@@ -1,22 +1,9 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>🧠 ML Fundamentals — Senior ML Engineer Roadmap</title>
-    <!-- MathJax for possible formulas -->
-    <script>
-        MathJax = {
-            tex: {
-                inlineMath: [['\\(', '\\)']],
-                displayMath: [['\\[', '\\]']]
-            },
-            svg: {
-                fontCache: 'global'
-            }
-        };
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
     <style>
         * {
             box-sizing: border-box;
@@ -37,7 +24,7 @@
             background: white;
             padding: 40px 45px;
             border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
         }
         h1 {
             font-size: 2.2em;
@@ -71,87 +58,31 @@
         strong {
             color: #e17055;
         }
-        ul, ol {
+        ul,
+        ol {
             margin: 16px 0;
             padding-right: 25px;
         }
         li {
             margin: 8px 0;
         }
-        .ltr {
-            direction: ltr;
-            text-align: left;
-            unicode-bidi: isolate;
+        a {
+            color: #0984e3;
+            text-decoration: none;
+            transition: color 0.2s;
         }
-        .formula {
-            direction: ltr;
-            text-align: center;
-            margin: 25px 0;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 10px;
-            border: 1px solid #dfe6e9;
-            overflow-x: auto;
-            font-size: 1.15em;
+        a:hover {
+            color: #0652DD;
+            text-decoration: underline;
         }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 25px 0;
-            direction: ltr;
-            text-align: left;
-            background: white;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        }
-        th, td {
-            padding: 12px 16px;
-            border: 1px solid #dfe6e9;
-        }
-        th {
-            background: #0984e3;
-            color: white;
-            font-weight: 600;
-        }
-        tr:nth-child(even) {
-            background: #f8f9fa;
-        }
-        code {
-            background: #f0f2f5;
-            padding: 3px 8px;
-            border-radius: 6px;
-            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-            direction: ltr;
-            unicode-bidi: isolate;
+        .topic-link {
             display: inline-block;
-            font-size: 0.95em;
-            color: #d63031;
+            color: #0984e3;
+            font-weight: 500;
         }
-        pre {
-            background: #2d3436;
-            color: #f8f8f2;
-            padding: 20px;
-            border-radius: 10px;
-            overflow-x: auto;
-            direction: ltr;
-            text-align: left;
-            font-size: 0.9em;
-            line-height: 1.7;
-            margin: 25px 0;
-            tab-size: 4;
-        }
-        pre code {
-            background: none;
-            color: inherit;
-            padding: 0;
-        }
-        blockquote {
-            border-right: 5px solid #0984e3;
-            background: #f0f7ff;
-            margin: 20px 0;
-            padding: 15px 20px;
-            border-radius: 8px;
+        .topic-link:hover {
+            color: #0652DD;
+            text-decoration: underline;
         }
         .highlight-box {
             background: #fff9e6;
@@ -159,11 +90,6 @@
             padding: 18px 20px;
             border-radius: 10px;
             margin: 25px 0;
-        }
-        hr {
-            margin: 40px 0;
-            border: none;
-            border-top: 2px dashed #dfe6e9;
         }
         .tier-red {
             border-right: 6px solid #d63031;
@@ -181,6 +107,41 @@
             border-right: 6px solid #00b894;
             background: #f0fff4;
         }
+        hr {
+            margin: 40px 0;
+            border: none;
+            border-top: 2px dashed #dfe6e9;
+        }
+        code {
+            background: #f0f2f5;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            direction: ltr;
+            unicode-bidi: isolate;
+            display: inline-block;
+            font-size: 0.95em;
+            color: #d63031;
+        }
+        .badge {
+            display: inline-block;
+            background: #0984e3;
+            color: white;
+            font-size: 0.7em;
+            padding: 2px 10px;
+            border-radius: 20px;
+            margin-right: 6px;
+            font-weight: 600;
+        }
+        .badge-green {
+            background: #00b894;
+        }
+        .badge-orange {
+            background: #e17055;
+        }
+        .badge-purple {
+            background: #6c5ce7;
+        }
         @media (max-width: 768px) {
             .container {
                 padding: 20px;
@@ -192,751 +153,839 @@
     </style>
 </head>
 <body>
-<div class="container">
+    <div class="container">
 
-<h1>🧠 ML Fundamentals — Senior ML Engineer Roadmap</h1>
+        <h1>🧠 ML Fundamentals — Senior ML Engineer Roadmap</h1>
 
+        <p style="font-size: 1.05rem; color: #555;">
+            📂 تمام فایل‌های این دوره در <a href="https://github.com/yazdanparasthesam/ML-Concepts" target="_blank">مخزن گیت‌هاب</a> موجود است.
+            برای مشاهدهٔ هر مبحث، روی عنوان آن کلیک کنید.
+        </p>
 
-<h3>🧠 1. Core ML Fundamentals</h3>
-<ul>
-    <li>Supervised Learning</li>
-    <li>Unsupervised Learning</li>
-    <li>Semi-Supervised Learning</li>
-    <li>Self-Supervised Learning</li>
-    <li>Reinforcement Learning</li>
-    <li>Parametric vs Non-Parametric Models</li>
-    <li>Model Capacity</li>
-    <li>Bias–Variance Tradeoff</li>
-    <li>Underfitting / Overfitting</li>
-    <li>Generalization</li>
-    <li>Empirical Risk / Expected Risk</li>
-    <li>Training Error / Generalization Error</li>
-    <li>Bayes Error / Irreducible Error</li>
-    <li>Model Complexity</li>
-    <li>No Free Lunch Theorem</li>
-    <li>Curse of Dimensionality</li>
-</ul>
+        <!-- ============================================================ -->
+        <!--  1. Core ML Fundamentals                                      -->
+        <!-- ============================================================ -->
+        <h3>🧠 1. Core ML Fundamentals</h3>
+        <ul>
+            <li><a class="topic-link" href="./1.%20Core%20ML%20Fundamentals.html">Supervised Learning</a></li>
+            <li><a class="topic-link" href="./1.%20Core%20ML%20Fundamentals.html#unsupervised-learning">Unsupervised Learning</a></li>
+            <li><a class="topic-link" href="./1.%20Core%20ML%20Fundamentals.html#semi-supervised-learning">Semi-Supervised Learning</a></li>
+            <li><a class="topic-link" href="./1.%20Core%20ML%20Fundamentals.html#self-supervised-learning">Self-Supervised Learning</a></li>
+            <li><a class="topic-link" href="./1.%20Core%20ML%20Fundamentals.html#reinforcement-learning">Reinforcement Learning</a></li>
+            <li><a class="topic-link" href="./1.%20Core%20ML%20Fundamentals.html#parametric-vs-non-parametric-models">Parametric vs Non-Parametric Models</a></li>
+            <li><a class="topic-link" href="./1.%20Core%20ML%20Fundamentals.html#model-capacity">Model Capacity</a></li>
+            <li><a class="topic-link" href="./1.%20Core%20ML%20Fundamentals.html#bias-variance-tradeoff">Bias–Variance Tradeoff</a></li>
+            <li><a class="topic-link" href="./1.%20Core%20ML%20Fundamentals.html#underfitting">Underfitting</a> / <a class="topic-link" href="./1.%20Core%20ML%20Fundamentals.html#overfitting">Overfitting</a></li>
+            <li><a class="topic-link" href="./1.%20Core%20ML%20Fundamentals.html#generalization">Generalization</a></li>
+            <li><a class="topic-link" href="./1.%20Core%20ML%20Fundamentals.html#empirical-risk">Empirical Risk</a> / <a class="topic-link" href="./1.%20Core%20ML%20Fundamentals.html#expected-risk">Expected Risk</a></li>
+            <li><a class="topic-link" href="./1.%20Core%20ML%20Fundamentals.html#training-error">Training Error</a> / <a class="topic-link" href="./1.%20Core%20ML%20Fundamentals.html#generalization-error">Generalization Error</a></li>
+            <li><a class="topic-link" href="./1.%20Core%20ML%20Fundamentals.html#bayes-error">Bayes Error</a> / <a class="topic-link" href="./1.%20Core%20ML%20Fundamentals.html#irreducible-error">Irreducible Error</a></li>
+            <li><a class="topic-link" href="./1.%20Core%20ML%20Fundamentals.html#model-complexity">Model Complexity</a></li>
+            <li><a class="topic-link" href="./1.%20Core%20ML%20Fundamentals.html#no-free-lunch-theorem">No Free Lunch Theorem</a></li>
+            <li><a class="topic-link" href="./1.%20Core%20ML%20Fundamentals.html#curse-of-dimensionality">Curse of Dimensionality</a></li>
+        </ul>
 
-<h3>📊 2. Data &amp; Sampling</h3>
-<ul>
-    <li>Population vs Sample</li>
-    <li>Parameter vs Statistic</li>
-    <li>Sampling</li>
-    <li>Sampling Bias</li>
-    <li>Selection Bias</li>
-    <li>Sampling Distribution</li>
-    <li>IID Assumption</li>
-    <li>Distribution</li>
-    <li>Data Distribution</li>
-    <li>Train/Validation/Test Split</li>
-    <li>Random Split</li>
-    <li>Stratified Split</li>
-    <li>Group Split</li>
-    <li>Temporal Split</li>
-    <li>Data Leakage</li>
-    <li>Target Leakage</li>
-    <li>Train-Test Contamination</li>
-    <li>Duplicate Leakage</li>
-    <li>Label Leakage</li>
-</ul>
+        <!-- ============================================================ -->
+        <!--  2. Data & Sampling                                           -->
+        <!-- ============================================================ -->
+        <h3>📊 2. Data &amp; Sampling</h3>
+        <ul>
+            <li><a class="topic-link" href="./2.%20Data%20%26%20Sampling%20%E2%80%94%20Senior%20ML%20Level.html#population-vs-sample">Population vs Sample</a></li>
+            <li><a class="topic-link" href="./2.%20Data%20%26%20Sampling%20%E2%80%94%20Senior%20ML%20Level.html#parameter-vs-statistic">Parameter vs Statistic</a></li>
+            <li><a class="topic-link" href="./2.%20Data%20%26%20Sampling%20%E2%80%94%20Senior%20ML%20Level.html#sampling">Sampling</a></li>
+            <li><a class="topic-link" href="./2.%20Data%20%26%20Sampling%20%E2%80%94%20Senior%20ML%20Level.html#sampling-bias">Sampling Bias</a></li>
+            <li><a class="topic-link" href="./2.%20Data%20%26%20Sampling%20%E2%80%94%20Senior%20ML%20Level.html#selection-bias">Selection Bias</a></li>
+            <li><a class="topic-link" href="./2.%20Data%20%26%20Sampling%20%E2%80%94%20Senior%20ML%20Level.html#sampling-distribution">Sampling Distribution</a></li>
+            <li><a class="topic-link" href="./2.%20Data%20%26%20Sampling%20%E2%80%94%20Senior%20ML%20Level.html#iid-assumption">IID Assumption</a></li>
+            <li><a class="topic-link" href="./2.%20Data%20%26%20Sampling%20%E2%80%94%20Senior%20ML%20Level.html#distribution">Distribution</a></li>
+            <li><a class="topic-link" href="./2.%20Data%20%26%20Sampling%20%E2%80%94%20Senior%20ML%20Level.html#data-distribution">Data Distribution</a></li>
+            <li><a class="topic-link" href="./2.%20Data%20%26%20Sampling%20%E2%80%94%20Senior%20ML%20Level.html#train-validation-test-split">Train/Validation/Test Split</a></li>
+            <li><a class="topic-link" href="./2.%20Data%20%26%20Sampling%20%E2%80%94%20Senior%20ML%20Level.html#random-split">Random Split</a></li>
+            <li><a class="topic-link" href="./2.%20Data%20%26%20Sampling%20%E2%80%94%20Senior%20ML%20Level.html#stratified-split">Stratified Split</a></li>
+            <li><a class="topic-link" href="./2.%20Data%20%26%20Sampling%20%E2%80%94%20Senior%20ML%20Level.html#group-split">Group Split</a></li>
+            <li><a class="topic-link" href="./2.%20Data%20%26%20Sampling%20%E2%80%94%20Senior%20ML%20Level.html#temporal-split">Temporal Split</a></li>
+            <li><a class="topic-link" href="./2.%20Data%20%26%20Sampling%20%E2%80%94%20Senior%20ML%20Level.html#data-leakage">Data Leakage</a></li>
+            <li><a class="topic-link" href="./2.%20Data%20%26%20Sampling%20%E2%80%94%20Senior%20ML%20Level.html#target-leakage">Target Leakage</a></li>
+            <li><a class="topic-link" href="./2.%20Data%20%26%20Sampling%20%E2%80%94%20Senior%20ML%20Level.html#train-test-contamination">Train-Test Contamination</a></li>
+            <li><a class="topic-link" href="./2.%20Data%20%26%20Sampling%20%E2%80%94%20Senior%20ML%20Level.html#duplicate-leakage">Duplicate Leakage</a></li>
+            <li><a class="topic-link" href="./2.%20Data%20%26%20Sampling%20%E2%80%94%20Senior%20ML%20Level.html#label-leakage">Label Leakage</a></li>
+        </ul>
 
-<h3>🔄 3. Cross-Validation</h3>
-<ul>
-    <li>K-Fold</li>
-    <li>Stratified K-Fold</li>
-    <li>Group K-Fold</li>
-    <li>Stratified Group K-Fold</li>
-    <li>Repeated K-Fold</li>
-    <li>Leave-One-Out CV</li>
-    <li>Time Series Split</li>
-    <li>Nested Cross-Validation</li>
-    <li>Cross-Validation Leakage</li>
-</ul>
+        <!-- ============================================================ -->
+        <!--  3. Cross-Validation                                          -->
+        <!-- ============================================================ -->
+        <h3>🔄 3. Cross-Validation</h3>
+        <ul>
+            <li><a class="topic-link" href="./3.%20Cross-Validation.html#k-fold">K-Fold</a></li>
+            <li><a class="topic-link" href="./3.%20Cross-Validation.html#stratified-k-fold">Stratified K-Fold</a></li>
+            <li><a class="topic-link" href="./3.%20Cross-Validation.html#group-k-fold">Group K-Fold</a></li>
+            <li><a class="topic-link" href="./3.%20Cross-Validation.html#stratified-group-k-fold">Stratified Group K-Fold</a></li>
+            <li><a class="topic-link" href="./3.%20Cross-Validation.html#repeated-k-fold">Repeated K-Fold</a></li>
+            <li><a class="topic-link" href="./3.%20Cross-Validation.html#leave-one-out-cv">Leave-One-Out CV</a></li>
+            <li><a class="topic-link" href="./3.%20Cross-Validation.html#time-series-split">Time Series Split</a></li>
+            <li><a class="topic-link" href="./3.%20Cross-Validation.html#nested-cross-validation">Nested Cross-Validation</a></li>
+            <li><a class="topic-link" href="./3.%20Cross-Validation.html#cross-validation-leakage">Cross-Validation Leakage</a></li>
+        </ul>
 
-<h3>🎯 4. Loss Functions</h3>
-<p><strong>Regression:</strong></p>
-<ul>
-    <li>MSE</li>
-    <li>MAE</li>
-    <li>Huber Loss</li>
-    <li>Log-Cosh</li>
-    <li>Quantile Loss</li>
-</ul>
-<p><strong>Classification:</strong></p>
-<ul>
-    <li>Binary Cross Entropy</li>
-    <li>Categorical Cross Entropy</li>
-    <li>Sparse Categorical Cross Entropy</li>
-    <li>Hinge Loss</li>
-    <li>Focal Loss</li>
-    <li>Label Smoothing</li>
-</ul>
-<p><strong>Ranking:</strong></p>
-<ul>
-    <li>Pairwise Loss</li>
-    <li>Triplet Loss</li>
-    <li>Contrastive Loss</li>
-</ul>
+        <!-- ============================================================ -->
+        <!--  4. Loss Functions                                            -->
+        <!-- ============================================================ -->
+        <h3>🎯 4. Loss Functions</h3>
+        <p><strong>Regression:</strong></p>
+        <ul>
+            <li><a class="topic-link" href="./4.%20Loss%20Functions.html#mse">MSE</a></li>
+            <li><a class="topic-link" href="./4.%20Loss%20Functions.html#mae">MAE</a></li>
+            <li><a class="topic-link" href="./4.%20Loss%20Functions.html#huber-loss">Huber Loss</a></li>
+            <li><a class="topic-link" href="./4.%20Loss%20Functions.html#log-cosh">Log-Cosh</a></li>
+            <li><a class="topic-link" href="./4.%20Loss%20Functions.html#quantile-loss">Quantile Loss</a></li>
+        </ul>
+        <p><strong>Classification:</strong></p>
+        <ul>
+            <li><a class="topic-link" href="./4.%20Loss%20Functions.html#binary-cross-entropy">Binary Cross Entropy</a></li>
+            <li><a class="topic-link" href="./4.%20Loss%20Functions.html#categorical-cross-entropy">Categorical Cross Entropy</a></li>
+            <li><a class="topic-link" href="./4.%20Loss%20Functions.html#sparse-categorical-cross-entropy">Sparse Categorical Cross Entropy</a></li>
+            <li><a class="topic-link" href="./4.%20Loss%20Functions.html#hinge-loss">Hinge Loss</a></li>
+            <li><a class="topic-link" href="./4.%20Loss%20Functions.html#focal-loss">Focal Loss</a></li>
+            <li><a class="topic-link" href="./4.%20Loss%20Functions.html#label-smoothing">Label Smoothing</a></li>
+        </ul>
+        <p><strong>Ranking:</strong></p>
+        <ul>
+            <li><a class="topic-link" href="./4.%20Loss%20Functions.html#pairwise-loss">Pairwise Loss</a></li>
+            <li><a class="topic-link" href="./4.%20Loss%20Functions.html#triplet-loss">Triplet Loss</a></li>
+            <li><a class="topic-link" href="./4.%20Loss%20Functions.html#contrastive-loss">Contrastive Loss</a></li>
+        </ul>
 
-<h3>📈 5. Evaluation Metrics</h3>
-<p><strong>Classification:</strong></p>
-<ul>
-    <li>Accuracy</li>
-    <li>Precision</li>
-    <li>Recall</li>
-    <li>Specificity</li>
-    <li>F1</li>
-    <li>Fβ</li>
-    <li>Macro F1</li>
-    <li>Micro F1</li>
-    <li>Weighted F1</li>
-    <li>ROC-AUC</li>
-    <li>PR-AUC</li>
-    <li>Log Loss</li>
-    <li>Matthews Correlation Coefficient</li>
-    <li>Cohen's Kappa</li>
-    <li>Balanced Accuracy</li>
-    <li>Top-K Accuracy</li>
-</ul>
-<p><strong>Regression:</strong></p>
-<ul>
-    <li>MAE</li>
-    <li>MSE</li>
-    <li>RMSE</li>
-    <li>R²</li>
-    <li>Adjusted R²</li>
-    <li>MAPE</li>
-    <li>sMAPE</li>
-    <li>MSLE</li>
-    <li>RMSLE</li>
-</ul>
-<p><strong>مهم‌تر</strong>: Metric Selection based on Business Objective</p>
+        <!-- ============================================================ -->
+        <!--  5. Evaluation Metrics                                        -->
+        <!-- ============================================================ -->
+        <h3>📈 5. Evaluation Metrics</h3>
+        <p><strong>Classification:</strong></p>
+        <ul>
+            <li><a class="topic-link" href="./5.%20Evaluation%20Metrics.html#accuracy">Accuracy</a></li>
+            <li><a class="topic-link" href="./5.%20Evaluation%20Metrics.html#precision">Precision</a></li>
+            <li><a class="topic-link" href="./5.%20Evaluation%20Metrics.html#recall">Recall</a></li>
+            <li><a class="topic-link" href="./5.%20Evaluation%20Metrics.html#specificity">Specificity</a></li>
+            <li><a class="topic-link" href="./5.%20Evaluation%20Metrics.html#f1">F1</a></li>
+            <li><a class="topic-link" href="./5.%20Evaluation%20Metrics.html#fβ">Fβ</a></li>
+            <li><a class="topic-link" href="./5.%20Evaluation%20Metrics.html#macro-f1">Macro F1</a></li>
+            <li><a class="topic-link" href="./5.%20Evaluation%20Metrics.html#micro-f1">Micro F1</a></li>
+            <li><a class="topic-link" href="./5.%20Evaluation%20Metrics.html#weighted-f1">Weighted F1</a></li>
+            <li><a class="topic-link" href="./5.%20Evaluation%20Metrics.html#roc-auc">ROC-AUC</a></li>
+            <li><a class="topic-link" href="./5.%20Evaluation%20Metrics.html#pr-auc">PR-AUC</a></li>
+            <li><a class="topic-link" href="./5.%20Evaluation%20Metrics.html#log-loss">Log Loss</a></li>
+            <li><a class="topic-link" href="./5.%20Evaluation%20Metrics.html#matthews-correlation-coefficient">Matthews Correlation Coefficient</a></li>
+            <li><a class="topic-link" href="./5.%20Evaluation%20Metrics.html#cohens-kappa">Cohen's Kappa</a></li>
+            <li><a class="topic-link" href="./5.%20Evaluation%20Metrics.html#balanced-accuracy">Balanced Accuracy</a></li>
+            <li><a class="topic-link" href="./5.%20Evaluation%20Metrics.html#top-k-accuracy">Top-K Accuracy</a></li>
+        </ul>
+        <p><strong>Regression:</strong></p>
+        <ul>
+            <li><a class="topic-link" href="./5.%20Evaluation%20Metrics.html#mae-regression">MAE</a></li>
+            <li><a class="topic-link" href="./5.%20Evaluation%20Metrics.html#mse-regression">MSE</a></li>
+            <li><a class="topic-link" href="./5.%20Evaluation%20Metrics.html#rmse">RMSE</a></li>
+            <li><a class="topic-link" href="./5.%20Evaluation%20Metrics.html#r2">R²</a></li>
+            <li><a class="topic-link" href="./5.%20Evaluation%20Metrics.html#adjusted-r2">Adjusted R²</a></li>
+            <li><a class="topic-link" href="./5.%20Evaluation%20Metrics.html#mape">MAPE</a></li>
+            <li><a class="topic-link" href="./5.%20Evaluation%20Metrics.html#smape">sMAPE</a></li>
+            <li><a class="topic-link" href="./5.%20Evaluation%20Metrics.html#msle">MSLE</a></li>
+            <li><a class="topic-link" href="./5.%20Evaluation%20Metrics.html#rmsle">RMSLE</a></li>
+        </ul>
 
-<h3>⚖️ 6. Classification Concepts</h3>
-<ul>
-    <li>Confusion Matrix</li>
-    <li>Decision Boundary</li>
-    <li>Probability Output</li>
-    <li>Classification Threshold</li>
-    <li>Threshold Tuning</li>
-    <li>Cost-Sensitive Classification</li>
-    <li>Class Imbalance</li>
-    <li>Class Weight</li>
-    <li>Oversampling</li>
-    <li>Undersampling</li>
-    <li>SMOTE</li>
-    <li>ADASYN</li>
-    <li>Precision-Recall Tradeoff</li>
-    <li>ROC Curve</li>
-    <li>PR Curve</li>
-    <li>Calibration</li>
-    <li>Probability Calibration</li>
-    <li>Platt Scaling</li>
-    <li>Isotonic Regression</li>
-</ul>
+        <!-- ============================================================ -->
+        <!--  6. Classification Concepts                                   -->
+        <!-- ============================================================ -->
+        <h3>⚖️ 6. Classification Concepts</h3>
+        <ul>
+            <li><a class="topic-link" href="./6.%20Classification%20Concepts.html#confusion-matrix">Confusion Matrix</a></li>
+            <li><a class="topic-link" href="./6.%20Classification%20Concepts.html#decision-boundary">Decision Boundary</a></li>
+            <li><a class="topic-link" href="./6.%20Classification%20Concepts.html#probability-output">Probability Output</a></li>
+            <li><a class="topic-link" href="./6.%20Classification%20Concepts.html#classification-threshold">Classification Threshold</a></li>
+            <li><a class="topic-link" href="./6.%20Classification%20Concepts.html#threshold-tuning">Threshold Tuning</a></li>
+            <li><a class="topic-link" href="./6.%20Classification%20Concepts.html#cost-sensitive-classification">Cost-Sensitive Classification</a></li>
+            <li><a class="topic-link" href="./6.%20Classification%20Concepts.html#class-imbalance">Class Imbalance</a></li>
+            <li><a class="topic-link" href="./6.%20Classification%20Concepts.html#class-weight">Class Weight</a></li>
+            <li><a class="topic-link" href="./6.%20Classification%20Concepts.html#oversampling">Oversampling</a></li>
+            <li><a class="topic-link" href="./6.%20Classification%20Concepts.html#undersampling">Undersampling</a></li>
+            <li><a class="topic-link" href="./6.%20Classification%20Concepts.html#smote">SMOTE</a></li>
+            <li><a class="topic-link" href="./6.%20Classification%20Concepts.html#adasyn">ADASYN</a></li>
+            <li><a class="topic-link" href="./6.%20Classification%20Concepts.html#precision-recall-tradeoff">Precision-Recall Tradeoff</a></li>
+            <li><a class="topic-link" href="./6.%20Classification%20Concepts.html#roc-curve">ROC Curve</a></li>
+            <li><a class="topic-link" href="./6.%20Classification%20Concepts.html#pr-curve">PR Curve</a></li>
+            <li><a class="topic-link" href="./6.%20Classification%20Concepts.html#calibration">Calibration</a></li>
+            <li><a class="topic-link" href="./6.%20Classification%20Concepts.html#probability-calibration">Probability Calibration</a></li>
+            <li><a class="topic-link" href="./6.%20Classification%20Concepts.html#platt-scaling">Platt Scaling</a></li>
+            <li><a class="topic-link" href="./6.%20Classification%20Concepts.html#isotonic-regression">Isotonic Regression</a></li>
+        </ul>
 
-<h3>🔧 7. Optimization</h3>
-<ul>
-    <li>Objective Function</li>
-    <li>Loss Function</li>
-    <li>Gradient</li>
-    <li>Gradient Descent</li>
-    <li>Batch Gradient Descent</li>
-    <li>Stochastic Gradient Descent</li>
-    <li>Mini-Batch Gradient Descent</li>
-    <li>Learning Rate</li>
-    <li>Learning Rate Scheduling</li>
-    <li>Momentum</li>
-    <li>Nesterov Momentum</li>
-    <li>AdaGrad</li>
-    <li>RMSProp</li>
-    <li>Adam</li>
-    <li>AdamW</li>
-    <li>Second-Order Optimization</li>
-    <li>Newton's Method</li>
-    <li>Convex vs Non-Convex Optimization</li>
-    <li>Local Minimum</li>
-    <li>Global Minimum</li>
-    <li>Saddle Point</li>
-    <li>Gradient Explosion</li>
-    <li>Gradient Vanishing</li>
-</ul>
+        <!-- ============================================================ -->
+        <!--  7. Optimization                                              -->
+        <!-- ============================================================ -->
+        <h3>🔧 7. Optimization</h3>
+        <ul>
+            <li><a class="topic-link" href="./7.%20Optimization.html#objective-function">Objective Function</a></li>
+            <li><a class="topic-link" href="./7.%20Optimization.html#loss-function">Loss Function</a></li>
+            <li><a class="topic-link" href="./7.%20Optimization.html#gradient">Gradient</a></li>
+            <li><a class="topic-link" href="./7.%20Optimization.html#gradient-descent">Gradient Descent</a></li>
+            <li><a class="topic-link" href="./7.%20Optimization.html#batch-gradient-descent">Batch Gradient Descent</a></li>
+            <li><a class="topic-link" href="./7.%20Optimization.html#stochastic-gradient-descent">Stochastic Gradient Descent</a></li>
+            <li><a class="topic-link" href="./7.%20Optimization.html#mini-batch-gradient-descent">Mini-Batch Gradient Descent</a></li>
+            <li><a class="topic-link" href="./7.%20Optimization.html#learning-rate">Learning Rate</a></li>
+            <li><a class="topic-link" href="./7.%20Optimization.html#learning-rate-scheduling">Learning Rate Scheduling</a></li>
+            <li><a class="topic-link" href="./7.%20Optimization.html#momentum">Momentum</a></li>
+            <li><a class="topic-link" href="./7.%20Optimization.html#nesterov-momentum">Nesterov Momentum</a></li>
+            <li><a class="topic-link" href="./7.%20Optimization.html#adagrad">AdaGrad</a></li>
+            <li><a class="topic-link" href="./7.%20Optimization.html#rmsprop">RMSProp</a></li>
+            <li><a class="topic-link" href="./7.%20Optimization.html#adam">Adam</a></li>
+            <li><a class="topic-link" href="./7.%20Optimization.html#adamw">AdamW</a></li>
+            <li><a class="topic-link" href="./7.%20Optimization.html#second-order-optimization">Second-Order Optimization</a></li>
+            <li><a class="topic-link" href="./7.%20Optimization.html#newtons-method">Newton's Method</a></li>
+            <li><a class="topic-link" href="./7.%20Optimization.html#convex-vs-non-convex-optimization">Convex vs Non-Convex Optimization</a></li>
+            <li><a class="topic-link" href="./7.%20Optimization.html#local-minimum">Local Minimum</a></li>
+            <li><a class="topic-link" href="./7.%20Optimization.html#global-minimum">Global Minimum</a></li>
+            <li><a class="topic-link" href="./7.%20Optimization.html#saddle-point">Saddle Point</a></li>
+            <li><a class="topic-link" href="./7.%20Optimization.html#gradient-explosion">Gradient Explosion</a></li>
+            <li><a class="topic-link" href="./7.%20Optimization.html#gradient-vanishing">Gradient Vanishing</a></li>
+        </ul>
 
-<h3>🧮 8. Regularization</h3>
-<ul>
-    <li>L1 Regularization</li>
-    <li>L2 Regularization</li>
-    <li>Elastic Net</li>
-    <li>Weight Decay</li>
-    <li>Dropout</li>
-    <li>Early Stopping</li>
-    <li>Data Augmentation</li>
-    <li>Noise Injection</li>
-    <li>Label Smoothing</li>
-    <li>Max-Norm Constraint</li>
-</ul>
-<p><strong>باید ارتباطش را با این مفاهیم بفهمی</strong>: Bias, Variance, Overfitting, Generalization</p>
+        <!-- ============================================================ -->
+        <!--  8. Regularization                                            -->
+        <!-- ============================================================ -->
+        <h3>🧮 8. Regularization</h3>
+        <ul>
+            <li><a class="topic-link" href="./8.%20Regularization.html#l1-regularization">L1 Regularization</a></li>
+            <li><a class="topic-link" href="./8.%20Regularization.html#l2-regularization">L2 Regularization</a></li>
+            <li><a class="topic-link" href="./8.%20Regularization.html#elastic-net">Elastic Net</a></li>
+            <li><a class="topic-link" href="./8.%20Regularization.html#weight-decay">Weight Decay</a></li>
+            <li><a class="topic-link" href="./8.%20Regularization.html#dropout">Dropout</a></li>
+            <li><a class="topic-link" href="./8.%20Regularization.html#early-stopping">Early Stopping</a></li>
+            <li><a class="topic-link" href="./8.%20Regularization.html#data-augmentation">Data Augmentation</a></li>
+            <li><a class="topic-link" href="./8.%20Regularization.html#noise-injection">Noise Injection</a></li>
+            <li><a class="topic-link" href="./8.%20Regularization.html#label-smoothing-regularization">Label Smoothing</a></li>
+            <li><a class="topic-link" href="./8.%20Regularization.html#max-norm-constraint">Max-Norm Constraint</a></li>
+        </ul>
+        <p><strong>باید ارتباطش را با این مفاهیم بفهمی</strong>: Bias, Variance, Overfitting, Generalization</p>
 
-<h3>🌳 9. Classical ML Algorithms</h3>
-<p><strong>Linear Models:</strong></p>
-<ul>
-    <li>Linear Regression</li>
-    <li>Polynomial Regression</li>
-    <li>Ridge</li>
-    <li>Lasso</li>
-    <li>Elastic Net</li>
-    <li>Logistic Regression</li>
-</ul>
-<p><strong>Distance-Based:</strong></p>
-<ul>
-    <li>KNN</li>
-    <li>K-Means</li>
-    <li>K-Medoids</li>
-</ul>
-<p><strong>Tree-Based:</strong></p>
-<ul>
-    <li>Decision Tree</li>
-    <li>Random Forest</li>
-    <li>Extra Trees</li>
-    <li>Gradient Boosting</li>
-    <li>XGBoost</li>
-    <li>LightGBM</li>
-    <li>CatBoost</li>
-</ul>
-<p><strong>Margin-Based:</strong></p>
-<ul>
-    <li>SVM</li>
-    <li>SVR</li>
-</ul>
-<p><strong>Probabilistic:</strong></p>
-<ul>
-    <li>Naive Bayes</li>
-    <li>Gaussian Mixture Model</li>
-</ul>
+        <!-- ============================================================ -->
+        <!--  9. Classical ML Algorithms                                   -->
+        <!-- ============================================================ -->
+        <h3>🌳 9. Classical ML Algorithms</h3>
+        <p><strong>Linear Models:</strong></p>
+        <ul>
+            <li><a class="topic-link" href="./9.%20Classical%20Machine%20Learning%20Algorithms.html#linear-regression">Linear Regression</a></li>
+            <li><a class="topic-link" href="./9.%20Classical%20Machine%20Learning%20Algorithms.html#polynomial-regression">Polynomial Regression</a></li>
+            <li><a class="topic-link" href="./9.%20Classical%20Machine%20Learning%20Algorithms.html#ridge">Ridge</a></li>
+            <li><a class="topic-link" href="./9.%20Classical%20Machine%20Learning%20Algorithms.html#lasso">Lasso</a></li>
+            <li><a class="topic-link" href="./9.%20Classical%20Machine%20Learning%20Algorithms.html#elastic-net">Elastic Net</a></li>
+            <li><a class="topic-link" href="./9.%20Classical%20Machine%20Learning%20Algorithms.html#logistic-regression">Logistic Regression</a></li>
+        </ul>
+        <p><strong>Distance-Based:</strong></p>
+        <ul>
+            <li><a class="topic-link" href="./9.%20Classical%20Machine%20Learning%20Algorithms.html#knn">KNN</a></li>
+            <li><a class="topic-link" href="./9.%20Classical%20Machine%20Learning%20Algorithms.html#k-means">K-Means</a></li>
+            <li><a class="topic-link" href="./9.%20Classical%20Machine%20Learning%20Algorithms.html#k-medoids">K-Medoids</a></li>
+        </ul>
+        <p><strong>Tree-Based:</strong></p>
+        <ul>
+            <li><a class="topic-link" href="./9.%20Classical%20Machine%20Learning%20Algorithms.html#decision-tree">Decision Tree</a></li>
+            <li><a class="topic-link" href="./9.%20Classical%20Machine%20Learning%20Algorithms.html#random-forest">Random Forest</a></li>
+            <li><a class="topic-link" href="./9.%20Classical%20Machine%20Learning%20Algorithms.html#extra-trees">Extra Trees</a></li>
+            <li><a class="topic-link" href="./9.%20Classical%20Machine%20Learning%20Algorithms.html#gradient-boosting">Gradient Boosting</a></li>
+            <li><a class="topic-link" href="./9.%20Classical%20Machine%20Learning%20Algorithms.html#xgboost">XGBoost</a></li>
+            <li><a class="topic-link" href="./9.%20Classical%20Machine%20Learning%20Algorithms.html#lightgbm">LightGBM</a></li>
+            <li><a class="topic-link" href="./9.%20Classical%20Machine%20Learning%20Algorithms.html#catboost">CatBoost</a></li>
+        </ul>
+        <p><strong>Margin-Based:</strong></p>
+        <ul>
+            <li><a class="topic-link" href="./9.%20Classical%20Machine%20Learning%20Algorithms.html#svm">SVM</a></li>
+            <li><a class="topic-link" href="./9.%20Classical%20Machine%20Learning%20Algorithms.html#svr">SVR</a></li>
+        </ul>
+        <p><strong>Probabilistic:</strong></p>
+        <ul>
+            <li><a class="topic-link" href="./9.%20Classical%20Machine%20Learning%20Algorithms.html#naive-bayes">Naive Bayes</a></li>
+            <li><a class="topic-link" href="./9.%20Classical%20Machine%20Learning%20Algorithms.html#gaussian-mixture-model">Gaussian Mixture Model</a></li>
+        </ul>
 
-<h3>🌲 10. Decision Tree Concepts</h3>
-<ul>
-    <li>Entropy</li>
-    <li>Information Gain</li>
-    <li>Gini Impurity</li>
-    <li>Gain Ratio</li>
-    <li>Splitting</li>
-    <li>Pruning</li>
-    <li>Pre-Pruning</li>
-    <li>Post-Pruning</li>
-    <li>Tree Depth</li>
-    <li>Leaf Size</li>
-    <li>Feature Importance</li>
-    <li>Random Feature Selection</li>
-</ul>
+        <!-- ============================================================ -->
+        <!--  10. Decision Tree Concepts                                   -->
+        <!-- ============================================================ -->
+        <h3>🌲 10. Decision Tree Concepts</h3>
+        <ul>
+            <li><a class="topic-link" href="./10.%20Decision%20Tree%20Concepts.html#entropy">Entropy</a></li>
+            <li><a class="topic-link" href="./10.%20Decision%20Tree%20Concepts.html#information-gain">Information Gain</a></li>
+            <li><a class="topic-link" href="./10.%20Decision%20Tree%20Concepts.html#gini-impurity">Gini Impurity</a></li>
+            <li><a class="topic-link" href="./10.%20Decision%20Tree%20Concepts.html#gain-ratio">Gain Ratio</a></li>
+            <li><a class="topic-link" href="./10.%20Decision%20Tree%20Concepts.html#splitting">Splitting</a></li>
+            <li><a class="topic-link" href="./10.%20Decision%20Tree%20Concepts.html#pruning">Pruning</a></li>
+            <li><a class="topic-link" href="./10.%20Decision%20Tree%20Concepts.html#pre-pruning">Pre-Pruning</a></li>
+            <li><a class="topic-link" href="./10.%20Decision%20Tree%20Concepts.html#post-pruning">Post-Pruning</a></li>
+            <li><a class="topic-link" href="./10.%20Decision%20Tree%20Concepts.html#tree-depth">Tree Depth</a></li>
+            <li><a class="topic-link" href="./10.%20Decision%20Tree%20Concepts.html#leaf-size">Leaf Size</a></li>
+            <li><a class="topic-link" href="./10.%20Decision%20Tree%20Concepts.html#feature-importance">Feature Importance</a></li>
+            <li><a class="topic-link" href="./10.%20Decision%20Tree%20Concepts.html#random-feature-selection">Random Feature Selection</a></li>
+        </ul>
 
-<h3>🚀 11. Ensemble Learning</h3>
-<ul>
-    <li>Bagging</li>
-    <li>Boosting</li>
-    <li>Random Forest</li>
-    <li>Gradient Boosting</li>
-    <li>AdaBoost</li>
-    <li>XGBoost</li>
-    <li>LightGBM</li>
-    <li>CatBoost</li>
-    <li>Voting</li>
-    <li>Hard Voting</li>
-    <li>Soft Voting</li>
-    <li>Stacking</li>
-    <li>Blending</li>
-    <li>Bias Reduction</li>
-    <li>Variance Reduction</li>
-</ul>
+        <!-- ============================================================ -->
+        <!--  11. Ensemble Learning                                        -->
+        <!-- ============================================================ -->
+        <h3>🚀 11. Ensemble Learning</h3>
+        <ul>
+            <li><a class="topic-link" href="./11.%20Ensemble%20Learning1.html#bagging">Bagging</a></li>
+            <li><a class="topic-link" href="./11.%20Ensemble%20Learning1.html#boosting">Boosting</a></li>
+            <li><a class="topic-link" href="./11.%20Ensemble%20Learning1.html#random-forest">Random Forest</a></li>
+            <li><a class="topic-link" href="./11.%20Ensemble%20Learning1.html#gradient-boosting">Gradient Boosting</a></li>
+            <li><a class="topic-link" href="./11.%20Ensemble%20Learning1.html#adaboost">AdaBoost</a></li>
+            <li><a class="topic-link" href="./11.%20Ensemble%20Learning1.html#xgboost">XGBoost</a></li>
+            <li><a class="topic-link" href="./11.%20Ensemble%20Learning1.html#lightgbm">LightGBM</a></li>
+            <li><a class="topic-link" href="./11.%20Ensemble%20Learning1.html#catboost">CatBoost</a></li>
+            <li><a class="topic-link" href="./11.%20Ensemble%20Learning1.html#voting">Voting</a></li>
+            <li><a class="topic-link" href="./11.%20Ensemble%20Learning1.html#hard-voting">Hard Voting</a></li>
+            <li><a class="topic-link" href="./11.%20Ensemble%20Learning1.html#soft-voting">Soft Voting</a></li>
+            <li><a class="topic-link" href="./11.%20Ensemble%20Learning1.html#stacking">Stacking</a></li>
+            <li><a class="topic-link" href="./11.%20Ensemble%20Learning1.html#blending">Blending</a></li>
+            <li><a class="topic-link" href="./11.%20Ensemble%20Learning1.html#bias-reduction">Bias Reduction</a></li>
+            <li><a class="topic-link" href="./11.%20Ensemble%20Learning1.html#variance-reduction">Variance Reduction</a></li>
+        </ul>
 
-<h3>🔍 12. Feature Engineering</h3>
-<ul>
-    <li>Feature Selection</li>
-    <li>Feature Extraction</li>
-    <li>Feature Construction</li>
-    <li>Interaction Features</li>
-    <li>Polynomial Features</li>
-    <li>Binning</li>
-    <li>Log Transformation</li>
-    <li>Power Transformation</li>
-    <li>Quantile Transformation</li>
-    <li>Encoding</li>
-    <li>Scaling</li>
-    <li>Normalization</li>
-    <li>Standardization</li>
-    <li>Missing Value Handling</li>
-    <li>Outlier Handling</li>
-</ul>
+        <!-- ============================================================ -->
+        <!--  12. Feature Engineering                                      -->
+        <!-- ============================================================ -->
+        <h3>🔍 12. Feature Engineering</h3>
+        <ul>
+            <li><a class="topic-link" href="./12.%20Feature%20Engineering.html#feature-selection">Feature Selection</a></li>
+            <li><a class="topic-link" href="./12.%20Feature%20Engineering.html#feature-extraction">Feature Extraction</a></li>
+            <li><a class="topic-link" href="./12.%20Feature%20Engineering.html#feature-construction">Feature Construction</a></li>
+            <li><a class="topic-link" href="./12.%20Feature%20Engineering.html#interaction-features">Interaction Features</a></li>
+            <li><a class="topic-link" href="./12.%20Feature%20Engineering.html#polynomial-features">Polynomial Features</a></li>
+            <li><a class="topic-link" href="./12.%20Feature%20Engineering.html#binning">Binning</a></li>
+            <li><a class="topic-link" href="./12.%20Feature%20Engineering.html#log-transformation">Log Transformation</a></li>
+            <li><a class="topic-link" href="./12.%20Feature%20Engineering.html#power-transformation">Power Transformation</a></li>
+            <li><a class="topic-link" href="./12.%20Feature%20Engineering.html#quantile-transformation">Quantile Transformation</a></li>
+            <li><a class="topic-link" href="./12.%20Feature%20Engineering.html#encoding">Encoding</a></li>
+            <li><a class="topic-link" href="./12.%20Feature%20Engineering.html#scaling">Scaling</a></li>
+            <li><a class="topic-link" href="./12.%20Feature%20Engineering.html#normalization">Normalization</a></li>
+            <li><a class="topic-link" href="./12.%20Feature%20Engineering.html#standardization">Standardization</a></li>
+            <li><a class="topic-link" href="./12.%20Feature%20Engineering.html#missing-value-handling">Missing Value Handling</a></li>
+            <li><a class="topic-link" href="./12.%20Feature%20Engineering.html#outlier-handling">Outlier Handling</a></li>
+        </ul>
 
-<h3>🏷️ 13. Categorical Features</h3>
-<ul>
-    <li>One-Hot Encoding</li>
-    <li>Ordinal Encoding</li>
-    <li>Label Encoding</li>
-    <li>Target Encoding</li>
-    <li>Frequency Encoding</li>
-    <li>Count Encoding</li>
-    <li>Binary Encoding</li>
-    <li>Hash Encoding</li>
-    <li>Native Categorical Handling</li>
-</ul>
-<p><strong>مهم‌تر</strong>: Target Encoding می‌تواند باعث Leakage شود.</p>
+        <!-- ============================================================ -->
+        <!--  13. Categorical Features                                     -->
+        <!-- ============================================================ -->
+        <h3>🏷️ 13. Categorical Features</h3>
+        <ul>
+            <li><a class="topic-link" href="./13.%20Categorical%20Features.html#one-hot-encoding">One-Hot Encoding</a></li>
+            <li><a class="topic-link" href="./13.%20Categorical%20Features.html#ordinal-encoding">Ordinal Encoding</a></li>
+            <li><a class="topic-link" href="./13.%20Categorical%20Features.html#label-encoding">Label Encoding</a></li>
+            <li><a class="topic-link" href="./13.%20Categorical%20Features.html#target-encoding">Target Encoding</a></li>
+            <li><a class="topic-link" href="./13.%20Categorical%20Features.html#frequency-encoding">Frequency Encoding</a></li>
+            <li><a class="topic-link" href="./13.%20Categorical%20Features.html#count-encoding">Count Encoding</a></li>
+            <li><a class="topic-link" href="./13.%20Categorical%20Features.html#binary-encoding">Binary Encoding</a></li>
+            <li><a class="topic-link" href="./13.%20Categorical%20Features.html#hash-encoding">Hash Encoding</a></li>
+            <li><a class="topic-link" href="./13.%20Categorical%20Features.html#native-categorical-handling">Native Categorical Handling</a></li>
+        </ul>
 
-<h3>📐 14. Dimensionality Reduction</h3>
-<p><strong>Linear:</strong></p>
-<ul>
-    <li>PCA</li>
-    <li>SVD</li>
-    <li>Truncated SVD</li>
-</ul>
-<p><strong>Nonlinear:</strong></p>
-<ul>
-    <li>Kernel PCA</li>
-    <li>t-SNE</li>
-    <li>UMAP</li>
-    <li>Autoencoder</li>
-</ul>
-<p><strong>تفاوت</strong>: Feature Selection vs Feature Extraction vs Dimensionality Reduction</p>
+        <!-- ============================================================ -->
+        <!--  14. Dimensionality Reduction                                 -->
+        <!-- ============================================================ -->
+        <h3>📐 14. Dimensionality Reduction</h3>
+        <p><strong>Linear:</strong></p>
+        <ul>
+            <li><a class="topic-link" href="./14.%20Dimensionality%20Reduction.html#pca">PCA</a></li>
+            <li><a class="topic-link" href="./14.%20Dimensionality%20Reduction.html#svd">SVD</a></li>
+            <li><a class="topic-link" href="./14.%20Dimensionality%20Reduction.html#truncated-svd">Truncated SVD</a></li>
+        </ul>
+        <p><strong>Nonlinear:</strong></p>
+        <ul>
+            <li><a class="topic-link" href="./14.%20Dimensionality%20Reduction.html#kernel-pca">Kernel PCA</a></li>
+            <li><a class="topic-link" href="./14.%20Dimensionality%20Reduction.html#t-sne">t-SNE</a></li>
+            <li><a class="topic-link" href="./14.%20Dimensionality%20Reduction.html#umap">UMAP</a></li>
+            <li><a class="topic-link" href="./14.%20Dimensionality%20Reduction.html#autoencoder">Autoencoder</a></li>
+        </ul>
+        <p><strong>تفاوت</strong>: Feature Selection vs Feature Extraction vs Dimensionality Reduction</p>
 
-<h3>🔬 15. Unsupervised Learning</h3>
-<ul>
-    <li>Clustering</li>
-    <li>K-Means</li>
-    <li>Hierarchical Clustering</li>
-    <li>DBSCAN</li>
-    <li>HDBSCAN</li>
-    <li>Gaussian Mixture Models</li>
-    <li>Density Estimation</li>
-    <li>Anomaly Detection</li>
-    <li>Isolation Forest</li>
-    <li>One-Class SVM</li>
-</ul>
+        <!-- ============================================================ -->
+        <!--  15. Unsupervised Learning                                    -->
+        <!-- ============================================================ -->
+        <h3>🔬 15. Unsupervised Learning</h3>
+        <ul>
+            <li><a class="topic-link" href="./15.%20Unsupervised%20Learning.html#clustering">Clustering</a></li>
+            <li><a class="topic-link" href="./15.%20Unsupervised%20Learning.html#k-means">K-Means</a></li>
+            <li><a class="topic-link" href="./15.%20Unsupervised%20Learning.html#hierarchical-clustering">Hierarchical Clustering</a></li>
+            <li><a class="topic-link" href="./15.%20Unsupervised%20Learning.html#dbscan">DBSCAN</a></li>
+            <li><a class="topic-link" href="./15.%20Unsupervised%20Learning.html#hdbscan">HDBSCAN</a></li>
+            <li><a class="topic-link" href="./15.%20Unsupervised%20Learning.html#gaussian-mixture-models">Gaussian Mixture Models</a></li>
+            <li><a class="topic-link" href="./15.%20Unsupervised%20Learning.html#density-estimation">Density Estimation</a></li>
+            <li><a class="topic-link" href="./15.%20Unsupervised%20Learning.html#anomaly-detection">Anomaly Detection</a></li>
+            <li><a class="topic-link" href="./15.%20Unsupervised%20Learning.html#isolation-forest">Isolation Forest</a></li>
+            <li><a class="topic-link" href="./15.%20Unsupervised%20Learning.html#one-class-svm">One-Class SVM</a></li>
+        </ul>
 
-<h3>🚨 16. Anomaly Detection</h3>
-<ul>
-    <li>Outlier vs Anomaly</li>
-    <li>Statistical Anomaly Detection</li>
-    <li>Z-Score</li>
-    <li>IQR</li>
-    <li>Isolation Forest</li>
-    <li>One-Class SVM</li>
-    <li>Local Outlier Factor</li>
-    <li>Autoencoder-based Anomaly Detection</li>
-    <li>Reconstruction Error</li>
-</ul>
+        <!-- ============================================================ -->
+        <!--  16. Anomaly Detection                                        -->
+        <!-- ============================================================ -->
+        <h3>🚨 16. Anomaly Detection</h3>
+        <ul>
+            <li><a class="topic-link" href="./16.%20Anomaly%20Detection.html#outlier-vs-anomaly">Outlier vs Anomaly</a></li>
+            <li><a class="topic-link" href="./16.%20Anomaly%20Detection.html#statistical-anomaly-detection">Statistical Anomaly Detection</a></li>
+            <li><a class="topic-link" href="./16.%20Anomaly%20Detection.html#z-score">Z-Score</a></li>
+            <li><a class="topic-link" href="./16.%20Anomaly%20Detection.html#iqr">IQR</a></li>
+            <li><a class="topic-link" href="./16.%20Anomaly%20Detection.html#isolation-forest">Isolation Forest</a></li>
+            <li><a class="topic-link" href="./16.%20Anomaly%20Detection.html#one-class-svm">One-Class SVM</a></li>
+            <li><a class="topic-link" href="./16.%20Anomaly%20Detection.html#local-outlier-factor">Local Outlier Factor</a></li>
+            <li><a class="topic-link" href="./16.%20Anomaly%20Detection.html#autoencoder-based-anomaly-detection">Autoencoder-based Anomaly Detection</a></li>
+            <li><a class="topic-link" href="./16.%20Anomaly%20Detection.html#reconstruction-error">Reconstruction Error</a></li>
+        </ul>
 
-<h3>🔄 17. Distribution Shift</h3>
-<ul>
-    <li>Covariate Shift</li>
-    <li>Label Shift</li>
-    <li>Concept Shift</li>
-    <li>Concept Drift</li>
-    <li>Dataset Shift</li>
-    <li>Prior Probability Shift</li>
-    <li>Domain Shift</li>
-    <li>Temporal Drift</li>
-    <li>Data Drift</li>
-    <li>Feature Drift</li>
-</ul>
+        <!-- ============================================================ -->
+        <!--  17. Distribution Shift                                       -->
+        <!-- ============================================================ -->
+        <h3>🔄 17. Distribution Shift</h3>
+        <ul>
+            <li><a class="topic-link" href="./17.%20Distribution%20Shift.html#covariate-shift">Covariate Shift</a></li>
+            <li><a class="topic-link" href="./17.%20Distribution%20Shift.html#label-shift">Label Shift</a></li>
+            <li><a class="topic-link" href="./17.%20Distribution%20Shift.html#concept-shift">Concept Shift</a></li>
+            <li><a class="topic-link" href="./17.%20Distribution%20Shift.html#concept-drift">Concept Drift</a></li>
+            <li><a class="topic-link" href="./17.%20Distribution%20Shift.html#dataset-shift">Dataset Shift</a></li>
+            <li><a class="topic-link" href="./17.%20Distribution%20Shift.html#prior-probability-shift">Prior Probability Shift</a></li>
+            <li><a class="topic-link" href="./17.%20Distribution%20Shift.html#domain-shift">Domain Shift</a></li>
+            <li><a class="topic-link" href="./17.%20Distribution%20Shift.html#temporal-drift">Temporal Drift</a></li>
+            <li><a class="topic-link" href="./17.%20Distribution%20Shift.html#data-drift">Data Drift</a></li>
+            <li><a class="topic-link" href="./17.%20Distribution%20Shift.html#feature-drift">Feature Drift</a></li>
+        </ul>
 
-<h3>🎲 18. Uncertainty</h3>
-<ul>
-    <li>Aleatoric Uncertainty</li>
-    <li>Epistemic Uncertainty</li>
-    <li>Predictive Uncertainty</li>
-    <li>Confidence Interval</li>
-    <li>Prediction Interval</li>
-    <li>Bayesian ML</li>
-    <li>Monte Carlo Dropout</li>
-    <li>Deep Ensembles</li>
-    <li>Conformal Prediction</li>
-</ul>
+        <!-- ============================================================ -->
+        <!--  18. Uncertainty                                              -->
+        <!-- ============================================================ -->
+        <h3>🎲 18. Uncertainty</h3>
+        <ul>
+            <li><a class="topic-link" href="./18.%20Uncertainty%20Machine%20Learning.html#aleatoric-uncertainty">Aleatoric Uncertainty</a></li>
+            <li><a class="topic-link" href="./18.%20Uncertainty%20Machine%20Learning.html#epistemic-uncertainty">Epistemic Uncertainty</a></li>
+            <li><a class="topic-link" href="./18.%20Uncertainty%20Machine%20Learning.html#predictive-uncertainty">Predictive Uncertainty</a></li>
+            <li><a class="topic-link" href="./18.%20Uncertainty%20Machine%20Learning.html#confidence-interval">Confidence Interval</a></li>
+            <li><a class="topic-link" href="./18.%20Uncertainty%20Machine%20Learning.html#prediction-interval">Prediction Interval</a></li>
+            <li><a class="topic-link" href="./18.%20Uncertainty%20Machine%20Learning.html#bayesian-ml">Bayesian ML</a></li>
+            <li><a class="topic-link" href="./18.%20Uncertainty%20Machine%20Learning.html#monte-carlo-dropout">Monte Carlo Dropout</a></li>
+            <li><a class="topic-link" href="./18.%20Uncertainty%20Machine%20Learning.html#deep-ensembles">Deep Ensembles</a></li>
+            <li><a class="topic-link" href="./18.%20Uncertainty%20Machine%20Learning.html#conformal-prediction">Conformal Prediction</a></li>
+        </ul>
 
-<h3>🧠 19. Explainability</h3>
-<ul>
-    <li>Feature Importance</li>
-    <li>Permutation Importance</li>
-    <li>Partial Dependence Plot</li>
-    <li>ICE Plot</li>
-    <li>SHAP</li>
-    <li>LIME</li>
-    <li>Counterfactual Explanation</li>
-    <li>Global Explainability</li>
-    <li>Local Explainability</li>
-</ul>
-<p><strong>مثلاً تفاوت</strong>:</p>
-<ul>
-    <li>Why is this customer classified as Fraud?</li>
-    <li>What features generally drive Fraud predictions?</li>
-</ul>
+        <!-- ============================================================ -->
+        <!--  19. Explainability                                           -->
+        <!-- ============================================================ -->
+        <h3>🧠 19. Explainability</h3>
+        <ul>
+            <li><a class="topic-link" href="./19.%20Explainability%20Machine%20Learning.html#feature-importance">Feature Importance</a></li>
+            <li><a class="topic-link" href="./19.%20Explainability%20Machine%20Learning.html#permutation-importance">Permutation Importance</a></li>
+            <li><a class="topic-link" href="./19.%20Explainability%20Machine%20Learning.html#partial-dependence-plot">Partial Dependence Plot</a></li>
+            <li><a class="topic-link" href="./19.%20Explainability%20Machine%20Learning.html#ice-plot">ICE Plot</a></li>
+            <li><a class="topic-link" href="./19.%20Explainability%20Machine%20Learning.html#shap">SHAP</a></li>
+            <li><a class="topic-link" href="./19.%20Explainability%20Machine%20Learning.html#lime">LIME</a></li>
+            <li><a class="topic-link" href="./19.%20Explainability%20Machine%20Learning.html#counterfactual-explanation">Counterfactual Explanation</a></li>
+            <li><a class="topic-link" href="./19.%20Explainability%20Machine%20Learning.html#global-explainability">Global Explainability</a></li>
+            <li><a class="topic-link" href="./19.%20Explainability%20Machine%20Learning.html#local-explainability">Local Explainability</a></li>
+        </ul>
 
-<h3>🧪 20. Statistical Concepts برای ML</h3>
-<ul>
-    <li>Mean</li>
-    <li>Median</li>
-    <li>Variance</li>
-    <li>Standard Deviation</li>
-    <li>Covariance</li>
-    <li>Correlation</li>
-    <li>Probability</li>
-    <li>Conditional Probability</li>
-    <li>Bayes' Theorem</li>
-    <li>Expected Value</li>
-    <li>Distribution</li>
-    <li>Normal Distribution</li>
-    <li>Binomial Distribution</li>
-    <li>Bernoulli Distribution</li>
-    <li>Sampling Distribution</li>
-    <li>Central Limit Theorem</li>
-    <li>Standard Error</li>
-    <li>Confidence Interval</li>
-    <li>Hypothesis Testing</li>
-    <li>p-value</li>
-    <li>Type I Error</li>
-    <li>Type II Error</li>
-    <li>Statistical Power</li>
-    <li>Effect Size</li>
-    <li>Multiple Testing</li>
-    <li>Bonferroni Correction</li>
-    <li>False Discovery Rate</li>
-</ul>
+        <!-- ============================================================ -->
+        <!--  20. Statistical Concepts                                     -->
+        <!-- ============================================================ -->
+        <h3>🧪 20. Statistical Concepts برای ML</h3>
+        <ul>
+            <li><a class="topic-link" href="./20.%20Statistical%20Concepts%20Machine%20Learning%20...html#mean">Mean</a></li>
+            <li><a class="topic-link" href="./20.%20Statistical%20Concepts%20Machine%20Learning%20...html#median">Median</a></li>
+            <li><a class="topic-link" href="./20.%20Statistical%20Concepts%20Machine%20Learning%20...html#variance">Variance</a></li>
+            <li><a class="topic-link" href="./20.%20Statistical%20Concepts%20Machine%20Learning%20...html#standard-deviation">Standard Deviation</a></li>
+            <li><a class="topic-link" href="./20.%20Statistical%20Concepts%20Machine%20Learning%20...html#covariance">Covariance</a></li>
+            <li><a class="topic-link" href="./20.%20Statistical%20Concepts%20Machine%20Learning%20...html#correlation">Correlation</a></li>
+            <li><a class="topic-link" href="./20.%20Statistical%20Concepts%20Machine%20Learning%20...html#probability">Probability</a></li>
+            <li><a class="topic-link" href="./20.%20Statistical%20Concepts%20Machine%20Learning%20...html#conditional-probability">Conditional Probability</a></li>
+            <li><a class="topic-link" href="./20.%20Statistical%20Concepts%20Machine%20Learning%20...html#bayes-theorem">Bayes' Theorem</a></li>
+            <li><a class="topic-link" href="./20.%20Statistical%20Concepts%20Machine%20Learning%20...html#expected-value">Expected Value</a></li>
+            <li><a class="topic-link" href="./20.%20Statistical%20Concepts%20Machine%20Learning%20...html#distribution">Distribution</a></li>
+            <li><a class="topic-link" href="./20.%20Statistical%20Concepts%20Machine%20Learning%20...html#normal-distribution">Normal Distribution</a></li>
+            <li><a class="topic-link" href="./20.%20Statistical%20Concepts%20Machine%20Learning%20...html#binomial-distribution">Binomial Distribution</a></li>
+            <li><a class="topic-link" href="./20.%20Statistical%20Concepts%20Machine%20Learning%20...html#bernoulli-distribution">Bernoulli Distribution</a></li>
+            <li><a class="topic-link" href="./20.%20Statistical%20Concepts%20Machine%20Learning%20...html#sampling-distribution">Sampling Distribution</a></li>
+            <li><a class="topic-link" href="./20.%20Statistical%20Concepts%20Machine%20Learning%20...html#central-limit-theorem">Central Limit Theorem</a></li>
+            <li><a class="topic-link" href="./20.%20Statistical%20Concepts%20Machine%20Learning%20...html#standard-error">Standard Error</a></li>
+            <li><a class="topic-link" href="./20.%20Statistical%20Concepts%20Machine%20Learning%20...html#confidence-interval">Confidence Interval</a></li>
+            <li><a class="topic-link" href="./20.%20Statistical%20Concepts%20Machine%20Learning%20...html#hypothesis-testing">Hypothesis Testing</a></li>
+            <li><a class="topic-link" href="./20.%20Statistical%20Concepts%20Machine%20Learning%20...html#p-value">p-value</a></li>
+            <li><a class="topic-link" href="./20.%20Statistical%20Concepts%20Machine%20Learning%20...html#type-i-error">Type I Error</a></li>
+            <li><a class="topic-link" href="./20.%20Statistical%20Concepts%20Machine%20Learning%20...html#type-ii-error">Type II Error</a></li>
+            <li><a class="topic-link" href="./20.%20Statistical%20Concepts%20Machine%20Learning%20...html#statistical-power">Statistical Power</a></li>
+            <li><a class="topic-link" href="./20.%20Statistical%20Concepts%20Machine%20Learning%20...html#effect-size">Effect Size</a></li>
+            <li><a class="topic-link" href="./20.%20Statistical%20Concepts%20Machine%20Learning%20...html#multiple-testing">Multiple Testing</a></li>
+            <li><a class="topic-link" href="./20.%20Statistical%20Concepts%20Machine%20Learning%20...html#bonferroni-correction">Bonferroni Correction</a></li>
+            <li><a class="topic-link" href="./20.%20Statistical%20Concepts%20Machine%20Learning%20...html#false-discovery-rate">False Discovery Rate</a></li>
+        </ul>
 
-<h3>🧬 21. Bayesian Concepts</h3>
-<ul>
-    <li>Prior</li>
-    <li>Likelihood</li>
-    <li>Posterior</li>
-    <li>Evidence</li>
-    <li>Maximum Likelihood Estimation</li>
-    <li>Maximum A Posteriori</li>
-    <li>Bayesian Inference</li>
-    <li>Bayesian Optimization</li>
-    <li>Naive Bayes</li>
-    <li>Bayesian Neural Networks</li>
-</ul>
+        <!-- ============================================================ -->
+        <!--  21. Bayesian Concepts                                        -->
+        <!-- ============================================================ -->
+        <h3>🧬 21. Bayesian Concepts</h3>
+        <ul>
+            <li><a class="topic-link" href="./21.%20Bayesian%20Concepts%20%E2%80%94%20Bayesian%20ML...html#prior">Prior</a></li>
+            <li><a class="topic-link" href="./21.%20Bayesian%20Concepts%20%E2%80%94%20Bayesian%20ML...html#likelihood">Likelihood</a></li>
+            <li><a class="topic-link" href="./21.%20Bayesian%20Concepts%20%E2%80%94%20Bayesian%20ML...html#posterior">Posterior</a></li>
+            <li><a class="topic-link" href="./21.%20Bayesian%20Concepts%20%E2%80%94%20Bayesian%20ML...html#evidence">Evidence</a></li>
+            <li><a class="topic-link" href="./21.%20Bayesian%20Concepts%20%E2%80%94%20Bayesian%20ML...html#maximum-likelihood-estimation">Maximum Likelihood Estimation</a></li>
+            <li><a class="topic-link" href="./21.%20Bayesian%20Concepts%20%E2%80%94%20Bayesian%20ML...html#maximum-a-posteriori">Maximum A Posteriori</a></li>
+            <li><a class="topic-link" href="./21.%20Bayesian%20Concepts%20%E2%80%94%20Bayesian%20ML...html#bayesian-inference">Bayesian Inference</a></li>
+            <li><a class="topic-link" href="./21.%20Bayesian%20Concepts%20%E2%80%94%20Bayesian%20ML...html#bayesian-optimization">Bayesian Optimization</a></li>
+            <li><a class="topic-link" href="./21.%20Bayesian%20Concepts%20%E2%80%94%20Bayesian%20ML...html#naive-bayes">Naive Bayes</a></li>
+            <li><a class="topic-link" href="./21.%20Bayesian%20Concepts%20%E2%80%94%20Bayesian%20ML...html#bayesian-neural-networks">Bayesian Neural Networks</a></li>
+        </ul>
 
-<h3>🕳️ 22. Missing Data</h3>
-<p>سه مورد خیلی مهم:</p>
-<ul>
-    <li>MCAR</li>
-    <li>MAR</li>
-    <li>MNAR</li>
-</ul>
-<p>روش‌ها:</p>
-<ul>
-    <li>Mean/Median Imputation</li>
-    <li>Mode Imputation</li>
-    <li>KNN Imputation</li>
-    <li>Iterative Imputation</li>
-    <li>MICE</li>
-    <li>Missing Indicator</li>
-    <li>Model-Based Imputation</li>
-</ul>
+        <!-- ============================================================ -->
+        <!--  22. Missing Data                                             -->
+        <!-- ============================================================ -->
+        <h3>🕳️ 22. Missing Data</h3>
+        <ul>
+            <li><a class="topic-link" href="./22.%20Missing%20Data.html#mcar">MCAR</a></li>
+            <li><a class="topic-link" href="./22.%20Missing%20Data.html#mar">MAR</a></li>
+            <li><a class="topic-link" href="./22.%20Missing%20Data.html#mnar">MNAR</a></li>
+            <li><a class="topic-link" href="./22.%20Missing%20Data.html#mean-median-imputation">Mean/Median Imputation</a></li>
+            <li><a class="topic-link" href="./22.%20Missing%20Data.html#mode-imputation">Mode Imputation</a></li>
+            <li><a class="topic-link" href="./22.%20Missing%20Data.html#knn-imputation">KNN Imputation</a></li>
+            <li><a class="topic-link" href="./22.%20Missing%20Data.html#iterative-imputation">Iterative Imputation</a></li>
+            <li><a class="topic-link" href="./22.%20Missing%20Data.html#mice">MICE</a></li>
+            <li><a class="topic-link" href="./22.%20Missing%20Data.html#missing-indicator">Missing Indicator</a></li>
+            <li><a class="topic-link" href="./22.%20Missing%20Data.html#model-based-imputation">Model-Based Imputation</a></li>
+        </ul>
 
-<h3>📦 23. Outliers</h3>
-<ul>
-    <li>Outlier</li>
-    <li>Anomaly</li>
-    <li>Leverage Point</li>
-    <li>Influential Point</li>
-    <li>Z-Score</li>
-    <li>IQR</li>
-    <li>Robust Statistics</li>
-    <li>Winsorization</li>
-    <li>Trimming</li>
-</ul>
-<p><strong>مهم‌تر</strong>: هر Outlier الزاماً نباید حذف شود. ممکن است خودش مهم‌ترین Signal باشد.</p>
+        <!-- ============================================================ -->
+        <!--  23. Outliers                                                 -->
+        <!-- ============================================================ -->
+        <h3>📦 23. Outliers</h3>
+        <ul>
+            <li><a class="topic-link" href="./23.%20Outliers-.html#outlier">Outlier</a></li>
+            <li><a class="topic-link" href="./23.%20Outliers-.html#anomaly">Anomaly</a></li>
+            <li><a class="topic-link" href="./23.%20Outliers-.html#leverage-point">Leverage Point</a></li>
+            <li><a class="topic-link" href="./23.%20Outliers-.html#influential-point">Influential Point</a></li>
+            <li><a class="topic-link" href="./23.%20Outliers-.html#z-score">Z-Score</a></li>
+            <li><a class="topic-link" href="./23.%20Outliers-.html#iqr">IQR</a></li>
+            <li><a class="topic-link" href="./23.%20Outliers-.html#robust-statistics">Robust Statistics</a></li>
+            <li><a class="topic-link" href="./23.%20Outliers-.html#winsorization">Winsorization</a></li>
+            <li><a class="topic-link" href="./23.%20Outliers-.html#trimming">Trimming</a></li>
+        </ul>
 
-<h3>🧠 24. Learning Curves</h3>
-<p>خیلی مفید برای تشخیص:</p>
-<ul>
-    <li>High Bias</li>
-    <li>High Variance</li>
-    <li>More Data Needed</li>
-    <li>Model Capacity Problem</li>
-</ul>
-<p><strong>مثلاً</strong>: Training Error ↓, Validation Error ↓. اگر با افزایش داده Validation Error همچنان بالا باشد، احتمالاً مشکل دیگری داریم.</p>
+        <!-- ============================================================ -->
+        <!--  24. Learning Curves                                          -->
+        <!-- ============================================================ -->
+        <h3>🧠 24. Learning Curves</h3>
+        <ul>
+            <li><a class="topic-link" href="./24.%20Learning%20Curves-.html#high-bias">High Bias</a></li>
+            <li><a class="topic-link" href="./24.%20Learning%20Curves-.html#high-variance">High Variance</a></li>
+            <li><a class="topic-link" href="./24.%20Learning%20Curves-.html#more-data-needed">More Data Needed</a></li>
+            <li><a class="topic-link" href="./24.%20Learning%20Curves-.html#model-capacity-problem">Model Capacity Problem</a></li>
+        </ul>
 
-<h3>🧪 25. Error Analysis</h3>
-<p>یکی از مهم‌ترین مهارت‌های Senior ML Engineer.
-به جای اینکه فقط بگویی: F1 = 0.91
-می‌پرسی: Where does the model fail?
-مثلاً:</p>
-<ul>
-    <li>False Positives</li>
-    <li>False Negatives</li>
-    <li>Rare Cases</li>
-    <li>Specific User Groups</li>
-    <li>Specific Time Periods</li>
-    <li>Specific Products</li>
-</ul>
-<p>این مرحله خیلی وقت‌ها از Hyperparameter Tuning مهم‌تر است.</p>
+        <!-- ============================================================ -->
+        <!--  25. Error Analysis                                           -->
+        <!-- ============================================================ -->
+        <h3>🧪 25. Error Analysis</h3>
+        <ul>
+            <li><a class="topic-link" href="./25.%20Error%20Analysis-.html#false-positives">False Positives</a></li>
+            <li><a class="topic-link" href="./25.%20Error%20Analysis-.html#false-negatives">False Negatives</a></li>
+            <li><a class="topic-link" href="./25.%20Error%20Analysis-.html#rare-cases">Rare Cases</a></li>
+            <li><a class="topic-link" href="./25.%20Error%20Analysis-.html#specific-user-groups">Specific User Groups</a></li>
+            <li><a class="topic-link" href="./25.%20Error%20Analysis-.html#specific-time-periods">Specific Time Periods</a></li>
+            <li><a class="topic-link" href="./25.%20Error%20Analysis-.html#specific-products">Specific Products</a></li>
+        </ul>
 
-<h3>🎯 26. Model Selection</h3>
-<ul>
-    <li>Model Complexity</li>
-    <li>Cross-Validation</li>
-    <li>Hyperparameter Tuning</li>
-    <li>Grid Search</li>
-    <li>Random Search</li>
-    <li>Bayesian Optimization</li>
-    <li>Hyperband</li>
-    <li>Successive Halving</li>
-    <li>Early Stopping</li>
-    <li>Model Comparison</li>
-    <li>Statistical Significance of Model Differences</li>
-</ul>
+        <!-- ============================================================ -->
+        <!--  26. Model Selection                                          -->
+        <!-- ============================================================ -->
+        <h3>🎯 26. Model Selection</h3>
+        <ul>
+            <li><a class="topic-link" href="./26.%20Model%20Selection-.html#model-complexity">Model Complexity</a></li>
+            <li><a class="topic-link" href="./26.%20Model%20Selection-.html#cross-validation">Cross-Validation</a></li>
+            <li><a class="topic-link" href="./26.%20Model%20Selection-.html#hyperparameter-tuning">Hyperparameter Tuning</a></li>
+            <li><a class="topic-link" href="./26.%20Model%20Selection-.html#grid-search">Grid Search</a></li>
+            <li><a class="topic-link" href="./26.%20Model%20Selection-.html#random-search">Random Search</a></li>
+            <li><a class="topic-link" href="./26.%20Model%20Selection-.html#bayesian-optimization">Bayesian Optimization</a></li>
+            <li><a class="topic-link" href="./26.%20Model%20Selection-.html#hyperband">Hyperband</a></li>
+            <li><a class="topic-link" href="./26.%20Model%20Selection-.html#successive-halving">Successive Halving</a></li>
+            <li><a class="topic-link" href="./26.%20Model%20Selection-.html#early-stopping">Early Stopping</a></li>
+            <li><a class="topic-link" href="./26.%20Model%20Selection-.html#model-comparison">Model Comparison</a></li>
+            <li><a class="topic-link" href="./26.%20Model%20Selection-.html#statistical-significance-of-model-differences">Statistical Significance of Model Differences</a></li>
+        </ul>
 
-<h3>🔥 27. Hyperparameter Optimization</h3>
-<p>از ساده به پیشرفته:</p>
-<ul>
-    <li>Grid Search</li>
-    <li>Random Search</li>
-    <li>Bayesian Optimization</li>
-    <li>Optuna / TPE</li>
-    <li>Hyperband</li>
-    <li>Population-Based Methods</li>
-</ul>
+        <!-- ============================================================ -->
+        <!--  27. Hyperparameter Optimization                              -->
+        <!-- ============================================================ -->
+        <h3>🔥 27. Hyperparameter Optimization</h3>
+        <ul>
+            <li><a class="topic-link" href="./27.%20Hyperparameter%20Optimization.html#grid-search">Grid Search</a></li>
+            <li><a class="topic-link" href="./27.%20Hyperparameter%20Optimization.html#random-search">Random Search</a></li>
+            <li><a class="topic-link" href="./27.%20Hyperparameter%20Optimization.html#bayesian-optimization">Bayesian Optimization</a></li>
+            <li><a class="topic-link" href="./27.%20Hyperparameter%20Optimization.html#optuna-tpe">Optuna / TPE</a></li>
+            <li><a class="topic-link" href="./27.%20Hyperparameter%20Optimization.html#hyperband">Hyperband</a></li>
+            <li><a class="topic-link" href="./27.%20Hyperparameter%20Optimization.html#population-based-methods">Population-Based Methods</a></li>
+        </ul>
 
-<h3>🧠 28. Calibration &amp; Decision Theory</h3>
-<ul>
-    <li>Calibration</li>
-    <li>Reliability Diagram</li>
-    <li>Brier Score</li>
-    <li>Expected Calibration Error</li>
-    <li>Decision Threshold</li>
-    <li>Cost Matrix</li>
-    <li>Expected Cost</li>
-    <li>Expected Utility</li>
-    <li>Cost-Sensitive Learning</li>
-</ul>
-<p><strong>مثلاً در Fraud Detection</strong>: False Positive Cost vs False Negative Cost ممکن است برابر نباشد.</p>
+        <!-- ============================================================ -->
+        <!--  28. Calibration & Decision Theory                           -->
+        <!-- ============================================================ -->
+        <h3>🧠 28. Calibration &amp; Decision Theory</h3>
+        <ul>
+            <li><a class="topic-link" href="./28.%20Calibration%20%26%20Decision%20Theory%20%D8%AF%D8%B1%20ML%20.html#calibration">Calibration</a></li>
+            <li><a class="topic-link" href="./28.%20Calibration%20%26%20Decision%20Theory%20%D8%AF%D8%B1%20ML%20.html#reliability-diagram">Reliability Diagram</a></li>
+            <li><a class="topic-link" href="./28.%20Calibration%20%26%20Decision%20Theory%20%D8%AF%D8%B1%20ML%20.html#brier-score">Brier Score</a></li>
+            <li><a class="topic-link" href="./28.%20Calibration%20%26%20Decision%20Theory%20%D8%AF%D8%B1%20ML%20.html#expected-calibration-error">Expected Calibration Error</a></li>
+            <li><a class="topic-link" href="./28.%20Calibration%20%26%20Decision%20Theory%20%D8%AF%D8%B1%20ML%20.html#decision-threshold">Decision Threshold</a></li>
+            <li><a class="topic-link" href="./28.%20Calibration%20%26%20Decision%20Theory%20%D8%AF%D8%B1%20ML%20.html#cost-matrix">Cost Matrix</a></li>
+            <li><a class="topic-link" href="./28.%20Calibration%20%26%20Decision%20Theory%20%D8%AF%D8%B1%20ML%20.html#expected-cost">Expected Cost</a></li>
+            <li><a class="topic-link" href="./28.%20Calibration%20%26%20Decision%20Theory%20%D8%AF%D8%B1%20ML%20.html#expected-utility">Expected Utility</a></li>
+            <li><a class="topic-link" href="./28.%20Calibration%20%26%20Decision%20Theory%20%D8%AF%D8%B1%20ML%20.html#cost-sensitive-learning">Cost-Sensitive Learning</a></li>
+        </ul>
 
-<h3>🔗 29. Causality</h3>
-<p>ML ≠ Causal Inference.
-مفاهیم مهم:</p>
-<ul>
-    <li>Correlation</li>
-    <li>Causation</li>
-    <li>Confounding</li>
-    <li>Treatment</li>
-    <li>Control</li>
-    <li>Counterfactual</li>
-    <li>DAG</li>
-    <li>Intervention</li>
-    <li>Do-Calculus</li>
-    <li>ATE</li>
-    <li>CATE</li>
-    <li>Propensity Score</li>
-    <li>Instrumental Variables</li>
-</ul>
+        <!-- ============================================================ -->
+        <!--  29. Causality                                                -->
+        <!-- ============================================================ -->
+        <h3>🔗 29. Causality</h3>
+        <ul>
+            <li><a class="topic-link" href="./29.%20Causality.html#correlation">Correlation</a></li>
+            <li><a class="topic-link" href="./29.%20Causality.html#causation">Causation</a></li>
+            <li><a class="topic-link" href="./29.%20Causality.html#confounding">Confounding</a></li>
+            <li><a class="topic-link" href="./29.%20Causality.html#treatment">Treatment</a></li>
+            <li><a class="topic-link" href="./29.%20Causality.html#control">Control</a></li>
+            <li><a class="topic-link" href="./29.%20Causality.html#counterfactual">Counterfactual</a></li>
+            <li><a class="topic-link" href="./29.%20Causality.html#dag">DAG</a></li>
+            <li><a class="topic-link" href="./29.%20Causality.html#intervention">Intervention</a></li>
+            <li><a class="topic-link" href="./29.%20Causality.html#do-calculus">Do-Calculus</a></li>
+            <li><a class="topic-link" href="./29.%20Causality.html#ate">ATE</a></li>
+            <li><a class="topic-link" href="./29.%20Causality.html#cate">CATE</a></li>
+            <li><a class="topic-link" href="./29.%20Causality.html#propensity-score">Propensity Score</a></li>
+            <li><a class="topic-link" href="./29.%20Causality.html#instrumental-variables">Instrumental Variables</a></li>
+        </ul>
 
-<h3>📈 30. Time Series ML</h3>
-<p>اگر وارد Forecasting شوی:</p>
-<ul>
-    <li>Trend</li>
-    <li>Seasonality</li>
-    <li>Cyclicity</li>
-    <li>Stationarity</li>
-    <li>Autocorrelation</li>
-    <li>Partial Autocorrelation</li>
-    <li>Lag Features</li>
-    <li>Rolling Features</li>
-    <li>Time-Based Split</li>
-    <li>Forecast Horizon</li>
-    <li>AR</li>
-    <li>MA</li>
-    <li>ARIMA</li>
-    <li>SARIMA</li>
-    <li>Exponential Smoothing</li>
-    <li>Temporal Cross-Validation</li>
-</ul>
+        <!-- ============================================================ -->
+        <!--  30. Time Series ML                                           -->
+        <!-- ============================================================ -->
+        <h3>📈 30. Time Series ML</h3>
+        <ul>
+            <li><a class="topic-link" href="./30.%20Time%20Series%20Machine%20Learning.html#trend">Trend</a></li>
+            <li><a class="topic-link" href="./30.%20Time%20Series%20Machine%20Learning.html#seasonality">Seasonality</a></li>
+            <li><a class="topic-link" href="./30.%20Time%20Series%20Machine%20Learning.html#cyclicity">Cyclicity</a></li>
+            <li><a class="topic-link" href="./30.%20Time%20Series%20Machine%20Learning.html#stationarity">Stationarity</a></li>
+            <li><a class="topic-link" href="./30.%20Time%20Series%20Machine%20Learning.html#autocorrelation">Autocorrelation</a></li>
+            <li><a class="topic-link" href="./30.%20Time%20Series%20Machine%20Learning.html#partial-autocorrelation">Partial Autocorrelation</a></li>
+            <li><a class="topic-link" href="./30.%20Time%20Series%20Machine%20Learning.html#lag-features">Lag Features</a></li>
+            <li><a class="topic-link" href="./30.%20Time%20Series%20Machine%20Learning.html#rolling-features">Rolling Features</a></li>
+            <li><a class="topic-link" href="./30.%20Time%20Series%20Machine%20Learning.html#time-based-split">Time-Based Split</a></li>
+            <li><a class="topic-link" href="./30.%20Time%20Series%20Machine%20Learning.html#forecast-horizon">Forecast Horizon</a></li>
+            <li><a class="topic-link" href="./30.%20Time%20Series%20Machine%20Learning.html#ar">AR</a></li>
+            <li><a class="topic-link" href="./30.%20Time%20Series%20Machine%20Learning.html#ma">MA</a></li>
+            <li><a class="topic-link" href="./30.%20Time%20Series%20Machine%20Learning.html#arima">ARIMA</a></li>
+            <li><a class="topic-link" href="./30.%20Time%20Series%20Machine%20Learning.html#sarima">SARIMA</a></li>
+            <li><a class="topic-link" href="./30.%20Time%20Series%20Machine%20Learning.html#exponential-smoothing">Exponential Smoothing</a></li>
+            <li><a class="topic-link" href="./30.%20Time%20Series%20Machine%20Learning.html#temporal-cross-validation">Temporal Cross-Validation</a></li>
+        </ul>
 
-<h3>🤖 31. Deep Learning Fundamentals</h3>
-<ul>
-    <li>Perceptron</li>
-    <li>Neural Network</li>
-    <li>Forward Propagation</li>
-    <li>Backpropagation</li>
-    <li>Activation Functions</li>
-    <li>Sigmoid</li>
-    <li>Tanh</li>
-    <li>ReLU</li>
-    <li>Leaky ReLU</li>
-    <li>GELU</li>
-    <li>Softmax</li>
-    <li>Weight Initialization</li>
-    <li>Xavier Initialization</li>
-    <li>He Initialization</li>
-    <li>Batch Normalization</li>
-    <li>Layer Normalization</li>
-    <li>Dropout</li>
-    <li>Residual Connections</li>
-    <li>Attention</li>
-    <li>CNN</li>
-    <li>RNN</li>
-    <li>LSTM</li>
-    <li>GRU</li>
-    <li>Transformer</li>
-</ul>
+        <!-- ============================================================ -->
+        <!--  31. Deep Learning Fundamentals                               -->
+        <!-- ============================================================ -->
+        <h3>🤖 31. Deep Learning Fundamentals</h3>
+        <ul>
+            <li><a class="topic-link" href="./31.%20Deep%20Learning%20Fundamentals.html#perceptron">Perceptron</a></li>
+            <li><a class="topic-link" href="./31.%20Deep%20Learning%20Fundamentals.html#neural-network">Neural Network</a></li>
+            <li><a class="topic-link" href="./31.%20Deep%20Learning%20Fundamentals.html#forward-propagation">Forward Propagation</a></li>
+            <li><a class="topic-link" href="./31.%20Deep%20Learning%20Fundamentals.html#backpropagation">Backpropagation</a></li>
+            <li><a class="topic-link" href="./31.%20Deep%20Learning%20Fundamentals.html#activation-functions">Activation Functions</a></li>
+            <li><a class="topic-link" href="./31.%20Deep%20Learning%20Fundamentals.html#sigmoid">Sigmoid</a></li>
+            <li><a class="topic-link" href="./31.%20Deep%20Learning%20Fundamentals.html#tanh">Tanh</a></li>
+            <li><a class="topic-link" href="./31.%20Deep%20Learning%20Fundamentals.html#relu">ReLU</a></li>
+            <li><a class="topic-link" href="./31.%20Deep%20Learning%20Fundamentals.html#leaky-relu">Leaky ReLU</a></li>
+            <li><a class="topic-link" href="./31.%20Deep%20Learning%20Fundamentals.html#gelu">GELU</a></li>
+            <li><a class="topic-link" href="./31.%20Deep%20Learning%20Fundamentals.html#softmax">Softmax</a></li>
+            <li><a class="topic-link" href="./31.%20Deep%20Learning%20Fundamentals.html#weight-initialization">Weight Initialization</a></li>
+            <li><a class="topic-link" href="./31.%20Deep%20Learning%20Fundamentals.html#xavier-initialization">Xavier Initialization</a></li>
+            <li><a class="topic-link" href="./31.%20Deep%20Learning%20Fundamentals.html#he-initialization">He Initialization</a></li>
+            <li><a class="topic-link" href="./31.%20Deep%20Learning%20Fundamentals.html#batch-normalization">Batch Normalization</a></li>
+            <li><a class="topic-link" href="./31.%20Deep%20Learning%20Fundamentals.html#layer-normalization">Layer Normalization</a></li>
+            <li><a class="topic-link" href="./31.%20Deep%20Learning%20Fundamentals.html#dropout">Dropout</a></li>
+            <li><a class="topic-link" href="./31.%20Deep%20Learning%20Fundamentals.html#residual-connections">Residual Connections</a></li>
+            <li><a class="topic-link" href="./31.%20Deep%20Learning%20Fundamentals.html#attention">Attention</a></li>
+            <li><a class="topic-link" href="./31.%20Deep%20Learning%20Fundamentals.html#cnn">CNN</a></li>
+            <li><a class="topic-link" href="./31.%20Deep%20Learning%20Fundamentals.html#rnn">RNN</a></li>
+            <li><a class="topic-link" href="./31.%20Deep%20Learning%20Fundamentals.html#lstm">LSTM</a></li>
+            <li><a class="topic-link" href="./31.%20Deep%20Learning%20Fundamentals.html#gru">GRU</a></li>
+            <li><a class="topic-link" href="./31.%20Deep%20Learning%20Fundamentals.html#transformer">Transformer</a></li>
+        </ul>
 
-<h3>🧠 32. Advanced Deep Learning</h3>
-<ul>
-    <li>Vanishing Gradient</li>
-    <li>Exploding Gradient</li>
-    <li>BatchNorm vs LayerNorm</li>
-    <li>Pre-Norm vs Post-Norm</li>
-    <li>Residual Learning</li>
-    <li>Attention Mechanism</li>
-    <li>Self-Attention</li>
-    <li>Multi-Head Attention</li>
-    <li>Positional Encoding</li>
-    <li>Encoder / Decoder</li>
-    <li>Transfer Learning</li>
-    <li>Fine-Tuning</li>
-    <li>Freezing Layers</li>
-    <li>Parameter-Efficient Fine-Tuning</li>
-    <li>LoRA</li>
-    <li>QLoRA</li>
-    <li>Knowledge Distillation</li>
-</ul>
+        <!-- ============================================================ -->
+        <!--  32. Advanced Deep Learning                                   -->
+        <!-- ============================================================ -->
+        <h3>🧠 32. Advanced Deep Learning</h3>
+        <ul>
+            <li><a class="topic-link" href="./32.%20Advanced%20Deep%20Learning.html#vanishing-gradient">Vanishing Gradient</a></li>
+            <li><a class="topic-link" href="./32.%20Advanced%20Deep%20Learning.html#exploding-gradient">Exploding Gradient</a></li>
+            <li><a class="topic-link" href="./32.%20Advanced%20Deep%20Learning.html#batchnorm-vs-layernorm">BatchNorm vs LayerNorm</a></li>
+            <li><a class="topic-link" href="./32.%20Advanced%20Deep%20Learning.html#pre-norm-vs-post-norm">Pre-Norm vs Post-Norm</a></li>
+            <li><a class="topic-link" href="./32.%20Advanced%20Deep%20Learning.html#residual-learning">Residual Learning</a></li>
+            <li><a class="topic-link" href="./32.%20Advanced%20Deep%20Learning.html#attention-mechanism">Attention Mechanism</a></li>
+            <li><a class="topic-link" href="./32.%20Advanced%20Deep%20Learning.html#self-attention">Self-Attention</a></li>
+            <li><a class="topic-link" href="./32.%20Advanced%20Deep%20Learning.html#multi-head-attention">Multi-Head Attention</a></li>
+            <li><a class="topic-link" href="./32.%20Advanced%20Deep%20Learning.html#positional-encoding">Positional Encoding</a></li>
+            <li><a class="topic-link" href="./32.%20Advanced%20Deep%20Learning.html#encoder-decoder">Encoder / Decoder</a></li>
+            <li><a class="topic-link" href="./32.%20Advanced%20Deep%20Learning.html#transfer-learning">Transfer Learning</a></li>
+            <li><a class="topic-link" href="./32.%20Advanced%20Deep%20Learning.html#fine-tuning">Fine-Tuning</a></li>
+            <li><a class="topic-link" href="./32.%20Advanced%20Deep%20Learning.html#freezing-layers">Freezing Layers</a></li>
+            <li><a class="topic-link" href="./32.%20Advanced%20Deep%20Learning.html#parameter-efficient-fine-tuning">Parameter-Efficient Fine-Tuning</a></li>
+            <li><a class="topic-link" href="./32.%20Advanced%20Deep%20Learning.html#lora">LoRA</a></li>
+            <li><a class="topic-link" href="./32.%20Advanced%20Deep%20Learning.html#qlora">QLoRA</a></li>
+            <li><a class="topic-link" href="./32.%20Advanced%20Deep%20Learning.html#knowledge-distillation">Knowledge Distillation</a></li>
+        </ul>
 
-<h3>🚀 33. Modern ML / LLM</h3>
-<ul>
-    <li>Embeddings</li>
-    <li>Vector Similarity</li>
-    <li>Semantic Search</li>
-    <li>ANN</li>
-    <li>HNSW</li>
-    <li>RAG</li>
-    <li>Chunking</li>
-    <li>Reranking</li>
-    <li>Query Expansion</li>
-    <li>Hybrid Search</li>
-    <li>Fine-Tuning</li>
-    <li>Instruction Tuning</li>
-    <li>RLHF</li>
-    <li>DPO</li>
-    <li>Quantization</li>
-    <li>KV Cache</li>
-    <li>Speculative Decoding</li>
-    <li>LLM Evaluation</li>
-    <li>Hallucination</li>
-    <li>Retrieval Evaluation</li>
-    <li>RAG Evaluation</li>
-</ul>
+        <!-- ============================================================ -->
+        <!--  33. Modern ML / LLM                                          -->
+        <!-- ============================================================ -->
+        <h3>🚀 33. Modern ML / LLM</h3>
+        <ul>
+            <li><a class="topic-link" href="./33.%20Modern%20ML%20-%20LLM.html#embeddings">Embeddings</a></li>
+            <li><a class="topic-link" href="./33.%20Modern%20ML%20-%20LLM.html#vector-similarity">Vector Similarity</a></li>
+            <li><a class="topic-link" href="./33.%20Modern%20ML%20-%20LLM.html#semantic-search">Semantic Search</a></li>
+            <li><a class="topic-link" href="./33.%20Modern%20ML%20-%20LLM.html#ann">ANN</a></li>
+            <li><a class="topic-link" href="./33.%20Modern%20ML%20-%20LLM.html#hnsw">HNSW</a></li>
+            <li><a class="topic-link" href="./33.%20Modern%20ML%20-%20LLM.html#rag">RAG</a></li>
+            <li><a class="topic-link" href="./33.%20Modern%20ML%20-%20LLM.html#chunking">Chunking</a></li>
+            <li><a class="topic-link" href="./33.%20Modern%20ML%20-%20LLM.html#reranking">Reranking</a></li>
+            <li><a class="topic-link" href="./33.%20Modern%20ML%20-%20LLM.html#query-expansion">Query Expansion</a></li>
+            <li><a class="topic-link" href="./33.%20Modern%20ML%20-%20LLM.html#hybrid-search">Hybrid Search</a></li>
+            <li><a class="topic-link" href="./33.%20Modern%20ML%20-%20LLM.html#fine-tuning">Fine-Tuning</a></li>
+            <li><a class="topic-link" href="./33.%20Modern%20ML%20-%20LLM.html#instruction-tuning">Instruction Tuning</a></li>
+            <li><a class="topic-link" href="./33.%20Modern%20ML%20-%20LLM.html#rlhf">RLHF</a></li>
+            <li><a class="topic-link" href="./33.%20Modern%20ML%20-%20LLM.html#dpo">DPO</a></li>
+            <li><a class="topic-link" href="./33.%20Modern%20ML%20-%20LLM.html#quantization">Quantization</a></li>
+            <li><a class="topic-link" href="./33.%20Modern%20ML%20-%20LLM.html#kv-cache">KV Cache</a></li>
+            <li><a class="topic-link" href="./33.%20Modern%20ML%20-%20LLM.html#speculative-decoding">Speculative Decoding</a></li>
+            <li><a class="topic-link" href="./33.%20Modern%20ML%20-%20LLM.html#llm-evaluation">LLM Evaluation</a></li>
+            <li><a class="topic-link" href="./33.%20Modern%20ML%20-%20LLM.html#hallucination">Hallucination</a></li>
+            <li><a class="topic-link" href="./33.%20Modern%20ML%20-%20LLM.html#retrieval-evaluation">Retrieval Evaluation</a></li>
+            <li><a class="topic-link" href="./33.%20Modern%20ML%20-%20LLM.html#rag-evaluation">RAG Evaluation</a></li>
+        </ul>
 
-<h3>🏭 34. Production ML / MLOps</h3>
-<p>این‌ها برای Senior ML Engineer بسیار مهم‌اند:</p>
-<ul>
-    <li>Training Pipeline</li>
-    <li>Feature Store</li>
-    <li>Model Registry</li>
-    <li>Model Versioning</li>
-    <li>Experiment Tracking</li>
-    <li>Reproducibility</li>
-    <li>Model Serving</li>
-    <li>Batch Inference</li>
-    <li>Online Inference</li>
-    <li>Shadow Deployment</li>
-    <li>Canary Deployment</li>
-    <li>A/B Testing</li>
-    <li>Model Monitoring</li>
-    <li>Data Drift</li>
-    <li>Concept Drift</li>
-    <li>Performance Monitoring</li>
-    <li>Retraining</li>
-    <li>Rollback</li>
-</ul>
+        <!-- ============================================================ -->
+        <!--  34. Production ML / MLOps                                    -->
+        <!-- ============================================================ -->
+        <h3>🏭 34. Production ML / MLOps</h3>
+        <ul>
+            <li><a class="topic-link" href="./34.%20Production%20ML%20-%20MLOps.html#training-pipeline">Training Pipeline</a></li>
+            <li><a class="topic-link" href="./34.%20Production%20ML%20-%20MLOps.html#feature-store">Feature Store</a></li>
+            <li><a class="topic-link" href="./34.%20Production%20ML%20-%20MLOps.html#model-registry">Model Registry</a></li>
+            <li><a class="topic-link" href="./34.%20Production%20ML%20-%20MLOps.html#model-versioning">Model Versioning</a></li>
+            <li><a class="topic-link" href="./34.%20Production%20ML%20-%20MLOps.html#experiment-tracking">Experiment Tracking</a></li>
+            <li><a class="topic-link" href="./34.%20Production%20ML%20-%20MLOps.html#reproducibility">Reproducibility</a></li>
+            <li><a class="topic-link" href="./34.%20Production%20ML%20-%20MLOps.html#model-serving">Model Serving</a></li>
+            <li><a class="topic-link" href="./34.%20Production%20ML%20-%20MLOps.html#batch-inference">Batch Inference</a></li>
+            <li><a class="topic-link" href="./34.%20Production%20ML%20-%20MLOps.html#online-inference">Online Inference</a></li>
+            <li><a class="topic-link" href="./34.%20Production%20ML%20-%20MLOps.html#shadow-deployment">Shadow Deployment</a></li>
+            <li><a class="topic-link" href="./34.%20Production%20ML%20-%20MLOps.html#canary-deployment">Canary Deployment</a></li>
+            <li><a class="topic-link" href="./34.%20Production%20ML%20-%20MLOps.html#a-b-testing">A/B Testing</a></li>
+            <li><a class="topic-link" href="./34.%20Production%20ML%20-%20MLOps.html#model-monitoring">Model Monitoring</a></li>
+            <li><a class="topic-link" href="./34.%20Production%20ML%20-%20MLOps.html#data-drift">Data Drift</a></li>
+            <li><a class="topic-link" href="./34.%20Production%20ML%20-%20MLOps.html#concept-drift">Concept Drift</a></li>
+            <li><a class="topic-link" href="./34.%20Production%20ML%20-%20MLOps.html#performance-monitoring">Performance Monitoring</a></li>
+            <li><a class="topic-link" href="./34.%20Production%20ML%20-%20MLOps.html#retraining">Retraining</a></li>
+            <li><a class="topic-link" href="./34.%20Production%20ML%20-%20MLOps.html#rollback">Rollback</a></li>
+        </ul>
 
-<hr>
+        <hr />
 
-<h2>🏆 اگر بخواهم اولویت‌بندی کنم</h2>
-<p>برای تو که روی ML Engineer / Senior ML Engineer تمرکز داری، من این ترتیب را پیشنهاد می‌کنم:</p>
+        <!-- ============================================================ -->
+        <!--  PRIORITIZATION                                               -->
+        <!-- ============================================================ -->
+        <h2>🏆 اگر بخواهم اولویت‌بندی کنم</h2>
+        <p>برای تو که روی ML Engineer / Senior ML Engineer تمرکز داری، من این ترتیب را پیشنهاد می‌کنم:</p>
 
-<div class="highlight-box tier-red">
-<h3>🔴 Tier 1 — باید کاملاً مسلط باشی</h3>
-<ul>
-    <li>Bias / Variance</li>
-    <li>Underfitting / Overfitting</li>
-    <li>Generalization</li>
-    <li>Train / Validation / Test</li>
-    <li>Cross Validation</li>
-    <li>Data Leakage</li>
-    <li>Loss Functions</li>
-    <li>Metrics</li>
-    <li>Confusion Matrix</li>
-    <li>Precision / Recall / F1</li>
-    <li>ROC-AUC / PR-AUC</li>
-    <li>Class Imbalance</li>
-    <li>Regularization</li>
-    <li>Feature Engineering</li>
-    <li>Optimization</li>
-    <li>Gradient Descent</li>
-    <li>Hyperparameters</li>
-    <li>Model Selection</li>
-</ul>
-</div>
+        <div class="highlight-box tier-red">
+            <h3 style="margin-top:0;">🔴 Tier 1 — باید کاملاً مسلط باشی</h3>
+            <ul>
+                <li>Bias / Variance</li>
+                <li>Underfitting / Overfitting</li>
+                <li>Generalization</li>
+                <li>Train / Validation / Test</li>
+                <li>Cross Validation</li>
+                <li>Data Leakage</li>
+                <li>Loss Functions</li>
+                <li>Metrics</li>
+                <li>Confusion Matrix</li>
+                <li>Precision / Recall / F1</li>
+                <li>ROC-AUC / PR-AUC</li>
+                <li>Class Imbalance</li>
+                <li>Regularization</li>
+                <li>Feature Engineering</li>
+                <li>Optimization</li>
+                <li>Gradient Descent</li>
+                <li>Hyperparameters</li>
+                <li>Model Selection</li>
+            </ul>
+        </div>
 
-<div class="highlight-box tier-orange">
-<h3>🟠 Tier 2 — سطح Senior</h3>
-<ul>
-    <li>Distribution Shift</li>
-    <li>Concept Drift</li>
-    <li>Calibration</li>
-    <li>Uncertainty</li>
-    <li>Learning Curves</li>
-    <li>Error Analysis</li>
-    <li>Ensemble Learning</li>
-    <li>XGBoost / LightGBM</li>
-    <li>SHAP</li>
-    <li>Causal vs Correlation</li>
-    <li>Statistical Testing</li>
-    <li>Nested CV</li>
-    <li>Bayesian Optimization</li>
-    <li>Anomaly Detection</li>
-    <li>Time-Series Validation</li>
-</ul>
-</div>
+        <div class="highlight-box tier-orange">
+            <h3 style="margin-top:0;">🟠 Tier 2 — سطح Senior</h3>
+            <ul>
+                <li>Distribution Shift</li>
+                <li>Concept Drift</li>
+                <li>Calibration</li>
+                <li>Uncertainty</li>
+                <li>Learning Curves</li>
+                <li>Error Analysis</li>
+                <li>Ensemble Learning</li>
+                <li>XGBoost / LightGBM</li>
+                <li>SHAP</li>
+                <li>Causal vs Correlation</li>
+                <li>Statistical Testing</li>
+                <li>Nested CV</li>
+                <li>Bayesian Optimization</li>
+                <li>Anomaly Detection</li>
+                <li>Time-Series Validation</li>
+            </ul>
+        </div>
 
-<div class="highlight-box tier-yellow">
-<h3>🟡 Tier 3 — Advanced ML</h3>
-<ul>
-    <li>VC Dimension</li>
-    <li>PAC Learning</li>
-    <li>Statistical Learning Theory</li>
-    <li>Double Descent</li>
-    <li>Conformal Prediction</li>
-    <li>Bayesian ML</li>
-    <li>Causal Inference</li>
-    <li>Advanced Uncertainty</li>
-    <li>Meta Learning</li>
-    <li>Online Learning</li>
-    <li>Continual Learning</li>
-</ul>
-</div>
+        <div class="highlight-box tier-yellow">
+            <h3 style="margin-top:0;">🟡 Tier 3 — Advanced ML</h3>
+            <ul>
+                <li>VC Dimension</li>
+                <li>PAC Learning</li>
+                <li>Statistical Learning Theory</li>
+                <li>Double Descent</li>
+                <li>Conformal Prediction</li>
+                <li>Bayesian ML</li>
+                <li>Causal Inference</li>
+                <li>Advanced Uncertainty</li>
+                <li>Meta Learning</li>
+                <li>Online Learning</li>
+                <li>Continual Learning</li>
+            </ul>
+        </div>
 
-<div class="highlight-box tier-green">
-<h3>🟢 Tier 4 — اگر مسیرت AI/LLM باشد</h3>
-<ul>
-    <li>Embeddings</li>
-    <li>Attention</li>
-    <li>Transformers</li>
-    <li>RAG</li>
-    <li>Vector Search</li>
-    <li>Reranking</li>
-    <li>Fine-Tuning</li>
-    <li>LoRA / QLoRA</li>
-    <li>Quantization</li>
-    <li>LLM Evaluation</li>
-    <li>Agents</li>
-</ul>
-</div>
+        <div class="highlight-box tier-green">
+            <h3 style="margin-top:0;">🟢 Tier 4 — اگر مسیرت AI/LLM باشد</h3>
+            <ul>
+                <li>Embeddings</li>
+                <li>Attention</li>
+                <li>Transformers</li>
+                <li>RAG</li>
+                <li>Vector Search</li>
+                <li>Reranking</li>
+                <li>Fine-Tuning</li>
+                <li>LoRA / QLoRA</li>
+                <li>Quantization</li>
+                <li>LLM Evaluation</li>
+                <li>Agents</li>
+            </ul>
+        </div>
 
-<hr>
+        <hr />
 
-<p>به نظرم مرحله بعدی برای تو این است که همین Tier 1 را یکی‌یکی عمیق کنیم؛ مخصوصاً Loss vs Objective vs Metric → Optimization → Regularization → Learning Curves → Error Analysis → Data Leakage → Distribution Shift. این‌ها همان مفاهیمی هستند که وقتی کنار Bias–Variance و K-Fold قرار می‌گیرند، تصویر واقعی ML را می‌سازند.</p>
+        <p style="text-align:center; color:#555;">
+            📂 همهٔ فایل‌ها در مخزن
+            <a href="https://github.com/yazdanparasthesam/ML-Concepts" target="_blank" style="color:#0984e3;">yazdanparasthesam/ML-Concepts</a>
+            موجود هستند.
+        </p>
 
-</div>
+    </div>
 </body>
 </html>
