@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Causality - Senior ML Level</title>
+    <style>
+        body { background-color: #0d1117; color: #e6edf3; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.8; margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1, h2, h3 { color: #e6edf3; text-align: right; border-bottom: 1px solid #444; padding-bottom: 15px; margin-top: 50px; }
+        p, li { text-align: right; }
+        
+        /* Boxes */
+        .box { background-color: #21262d; border: 1px solid #30363d; border-radius: 8px; padding: 15px; margin: 15px 0; color: #e6edf3; direction: rtl; }
+        .inner-box { background-color: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 15px; margin: 10px; direction: rtl; }
+        .inner-title { font-weight: bold; margin-bottom: 5px; text-align: right; }
+
+        /* Formula Box (Plain HTML to avoid KaTeX errors) */
+        .formula {
+            direction: ltr;
+            background-color: #000;
+            border: 1px solid #fff;
+            border-radius: 0;
+            padding: 20px;
+            margin: 20px auto;
+            width: fit-content;
+            max-width: 100%;
+            overflow-x: auto;
+            text-align: center;
+            font-size: 1.2em;
+            font-family: "Times New Roman", Times, serif;
+            color: #fff;
+        }
+
+        /* Charts / Flowcharts / ASCII Art (Must be LTR) */
+        .chart { direction: ltr; text-align: left; font-family: monospace; background-color: #21262d; border-radius: 8px; padding: 15px; overflow-x: auto; white-space: pre; border: 1px solid #444; }
+
+        /* Tables */
+        table { width: 100%; border-collapse: collapse; direction: rtl; margin-bottom: 20px; }
+        th, td { border: 1px solid #444; padding: 12px; text-align: right; }
+        th { background-color: #21262d; }
+        
+        .highlight { color: #58a6ff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔗 29. Causality — علیت در Machine Learning</h1>
+
+        <p>این مبحث یکی از مهم‌ترین تفاوت‌های بین Predictive ML و Causal Inference است.</p>
+        <p>اگر بخواهم کل Chapter را در یک جمله خلاصه کنم:</p>
+        <div class="inner-box">ML معمولاً می‌پرسد: «چه چیزی را می‌توانم پیش‌بینی کنم؟»؛ Causal Inference می‌پرسد: «اگر X را عمداً تغییر دهم، Y چه تغییری می‌کند؟»</div>
+        <p>مثلاً:</p>
+        
+        <div class="box">
+            <div style="font-weight: bold; margin-bottom: 10px;">ML:</div>
+            <div>چه مشتری‌هایی احتمالاً churn می‌کنند؟</div>
+            <br>
+            <div style="font-weight: bold; margin-bottom: 10px;">Causal:</div>
+            <div>اگر به مشتری تخفیف بدهم، آیا واقعاً churn او کاهش پیدا می‌کند؟</div>
+        </div>
+
+        <p>این دو سؤال کاملاً متفاوت‌اند.</p>
+
+        <h2>1. ML ≠ Causal Inference</h2>
+        <p>فرض کن داده داریم:</p>
+        <div class="box"><div class="chart">Age
+Income
+PreviousPurchases
+Discount
+Churn</div></div>
+        <p>یک مدل ML می‌سازیم:</p>
+        <div class="formula">P(Churn | X)</div>
+        <p>هدف:</p>
+        <div class="inner-box">پیش‌بینی اینکه چه کسی churn می‌کند.</div>
+        <p>اما مدیر می‌پرسد:</p>
+        <div class="inner-box">اگر به این مشتری discount بدهیم، آیا churn نمی‌کند؟</div>
+        <p>این دیگر prediction صرف نیست.</p>
+        <p>باید بدانیم:</p>
+        <div class="formula">P(Y | do(T = 1))</div>
+        <p>در مقابل:</p>
+        <div class="formula">P(Y | T = 1)</div>
+
+        <h2>2. فرق اصلی Observational و Interventional</h2>
+        <p>این دو عبارت را خیلی خوب یاد بگیر:</p>
+        <div class="inner-box"><div class="inner-title">مشاهده</div></div>
+        <div class="formula">P(Y | T = 1)</div>
+        <p>یعنی:</p>
+        <div class="inner-box">بین کسانی که treatment گرفته‌اند، outcome چه بوده؟</div>
+        <div class="inner-box"><div class="inner-title">Intervention</div></div>
+        <div class="formula">P(Y | do(T = 1))</div>
+        <p>یعنی:</p>
+        <div class="inner-box">اگر خودمان treatment را اعمال کنیم، outcome چه خواهد شد؟</div>
+        <p>این do قلب causal inference است.</p>
+
+        <h2>3. Correlation</h2>
+        <p>Correlation یعنی دو متغیر با هم تغییر می‌کنند.</p>
+        <p>مثلاً:</p>
+        <div class="formula">X = IceCreamSales</div>
+        <p>و:</p>
+        <div class="formula">Y = Drowning</div>
+        <p>ممکن است correlation مثبت باشد.</p>
+        <p>اما:</p>
+        <div class="inner-box">فروش بستنی باعث غرق‌شدن افراد نمی‌شود.</div>
+        <p>عامل سوم:</p>
+        <div class="formula">Temperature</div>
+        <p>است.</p>
+
+        <h2>4. Visualization ذهنی Correlation</h2>
+        <div class="box"><div class="chart">Drag points
+2
+4
+6
+8
+10
+2
+4
+6
+8
+X
+Y
+Linear correlation is positive (r = 0.98).
+Negative
+Near zero
+Positive
+Negative
+Near zero
+Positive
+Give feedback</div></div>
+        <p>Correlation درباره association صحبت می‌کند، نه الزاماً causal effect.</p>
+
+        <h2>5. Causation</h2>
+        <p>Causation یعنی تغییر X باعث تغییر Y شود.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Smoking → Lung Cancer</div></div>
+        <p>سؤال causal:</p>
+        <div class="inner-box">اگر فردی را از smoking به non-smoking منتقل کنیم، آیا ریسک سرطان تغییر می‌کند؟</div>
+        <p>این counterfactual است.</p>
+
+        <h2>6. Correlation ≠ Causation</h2>
+        <p>سه حالت مهم:</p>
+        <div class="box"><div class="chart">X → Y</div></div>
+        <p>یعنی X ممکن است علت Y باشد.</p>
+        <p>اما ممکن است:</p>
+        <div class="box"><div class="chart">X ← Z → Y</div></div>
+        <p>باشد.</p>
+        <p>یا:</p>
+        <div class="box"><div class="chart">X ← Y</div></div>
+        <p>باشد.</p>
+        <p>در هر دو حالت ممکن است correlation داشته باشیم بدون اینکه:</p>
+        <div class="formula">X → Y</div>
+        <p>وجود داشته باشد.</p>
+
+        <h2>7. Confounding</h2>
+        <p>یکی از مهم‌ترین مفاهیم causal inference.</p>
+        <p>Confounder متغیری است که هم با treatment و هم با outcome ارتباط دارد و می‌تواند association مشاهده‌شده را مخدوش کند.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Exercise → Weight Loss</div></div>
+        <p>اما:</p>
+        <div class="box"><div class="chart">Age
+ ↙    ↘
+Exercise  Weight</div></div>
+        <p>سن روی هر دو اثر دارد.</p>
+
+        <h2>8. مثال مشهور</h2>
+        <p>فرض کن:</p>
+        <div class="box"><div class="chart">Ice Cream Sales → Drowning</div></div>
+        <p>همبستگی وجود دارد.</p>
+        <p>اما:</p>
+        <div class="box"><div class="chart">        Temperature
+        ↙         ↘
+Ice Cream       Drowning</div></div>
+        <p>Temperature confounder است.</p>
+        <p>در تابستان:</p>
+        <div class="box"><div class="chart">Temperature ↑
+      ↓
+Ice Cream ↑
+
+Temperature ↑
+      ↓
+Swimming ↑
+      ↓
+Drowning ↑</div></div>
+        <p>پس association بین بستنی و غرق‌شدن الزاماً causal نیست.</p>
+
+        <h2>9. Treatment</h2>
+        <p>در causal inference معمولاً:</p>
+        <div class="formula">T</div>
+        <p>را Treatment می‌نامیم.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">T = 1 → receives discount
+T = 0 → no discount</div></div>
+
+        <h2>10. Outcome</h2>
+        <p>متغیر نتیجه:</p>
+        <div class="formula">Y</div>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Y = 1 → churn
+Y = 0 → no churn</div></div>
+        <p>پس:</p>
+        <div class="box"><div class="chart">T = Discount
+Y = Churn</div></div>
+        <p>سؤال causal:</p>
+        <div class="inner-box">Discount چه اثری روی Churn دارد؟</div>
+
+        <h2>11. Control</h2>
+        <p>Control معمولاً گروهی است که treatment دریافت نکرده.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Treatment:
+Discount = 1
+
+Control:
+Discount = 0</div></div>
+        <p>در Randomized Controlled Trial:</p>
+        <div class="box"><div class="chart">Population
+     ↓
+Random Assignment
+   ↙       ↘
+Treatment  Control</div></div>
+        <p>Randomization باعث می‌شود confounders به‌طور متوسط بین دو گروه متعادل شوند.</p>
+
+        <h2>12. Counterfactual</h2>
+        <p>این یکی از عمیق‌ترین مفاهیم causal inference است.</p>
+        <p>برای هر فرد دو outcome فرضی داریم:</p>
+        <div class="formula">Y(1)</div>
+        <p>اگر treatment دریافت کند.</p>
+        <p>و:</p>
+        <div class="formula">Y(0)</div>
+        <p>اگر treatment دریافت نکند.</p>
+
+        <h2>13. مشکل Fundamental Problem of Causal Inference</h2>
+        <p>برای یک فرد فقط یکی را مشاهده می‌کنیم.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Customer A
+
+واقعیت:
+Discount = 1
+Churn = 0</div></div>
+        <p>می‌دانیم:</p>
+        <div class="formula">Y(1) = 0</div>
+        <p>اما نمی‌دانیم:</p>
+        <div class="formula">Y(0)</div>
+        <p>چه می‌شد.</p>
+        <p>چون نمی‌توانیم یک فرد را هم‌زمان:</p>
+        <div class="box"><div class="chart">Discount</div></div>
+        <p>و:</p>
+        <div class="box"><div class="chart">No Discount</div></div>
+        <p>کنیم.</p>
+
+        <h2>14. Individual Treatment Effect — ITE</h2>
+        <p>برای یک فرد:</p>
+        <div class="formula">ITE = Y(1) - Y(0)</div>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Y(1) = 0
+Y(0) = 1</div></div>
+        <p>پس:</p>
+        <div class="formula">ITE = -1</div>
+        <p>یعنی treatment باعث جلوگیری از churn شده.</p>
+
+        <h2>15. ATE</h2>
+        <p>Average Treatment Effect:</p>
+        <div class="formula"><b>ATE = E[Y(1) - Y(0)]</b></div>
+        <p>با خطی بودن expectation:</p>
+        <div class="formula">ATE = E[Y(1)] - E[Y(0)]</div>
+        <p>یعنی:</p>
+        <div class="inner-box">treatment به‌طور متوسط چه اثری روی population دارد؟</div>
+
+        <h2>16. مثال ATE</h2>
+        <p>فرض:</p>
+        <div class="box"><div class="chart">Without Discount:
+20% churn
+
+With Discount:
+15% churn</div></div>
+        <p>پس:</p>
+        <div class="formula">ATE = 0.15 - 0.20 = -0.05</div>
+        <p>یعنی:</p>
+        <div class="inner-box">Discount به‌طور متوسط churn را 5 percentage points کاهش داده است.</div>
+
+        <h2>17. CATE</h2>
+        <p>Conditional Average Treatment Effect:</p>
+        <div class="formula"><b>CATE(x) = E[Y(1) - Y(0) | X = x]</b></div>
+        <p>یعنی:</p>
+        <div class="inner-box">اثر treatment برای گروهی با ویژگی‌های مشخص چقدر است؟</div>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Young customers:
+CATE = -10%
+
+Older customers:
+CATE = -2%</div></div>
+        <p>پس discount برای گروه اول مؤثرتر است.</p>
+
+        <h2>18. ATE vs CATE</h2>
+        <div class="inner-box"><div class="inner-title">ATE</div></div>
+        <div class="box"><div class="chart">اثر متوسط روی کل population</div></div>
+        <div class="inner-box"><div class="inner-title">CATE</div></div>
+        <div class="box"><div class="chart">اثر متوسط برای یک subgroup</div></div>
+        <p>مثلاً:</p>
+        <div class="formula">ATE = -5%</div>
+        <p>ولی:</p>
+        <div class="box"><div class="chart">Premium customers:
+CATE = -12%
+
+Basic customers:
+CATE = -1%</div></div>
+        <p>این اطلاعات برای targeting بسیار ارزشمند است.</p>
+
+        <h2>19. DAG چیست؟</h2>
+        <p>DAG:</p>
+        <div class="inner-box">Directed Acyclic Graph</div>
+        <p>ابزاری برای نمایش فرضیات causal است.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Age ─────→ Exercise
+ │
+ └────────→ Weight</div></div>
+        <p>یا:</p>
+        <div class="box"><div class="chart">Age → Exercise → Weight
+ │               ↑
+ └───────────────┘</div></div>
+        <p>DAG به ما کمک می‌کند بفهمیم:</p>
+        <div class="inner-box">چه متغیرهایی را باید کنترل کنیم و چه متغیرهایی را نباید کنترل کنیم.</div>
+
+        <h2>20. سه نوع Node مهم</h2>
+        <p>در DAG معمولاً با این ساختارها زیاد کار داریم:</p>
+        <div class="inner-box"><div class="inner-title">Chain</div></div>
+        <div class="box"><div class="chart">X → M → Y</div></div>
+        <div class="inner-box"><div class="inner-title">Fork</div></div>
+        <div class="box"><div class="chart">    Z
+   ↙ ↘
+  X   Y</div></div>
+        <div class="inner-box"><div class="inner-title">Collider</div></div>
+        <div class="box"><div class="chart">X → Z ← Y</div></div>
+        <p>این سه ساختار بسیار مهم‌اند.</p>
+
+        <h2>21. Chain</h2>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Education → Job → Income</div></div>
+        <p>اگر Job را condition کنیم:</p>
+        <div class="box"><div class="chart">Education → Job → Income</div></div>
+        <p>مسیر بین Education و Income block می‌شود.</p>
+
+        <h2>22. Fork</h2>
+        <div class="box"><div class="chart">Age
+↙   ↘
+Exercise  Disease</div></div>
+        <p>Age باعث association بین Exercise و Disease می‌شود.</p>
+        <p>با کنترل Age می‌توان این backdoor path را block کرد.</p>
+
+        <h2>23. Collider</h2>
+        <p>بسیار مهم:</p>
+        <div class="box"><div class="chart">Ability → University ← Wealth</div></div>
+        <p>University یک collider است.</p>
+        <p>اگر conditioning کنیم:</p>
+        <div class="formula">P(Ability | University, Wealth)</div>
+        <p>ممکن است association مصنوعی ایجاد کنیم.</p>
+
+        <h2>24. Collider Bias</h2>
+        <p>این یکی از اشتباهات مهم در causal analysis است.</p>
+        <p>اگر:</p>
+        <div class="box"><div class="chart">X → Z ← Y</div></div>
+        <p>باشد، معمولاً نباید روی Z condition کنیم مگر اینکه دلیل causal مشخصی داشته باشیم.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Skill → Hiring ← Network</div></div>
+        <p>اگر فقط افراد hired را بررسی کنیم، ممکن است Skill و Network ارتباط مصنوعی پیدا کنند.</p>
+
+        <h2>25. Intervention</h2>
+        <p>Intervention یعنی عمداً مقدار یک متغیر را تنظیم کنیم.</p>
+        <p>در Pearl notation:</p>
+        <div class="formula">do(X = x)</div>
+        <p>یعنی:</p>
+        <div class="inner-box">سیستم را طوری تغییر بده که X=x شود.</div>
+
+        <h2>26. فرق Conditioning و Intervention</h2>
+        <p>این یکی از مهم‌ترین سؤالات مصاحبه‌ای است.</p>
+        <div class="inner-box"><div class="inner-title">Conditioning</div></div>
+        <div class="formula">P(Y | X = x)</div>
+        <p>یعنی:</p>
+        <div class="inner-box">در داده‌هایی که X=x بوده چه اتفاقی افتاده؟</div>
+        <div class="inner-box"><div class="inner-title">Intervention</div></div>
+        <div class="formula">P(Y | do(X = x))</div>
+        <p>یعنی:</p>
+        <div class="inner-box">اگر X را مجبور کنیم برابر x شود چه اتفاقی می‌افتد؟</div>
+        <p>این دو در presence of confounding متفاوت‌اند.</p>
+
+        <h2>27. مثال</h2>
+        <p>فرض:</p>
+        <div class="box"><div class="chart">Weather → Umbrella
+Weather → Rain</div></div>
+        <p>وقتی می‌بینی:</p>
+        <div class="box"><div class="chart">P(Rain | Umbrella)</div></div>
+        <p>فقط observation است.</p>
+        <p>اما:</p>
+        <div class="box"><div class="chart">P(Rain | do(Umbrella = 1))</div></div>
+        <p>می‌پرسد:</p>
+        <div class="inner-box">اگر همه را مجبور کنیم umbrella حمل کنند، آیا باران تغییر می‌کند؟</div>
+        <p>واضح است که نه.</p>
+
+        <h2>28. Do-Calculus</h2>
+        <p>Do-calculus مجموعه‌ای از قواعد برای تبدیل expressions مربوط به:</p>
+        <div class="formula">P(Y | do(X))</div>
+        <p>به quantities قابل تخمین از observational data است، وقتی assumptions causal کافی باشند.</p>
+        <p>این نظریه توسط Judea Pearl توسعه داده شده.</p>
+
+        <h2>29. چرا Do-Calculus مهم است؟</h2>
+        <p>چون همیشه Randomized Experiment نداریم.</p>
+        <p>مثلاً:</p>
+        <div class="inner-box">آیا داروی X باعث کاهش mortality می‌شود؟</div>
+        <p>نمی‌توان همیشه آزمایش تصادفی انجام داد.</p>
+        <p>ممکن است observational data داشته باشیم.</p>
+        <p>DAG + assumptions + do-calculus می‌تواند کمک کند بفهمیم آیا causal effect identifiable است یا نه.</p>
+
+        <h2>30. Backdoor Path</h2>
+        <p>فرض:</p>
+        <div class="box"><div class="chart">Z → X
+Z → Y
+X → Y</div></div>
+        <p>مسیر:</p>
+        <div class="box"><div class="chart">X ← Z → Y</div></div>
+        <p>یک:</p>
+        <div class="inner-box">Backdoor path</div>
+        <p>است.</p>
+        <p>این مسیر association غیرمستقیم ایجاد می‌کند.</p>
+
+        <h2>31. Backdoor Adjustment</h2>
+        <p>اگر Z confounder باشد و شرایط لازم برقرار باشد:</p>
+        <div class="formula">P(Y | do(X = x)) = Σ<sub>z</sub> P(Y | X = x, Z = z) P(Z = z)</div>
+        <p>این فرمول بسیار مهم است.</p>
+
+        <h2>32. مثال</h2>
+        <p>فرض:</p>
+        <div class="box"><div class="chart">Age → Treatment
+Age → Outcome
+Treatment → Outcome</div></div>
+        <p>Age confounder است.</p>
+        <p>می‌توان اثر treatment را با adjustment نسبت به Age تخمین زد.</p>
+
+        <h2>33. Propensity Score</h2>
+        <p>Propensity score:</p>
+        <div class="formula"><b>e(X) = P(T = 1 | X)</b></div>
+        <p>یعنی:</p>
+        <div class="inner-box">احتمال دریافت treatment با توجه به covariates.</div>
+
+        <h2>34. مثال Propensity</h2>
+        <p>فرض:</p>
+        <div class="box"><div class="chart">Age
+Income
+Health
+Previous disease</div></div>
+        <p>داریم.</p>
+        <p>مدلی می‌سازیم:</p>
+        <div class="formula">P(Treatment = 1 | Age, Income, Health, ...)</div>
+        <p>این probability می‌شود:</p>
+        <div class="inner-box">Propensity Score.</div>
+
+        <h2>35. چرا Propensity Score؟</h2>
+        <p>در observational data treatment random نیست.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Sicker patients
+      ↓
+more likely to receive treatment</div></div>
+        <p>پس treatment group و control group متفاوت‌اند.</p>
+        <p>Propensity score کمک می‌کند این تفاوت را adjust کنیم.</p>
+
+        <h2>36. Propensity Score Matching</h2>
+        <p>افرادی با propensity مشابه را match می‌کنیم:</p>
+        <div class="box"><div class="chart">Treated:
+Patient A
+Propensity = 0.72
+
+Control:
+Patient B
+Propensity = 0.70</div></div>
+        <p>این دو از نظر observed covariates قابل مقایسه‌تر می‌شوند.</p>
+
+        <h2>37. Propensity Score Weighting</h2>
+        <p>Inverse Probability Weighting:</p>
+        <p>برای treated:</p>
+        <div class="formula">w<sub>i</sub> = 1 / e(X<sub>i</sub>)</div>
+        <p>برای control:</p>
+        <div class="formula">w<sub>i</sub> = 1 / (1 - e(X<sub>i</sub>))</div>
+        <p>این کار می‌تواند pseudo-population ایجاد کند که treatment در آن تقریباً independent از measured covariates باشد.</p>
+
+        <h2>38. نکته بسیار مهم: Positivity</h2>
+        <p>برای causal identification باید برای سطوح relevant از X، احتمال هر دو treatment وجود داشته باشد.</p>
+        <p>یعنی:</p>
+        <div class="formula">0 < P(T = 1 | X) < 1</div>
+        <p>اگر:</p>
+        <div class="box"><div class="chart">P(T = 1 | X) = 1</div></div>
+        <p>یعنی یک subgroup همیشه treatment می‌گیرد.</p>
+        <p>در آن subgroup نمی‌توان effect treatment را از observational data به‌خوبی مقایسه کرد.</p>
+
+        <h2>39. SUTVA</h2>
+        <p>یکی از assumptions مهم causal inference:</p>
+        <div class="inner-box">Stable Unit Treatment Value Assumption</div>
+        <p>به‌طور ساده دو بخش مهم دارد:</p>
+        <div class="inner-box"><div class="inner-title">No interference</div></div>
+        <p>Treatment فرد A نباید outcome فرد B را تغییر دهد.</p>
+        <div class="inner-box"><div class="inner-title">Well-defined treatment</div></div>
+        <p>Treatment باید تعریف مشخصی داشته باشد.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">"receive treatment"</div></div>
+        <p>اگر ده‌ها نوع treatment متفاوت باشد، تعریف causal effect سخت‌تر می‌شود.</p>
+
+        <h2>40. Exchangeability / No Unmeasured Confounding</h2>
+        <p>برای بسیاری از روش‌های observational causal inference فرض مهمی داریم:</p>
+        <div class="formula">Y(1), Y(0) ⊥ T | X</div>
+        <p>یعنی:</p>
+        <div class="inner-box">بعد از کنترل X، treatment assignment به potential outcomes وابستگی سیستماتیک ندارد.</div>
+        <p>در زبان ساده:</p>
+        <div class="inner-box">confounder مهمی که هم treatment و outcome را تحت تأثیر قرار دهد و در X نباشد، نداریم.</div>
+        <p>این assumption معمولاً قابل اثبات صرفاً از observational data نیست.</p>
+
+        <h2>41. Consistency</h2>
+        <p>اگر فرد واقعاً treatment T = t را دریافت کرده باشد:</p>
+        <div class="formula">Y = Y(t)</div>
+        <p>یعنی treatment تعریف‌شده باید با treatment واقعی فرد مطابقت داشته باشد.</p>
+
+        <h2>42. سه Assumption معروف</h2>
+        <p>برای بسیاری از causal methods:</p>
+        <div class="box"><div class="chart">1. Exchangeability
+2. Positivity
+3. Consistency</div></div>
+        <p>این سه را برای مصاحبه Senior بسیار خوب بلد باش.</p>
+
+        <h2>43. Randomized Controlled Trial</h2>
+        <p>Gold standard برای بسیاری از causal questions:</p>
+        <div class="box"><div class="chart">Population
+      ↓
+Randomization
+   ↙       ↘
+Treatment  Control
+   ↓         ↓
+ Outcome   Outcome</div></div>
+        <p>Randomization باعث می‌شود confounders به‌صورت expected متعادل شوند.</p>
+
+        <h2>44. RCT و ATE</h2>
+        <p>در یک RCT ساده:</p>
+        <div class="formula">ATE ≈ E[Y | T = 1] - E[Y | T = 0]</div>
+        <p>چون treatment به‌صورت random assignment شده است.</p>
+
+        <h2>45. Observational Study</h2>
+        <p>در observational data:</p>
+        <div class="box"><div class="chart">Treatment
+    ↑
+Patient characteristics
+    ↓
+Outcome</div></div>
+        <p>Treatment random نیست.</p>
+        <p>پس:</p>
+        <div class="formula">E[Y | T = 1] - E[Y | T = 0]</div>
+        <p>لزومأ برابر ATE نیست.</p>
+
+        <h2>46. Selection Bias</h2>
+        <p>فرض کن:</p>
+        <div class="box"><div class="chart">Treatment group</div></div>
+        <p>از ابتدا افراد سالم‌تر باشند.</p>
+        <p>ممکن است ببینی:</p>
+        <div class="box"><div class="chart">Treatment → Better outcome</div></div>
+        <p>اما علت واقعی:</p>
+        <div class="box"><div class="chart">Health → Treatment
+Health → Outcome</div></div>
+        <p>باشد.</p>
+
+        <h2>47. ML چرا به‌تنهایی causal نیست؟</h2>
+        <p>ML می‌تواند تابع زیر را عالی تخمین بزند:</p>
+        <div class="formula">f(X) ≈ E[Y | X]</div>
+        <p>اما causal question معمولاً:</p>
+        <div class="formula">E[Y | do(X = x)]</div>
+        <p>است.</p>
+        <p>این دو object متفاوت‌اند.</p>
+
+        <h2>48. مثال بسیار مهم برای ML Engineer</h2>
+        <p>فرض:</p>
+        <div class="box"><div class="chart">Features:
+Age
+Income
+CreditScore
+LoanAmount
+InterestRate
+
+Target:
+Default</div></div>
+        <p>مدل ML می‌تواند:</p>
+        <div class="formula">P(Default | X)</div>
+        <p>را پیش‌بینی کند.</p>
+        <p>اما اگر بپرسی:</p>
+        <div class="inner-box">اگر InterestRate را کاهش دهیم، default چقدر کاهش می‌یابد؟</div>
+        <p>این سؤال causal است.</p>
+        <p>مدل predictive معمولی الزاماً پاسخ درست نمی‌دهد.</p>
+
+        <h2>49. Treatment Effect Modeling</h2>
+        <p>حالا ML می‌تواند وارد causal inference شود.</p>
+        <p>هدف:</p>
+        <div class="formula">τ(X) = E[Y(1) - Y(0) | X]</div>
+        <p>یعنی CATE.</p>
+        <p>روش‌های مدرن:</p>
+        <div class="box"><div class="chart">T-Learner
+S-Learner
+X-Learner
+R-Learner
+Causal Forest
+Bayesian Causal Models
+Double Machine Learning</div></div>
+
+        <h2>50. S-Learner</h2>
+        <p>یک model:</p>
+        <div class="formula">Y = f(X, T)</div>
+        <p>می‌سازیم.</p>
+        <p>برای فرد:</p>
+        <div class="box"><div class="chart">f(X, 1)</div></div>
+        <p>و:</p>
+        <div class="box"><div class="chart">f(X, 0)</div></div>
+        <p>را محاسبه می‌کنیم.</p>
+        <p>سپس:</p>
+        <div class="formula">τ̂(X) = f(X, 1) - f(X, 0)</div>
+
+        <h2>51. T-Learner</h2>
+        <p>دو model جدا:</p>
+        <div class="formula">μ̂<sub>1</sub>(X) = E[Y | X, T = 1]</div>
+        <p>و:</p>
+        <div class="formula">μ̂<sub>0</sub>(X) = E[Y | X, T = 0]</div>
+        <p>سپس:</p>
+        <div class="formula"><b>τ̂(X) = μ̂<sub>1</sub>(X) - μ̂<sub>0</sub>(X)</b></div>
+
+        <h2>52. مشکل T-Learner</h2>
+        <p>اگر treatment group کوچک باشد:</p>
+        <div class="box"><div class="chart">Treatment → 5%
+Control → 95%</div></div>
+        <p>مدل treatment داده کمی دارد.</p>
+        <p>همچنین extrapolation می‌تواند مشکل‌ساز شود.</p>
+
+        <h2>53. Causal Forest</h2>
+        <p>Causal Forest از ایده‌های Random Forest استفاده می‌کند ولی به جای صرفاً prediction، heterogeneity در treatment effect را هدف قرار می‌دهد.</p>
+        <p>هدف:</p>
+        <div class="formula">τ(X)</div>
+        <p>یعنی:</p>
+        <div class="inner-box">چه کسانی بیشتر از treatment سود می‌برند؟</div>
+
+        <h2>54. Uplift Modeling</h2>
+        <p>در Marketing خیلی مهم است.</p>
+        <p>به جای:</p>
+        <div class="inner-box">چه کسی خرید می‌کند؟</div>
+        <p>می‌پرسیم:</p>
+        <div class="inner-box">چه کسی به خاطر intervention خرید می‌کند؟</div>
+        <p>چهار گروه مهم:</p>
+        <div class="box"><div class="chart">                Treatment Effect
+
+  Persuadables   |  Always-buy
+                 |
+-----------------+----------------
+                 |
+  Never-buy      |  Sleeping-dogs</div></div>
+        <p>هدف پیدا کردن:</p>
+        <div class="inner-box">Persuadables</div>
+        <p>است.</p>
+
+        <h2>55. این تفاوت فوق‌العاده مهم است</h2>
+        <div class="inner-box"><div class="inner-title">Predictive targeting:</div></div>
+        <div class="inner-box">چه کسی احتمال خرید بالایی دارد؟</div>
+        <div class="inner-box"><div class="inner-title">Causal targeting:</div></div>
+        <div class="inner-box">چه کسی به‌خاطر campaign خرید خواهد کرد؟</div>
+        <p>ممکن است شخصی:</p>
+        <div class="box"><div class="chart">P(Buy) = 95%</div></div>
+        <p>داشته باشد ولی campaign هیچ اثری روی او نداشته باشد.</p>
+        <p>پس برای marketing:</p>
+        <div class="inner-box">high probability ≠ high treatment effect</div>
+
+        <h2>56. Instrumental Variables — IV</h2>
+        <p>یکی از روش‌های بسیار مهم causal inference.</p>
+        <p>فرض کنیم:</p>
+        <div class="box"><div class="chart">Z → T → Y</div></div>
+        <p>ولی confounding بین T و Y داریم.</p>
+        <p>Instrument Z باید شرایط خاصی داشته باشد.</p>
+
+        <h2>57. Instrument باید چه ویژگی‌هایی داشته باشد؟</h2>
+        <p>به‌صورت ساده:</p>
+        <div class="inner-box"><div class="inner-title">1. Relevance</div></div>
+        <p>Z باید روی Treatment اثر داشته باشد:</p>
+        <div class="formula">Z ⊥̸ T</div>
+        <div class="inner-box"><div class="inner-title">2. Exclusion Restriction</div></div>
+        <p>Z نباید مستقیماً روی Y اثر بگذارد.</p>
+        <p>مسیر:</p>
+        <div class="box"><div class="chart">Z → Y</div></div>
+        <p>نباید وجود داشته باشد، مگر از طریق T.</p>
+        <div class="inner-box"><div class="inner-title">3. Independence</div></div>
+        <p>Z نباید با unobserved confounders ارتباط داشته باشد.</p>
+
+        <h2>58. مثال Instrumental Variable</h2>
+        <p>فرض:</p>
+        <div class="box"><div class="chart">Education → Income</div></div>
+        <p>اما:</p>
+        <div class="box"><div class="chart">Ability
+↙      ↘
+Education Income</div></div>
+        <p>Ability را نمی‌بینیم.</p>
+        <p>ممکن است:</p>
+        <div class="box"><div class="chart">Distance to College</div></div>
+        <p>به‌عنوان instrument استفاده شود، اگر assumptions لازم منطقی باشند.</p>
+        <div class="box"><div class="chart">Distance → Education → Income</div></div>
+        <p>اما Distance نباید مستقیماً Income را تغییر دهد.</p>
+
+        <h2>59. Two-Stage Least Squares — 2SLS</h2>
+        <p>یکی از روش‌های معروف IV.</p>
+        <div class="inner-box"><div class="inner-title">Stage 1</div></div>
+        <p>Treatment را با instrument پیش‌بینی می‌کنیم:</p>
+        <div class="formula">T = π<sub>0</sub> + π<sub>1</sub> Z + π<sub>2</sub> X + ε</div>
+        <p>و:</p>
+        <div class="formula">T̂</div>
+        <p>می‌گیریم.</p>
+        <div class="inner-box"><div class="inner-title">Stage 2</div></div>
+        <p>Outcome را با predicted treatment مدل می‌کنیم:</p>
+        <div class="formula">Y = β<sub>0</sub> + β<sub>1</sub> T̂ + β<sub>2</sub> X + ε</div>
+        <p>β<sub>1</sub> effect مورد نظر را تحت assumptions IV تخمین می‌زند.</p>
+
+        <h2>60. Weak Instrument</h2>
+        <p>اگر instrument خیلی ضعیف باشد:</p>
+        <div class="formula">Z ⊥̸ T</div>
+        <p>effect estimation می‌تواند بسیار noisy یا biased باشد.</p>
+        <p>در IV:</p>
+        <div class="inner-box">relevance باید جدی بررسی شود.</div>
+
+        <h2>61. ATE vs CATE vs LATE</h2>
+        <p>در IV اغلب به:</p>
+        <div class="inner-box">Local Average Treatment Effect</div>
+        <p>برمی‌خوریم.</p>
+        <p>LATE اثر treatment برای:</p>
+        <div class="inner-box">Compliers</div>
+        <p>است؛ افرادی که treatment آنها توسط instrument تغییر می‌کند.</p>
+        <p>پس:</p>
+        <div class="box"><div class="chart">ATE
+→ کل population
+
+CATE
+→ subgroup
+
+LATE
+→ subgroup defined by IV compliance</div></div>
+
+        <h2>62. Confounder vs Mediator</h2>
+        <p>این دو را اشتباه نکن.</p>
+        <p>فرض:</p>
+        <div class="box"><div class="chart">Treatment → Exercise → Weight Loss</div></div>
+        <p>Exercise یک:</p>
+        <div class="inner-box">Mediator</div>
+        <p>است.</p>
+        <p>اگر می‌خواهی Total Effect treatment را بدانیم، نباید mediator را بی‌دلیل control کنیم.</p>
+
+        <h2>63. Total Effect</h2>
+        <div class="formula">Treatment → Mediator → Outcome</div>
+        <p>اگر mediator را control کنیم، بخشی از causal pathway را block می‌کنیم.</p>
+        <p>پس ممکن است:</p>
+        <div class="inner-box">Total Effect</div>
+        <p>را به:</p>
+        <div class="inner-box">Direct Effect</div>
+        <p>تبدیل کنیم.</p>
+
+        <h2>64. Confounder vs Mediator</h2>
+        <div class="inner-box"><div class="inner-title">Confounder</div></div>
+        <div class="box"><div class="chart">Z → Treatment
+Z → Outcome</div></div>
+        <p>معمولاً باید برای estimation effect آن را در نظر بگیریم.</p>
+        <div class="inner-box"><div class="inner-title">Mediator</div></div>
+        <div class="box"><div class="chart">Treatment → M → Outcome</div></div>
+        <p>برای total effect معمولاً نباید آن را adjustment variable معمولی در نظر گرفت.</p>
+
+        <h2>65. Collider را هم اضافه کنیم</h2>
+        <div class="box"><div class="chart">Treatment → Collider ← Outcome</div></div>
+        <p>کنترل collider می‌تواند bias ایجاد کند.</p>
+        <p>پس سه مورد را خیلی خوب تشخیص بده:</p>
+        <div class="box"><div class="chart">Confounder → adjust
+
+Mediator → depends on estimand
+
+Collider → generally don't adjust</div></div>
+
+        <h2>66. DAG در مصاحبه Senior</h2>
+        <p>اگر به تو بگویند:</p>
+        <div class="box"><div class="chart">Age → Treatment
+Age → Outcome
+Treatment → Outcome</div></div>
+        <p>باید سریع بگویی:</p>
+        <div class="inner-box">Age is a confounder and creates a backdoor path Treatment ← Age → Outcome.</div>
+        <p>و برای تخمین causal effect باید این backdoor path را block کنیم.</p>
+
+        <h2>67. یک مثال واقعی‌تر</h2>
+        <p>فرض:</p>
+        <div class="box"><div class="chart">Drug → Recovery
+Age → Drug
+Age → Recovery</div></div>
+        <p>اگر صرفاً حساب کنیم:</p>
+        <div class="formula">E[Recovery | Drug = 1] - E[Recovery | Drug = 0]</div>
+        <p>ممکن است اثر دارو را اشتباه تخمین بزنیم.</p>
+        <p>چون:</p>
+        <div class="box"><div class="chart">Drug ← Age → Recovery</div></div>
+        <p>وجود دارد.</p>
+
+        <h2>68. Adjustment Set</h2>
+        <p>یک مجموعه متغیر Z انتخاب می‌کنیم که:</p>
+        <div class="inner-box">backdoor paths را block کند.</div>
+        <p>سپس:</p>
+        <div class="formula">P(Y | do(X = x)) = Σ<sub>z</sub> P(Y | X = x, Z = z) P(Z = z)</div>
+
+        <h2>69. نکته خیلی مهم: همه چیز را Control نکن</h2>
+        <p>یک اشتباه رایج:</p>
+        <div class="inner-box">"هر featureی داریم وارد regression کنیم."</div>
+        <p>در causal inference این می‌تواند اشتباه باشد.</p>
+        <p>ممکن است feature:</p>
+        <div class="box"><div class="chart">mediator
+collider
+post-treatment variable</div></div>
+        <p>باشد.</p>
+        <p>و کنترل آن bias ایجاد کند.</p>
+
+        <h2>70. Post-Treatment Variable</h2>
+        <p>فرض:</p>
+        <div class="box"><div class="chart">Treatment → BloodPressure → Outcome</div></div>
+        <p>BloodPressure بعد از treatment اندازه‌گیری شده.</p>
+        <p>اگر effect کل treatment را می‌خواهی، کنترل BloodPressure می‌تواند بخشی از effect را حذف کند.</p>
+
+        <h2>71. Causal vs Predictive Feature Selection</h2>
+        <p>در ML:</p>
+        <div class="inner-box">feature predictive خوب است.</div>
+        <p>در causal:</p>
+        <div class="inner-box">feature باید بر اساس causal estimand و identification strategy انتخاب شود.</div>
+        <p>این دو objective یکسان نیستند.</p>
+
+        <h2>72. ML می‌تواند Causal Inference را تقویت کند</h2>
+        <p>ML برای:</p>
+        <div class="box"><div class="chart">propensity score estimation
+outcome modeling
+heterogeneous treatment effects
+nuisance function estimation
+high-dimensional confounder adjustment</div></div>
+        <p>خیلی مفید است.</p>
+        <p>ولی:</p>
+        <div class="inner-box">ML خودش causal assumptions را ایجاد نمی‌کند.</div>
+
+        <h2>73. Double Machine Learning</h2>
+        <p>یک روش مهم برای استفاده از ML در causal inference.</p>
+        <p>ایده:</p>
+        <div class="inner-box">nuisance functions را با ML تخمین بزن و effect causal را طوری estimate کن که نسبت به خطاهای این مدل‌ها robustتر باشد.</div>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">X → Treatment
+X → Outcome</div></div>
+        <p>دو مدل:</p>
+        <div class="formula">m(X) = E[Y | X]</div>
+        <p>و:</p>
+        <div class="formula">e(X) = E[T | X]</div>
+        <p>سپس از residualization استفاده می‌کنیم.</p>
+
+        <h2>74. چرا Double ML مهم است؟</h2>
+        <p>چون در داده high-dimensional نمی‌خواهیم:</p>
+        <div class="box"><div class="chart">Age
+Income
+Clicks
+History
+Device
+Location
+...</div></div>
+        <p>را صرفاً با یک linear model ساده کنترل کنیم.</p>
+        <p>ML می‌تواند روابط nonlinear و interactions را یاد بگیرد.</p>
+        <p>اما final causal parameter با روش مناسب inference استخراج می‌شود.</p>
+
+        <h2>75. Causal Forest vs Random Forest</h2>
+        <p>Random Forest:</p>
+        <div class="formula">E[Y | X]</div>
+        <p>را هدف می‌گیرد.</p>
+        <p>Causal Forest:</p>
+        <div class="formula">E[Y(1) - Y(0) | X]</div>
+        <p>را هدف می‌گیرد.</p>
+        <p>این تفاوت را خیلی خوب حفظ کن.</p>
+
+        <h2>76. مهم‌ترین اشتباه در Causal ML</h2>
+        <p>این:</p>
+        <div class="box"><div class="chart">Train ML
+↓
+Feature importance
+↓
+"X causes Y"</div></div>
+        <div class="inner-box">❌ غلط است.</div>
+        <p>اگر feature importance بالا باشد:</p>
+        <div class="inner-box">فقط یعنی X برای prediction مفید است.</div>
+        <p>نه اینکه:</p>
+        <div class="inner-box">X علت Y است.</div>
+
+        <h2>77. مثال Feature Importance</h2>
+        <p>مدل:</p>
+        <div class="box"><div class="chart">Umbrella ownership
+→ predicts rain</div></div>
+        <p>Feature importance بالا.</p>
+        <p>آیا:</p>
+        <div class="inner-box">umbrella باعث rain می‌شود؟</div>
+        <div class="inner-box">❌ نه.</div>
+        <p>این فقط predictive association است.</p>
+
+        <h2>78. Causal Question باید دقیق تعریف شود</h2>
+        <p>قبل از مدل‌سازی بپرس:</p>
+        <div class="inner-box">Treatment چیست؟</div>
+        <div class="formula">T = ?</div>
+        <div class="inner-box">Outcome چیست؟</div>
+        <div class="formula">Y = ?</div>
+        <div class="inner-box">Population چیست؟</div>
+        <div class="formula">P = ?</div>
+        <div class="inner-box">Time horizon چیست؟</div>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">30-day churn</div></div>
+        <div class="inner-box">Estimand چیست؟</div>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">ATE
+CATE
+LATE</div></div>
+
+        <h2>79. Estimand</h2>
+        <p>یکی از مهم‌ترین مفاهیم Senior.</p>
+        <p>Estimand یعنی:</p>
+        <div class="inner-box">دقیقاً چه quantity causal را می‌خواهیم اندازه‌گیری کنیم؟</div>
+        <p>مثلاً:</p>
+        <div class="formula">ATE = E[Y(1) - Y(0)]</div>
+        <p>یا:</p>
+        <div class="formula">CATE(x) = E[Y(1) - Y(0) | X = x]</div>
+        <p>بدون مشخص کردن estimand، تحلیل causal مبهم است.</p>
+
+        <h2>80. Estimator vs Estimand</h2>
+        <p>این دو را قاطی نکن.</p>
+        <div class="inner-box"><div class="inner-title">Estimand</div></div>
+        <p>چیزی که می‌خواهیم بدانیم.</p>
+        <p>مثلاً:</p>
+        <div class="formula">ATE</div>
+        <div class="inner-box"><div class="inner-title">Estimator</div></div>
+        <p>روشی که با داده آن را estimate می‌کنیم.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">IPW
+Regression Adjustment
+DML
+Matching</div></div>
+        <div class="inner-box"><div class="inner-title">Estimate</div></div>
+        <p>عدد نهایی:</p>
+        <div class="box"><div class="chart">ATE = -0.047</div></div>
+
+        <h2>81. Confidence Interval در Causal Inference</h2>
+        <p>مثلاً:</p>
+        <div class="formula">ATE = -0.05</div>
+        <p>با:</p>
+        <div class="formula">95% CI = [-0.08, -0.02]</div>
+        <p>یعنی effect estimated negative است و uncertainty را هم گزارش کرده‌ایم.</p>
+        <p>فقط گفتن:</p>
+        <div class="box"><div class="chart">ATE = -5%</div></div>
+        <p>کافی نیست.</p>
+
+        <h2>82. Statistical Significance ≠ Causal Validity</h2>
+        <p>حتی اگر:</p>
+        <div class="formula">p < 0.05</div>
+        <p>باشد، causal effect معتبر نیست اگر:</p>
+        <div class="inner-box">confounding شدید داشته باشیم.</div>
+        <p>پس:</p>
+        <div class="inner-box">Statistical significance ≠ Causal identification</div>
+
+        <h2>83. External Validity</h2>
+        <p>ممکن است causal effect در یک population معتبر باشد ولی جای دیگر نباشد.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Treatment effect in young users</div></div>
+        <p>لزومی ندارد برای:</p>
+        <div class="box"><div class="chart">elderly users</div></div>
+        <p>یکسان باشد.</p>
+
+        <h2>84. Internal vs External Validity</h2>
+        <div class="inner-box"><div class="inner-title">Internal Validity</div></div>
+        <p>آیا effect در همین study واقعاً causal است؟</p>
+        <div class="inner-box"><div class="inner-title">External Validity</div></div>
+        <p>آیا نتیجه به population دیگری قابل تعمیم است؟</p>
+
+        <h2>85. Time بسیار مهم است</h2>
+        <p>Causality ذاتاً temporal است.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Cause
+ ↓
+Effect</div></div>
+        <p>اگر feature بعد از outcome ایجاد شده باشد:</p>
+        <div class="box"><div class="chart">Outcome
+ ↓
+Feature</div></div>
+        <p>نمی‌توان آن را به‌عنوان علت قبل از outcome استفاده کرد.</p>
+
+        <h2>86. Causal Leakage</h2>
+        <p>در ML predictive leakage داشتیم.</p>
+        <p>در causal analysis هم باید مراقب:</p>
+        <div class="inner-box">post-treatment variables</div>
+        <p>باشیم.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Treatment
+ ↓
+Customer contacted support
+ ↓
+Churn</div></div>
+        <p>اگر SupportContact بعد از treatment اتفاق افتاده، کنترل آن می‌تواند causal effect را خراب کند.</p>
+
+        <h2>87. Causal Graph برای Senior ML</h2>
+        <p>وقتی مسئله causal داری:</p>
+        <div class="box"><div class="chart">1. Define treatment
+2. Define outcome
+3. Define time
+4. Draw DAG
+5. Identify confounders
+6. Identify mediators
+7. Identify colliders
+8. Define estimand
+9. Choose identification strategy
+10. Estimate effect
+11. Quantify uncertainty
+12. Sensitivity analysis</div></div>
+        <p>این workflow بسیار مهم است.</p>
+
+        <h2>88. Sensitivity Analysis</h2>
+        <p>چون در observational causal inference ممکن است:</p>
+        <div class="inner-box">unmeasured confounding</div>
+        <p>داشته باشیم.</p>
+        <p>باید بپرسیم:</p>
+        <div class="inner-box">اگر یک confounder پنهان وجود داشته باشد، چقدر باید قوی باشد تا نتیجه ما را تغییر دهد؟</div>
+        <p>این می‌شود:</p>
+        <div class="inner-box">Sensitivity Analysis.</div>
+
+        <h2>89. Causal Inference بدون Assumptions وجود ندارد</h2>
+        <p>این نکته را جدی بگیر.</p>
+        <p>از observational data به‌تنهایی نمی‌توان همیشه causality را اثبات کرد.</p>
+        <p>معمولاً نیاز به:</p>
+        <div class="box"><div class="chart">Design
++
+Assumptions
++
+Identification
++
+Estimation
++
+Diagnostics</div></div>
+        <p>داریم.</p>
+
+        <h2>90. Causal Hierarchy</h2>
+        <p>به‌صورت مفهومی می‌توان سه سطح را در نظر گرفت:</p>
+        <div class="box"><div class="chart">Level 1:
+Association
+P(Y|X)
+
+Level 2:
+Intervention
+P(Y|do(X))
+
+Level 3:
+Counterfactual
+P(Y_x | X=x')</div></div>
+        <p>ML معمولاً در level 1 بسیار قدرتمند است.</p>
+        <p>Causal inference تلاش می‌کند به level 2 و 3 برسد.</p>
+
+        <h2>91. Association</h2>
+        <p>سؤال:</p>
+        <div class="inner-box">اگر X را ببینم، Y چه احتمالی دارد؟</div>
+        <div class="formula">P(Y | X)</div>
+
+        <h2>92. Intervention</h2>
+        <p>سؤال:</p>
+        <div class="inner-box">اگر X را تغییر دهم، Y چه می‌شود؟</div>
+        <div class="formula">P(Y | do(X))</div>
+
+        <h2>93. Counterfactual</h2>
+        <p>سؤال:</p>
+        <div class="inner-box">برای همین فرد، اگر X متفاوت بود چه اتفاقی می‌افتاد؟</div>
+        <div class="formula">Y<sub>x</sub></div>
+        <p>این سخت‌ترین سطح است.</p>
+
+        <h2>94. مثال نهایی — Discount</h2>
+        <div class="inner-box"><div class="inner-title">Predictive ML</div></div>
+        <div class="formula">P(Churn | CustomerFeatures)</div>
+        <p>می‌پرسد:</p>
+        <div class="inner-box">چه کسی churn می‌کند؟</div>
+        <div class="inner-box"><div class="inner-title">Causal</div></div>
+        <div class="formula">E[Y(1) - Y(0)]</div>
+        <p>می‌پرسد:</p>
+        <div class="inner-box">Discount به‌طور متوسط چقدر churn را تغییر می‌دهد؟</div>
+        <div class="inner-box"><div class="inner-title">CATE</div></div>
+        <div class="formula">E[Y(1) - Y(0) | X]</div>
+        <p>می‌پرسد:</p>
+        <div class="inner-box">Discount برای کدام مشتری‌ها مؤثرتر است؟</div>
+
+        <h2>95. اگر مدل churn prediction بگوید:</h2>
+        <div class="box"><div class="chart">Customer A:
+P(Churn) = 0.90</div></div>
+        <p>نباید نتیجه بگیری:</p>
+        <div class="inner-box">پس به Customer A discount بده.</div>
+        <p>ممکن است discount هیچ تأثیری روی او نداشته باشد.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Y(1) = 1
+Y(0) = 1</div></div>
+        <p>پس:</p>
+        <div class="formula">ITE = 0</div>
+
+        <h2>96. مشتری بهتر برای Intervention</h2>
+        <p>مشتری B:</p>
+        <div class="box"><div class="chart">Y(1) = 0
+Y(0) = 1</div></div>
+        <p>پس:</p>
+        <div class="formula">ITE = -1</div>
+        <p>یعنی discount واقعاً او را از churn نجات می‌دهد.</p>
+        <p>بنابراین:</p>
+        <div class="inner-box">Prediction ≠ Persuasion ≠ Causal Effect</div>
+
+        <h2>97. Cheat Sheet مصاحبه Senior</h2>
+        <table>
+            <thead><tr><th>مفهوم</th><th>سؤال</th></tr></thead>
+            <tbody>
+                <tr><td>Correlation</td><td>آیا X و Y با هم مرتبط‌اند؟</td></tr>
+                <tr><td>Causation</td><td>آیا تغییر X باعث تغییر Y می‌شود؟</td></tr>
+                <tr><td>Confounder</td><td>چه متغیری هر دو را تحت تأثیر قرار می‌دهد؟</td></tr>
+                <tr><td>Treatment</td><td>چه چیزی را تغییر می‌دهیم؟</td></tr>
+                <tr><td>Control</td><td>بدون treatment چه اتفاقی می‌افتد؟</td></tr>
+                <tr><td>Counterfactual</td><td>برای همان فرد در حالت دیگر چه می‌شد؟</td></tr>
+                <tr><td>DAG</td><td>ساختار causal assumptions چیست؟</td></tr>
+                <tr><td>Intervention</td><td>اگر X را force کنیم چه می‌شود؟</td></tr>
+                <tr><td>do-calculus</td><td>آیا causal quantity از observational data قابل identification است؟</td></tr>
+                <tr><td>ATE</td><td>اثر متوسط روی کل population چیست؟</td></tr>
+                <tr><td>CATE</td><td>اثر برای subgroup چیست؟</td></tr>
+                <tr><td>Propensity</td><td>احتمال دریافت treatment با توجه به X چیست؟</td></tr>
+                <tr><td>IV</td><td>آیا instrument می‌تواند variation exogenous در treatment ایجاد کند؟</td></tr>
+            </tbody>
+        </table>
+
+        <h2>🔥 98. مهم‌ترین تفاوت‌ها برای حفظ کردن</h2>
+        <div class="inner-box"><div class="inner-title">Correlation vs Causation</div></div>
+        <p>Correlation:</p>
+        <div class="box"><div class="chart">X ↔ Y</div></div>
+        <p>Causation:</p>
+        <div class="box"><div class="chart">X → Y</div></div>
+        <div class="inner-box"><div class="inner-title">Observation vs Intervention</div></div>
+        <p>Observation:</p>
+        <div class="box"><div class="chart">P(Y|X)</div></div>
+        <p>Intervention:</p>
+        <div class="box"><div class="chart">P(Y|do(X))</div></div>
+        <div class="inner-box"><div class="inner-title">Prediction vs Causal Effect</div></div>
+        <p>Prediction:</p>
+        <div class="box"><div class="chart">E[Y|X]</div></div>
+        <p>Causal:</p>
+        <div class="box"><div class="chart">E[Y(1)-Y(0)|X]</div></div>
+        <div class="inner-box"><div class="inner-title">ATE vs CATE</div></div>
+        <p>ATE:</p>
+        <div class="box"><div class="chart">Global average treatment effect</div></div>
+        <p>CATE:</p>
+        <div class="box"><div class="chart">Treatment effect conditional on X</div></div>
+        <div class="inner-box"><div class="inner-title">Confounder vs Mediator vs Collider</div></div>
+        <p>Confounder:</p>
+        <div class="box"><div class="chart">      Z
+     ↙ ↘
+    T   Y</div></div>
+        <p>Mediator:</p>
+        <div class="box"><div class="chart">T → M → Y</div></div>
+        <p>Collider:</p>
+        <div class="box"><div class="chart">T → C ← Y</div></div>
+        <p>قاعده‌ی ساده:</p>
+        <div class="box"><div class="chart">Confounder → usually adjust
+Mediator   → depends on estimand
+Collider   → don't casually adjust</div></div>
+
+        <h2>🎯 در سطح Senior ML باید به این mindset برسی</h2>
+        <p>وقتی یک نفر می‌گوید:</p>
+        <div class="inner-box">«Feature X با Target همبستگی خیلی بالایی دارد.»</div>
+        <p>نباید فوراً بگویی:</p>
+        <div class="inner-box">«پس X مهم است و باید در مدل باشد.»</div>
+        <p>باید بپرسی:</p>
+        <div class="box"><div class="chart">Is it predictive?
+Is it causal?
+Is it a confounder?
+Is it a mediator?
+Is it a collider?
+Is it post-treatment?
+What is the estimand?
+What assumptions identify the effect?</div></div>
+        <p>و مهم‌تر از همه:</p>
+        <div class="inner-box">ML به تو می‌گوید چه چیزی احتمالاً اتفاق می‌افتد؛ Causal Inference تلاش می‌کند بفهمد اگر دنیا را تغییر بدهیم، چه اتفاقی خواهد افتاد.</div>
+        <p>این تفاوت، پایه‌ی Causal ML, Uplift Modeling, Treatment Effect Modeling, Experimentation, Recommendation, Pricing, Marketing Optimization و بسیاری از سیستم‌های تصمیم‌گیری واقعی است.</p>
+
+    </div>
+</body>
+</html>
