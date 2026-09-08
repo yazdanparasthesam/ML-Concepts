@@ -1,0 +1,1565 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data & Sampling - Senior ML Level</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}]});"></script>
+    <style>
+        body { background-color: #0d1117; color: #e6edf3; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.8; margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1, h2, h3 { color: #e6edf3; text-align: right; border-bottom: 1px solid #444; padding-bottom: 15px; margin-top: 50px; }
+        p, li { text-align: right; }
+        
+        /* Boxes */
+        .box { background-color: #21262d; border: 1px solid #30363d; border-radius: 8px; padding: 15px; margin: 15px 0; color: #e6edf3; }
+        .inner-box { background-color: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 15px; margin: 10px; }
+        .inner-title { font-weight: bold; margin-bottom: 5px; }
+
+        /* Formula Box */
+        .formula {
+            direction: ltr;
+            background-color: #000;
+            border: 1px solid #fff;
+            border-radius: 0;
+            padding: 20px;
+            margin: 20px auto;
+            width: fit-content;
+            max-width: 100%;
+            overflow-x: auto;
+            text-align: center;
+            font-size: 1.2em;
+            font-family: "Times New Roman", Times, serif;
+            color: #fff;
+        }
+
+        /* Charts / Flowcharts / ASCII Art */
+        .chart { direction: ltr; text-align: left; font-family: monospace; background-color: #21262d; border-radius: 8px; padding: 15px; overflow-x: auto; white-space: pre; border: 1px solid #444; }
+
+        /* Tables */
+        table { width: 100%; border-collapse: collapse; direction: rtl; margin-bottom: 20px; }
+        th, td { border: 1px solid #444; padding: 12px; text-align: right; }
+        th { background-color: #21262d; }
+        
+        .highlight { color: #58a6ff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 2. Data & Sampling — Senior ML Level</h1>
+        
+        <p>حتماً. این بخش از مباحثی است که تفاوت Mid-level و Senior ML Engineer را خیلی خوب نشان می‌دهد؛ چون Senior فقط نمی‌گوید «داده را train/test split کن»، بلکه باید بتواند توضیح دهد:</p>
+        <ul>
+            <li>آیا Test واقعاً نماینده‌ی دنیای واقعی است؟</li>
+            <li>آیا Sampling درست بوده؟</li>
+            <li>آیا Split باعث Leakage نشده؟</li>
+            <li>آیا فرض IID برقرار است؟</li>
+            <li>و آیا metric ما واقعاً Generalization را اندازه می‌گیرد؟</li>
+        </ul>
+
+        <h2>📊 2. Data & Sampling — Senior ML Level</h2>
+        <p>اول یک Mental Model کلی داشته باش:</p>
+        <div class="box">
+            <div class="chart">
+                    REAL WORLD
+                        │
+                        ▼
+                   POPULATION
+                        │
+                 Sampling Process
+                        │
+                        ▼
+                     SAMPLE
+                        │
+              ┌─────────┴─────────┐
+              │                   │
+          Train Data         Validation/Test
+              │                   │
+              ▼                   ▼
+          Learning             Evaluation
+              │                   │
+              └─────────┬─────────┘
+                        ▼
+                   Generalization
+                        │
+                        ▼
+                  Production Data
+            </div>
+        </div>
+        <p>مشکل اصلی این است که:</p>
+        <div class="box">
+            <div class="chart">
+Population
+    ↓
+Sample
+    ↓
+Train/Test
+            </div>
+        </div>
+        <p>اگر از همان ابتدا Sampling اشتباه باشد، حتی بهترین مدل دنیا هم ممکن است نتیجه‌ی غلط بدهد.</p>
+
+        <h3>1. Population vs Sample</h3>
+        <div class="inner-box"><div class="inner-title">Population چیست؟</div></div>
+        <p>Population یعنی کل مجموعه‌ای که می‌خواهیم درباره‌ی آن نتیجه‌گیری کنیم.</p>
+        <p>مثلاً می‌خواهیم Fraud Detection برای تمام تراکنش‌های بانکی یک کشور بسازیم.</p>
+        <p>Population:</p>
+        <div class="box"><div class="chart">تمام تراکنش‌های بانکی</div></div>
+        <p>نه فقط:</p>
+        <div class="box"><div class="chart">1,000,000 transaction</div></div>
+        <p>که در Dataset داریم.</p>
+        
+        <div class="inner-box"><div class="inner-title">Sample چیست؟</div></div>
+        <p>Sample بخشی از Population است که واقعاً در اختیار داریم.</p>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">
+Population
+10 Billion Transactions
+        │
+        ▼
+Sample
+2 Million Transactions
+            </div>
+        </div>
+        <p>ما مدل را روی Sample آموزش می‌دهیم، ولی هدفمان Population است.</p>
+
+        <div class="inner-box"><div class="inner-title">مثال پزشکی</div></div>
+        <p>فرض کن می‌خواهیم احتمال یک بیماری را در کل جمعیت تخمین بزنیم.</p>
+        <p>Population:</p>
+        <div class="box"><div class="chart">تمام افراد جامعه</div></div>
+        <p>Sample:</p>
+        <div class="box"><div class="chart">10,000 فردی که برای مطالعه انتخاب شده‌اند</div></div>
+        <p>اگر این 10,000 نفر فقط از بیمارستان انتخاب شده باشند، احتمالاً Sample نماینده Population نیست.</p>
+
+        <div class="inner-box"><div class="inner-title">نکته Senior</div></div>
+        <p>همیشه این سؤال را بپرس:</p>
+        <div class="inner-box">What is my target population?</div>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">
+All customers?
+Active customers?
+New customers?
+Customers in Iran?
+Customers in Europe?
+Customers using Android?
+Customers in 2026?
+            </div>
+        </div>
+        <p>تعریف Population روی نحوه Sampling و Evaluation تأثیر مستقیم دارد.</p>
+
+        <h3>2. Parameter vs Statistic</h3>
+        <p>این دو را خیلی‌ها اشتباه می‌کنند.</p>
+        <div class="inner-box"><div class="inner-title">Parameter</div></div>
+        <p>عددی که یک ویژگی از Population را توصیف می‌کند.</p>
+        <p>مثلاً Population Mean:</p>
+        <div class="formula">$$\mu$$</div>
+        <p>Population Variance:</p>
+        <div class="formula">$$\sigma^2$$</div>
+        <p>Population proportion:</p>
+        <div class="formula">$$p$$</div>
+        
+        <div class="inner-box"><div class="inner-title">Statistic</div></div>
+        <p>عددی که از Sample محاسبه می‌کنیم.</p>
+        <p>Sample Mean:</p>
+        <div class="formula">$$\bar{x}$$</div>
+        <p>Sample Variance:</p>
+        <div class="formula">$$s^2$$</div>
+        <p>Sample proportion:</p>
+        <div class="formula">$$\hat{p}$$</div>
+        
+        <div class="inner-box"><div class="inner-title">مثال</div></div>
+        <p>فرض کن:</p>
+        <div class="box"><div class="chart">Population = تمام کاربران یک سیستم</div></div>
+        <p>واقعاً:</p>
+        <div class="formula">$$\mu = 35$$</div>
+        <p>است.</p>
+        <p>اما ما این مقدار را نمی‌دانیم.</p>
+        <p>از 10,000 نفر Sample می‌گیریم:</p>
+        <div class="formula">$$\bar{x} = 34.7$$</div>
+        <p>پس:</p>
+        <div class="box"><div class="chart">μ       → Parameter
+x̄       → Statistic</div></div>
+        <p>و:</p>
+        <div class="formula">$$\bar{x} \approx \mu$$</div>
+
+        <div class="inner-box"><div class="inner-title">چرا این موضوع در ML مهم است؟</div></div>
+        <p>چون تقریباً تمام ML یک مشکل مشابه دارد:</p>
+        <div class="box">
+            <div class="chart">
+Unknown Population Distribution
+            ↓
+        Sample Data
+            ↓
+      Estimate from Sample
+            ↓
+        Generalize
+            </div>
+        </div>
+
+        <h3>3. Sampling</h3>
+        <p>Sampling یعنی:</p>
+        <div class="inner-box">انتخاب بخشی از Population برای تحلیل یا آموزش.</div>
+        <p>چرا کل Population را استفاده نمی‌کنیم؟</p>
+        <p>چون معمولاً:</p>
+        <ul>
+            <li>خیلی بزرگ است</li>
+            <li>دسترسی کامل نداریم</li>
+            <li>هزینه زیاد است</li>
+            <li>زمان زیاد است</li>
+            <li>Label کردن گران است</li>
+        </ul>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Population = 1 Billion Transactions</div></div>
+        <p>ممکن است فقط:</p>
+        <div class="box"><div class="chart">Sample = 10 Million</div></div>
+        <p>داشته باشیم.</p>
+
+        <div class="inner-box"><div class="inner-title">انواع مهم Sampling</div></div>
+        <div class="inner-box"><div class="inner-title">Simple Random Sampling</div></div>
+        <p>هر نمونه احتمال مشخصی برای انتخاب شدن دارد.</p>
+        <div class="box">
+            <div class="chart">
+Population
+ ├── A
+ ├── B
+ ├── C
+ ├── D
+ ├── E
+ └── F
+
+Random Sample:
+B, D, F
+            </div>
+        </div>
+        
+        <div class="inner-box"><div class="inner-title">Stratified Sampling</div></div>
+        <p>Population را به Strata تقسیم می‌کنیم و از هر گروه Sample می‌گیریم.</p>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">
+Population
+
+Fraud     = 1%
+Normal    = 99%
+
+اگر Random Sampling ساده انجام دهیم، ممکن است Fraudهای کمی داشته باشیم.
+
+Stratified Sampling:
+
+Fraud
+ ├── Train
+ ├── Validation
+ └── Test
+
+Normal
+ ├── Train
+ ├── Validation
+ └── Test
+
+نسبت کلاس‌ها حفظ می‌شود.
+            </div>
+        </div>
+
+        <h3>4. Sampling Bias</h3>
+        <p>Sampling Bias زمانی رخ می‌دهد که فرآیند Sampling باعث شود Sample به شکل سیستماتیک با Population متفاوت باشد.</p>
+        <p>مثلاً می‌خواهیم رضایت مشتریان را اندازه بگیریم.</p>
+        <p>ولی فقط از:</p>
+        <div class="box"><div class="chart">Customers who contacted support</div></div>
+        <p>نظرسنجی کنیم.</p>
+        <p>احتمالاً این افراد با مشتریان عادی متفاوت‌اند.</p>
+        
+        <div class="inner-box"><div class="inner-title">مثال ML</div></div>
+        <p>می‌خواهیم Fraud Detector بسازیم.</p>
+        <p>Population:</p>
+        <div class="box"><div class="chart">All Transactions</div></div>
+        <p>ولی Dataset:</p>
+        <div class="box"><div class="chart">Only transactions that were manually investigated</div></div>
+        <p>این Dataset احتمالاً Bias دارد.</p>
+        <p>چرا؟</p>
+        <p>چون انتخاب نمونه به رفتار/ویژگی مرتبط با Target وابسته بوده است.</p>
+
+        <h3>5. Selection Bias</h3>
+        <p>Selection Bias یک نوع مهم Sampling Bias است.</p>
+        <p>یعنی:</p>
+        <div class="inner-box">احتمال ورود یک نمونه به Dataset به شکلی سیستماتیک به ویژگی‌های آن نمونه وابسته باشد.</div>
+        
+        <div class="inner-box"><div class="inner-title">مثال معروف</div></div>
+        <p>می‌خواهی بفهمی:</p>
+        <p>چرا بعضی مشتری‌ها از سرویس خارج می‌شوند؟</p>
+        <p>فقط از مشتریانی که هنوز فعال هستند سؤال می‌کنی.</p>
+        <div class="box">
+            <div class="chart">
+Population
+├── Active
+└── Churned
+
+Sample
+└── Active only
+            </div>
+        </div>
+        <p>نتیجه:</p>
+        <p>مدل هیچ اطلاعات واقعی درباره Churnedها ندارد.</p>
+        
+        <div class="inner-box"><div class="inner-title">Selection Bias در ML</div></div>
+        <p>مثلاً Recruiting Model:</p>
+        <p>Population:</p>
+        <div class="box"><div class="chart">All applicants</div></div>
+        <p>Dataset:</p>
+        <div class="box"><div class="chart">Only applicants who were interviewed</div></div>
+        <p>اگر Interview Selection خودش بر اساس بعضی ویژگی‌ها باشد، Dataset دچار Selection Bias است.</p>
+
+        <h3>6. Sampling Distribution</h3>
+        <p>این یکی از مفاهیم آماری بسیار مهم برای ML است.</p>
+        <p>فرض کن یک Population داریم.</p>
+        <p>از آن Sample می‌گیریم.</p>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">
+Population
+    │
+    ├── Sample 1 → Mean = 49.8
+    ├── Sample 2 → Mean = 50.4
+    ├── Sample 3 → Mean = 49.1
+    ├── Sample 4 → Mean = 50.7
+    └── Sample 5 → Mean = 49.9
+            </div>
+        </div>
+        <p>اگر این کار را بارها انجام دهیم، مجموعه Meanها خودش یک Distribution می‌سازد.</p>
+        <p>این می‌شود:</p>
+        <div class="formula">$$Sampling \ Distribution$$</div>
+        
+        <div class="inner-box"><div class="inner-title">مثال</div></div>
+        <p>Population:</p>
+        <div class="formula">$$\mu = 100$$</div>
+        <p>Sample size:</p>
+        <div class="formula">$$n = 100$$</div>
+        <p>از Population بارها Sample می‌گیریم.</p>
+        <p>برای هر Sample:</p>
+        <div class="formula">$$\bar{X}$$</div>
+        <p>را حساب می‌کنیم.</p>
+        <p>حالا Distribution مربوط به:</p>
+        <div class="formula">$$\bar{X}$$</div>
+        <p>می‌شود Sampling Distribution of Sample Mean.</p>
+
+        <div class="inner-box"><div class="inner-title">Standard Error</div></div>
+        <p>برای Sample Mean:</p>
+        <div class="formula">$$SE(\bar{X}) = \frac{\sigma}{\sqrt{n}}$$</div>
+        <p>نکته بسیار مهم:</p>
+        <div class="box">
+            <div class="chart">
+Sample Size ↑
+      ↓
+Standard Error ↓
+            </div>
+        </div>
+        <p>یعنی با افزایش Sample Size، تخمین ما از Population Mean دقیق‌تر می‌شود.</p>
+
+        <div class="inner-box"><div class="inner-title">ارتباط Sampling Distribution با ML</div></div>
+        <p>وقتی مدل را روی Datasetهای مختلف آموزش می‌دهی:</p>
+        <div class="box">
+            <div class="chart">
+Dataset A → Model A
+Dataset B → Model B
+Dataset C → Model C
+            </div>
+        </div>
+        <p>Performance مدل هم تغییر می‌کند.</p>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">
+F1:
+0.81
+0.84
+0.79
+0.83
+0.80
+            </div>
+        </div>
+        <p>این variability ناشی از Sampling است.</p>
+        <p>Cross-validation تا حدی کمک می‌کند این variability را بهتر اندازه‌گیری کنیم.</p>
+
+        <h3>7. IID Assumption</h3>
+        <p>یکی از مهم‌ترین مفاهیم آماری در ML.</p>
+        <p>IID یعنی:</p>
+        <div class="inner-box">Independent and Identically Distributed</div>
+        <p>دو قسمت دارد.</p>
+        
+        <div class="inner-box"><div class="inner-title">Independent</div></div>
+        <p>نمونه‌ها نباید به یکدیگر وابسته باشند.</p>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">
+Transaction 1
+Transaction 2
+Transaction 3
+            </div>
+        </div>
+        <p>اگر هر Transaction کاملاً مستقل باشد، فرض Independence معقول‌تر است.</p>
+        <p>ولی:</p>
+        <div class="box">
+            <div class="chart">
+User A
+ ├── Transaction 1
+ ├── Transaction 2
+ ├── Transaction 3
+ └── Transaction 4
+            </div>
+        </div>
+        <p>این تراکنش‌ها احتمالاً مستقل نیستند.</p>
+
+        <div class="inner-box"><div class="inner-title">Identically Distributed</div></div>
+        <p>نمونه‌ها باید از یک Distribution مشترک بیایند:</p>
+        <div class="formula">$$X_i \sim P(X)$$</div>
+        <p>و:</p>
+        <div class="formula">$$Y_i \sim P(Y)$$</div>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">
+Train
+P_train(X,Y)
+
+Test
+P_test(X,Y)
+            </div>
+        </div>
+        <p>در حالت IID:</p>
+        <div class="formula">$$P_{train}(X,Y) \approx P_{test}(X,Y)$$</div>
+
+        <div class="inner-box"><div class="inner-title">چرا IID مهم است؟</div></div>
+        <p>بسیاری از روش‌های آماری و ML روی فرض IID ساخته شده‌اند.</p>
+        <p>اگر IID شدیداً نقض شود:</p>
+        <div class="box">
+            <div class="chart">
+Train performance
+      ↓
+may not predict
+      ↓
+Production performance
+            </div>
+        </div>
+        
+        <div class="inner-box"><div class="inner-title">مثال Time Series</div></div>
+        <p>فرض کن:</p>
+        <div class="box">
+            <div class="chart">
+2023
+2024
+2025
+2026
+            </div>
+        </div>
+        <p>داده داری.</p>
+        <p>اگر Random Split کنی:</p>
+        <div class="box">
+            <div class="chart">
+Train:
+2023
+2024
+2025
+2026
+
+Test:
+random samples from all years
+            </div>
+        </div>
+        <p>ممکن است آینده وارد Train شود و گذشته وارد Test.</p>
+        <p>این می‌تواند ارزیابی را غیرواقعی کند.</p>
+
+        <h3>8. Distribution</h3>
+        <p>Distribution یعنی توصیف آماری اینکه:</p>
+        <div class="inner-box">مقادیر Data چگونه در فضای ممکن پخش شده‌اند.</div>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">
+Height
+Age
+Income
+Transaction Amount
+            </div>
+        </div>
+        <p>هرکدام Distribution دارند.</p>
+
+        <div class="inner-box"><div class="inner-title">مثال Normal Distribution</div></div>
+        <div class="formula">$$X \sim N(\mu, \sigma^2)$$</div>
+        <p>یعنی:</p>
+        <div class="box"><div class="chart">Mean = μ
+Variance = σ²</div></div>
+
+        <div class="inner-box"><div class="inner-title">در ML Distribution چیست؟</div></div>
+        <p>ما معمولاً با:</p>
+        <div class="formula">$$P(X)$$</div>
+        <p>و:</p>
+        <div class="formula">$$P(X,Y)$$</div>
+        <p>سر و کار داریم.</p>
+        <p>برای Classification:</p>
+        <div class="formula">$$P(Y|X)$$</div>
+        <p>هم بسیار مهم است.</p>
+
+        <div class="inner-box"><div class="inner-title">سه Distribution بسیار مهم</div></div>
+        <div class="box"><div class="chart">Covariate Distribution
+P(X)
+
+Label Distribution
+P(Y)
+
+Joint Distribution
+P(X,Y)
+
+Conditional Distribution
+P(Y|X)</div></div>
+
+        <h3>9. Data Distribution</h3>
+        <p>وقتی می‌گوییم:</p>
+        <p>Train و Test باید Distribution مشابه داشته باشند</p>
+        <p>معمولاً منظور این است که نمونه‌های Train و Test باید نماینده‌ی همان فرآیند تولید داده‌ای باشند که مدل قرار است در Production ببیند.</p>
+
+        <div class="inner-box"><div class="inner-title">Distribution Shift</div></div>
+        <p>اگر:</p>
+        <div class="formula">$$P_{train}(X,Y) \neq P_{production}(X,Y)$$</div>
+        <p>داریم Distribution Shift.</p>
+        <p>این یکی از بزرگ‌ترین دلایل افت مدل در Production است.</p>
+
+        <div class="inner-box"><div class="inner-title">انواع مهم Distribution Shift</div></div>
+        <div class="inner-box"><div class="inner-title">Covariate Shift</div></div>
+        <div class="formula">$$P_{train}(X) \neq P_{test}(X)$$</div>
+        <p>ولی:</p>
+        <div class="formula">$$P(Y|X)$$</div>
+        <p>تقریباً ثابت است.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Train:
+Age mostly 20-40
+
+Production:
+Age mostly 40-70</div></div>
+        
+        <div class="inner-box"><div class="inner-title">Label Shift</div></div>
+        <div class="formula">$$P(Y)$$</div>
+        <p>تغییر می‌کند.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Fraud rate:
+Train = 1%
+Production = 5%</div></div>
+        
+        <div class="inner-box"><div class="inner-title">Concept Drift</div></div>
+        <p>رابطه:</p>
+        <div class="formula">$$P(Y|X)$$</div>
+        <p>تغییر می‌کند.</p>
+        <p>مثلاً Featureها همان‌اند ولی رفتار Fraudsters عوض شده است.</p>
+        <div class="box"><div class="chart">Before:
+X → Fraud
+
+After:
+same X → Normal</div></div>
+
+        <h3>10. Train / Validation / Test Split</h3>
+        <p>یکی از پایه‌ای‌ترین ولی مهم‌ترین بخش‌های ML.</p>
+        <p>Dataset را معمولاً به:</p>
+        <div class="box">
+            <div class="chart">
+                 Dataset
+                    │
+        ┌───────────┼───────────┐
+        │           │           │
+       Train      Validation    Test
+        │           │           │
+     Learn       Tune/Select   Final Eval
+            </div>
+        </div>
+        <p>تقسیم می‌کنیم.</p>
+
+        <div class="inner-box"><div class="inner-title">Train</div></div>
+        <p>برای یادگیری Parameters مدل.</p>
+        <p>مثلاً Neural Network:</p>
+        <div class="box"><div class="chart">Weights
+Biases</div></div>
+
+        <div class="inner-box"><div class="inner-title">Validation</div></div>
+        <p>برای تصمیم‌گیری درباره مدل.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Learning Rate
+Depth
+Number of Layers
+Regularization
+Threshold
+Architecture</div></div>
+
+        <div class="inner-box"><div class="inner-title">Test</div></div>
+        <p>برای ارزیابی نهایی.</p>
+        <p>Test نباید تبدیل شود به:</p>
+        <div class="inner-box">«یکی دیگر از Validation Sets»</div>
+
+        <div class="inner-box"><div class="inner-title">Data Leakage در Split</div></div>
+        <p>اگر Test را بارها نگاه کنیم:</p>
+        <div class="box">
+            <div class="chart">
+Test
+ ↓
+Model selection
+ ↓
+Test
+ ↓
+Model change
+ ↓
+Test
+            </div>
+        </div>
+        <p>دیگر Test کاملاً unbiased نیست.</p>
+        <p>در این حالت عملاً داریم روی Test هم overfit می‌کنیم.</p>
+
+        <h3>11. Random Split</h3>
+        <p>ساده‌ترین روش:</p>
+        <div class="box">
+            <div class="chart">
+Dataset
+   │
+   ▼
+Random Shuffle
+   │
+   ├── Train 80%
+   ├── Validation 10%
+   └── Test 10%
+            </div>
+        </div>
+        <p>برای داده‌های IID و بدون ساختار زمانی/گروهی، معمولاً مناسب است.</p>
+
+        <div class="inner-box"><div class="inner-title">چه زمانی Random Split بد است؟</div></div>
+        <p>وقتی Data ساختار دارد:</p>
+        <div class="box"><div class="chart">Time
+User
+Patient
+Device
+Session
+Company
+Location
+Household</div></div>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">User A:
+Transaction 1 → Train
+Transaction 2 → Test</div></div>
+        <p>ممکن است Leakage یا dependency ایجاد کند.</p>
+
+        <h3>12. Stratified Split</h3>
+        <p>در Classification وقتی Class Imbalance داریم بسیار مهم است.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Dataset
+
+Normal = 99%
+Fraud  = 1%</div></div>
+        <p>اگر Random Split ساده انجام دهیم، ممکن است نسبت‌ها در Splitها متفاوت شوند.</p>
+        <p>Stratified Split:</p>
+        <div class="box">
+            <div class="chart">
+Train:
+99% Normal
+1% Fraud
+
+Validation:
+99% Normal
+1% Fraud
+
+Test:
+99% Normal
+1% Fraud
+            </div>
+        </div>
+        
+        <div class="inner-box"><div class="inner-title">چرا مهم است؟</div></div>
+        <p>فرض کن Test اتفاقاً Fraud بسیار کمی داشته باشد.</p>
+        <p>ممکن است metric:</p>
+        <div class="box"><div class="chart">F1
+Recall
+Precision
+PR-AUC</div></div>
+        <p>unstable شود.</p>
+
+        <div class="inner-box"><div class="inner-title">نکته Senior</div></div>
+        <p>Stratification همیشه بهترین انتخاب نیست.</p>
+        <p>مثلاً در Time Series نباید فقط به خاطر imbalance، Time را نابود کنیم.</p>
+        <p>در چنین شرایطی ممکن است نیاز داشته باشیم:</p>
+        <div class="box"><div class="chart">Temporal Split
++
+Class weighting</div></div>
+        <p>یا روش‌های دیگر.</p>
+
+        <h3>13. Group Split</h3>
+        <p>وقتی چند Sample از یک Entity داریم.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Patient A
+ ├── Visit 1
+ ├── Visit 2
+ └── Visit 3</div></div>
+        <p>اگر:</p>
+        <div class="box"><div class="chart">Visit 1 → Train
+Visit 2 → Test</div></div>
+        <p>باشد، مدل اطلاعات مربوط به Patient را بین Train و Test share می‌کند.</p>
+
+        <div class="inner-box"><div class="inner-title">Group Split</div></div>
+        <p>تمام Samples مربوط به یک Group باید در یک Split باشند.</p>
+        <div class="box">
+            <div class="chart">
+Patient A → Train
+
+Patient B → Train
+
+Patient C → Test
+
+Patient D → Test
+
+نه:
+
+Patient A:
+Visit 1 → Train
+Visit 2 → Test ❌
+            </div>
+        </div>
+        
+        <div class="inner-box"><div class="inner-title">مثال‌های مهم Group</div></div>
+        <div class="box"><div class="chart">Patient
+User
+Customer
+Device
+Company
+Household
+Product
+Video
+Document</div></div>
+
+        <h3>14. Temporal Split</h3>
+        <p>برای داده‌هایی که Time مهم است.</p>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">
+2023 ───────────── 2024 ───────────── 2025 ───────────── 2026
+ │                  │                  │                  │
+ Train              Train              Validation         Test
+            </div>
+        </div>
+        <p>یا:</p>
+        <div class="box">
+            <div class="chart">
+Train:
+2023-2024
+
+Validation:
+2025 Q1
+
+Test:
+2025 Q2
+            </div>
+        </div>
+        
+        <div class="inner-box"><div class="inner-title">چرا؟</div></div>
+        <p>چون Production معمولاً آینده است.</p>
+        <p>هدف واقعی:</p>
+        <div class="inner-box">Train on past → Predict future</div>
+        <p>نه:</p>
+        <div class="inner-box">Train on random past/future mixture → Predict random past/future.</div>
+        
+        <div class="inner-box"><div class="inner-title">مثال Fraud</div></div>
+        <p>اگر مدل را با Random Split آموزش دهیم، ممکن است اطلاعاتی از Fraud Patternهای اواخر 2026 وارد Train شود و Test شامل نمونه‌های اوایل 2026 باشد.</p>
+        <p>این evaluation برای Production unrealistic است.</p>
+
+        <h3>15. Data Leakage</h3>
+        <p>یکی از مهم‌ترین موضوعات Senior ML.</p>
+        <p>تعریف:</p>
+        <div class="inner-box">Data Leakage زمانی رخ می‌دهد که اطلاعاتی که در زمان Prediction نباید در دسترس مدل باشد، به Training/Evaluation Pipeline وارد شود.</div>
+        
+        <div class="inner-box"><div class="inner-title">سه سؤال طلایی برای تشخیص Leakage</div></div>
+        <p>برای هر Feature بپرس:</p>
+        <p>1.</p>
+        <div class="inner-box">آیا این Feature در زمان Prediction واقعاً در دسترس است؟</div>
+        <p>2.</p>
+        <div class="inner-box">آیا Feature به Future Information وابسته است؟</div>
+        <p>3.</p>
+        <div class="inner-box">آیا Feature یا نمونه‌ای از همین Entity در Train و Test share شده؟</div>
+        <p>اگر جواب مشکل‌دار باشد، احتمال Leakage داریم.</p>
+
+        <div class="inner-box"><div class="inner-title">مثال</div></div>
+        <p>می‌خواهیم پیش‌بینی کنیم:</p>
+        <div class="box"><div class="chart">Will customer churn in next 30 days?</div></div>
+        <p>Feature:</p>
+        <div class="box"><div class="chart">number_of_support_tickets_next_30_days</div></div>
+        <p>این Feature آینده را می‌بیند.</p>
+        <div class="inner-box">→ Leakage.</div>
+
+        <h3>16. Target Leakage</h3>
+        <p>Target Leakage یعنی اطلاعاتی که مستقیماً یا غیرمستقیم از Target می‌آید وارد Features شود.</p>
+        
+        <div class="inner-box"><div class="inner-title">مثال</div></div>
+        <p>Target:</p>
+        <div class="box"><div class="chart">Loan Default</div></div>
+        <p>Feature:</p>
+        <div class="box"><div class="chart">loan_recovery_amount</div></div>
+        <p>این Feature بعد از Default ایجاد می‌شود.</p>
+        <p>پس:</p>
+        <div class="box"><div class="chart">Target
+   ↓
+Future Event
+   ↓
+Feature</div></div>
+        <p>مدل ممکن است در Training فوق‌العاده باشد.</p>
+        <p>ولی در Production:</p>
+        <div class="box"><div class="chart">Feature unavailable</div></div>
+        
+        <div class="inner-box"><div class="inner-title">مثال پزشکی</div></div>
+        <p>Target:</p>
+        <div class="box"><div class="chart">Patient has disease</div></div>
+        <p>Feature:</p>
+        <div class="box"><div class="chart">Treatment prescribed</div></div>
+        <p>اگر Treatment بعد از تشخیص بیماری انجام شده باشد، استفاده از آن برای prediction اولیه Leakage است.</p>
+
+        <div class="inner-box"><div class="inner-title">Target Leakage vs Feature Engineering</div></div>
+        <div class="inner-box"><div class="inner-title">Feature Engineering:</div></div>
+        <div class="box">
+            <div class="chart">
+Raw Data
+ ↓
+Transformation
+ ↓
+Feature
+            </div>
+        </div>
+        <p>کاملاً مجاز است.</p>
+        <div class="inner-box"><div class="inner-title">Target Leakage:</div></div>
+        <div class="box">
+            <div class="chart">
+Target/Future
+ ↓
+Feature
+            </div>
+        </div>
+        <p>مشکل‌دار است.</p>
+
+        <h3>17. Train-Test Contamination</h3>
+        <p>این مفهوم کمی متفاوت است.</p>
+        <p>Train-Test Contamination یعنی اطلاعات Test به نحوی وارد فرآیند آموزش/انتخاب مدل شود.</p>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">
+Train
+Test
+            </div>
+        </div>
+        <p>ولی قبل از Split:</p>
+        <div class="box"><div class="chart">StandardScaler.fit(all_data)</div></div>
+        <p>اجرا کنیم.</p>
+        <p>یعنی:</p>
+        <div class="box">
+            <div class="chart">
+Train + Test
+      ↓
+Scaler.fit()
+            </div>
+        </div>
+        <p>Test Data در محاسبه:</p>
+        <div class="formula">$$\mu$$</div>
+        <p>و:</p>
+        <div class="formula">$$\sigma$$</div>
+        <p>شرکت کرده.</p>
+        <p>این Leakage است.</p>
+
+        <div class="inner-box"><div class="inner-title">روش صحیح</div></div>
+        <div class="box">
+            <div class="chart">
+Train
+  ↓
+fit scaler
+
+Validation/Test
+  ↓
+transform only
+            </div>
+        </div>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">
+scaler.fit(X_train)
+
+X_train_scaled = scaler.transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+نه:
+
+scaler.fit(X_all)
+            </div>
+        </div>
+
+        <div class="inner-box"><div class="inner-title">مثال‌های دیگر Train-Test Contamination</div></div>
+        <div class="inner-box"><div class="inner-title">Feature Selection</div></div>
+        <p>اشتباه:</p>
+        <div class="box">
+            <div class="chart">
+Feature Selection
+      ↓
+Entire Dataset
+      ↓
+Split
+            </div>
+        </div>
+        <p>چون Test روی انتخاب Features اثر گذاشته.</p>
+        <p>صحیح:</p>
+        <div class="box">
+            <div class="chart">
+Split
+ ↓
+Feature Selection on Train
+ ↓
+Apply selected features to Val/Test
+            </div>
+        </div>
+        
+        <div class="inner-box"><div class="inner-title">Imputation</div></div>
+        <p>اشتباه:</p>
+        <div class="box"><div class="chart">Imputer.fit(all_data)</div></div>
+        <p>صحیح:</p>
+        <div class="box"><div class="chart">Imputer.fit(X_train)
+Imputer.transform(X_train)
+Imputer.transform(X_test)</div></div>
+        
+        <div class="inner-box"><div class="inner-title">PCA</div></div>
+        <p>اشتباه:</p>
+        <div class="box"><div class="chart">PCA.fit(X_all)</div></div>
+        <p>صحیح:</p>
+        <div class="box"><div class="chart">PCA.fit(X_train)
+PCA.transform(X_test)</div></div>
+
+        <h3>18. Duplicate Leakage</h3>
+        <p>این مورد خیلی مهم و underrated است.</p>
+        <p>فرض کن:</p>
+        <div class="box">
+            <div class="chart">
+Train:
+"How to reset password?"
+
+Test:
+"How do I reset my password?"
+            </div>
+        </div>
+        <p>ممکن است این دو تقریباً duplicate باشند.</p>
+        <p>یا دقیقاً یک Sample دو بار در Dataset آمده باشد.</p>
+        <p>نتیجه</p>
+        <div class="box">
+            <div class="chart">
+Train
+   ↓
+memorize sample
+   ↓
+Test contains duplicate
+   ↓
+Test performance ↑
+            </div>
+        </div>
+        <p>و ما فکر کنیم Generalization عالی است.</p>
+        <p>در حالی که:</p>
+        <div class="box"><div class="chart">مدل فقط داده را دیده است.</div></div>
+
+        <div class="inner-box"><div class="inner-title">انواع Duplicate</div></div>
+        <div class="inner-box"><div class="inner-title">Exact Duplicate</div></div>
+        <div class="box"><div class="chart">X1 == X2</div></div>
+        <div class="inner-box"><div class="inner-title">Near Duplicate</div></div>
+        <div class="box"><div class="chart">X1 ≈ X2</div></div>
+        <div class="inner-box"><div class="inner-title">Semantic Duplicate</div></div>
+        <p>متن متفاوت است ولی معنی یکی است.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">"How can I reset my password?"
+
+"How do I change my forgotten password?"</div></div>
+
+        <div class="inner-box"><div class="inner-title">Duplicate Leakage در Image</div></div>
+        <p>مثلاً یک تصویر را resize کنیم:</p>
+        <div class="box"><div class="chart">image.jpg
+image_resized.jpg</div></div>
+        <p>و یکی در Train و دیگری در Test باشد.</p>
+        <p>مدل تقریباً همان تصویر را دیده است.</p>
+
+        <div class="inner-box"><div class="inner-title">Duplicate Leakage در NLP</div></div>
+        <p>خیلی خطرناک است.</p>
+        <p>Dataset:</p>
+        <div class="box"><div class="chart">Question A
+Question A rewritten
+Question A paraphrased</div></div>
+        <p>اگر Split تصادفی باشد، ممکن است:</p>
+        <div class="box"><div class="chart">Original → Train
+Paraphrase → Test</div></div>
+        <p>باشد.</p>
+        <p>راه‌حل</p>
+        <div class="box"><div class="chart">قبل از Split:
+Deduplication</div></div>
+        <p>اما نکته مهم:</p>
+        <div class="box"><div class="chart">گاهی باید بعد از تعریف Group/Entity و بر اساس مسئله واقعی deduplicate/group کنیم.</div></div>
+
+        <h3>19. Label Leakage</h3>
+        <p>Label Leakage معمولاً به حالتی اشاره می‌کند که Label یا اطلاعاتی که Target را مستقیماً آشکار می‌کند، به Features یا Pipeline راه پیدا کند.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Target = Fraud</div></div>
+        <p>Feature:</p>
+        <div class="box"><div class="chart">fraud_confirmed_by_investigator</div></div>
+        <p>واضح است:</p>
+        <div class="box"><div class="chart">Fraud Target
+     ↓
+Investigation Result
+     ↓
+Feature</div></div>
+        <p>مدل به جای Prediction، عملاً Target را می‌خواند.</p>
+
+        <div class="inner-box"><div class="inner-title">تفاوت Target Leakage و Label Leakage</div></div>
+        <p>در عمل این اصطلاحات گاهی overlap دارند و در منابع مختلف با تعریف‌های کمی متفاوت استفاده می‌شوند.</p>
+        <p>به صورت عملی:</p>
+        <div class="inner-box"><div class="inner-title">Target Leakage</div></div>
+        <p>اطلاعات آینده یا اطلاعات مشتق‌شده از Outcome وارد Feature می‌شود.</p>
+        <div class="inner-box"><div class="inner-title">Label Leakage</div></div>
+        <p>اطلاعاتی که مستقیماً Label یا proxy بسیار نزدیک به Label است وارد Training می‌شود.</p>
+        <p>در هر دو حالت:</p>
+        <div class="box"><div class="chart">Offline Performance ↑
+Production Performance ↓</div></div>
+
+        <h3>20. یک مثال کامل از Leakage</h3>
+        <p>فرض کن می‌خواهیم:</p>
+        <p>پیش‌بینی کنیم آیا Customer در 30 روز آینده Churn می‌کند یا نه.</p>
+        <p>Dataset:</p>
+        <div class="box">
+            <div class="chart">
+Customer
+├── age
+├── income
+├── transaction_count
+├── support_tickets
+├── last_login
+├── cancellation_date
+└── churn
+            </div>
+        </div>
+        <p>Feature:</p>
+        <div class="box"><div class="chart">cancellation_date</div></div>
+        <p>مشکل:</p>
+        <div class="box"><div class="chart">churn = 1
+      ↓
+cancellation_date exists
+      ↓
+Model learns target</div></div>
+        <p>مدل شاید:</p>
+        <div class="box"><div class="chart">AUC = 0.999</div></div>
+        <p>بگیرد.</p>
+        <p>اما در Production:</p>
+        <div class="box"><div class="chart">cancellation_date</div></div>
+        <p>قبل از Churn وجود ندارد.</p>
+        <p>پس:</p>
+        <div class="box"><div class="chart">AUC ≈ useless</div></div>
+
+        <h3>21. Leakage فقط در Feature نیست</h3>
+        <p>این خیلی مهم است.</p>
+        <p>Leakage می‌تواند در:</p>
+        <div class="box">
+            <div class="chart">
+Feature Engineering
+Preprocessing
+Sampling
+Split
+Cross Validation
+Hyperparameter Tuning
+Data Augmentation
+Label Creation
+Aggregation
+            </div>
+        </div>
+        <p>اتفاق بیفتد.</p>
+
+        <div class="inner-box"><div class="inner-title">مثال Aggregation Leakage</div></div>
+        <p>فرض کن می‌خواهیم برای هر User:</p>
+        <div class="box"><div class="chart">average_transaction_amount</div></div>
+        <p>را حساب کنیم.</p>
+        <p>اگر این Average را از کل Dataset حساب کنیم:</p>
+        <div class="box"><div class="chart">Past + Future</div></div>
+        <p>ممکن است Future وارد Feature شود.</p>
+        <p>صحیح:</p>
+        <div class="box"><div class="chart">average_transaction_amount</div></div>
+        <p>باید فقط با اطلاعاتی محاسبه شود که تا زمان Prediction در دسترس بوده.</p>
+
+        <h3>22. Leakage در Cross Validation</h3>
+        <p>اشتباه:</p>
+        <div class="box"><div class="chart">Scale Entire Dataset
+        ↓
+KFold</div></div>
+        <p>صحیح:</p>
+        <div class="box">
+            <div class="chart">
+Fold 1:
+Train Fold
+   ↓
+fit preprocessing
+   ↓
+Validation Fold
+   ↓
+transform
+
+Fold 2:
+...
+            </div>
+        </div>
+        <p>به همین دلیل استفاده از Pipeline بسیار مهم است.</p>
+        <p>مثلاً در scikit-learn:</p>
+        <div class="box">
+            <div class="chart">
+Pipeline([
+    ("scaler", StandardScaler()),
+    ("model", LogisticRegression())
+])
+            </div>
+        </div>
+        <p>در هر Fold، Scaler فقط روی Training portion همان Fold fit می‌شود.</p>
+
+        <h3>23. Leakage در Feature Engineering</h3>
+        <p>فرض کن:</p>
+        <div class="box"><div class="chart">Customer Lifetime Average Spend</div></div>
+        <p>می‌سازی.</p>
+        <p>اگر این Average از کل تاریخچه شامل Future ساخته شود:</p>
+        <div class="box"><div class="chart">Past
++
+Future</div></div>
+        <p>استفاده کرده‌ای.</p>
+        <p>در حالی که هنگام Prediction فقط:</p>
+        <div class="box"><div class="chart">Past</div></div>
+        <p>در دسترس است.</p>
+
+        <h3>24. Leakage در Time Series</h3>
+        <p>یکی از خطرناک‌ترین انواع.</p>
+        <p>فرض کن:</p>
+        <div class="box"><div class="chart">Predict sales at 10:00</div></div>
+        <p>Feature:</p>
+        <div class="box"><div class="chart">sales_today</div></div>
+        <p>را داری.</p>
+        <p>اگر sales_today شامل فروش ساعت 11 باشد:</p>
+        <div class="box"><div class="chart">10:00 → prediction
+11:00 → future</div></div>
+        <p>Leakage رخ داده.</p>
+
+        <h3>25. Leakage و Train/Validation/Test</h3>
+        <p>یک Pipeline صحیح:</p>
+        <div class="box">
+            <div class="chart">
+                    Raw Data
+                       │
+                       ▼
+                Define Target
+                       │
+                       ▼
+             Define Prediction Time
+                       │
+                       ▼
+              Deduplicate / Group
+                       │
+                       ▼
+                 Split Data
+                       │
+        ┌──────────────┼──────────────┐
+        │              │              │
+      Train        Validation        Test
+        │              │              │
+        ▼              │              │
+    Fit Pipeline       │              │
+        │              │              │
+        └──────┬───────┘              │
+               ▼                      │
+         Model Selection              │
+               │                      │
+               ▼                      │
+          Final Model                 │
+               │                      │
+               └──────────────────────┤
+                                      ▼
+                              Final Evaluation
+            </div>
+        </div>
+
+        <h3>26. Random vs Stratified vs Group vs Temporal</h3>
+        <p>این قسمت را باید برای مصاحبه خیلی خوب بلد باشی.</p>
+        <table>
+            <thead><tr><th>Split</th><th>چه زمانی؟</th><th>هدف</th></tr></thead>
+            <tbody>
+                <tr><td>Random</td><td>IID data</td><td>تقسیم تصادفی</td></tr>
+                <tr><td>Stratified</td><td>Classification imbalance</td><td>حفظ نسبت کلاس</td></tr>
+                <tr><td>Group</td><td>چند نمونه از یک Entity</td><td>جلوگیری از Entity Leakage</td></tr>
+                <tr><td>Temporal</td><td>Time-dependent data</td><td>شبیه‌سازی آینده</td></tr>
+            </tbody>
+        </table>
+
+        <h3>27. آیا می‌توان این‌ها را ترکیب کرد؟</h3>
+        <p>بله.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">StratifiedGroupKFold</div></div>
+        <p>یعنی هم:</p>
+        <div class="inner-box">Group constraint</div>
+        <p>و هم:</p>
+        <div class="inner-box">Class distribution</div>
+        <p>را در نظر می‌گیریم.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Patients</div></div>
+        <p>داریم و Target هم شدیداً Imbalanced است.</p>
+        <p>نمی‌خواهیم یک Patient در چند Fold باشد و در عین حال می‌خواهیم Class distribution تا حد ممکن حفظ شود.</p>
+
+        <h3>28. مهم‌ترین سؤال Senior: Split باید بر اساس چیست؟</h3>
+        <p>پاسخ:</p>
+        <div class="inner-box">بر اساس نحوه استفاده واقعی از مدل در Production.</div>
+        <p>نه صرفاً:</p>
+        <div class="inner-box">بر اساس اینکه کدام Split metric بهتری می‌دهد.</div>
+        <p>مثال</p>
+        <p>اگر Production:</p>
+        <div class="inner-box">Future Users</div>
+        <p>است:</p>
+        <div class="inner-box">→ Temporal/Prospective split ممکن است مناسب باشد.</div>
+        <p>اگر Production:</p>
+        <div class="inner-box">New Patients</div>
+        <p>است:</p>
+        <div class="inner-box">→ Group split بر اساس Patient مهم است.</div>
+        <p>اگر Production:</p>
+        <div class="inner-box">Same Users, future transactions</div>
+        <p>است:</p>
+        <div class="inner-box">→ Temporal split ممکن است مناسب باشد، ولی باید dependencyهای User را هم در نظر گرفت.</div>
+
+        <h3>29. Population → Sample → Split</h3>
+        <p>این سه مرحله را از هم جدا کن.</p>
+        <div class="box">
+            <div class="chart">
+Population
+    │
+    │ Sampling
+    ▼
+Sample
+    │
+    │ Split
+    ▼
+┌─────────┬────────────┬─────────┐
+│  Train  │ Validation │  Test   │
+└─────────┴────────────┴─────────┘
+            </div>
+        </div>
+        <p>Sampling Bias کجا اتفاق می‌افتد؟</p>
+        <div class="box">
+            <div class="chart">
+Population
+     │
+     ▼
+  Sampling
+     │
+     ❌ Bias
+     ▼
+Sample
+            </div>
+        </div>
+        <p>Leakage کجا اتفاق می‌افتد؟</p>
+        <p>ممکن است در چند نقطه رخ دهد:</p>
+        <div class="box">
+            <div class="chart">
+Population
+    ↓
+Sampling
+    ↓
+Split
+    ↓
+Preprocessing
+    ↓
+Feature Engineering
+    ↓
+Training
+    ↓
+Evaluation
+            </div>
+        </div>
+
+        <h3>30. Sample Representativeness</h3>
+        <p>یک Sample خوب الزاماً Sampleای نیست که فقط بزرگ باشد.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Sample A = 10 Million users</div></div>
+        <p>ممکن است بدتر از:</p>
+        <div class="box"><div class="chart">Sample B = 100,000 users</div></div>
+        <p>باشد.</p>
+        <p>اگر Sample A فقط از:</p>
+        <div class="box"><div class="chart">Tehran
+Android
+Age 18-25
+High-income</div></div>
+        <p>باشد، ممکن است Population واقعی را نمایندگی نکند.</p>
+
+        <h3>31. Sample Size vs Sample Quality</h3>
+        <p>Senior ML Engineer باید بداند:</p>
+        <div class="formula">$$More \ Data \neq Better \ Data$$</div>
+        <p>مثلاً:</p>
+        <div class="inner-box">10M biased samples</div>
+        <p>لزومی ندارد از:</p>
+        <div class="inner-box">500K representative samples</div>
+        <p>بهتر باشند.</p>
+
+        <h3>32. Class Imbalance و Sampling</h3>
+        <p>مثلاً:</p>
+        <div class="inner-box">Normal = 99.9%, Fraud = 0.1%</div>
+        <p>اگر Oversampling کنیم:</p>
+        <div class="inner-box">Fraud ↑</div>
+        <p>ممکن است برای Training مفید باشد.</p>
+        <p>اما نباید Test را به شکل مصنوعی تغییر دهیم، مگر اینکه هدف evaluation مشخصاً چیز دیگری باشد.</p>
+        <p>نکته بسیار مهم</p>
+        <p>اگر Training را با:</p>
+        <div class="inner-box">Oversampling</div>
+        <p>انجام دادی، Test باید ideally نماینده Distribution واقعی Production باشد.</p>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">
+Train:
+50% Fraud
+50% Normal
+
+Test:
+0.1% Fraud
+99.9% Normal
+            </div>
+        </div>
+        <p>ممکن است کاملاً درست باشد.</p>
+
+        <h3>33. چرا Accuracy در اینجا خطرناک است؟</h3>
+        <p>اگر:</p>
+        <div class="inner-box">Fraud = 0.1%, Normal = 99.9%</div>
+        <p>مدل:</p>
+        <div class="inner-box">Always predict Normal</div>
+        <p>می‌تواند:</p>
+        <div class="inner-box">Accuracy = 99.9%</div>
+        <p>بگیرد.</p>
+        <p>اما:</p>
+        <div class="inner-box">Fraud Recall = 0%</div>
+        <p>است.</p>
+        <p>پس Evaluation باید با Business Objective هماهنگ باشد.</p>
+
+        <h3>34. Sampling Bias vs Distribution Shift</h3>
+        <p>این دو را قاطی نکن.</p>
+        <div class="inner-box"><div class="inner-title">Sampling Bias</div></div>
+        <p>مشکل در نحوه انتخاب داده.</p>
+        <div class="box">
+            <div class="chart">
+Population
+ ↓
+Bad Sampling
+ ↓
+Biased Dataset
+            </div>
+        </div>
+        <div class="inner-box"><div class="inner-title">Distribution Shift</div></div>
+        <p>تفاوت Distribution بین زمان/محیط‌های مختلف.</p>
+        <div class="box">
+            <div class="chart">
+Train Distribution
+       ≠
+Production Distribution
+            </div>
+        </div>
+        <p>البته Sampling Bias می‌تواند باعث شود Train Distribution از Target Population متفاوت شود.</p>
+
+        <h3>35. Data Leakage vs Distribution Shift</h3>
+        <div class="inner-box"><div class="inner-title">Leakage</div></div>
+        <p>اطلاعاتی که نباید در زمان آموزش/ارزیابی باشد وارد Pipeline شده.</p>
+        <div class="inner-box"><div class="inner-title">Distribution Shift</div></div>
+        <p>داده‌ای که مدل در Production می‌بیند ذاتاً با Train متفاوت است.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Train:
+2024 customers
+
+Production:
+2026 customers</div></div>
+        <p>ممکن است Distribution تغییر کرده باشد بدون اینکه Leakage وجود داشته باشد.</p>
+
+        <h3>36. یک سناریوی واقعی Senior</h3>
+        <p>فرض کن مدل Fraud داری.</p>
+        <p>Dataset:</p>
+        <div class="box"><div class="chart">2024:
+10M transactions
+Fraud = 0.3%</div></div>
+        <p>اشتباه اول</p>
+        <p>Random Split:</p>
+        <div class="inner-box">80% Train, 20% Test</div>
+        <p>ممکن است عملکرد عالی باشد.</p>
+        <p>بررسی Group</p>
+        <p>می‌بینی:</p>
+        <div class="inner-box">same customer</div>
+        <p>در Train و Test وجود دارد.</p>
+        <div class="inner-box">→ احتمال leakage/dependency.</div>
+        <p>اصلاح</p>
+        <div class="inner-box">Group Split.</div>
+        <p>Performance:</p>
+        <div class="box"><div class="chart">AUC:
+0.98 → 0.87</div></div>
+        <p>بررسی Time</p>
+        <p>Production قرار است آینده باشد.</p>
+        <p>Temporal Split:</p>
+        <div class="inner-box">Train = Jan-Sep, Test = Oct-Dec</div>
+        <p>Performance:</p>
+        <div class="box"><div class="chart">0.87 → 0.79</div></div>
+        <p>بررسی Drift</p>
+        <p>می‌بینی:</p>
+        <div class="inner-box">Fraud behavior changed</div>
+        <p>پس Concept Drift هم وجود دارد.</p>
+
+        <h3>37. Senior ML Evaluation Checklist</h3>
+        <p>قبل از اینکه بگویی:</p>
+        <div class="inner-box">«Model A بهتر از Model B است»</div>
+        <p>این موارد را بررسی کن:</p>
+        <div class="box">
+            <div class="chart">
+Data
+□ Population چیست؟
+□ Sample چگونه انتخاب شده؟
+□ Sampling Bias داریم؟
+□ Selection Bias داریم؟
+□ Class distribution چطور است؟
+□ Duplicate داریم؟
+Split
+□ Random مناسب است؟
+□ Stratified لازم است؟
+□ Group لازم است؟
+□ Temporal لازم است؟
+□ Entity leakage داریم؟
+Features
+□ Feature در Prediction Time موجود است؟
+□ Future information وارد نشده؟
+□ Target leakage نداریم؟
+□ Aggregation leakage نداریم؟
+Preprocessing
+□ Scaler فقط روی Train fit شده؟
+□ Imputer فقط روی Train fit شده؟
+□ PCA فقط روی Train fit شده؟
+□ Feature Selection فقط روی Train انجام شده؟
+Evaluation
+□ Test واقعاً unseen است؟
+□ Test چند بار استفاده نشده؟
+□ Test نماینده Production است؟
+□ Metric مناسب Business Objective است؟
+            </div>
+        </div>
+
+        <h3>38. یک Mental Model بسیار مهم برای Feature</h3>
+        <p>برای هر Feature این Timeline را بکش:</p>
+        <div class="box">
+            <div class="chart">
+Past                    Prediction                 Future
+ │                           │                        │
+ │                           │                        │
+ ▼                           ▼                        ▼
+───────────────┬─────────────┬────────────────────────
+               │
+          Available Here
+               │
+               ▼
+        Prediction Time
+            </div>
+        </div>
+        <p>Feature فقط زمانی مجاز است که:</p>
+        <div class="formula">$$Feature \ Information \le Prediction \ Time$$</div>
+
+        <h3>39. Data Leakage را با یک سؤال ساده پیدا کن</h3>
+        <p>برای هر Feature بپرس:</p>
+        <div class="inner-box">اگر فردا در Production همین Prediction را بخواهم انجام بدهم، آیا همین لحظه این Feature را دارم؟</div>
+        <p>اگر:</p>
+        <div class="inner-box">No</div>
+        <p>→ Feature احتمالاً Leakage دارد.</p>
+        <p>این یکی از بهترین Heuristicهای عملی برای ML Engineer است.</p>
+
+        <h3>40. مهم‌ترین نکات Senior-Level</h3>
+        <p>اگر بخواهم این فصل را به چند اصل تبدیل کنم:</p>
+        <ol>
+            <li>Dataset همان Population نیست.</li>
+            <li>هدف ML یادگیری از Sample برای Generalization به Population/Production است.</li>
+            <li>بزرگ بودن Dataset به معنی Representative بودن آن نیست.</li>
+            <li>Random Split همیشه درست نیست. Split باید با Data Generating Process و Production Scenario هماهنگ باشد.</li>
+            <li>اگر Entity تکرار می‌شود، Group Split را بررسی کن.</li>
+            <li>اگر Time مهم است، Temporal Split را بررسی کن.</li>
+            <li>Preprocessing باید داخل Training Pipeline باشد. نه روی کل Dataset قبل از Split.</li>
+            <li>Test Set باید واقعاً Unseen باشد. Test نباید ابزار تصمیم‌گیری روزانه مدل شود.</li>
+            <li>Feature باید در Prediction Time در دسترس باشد.</li>
+            <li>Evaluation Distribution باید تا حد امکان شبیه Production Distribution باشد.</li>
+        </ol>
+
+        <h2>🧠 Final Mental Model</h2>
+        <p>کل این فصل را در یک نمودار ذهنی ببین:</p>
+        <div class="box">
+            <div class="chart">
+                         REAL WORLD
+                             │
+                             ▼
+                         Population
+                             │
+                         Sampling
+                             │
+              ┌──────────────┴──────────────┐
+              │                             │
+       Sampling Bias                  Representative?
+              │                             │
+              ▼                             ▼
+            Sample ───────────────────→ Data Quality
+              │
+              ▼
+      Define Prediction Task
+              │
+              ▼
+       Define Prediction Time
+              │
+              ▼
+       Remove/Deduplicate/Group
+              │
+              ▼
+             SPLIT
+              │
+       ┌──────┼────────┬────────┐
+       │      │        │        │
+    Random  Stratified Group  Temporal
+       │      │        │        │
+       └──────┴────────┴────────┘
+              │
+              ▼
+     Train / Validation / Test
+              │
+              ▼
+       Pipeline on Train only
+              │
+       ┌──────┴─────────┐
+       │                │
+ Feature Engineering  Preprocessing
+       │                │
+       └──────┬─────────┘
+              ▼
+           Training
+              │
+              ▼
+          Validation
+              │
+              ▼
+        Model Selection
+              │
+              ▼
+          Final Test
+              │
+              ▼
+       Production Data
+              │
+              ▼
+     Distribution Shift?
+              │
+       ┌──────┴───────┐
+       │              │
+      No             Yes
+       │              │
+       ▼              ▼
+ Generalize      Drift / Shift
+                     │
+              Monitor & Retrain
+            </div>
+        </div>
+
+        <h2>🎯 اگر بخواهی این مبحث را واقعاً در سطح Senior بلد باشی، این زنجیره را باید بدون فکر کردن توضیح بدهی:</h2>
+        <div class="formula">$$Population \rightarrow Sampling \rightarrow Sample \rightarrow Split \rightarrow Preprocessing \rightarrow Training \rightarrow Validation \rightarrow Test \rightarrow Production$$</div>
+        <p>و در تمام این مراحل باید دائماً دنبال این چهار خطر باشی:</p>
+        <div class="formula">$$Sampling \ Bias + Selection \ Bias + Data \ Leakage + Distribution \ Shift$$</div>
+        <p>چون در پروژه واقعی، خیلی وقت‌ها بزرگ‌ترین مشکل مدل نیست؛ مشکل این است که داده‌ای که فکر می‌کنی نماینده‌ی مسئله است، واقعاً نماینده‌ی مسئله نیست.</p>
+
+    </div>
+</body>
+</html>

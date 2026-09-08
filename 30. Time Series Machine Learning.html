@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Time Series ML - Senior ML Level</title>
+    <style>
+        body { background-color: #0d1117; color: #e6edf3; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.8; margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1, h2, h3 { color: #e6edf3; text-align: right; border-bottom: 1px solid #444; padding-bottom: 15px; margin-top: 50px; }
+        p, li { text-align: right; }
+        
+        /* Boxes: MUST force RTL for Persian */
+        .box { background-color: #21262d; border: 1px solid #30363d; border-radius: 8px; padding: 15px; margin: 15px 0; color: #e6edf3; direction: rtl !important; text-align: right !important; }
+        .inner-box { background-color: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 15px; margin: 10px; direction: rtl !important; text-align: right !important; }
+        .inner-title { font-weight: bold; margin-bottom: 5px; text-align: right !important; }
+
+        /* Formula Box: MUST force LTR for formulas, no raw \[ \] */
+        .formula {
+            direction: ltr !important;
+            background-color: #000;
+            border: 1px solid #fff;
+            border-radius: 0;
+            padding: 20px;
+            margin: 20px auto;
+            width: fit-content;
+            max-width: 100%;
+            overflow-x: auto;
+            text-align: center;
+            font-size: 1.2em;
+            font-family: "Times New Roman", Times, serif;
+            color: #fff;
+        }
+
+        /* Charts / Flowcharts / ASCII Art: MUST force LTR */
+        .chart { direction: ltr !important; text-align: left !important; font-family: monospace; background-color: #21262d; border-radius: 8px; padding: 15px; overflow-x: auto; white-space: pre; border: 1px solid #444; }
+
+        /* Tables */
+        table { width: 100%; border-collapse: collapse; direction: rtl; margin-bottom: 20px; }
+        th, td { border: 1px solid #444; padding: 12px; text-align: right; }
+        th { background-color: #21262d; }
+        
+        .highlight { color: #58a6ff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📈 30. Time Series Machine Learning — از پایه تا Senior ML Engineer</h1>
+
+        <p>Time Series یکی از مهم‌ترین شاخه‌های ML در صنعت است چون بسیاری از مسائل واقعی ترتیب زمانی دارند:</p>
+        <div class="box">
+            <ul>
+                <li>Forecasting فروش</li>
+                <li>پیش‌بینی تقاضا (Demand Forecasting)</li>
+                <li>قیمت سهام</li>
+                <li>مصرف انرژی</li>
+                <li>Traffic prediction</li>
+                <li>Fraud detection در طول زمان</li>
+                <li>Monitoring سیستم‌ها</li>
+                <li>IoT sensor prediction</li>
+                <li>Anomaly detection در metricها</li>
+            </ul>
+        </div>
+
+        <p>تفاوت اصلی Time Series با ML معمولی:</p>
+        <p>در ML معمولی فرض می‌کنیم:</p>
+        <div class="formula">(X<sub>i</sub>, Y<sub>i</sub>)</div>
+        <p>نمونه‌ها مستقل هستند.</p>
+        <p>اما در Time Series:</p>
+        <div class="formula">Y<sub>t</sub></div>
+        <p>به گذشته وابسته است:</p>
+        <div class="formula">Y<sub>t</sub> = f(Y<sub>t-1</sub>, Y<sub>t-2</sub>, ..., X<sub>t</sub>)</div>
+        <p>یعنی:</p>
+        <div class="inner-box">زمان خودش یک feature است.</div>
+
+        <h2>1. ساختار یک Time Series</h2>
+        <p>یک سری زمانی:</p>
+        <div class="formula">{y<sub>1</sub>, y<sub>2</sub>, ..., y<sub>t</sub>}</div>
+        <p>مثلاً:</p>
+        
+        <div class="box">
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #444; padding-bottom: 10px;">
+                <span>Date</span>
+                <span>Sales</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 5px 0;">
+                <span>Jan</span>
+                <span>100</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 5px 0;">
+                <span>Feb</span>
+                <span>120</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 5px 0;">
+                <span>Mar</span>
+                <span>150</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 5px 0;">
+                <span>Apr</span>
+                <span>130</span>
+            </div>
+        </div>
+
+        <p>اینجا:</p>
+        <div class="inner-box">ترتیب مهم است</div>
+        <div class="inner-box">گذشته روی آینده اثر دارد</div>
+
+        <h2>2. Components of Time Series</h2>
+        <p>یک Time Series معمولاً از چند بخش تشکیل شده:</p>
+        <div class="formula">Y<sub>t</sub> = T<sub>t</sub> + S<sub>t</sub> + C<sub>t</sub> + R<sub>t</sub></div>
+        <p>یا:</p>
+        <div class="formula">Y<sub>t</sub> = T<sub>t</sub> &times; S<sub>t</sub> &times; C<sub>t</sub> &times; R<sub>t</sub></div>
+        <p>چهار component:</p>
+        <div class="box"><div class="chart">1. Trend
+2. Seasonality
+3. Cyclicity
+4. Noise/Residual</div></div>
+
+        <h2>3. Trend</h2>
+        <div class="inner-box"><div class="inner-title">تعریف</div></div>
+        <p>Trend یعنی:</p>
+        <div class="inner-box">جهت کلی حرکت داده در طول زمان</div>
+        <p>مثلاً:</p>
+        
+        <div class="box">
+            <div class="chart">Sales
+
+|
+|          *
+|       *
+|    *
+| *
+|________________
+        Time</div>
+        </div>
+        
+        <p>روند صعودی:</p>
+        <div class="formula">Trend &gt; 0</div>
+        <p>مثال:</p>
+        <div class="inner-box">رشد کاربران یک اپلیکیشن</div>
+        <div class="inner-box">افزایش فروش سالانه</div>
+        <div class="inner-box"><div class="inner-title">انواع Trend</div></div>
+        <p>Linear Trend</p>
+        <div class="formula">y<sub>t</sub> = a + bt</div>
+        <p>مثلاً:</p>
+        <div class="inner-box">هر ماه 100 کاربر اضافه می‌شود.</div>
+        <p>Non-linear Trend</p>
+        <p>مثلاً:</p>
+        <p>رشد exponential:</p>
+        <div class="formula">y = e<sup>t</sup></div>
+
+        <h2>4. Seasonality</h2>
+        <p>Seasonality یعنی:</p>
+        <div class="inner-box">الگوی تکرارشونده با دوره ثابت</div>
+        <p>مثال:</p>
+        <div class="inner-box">فروش:</div>
+        
+        <div class="box">
+            <div class="chart">Monday  ↑
+Tuesday ↑
+Weekend ↓</div>
+        </div>
+        
+        <p>یا:</p>
+        <div class="inner-box">فروش سالانه:</div>
+        
+        <div class="box">
+            <div class="chart">December ↑↑
+January ↓</div>
+        </div>
+        
+        <div class="inner-box"><div class="inner-title">مثال‌های Seasonality</div></div>
+        <p>Daily</p>
+        <div class="inner-box">مصرف برق:</div>
+        <div class="box">
+            <div class="chart">شب ↓
+روز ↑</div>
+        </div>
+        <p>Weekly</p>
+        <div class="inner-box">رفتار کاربران:</div>
+        <div class="box"><div class="chart">Weekend متفاوت</div></div>
+        <p>Yearly</p>
+        <div class="inner-box">فروش:</div>
+        <div class="box"><div class="chart">Christmas ↑</div></div>
+
+        <div class="inner-box"><div class="inner-title">Seasonality Period</div></div>
+        <p>دوره زمانی:</p>
+        <div class="formula">s</div>
+        <p>مثلاً:</p>
+        <p>داده روزانه:</p>
+        <div class="formula">s = 7</div>
+        <p>برای weekly seasonality.</p>
+        <p>داده ماهانه:</p>
+        <div class="formula">s = 12</div>
+        <p>برای سالانه.</p>
+
+        <h2>5. Cyclicity</h2>
+        <p>خیلی شبیه Seasonality است ولی فرق دارد.</p>
+        <div class="inner-box"><div class="inner-title">Seasonality</div></div>
+        <p>دوره ثابت دارد:</p>
+        <p>مثلاً:</p>
+        <div class="inner-box">هر 12 ماه</div>
+        <div class="inner-box"><div class="inner-title">Cyclicity</div></div>
+        <p>دوره ثابت ندارد.</p>
+        <p>مثال:</p>
+        <p>چرخه اقتصادی:</p>
+        
+        <div class="box">
+            <div class="chart">Boom
+ |
+Recession
+ |
+Recovery</div>
+        </div>
+        
+        <p>ممکن است:</p>
+        <div class="inner-box">5 سال</div>
+        <div class="inner-box">8 سال</div>
+        <div class="inner-box">10 سال</div>
+        <p>طول بکشد.</p>
+
+        <h2>6. Trend vs Seasonality vs Cyclicity</h2>
+        <table>
+            <thead><tr><th>Concept</th><th>Period ثابت؟</th><th>مثال</th></tr></thead>
+            <tbody>
+                <tr><td>Trend</td><td>نه</td><td>رشد کاربران</td></tr>
+                <tr><td>Seasonality</td><td>بله</td><td>فروش آخر سال</td></tr>
+                <tr><td>Cyclicity</td><td>نه</td><td>چرخه اقتصادی</td></tr>
+            </tbody>
+        </table>
+
+        <h2>7. Stationarity</h2>
+        <p>یکی از مهم‌ترین مفاهیم Time Series.</p>
+        <p>یک سری زمانی Stationary است اگر:</p>
+        <p>خصوصیات آماری آن در طول زمان ثابت باشد.</p>
+        <p>یعنی:</p>
+        <div class="inner-box"><div class="inner-title">Mean ثابت</div></div>
+        <div class="formula">E(Y<sub>t</sub>) = &mu;</div>
+        <div class="inner-box"><div class="inner-title">Variance ثابت</div></div>
+        <div class="formula">Var(Y<sub>t</sub>) = &sigma;<sup>2</sup></div>
+        <div class="inner-box"><div class="inner-title">Covariance ثابت</div></div>
+        <div class="formula">Cov(Y<sub>t</sub>, Y<sub>t-k</sub>)</div>
+        <p>مثال:</p>
+        <p>Stationary:</p>
+        <div class="box"><div class="chart">      *
+ *       *
+    *
+ *      *
+----------------
+Time</div></div>
+        <p>Non-stationary:</p>
+        <div class="box"><div class="chart">*
+   *
+      *
+          *
+              *</div></div>
+
+        <h2>8. چرا Stationarity مهم است؟</h2>
+        <p>بسیاری از مدل‌های کلاسیک:</p>
+        <div class="box"><div class="chart">AR
+MA
+ARIMA</div></div>
+        <p>فرض می‌کنند:</p>
+        <div class="formula">Stationary</div>
+        <p>چون اگر distribution تغییر کند:</p>
+        <div class="inner-box">مدل گذشته نمی‌تواند آینده را خوب پیش‌بینی کند.</div>
+
+        <h2>9. Non-Stationarity</h2>
+        <p>دلایل:</p>
+        <div class="inner-box"><div class="inner-title">Trend</div></div>
+        <p>مثلاً:</p>
+        <div class="inner-box">فروش دائماً رشد می‌کند.</div>
+        <div class="inner-box"><div class="inner-title">Seasonality</div></div>
+        <p>مثلاً:</p>
+        <div class="inner-box">Christmas effect</div>
+        <div class="inner-box"><div class="inner-title">Changing Variance</div></div>
+        <p>مثلاً:</p>
+        <div class="inner-box">volatility بازار سهام</div>
+
+        <h2>10. چگونه Stationary کنیم؟</h2>
+        <div class="inner-box"><div class="inner-title">Differencing</div></div>
+        <div class="formula">Y'<sub>t</sub> = Y<sub>t</sub> - Y<sub>t-1</sub></div>
+        <p>مثلاً:</p>
+        <p>قبل:</p>
+        <div class="box"><div class="chart">100
+120
+140
+160</div></div>
+        <p>بعد:</p>
+        <div class="box"><div class="chart">20
+20
+20</div></div>
+        <div class="inner-box"><div class="inner-title">Log Transformation</div></div>
+        <p>برای variance changing:</p>
+        <div class="formula">log(Y)</div>
+        <p>مثلاً:</p>
+        <p>قیمت:</p>
+        <div class="box"><div class="chart">100
+1000
+10000</div></div>
+        <p>بعد:</p>
+        <div class="box"><div class="chart">2
+3
+4</div></div>
+
+        <h2>11. Autocorrelation (ACF)</h2>
+        <p>یکی از مهم‌ترین مفاهیم.</p>
+        <p>سؤال:</p>
+        <div class="inner-box">مقدار فعلی چقدر به گذشته وابسته است؟</div>
+        <p>مثلاً:</p>
+        <div class="formula">Corr(Y<sub>t</sub>, Y<sub>t-1</sub>)</div>
+        <p>Lag:</p>
+        <div class="inner-box">فاصله زمانی.</div>
+        <p>Lag 1:</p>
+        <div class="formula">Y<sub>t</sub> vs Y<sub>t-1</sub></div>
+        <p>Lag 2:</p>
+        <div class="formula">Y<sub>t</sub> vs Y<sub>t-2</sub></div>
+        <p>مثال:</p>
+        <div class="inner-box">دمای امروز:</div>
+        <div class="inner-box">با دیروز correlation دارد.</div>
+
+        <h2>12. ACF Function</h2>
+        <p>فرمول:</p>
+        <div class="formula">&rho;<sub>k</sub> = Corr(Y<sub>t</sub>, Y<sub>t-k</sub>)</div>
+        <p>که:</p>
+        <p>k = lag</p>
+        <p>مثال:</p>
+        <div class="box"><div class="chart">Lag     ACF
+
+1       0.9
+2       0.7
+3       0.5</div></div>
+        <p>یعنی حافظه زمانی قوی.</p>
+
+        <h2>13. Partial Autocorrelation (PACF)</h2>
+        <p>فرق مهم:</p>
+        <p>ACF:</p>
+        <div class="inner-box">اثر مستقیم + غیر مستقیم</div>
+        <p>PACF:</p>
+        <div class="inner-box">فقط اثر مستقیم</div>
+        <p>مثال:</p>
+        <p>فرض:</p>
+        <div class="box"><div class="chart">Yt-2 → Yt-1 → Yt</div></div>
+        <p>ACF lag2:</p>
+        <div class="inner-box">بالا می‌شود.</div>
+        <p>اما PACF lag2:</p>
+        <div class="inner-box">اثر مستقیم را نشان می‌دهد.</div>
+
+        <h2>14. ACF vs PACF</h2>
+        <table>
+            <thead><tr><th></th><th>ACF</th><th>PACF</th></tr></thead>
+            <tbody>
+                <tr><td>اثر</td><td>مستقیم+غیرمستقیم</td><td>فقط مستقیم</td></tr>
+                <tr><td>استفاده</td><td>MA</td><td>AR</td></tr>
+                <tr><td>کمک به انتخاب مدل</td><td>بله</td><td>بله</td></tr>
+            </tbody>
+        </table>
+
+        <h2>15. Lag Features</h2>
+        <p>یکی از مهم‌ترین تکنیک‌های ML برای Time Series.</p>
+        <p>به جای:</p>
+        <div class="box"><div class="chart">Sales(t)</div></div>
+        <p>Feature می‌سازیم:</p>
+        <div class="box"><div class="chart">Sales(t-1)
+Sales(t-7)
+Sales(t-30)</div></div>
+        <p>مثال:</p>
+        <p>Original:</p>
+        
+        <div class="box">
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #444; padding-bottom: 10px;">
+                <span>Day</span>
+                <span>Sales</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 5px 0;">
+                <span>1</span>
+                <span>100</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 5px 0;">
+                <span>2</span>
+                <span>120</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 5px 0;">
+                <span>3</span>
+                <span>150</span>
+            </div>
+        </div>
+        
+        <p>Lag1:</p>
+        <div class="box">
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #444; padding-bottom: 10px;">
+                <span>Day</span>
+                <span>Sales</span>
+                <span>Lag1</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 5px 0;">
+                <span>2</span>
+                <span>120</span>
+                <span>100</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 5px 0;">
+                <span>3</span>
+                <span>150</span>
+                <span>120</span>
+            </div>
+        </div>
+
+        <h2>16. چرا Lag Feature مهم است؟</h2>
+        <p>چون مدل ML معمولی:</p>
+        <p>مثل:</p>
+        <div class="box"><div class="chart">XGBoost
+Random Forest
+Neural Network</div></div>
+        <p>زمان را نمی‌فهمد.</p>
+        <div class="inner-box">ما زمان را به feature تبدیل می‌کنیم.</div>
+
+        <h2>17. Rolling Features</h2>
+        <p>ویژگی‌هایی که از window زمانی ساخته می‌شوند.</p>
+        <p>مثلاً:</p>
+        <p>میانگین 7 روز گذشته:</p>
+        <div class="formula">RollingMean<sub>7</sub></div>
+        <p>مثال:</p>
+        <div class="box"><div class="chart">Day   Sales
+
+1     100
+2     120
+3     140</div></div>
+        <p>Rolling mean:</p>
+        <div class="box"><div class="chart">(100+120+140)/3
+=
+120</div></div>
+        <p>انواع:</p>
+        <div class="inner-box"><div class="inner-title">Rolling Mean</div></div>
+        <div class="formula">mean(x<sub>t-k:t</sub>)</div>
+        <div class="inner-box"><div class="inner-title">Rolling Std</div></div>
+        <p>برای volatility</p>
+        <div class="inner-box"><div class="inner-title">Rolling Max</div></div>
+        <div class="inner-box"><div class="inner-title">Rolling Min</div></div>
+
+        <h2>18. Time-Based Split</h2>
+        <p>یکی از مهم‌ترین تفاوت‌ها با ML معمولی.</p>
+        <div class="inner-box"><div class="inner-title">اشتباه:</div></div>
+        <p>Random Split</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Train:
+2025 Jan
+
+Test:
+2024 Dec</div></div>
+        <p>این یعنی:</p>
+        <div class="inner-box">آینده وارد گذشته شده.</div>
+        <div class="inner-box"><div class="inner-title">صحیح:</div></div>
+        <div class="box"><div class="chart">Train:
+
+Jan
+Feb
+Mar
+Apr
+
+
+Validation:
+
+May
+
+
+Test:
+Jun</div></div>
+
+        <h2>19. Data Leakage در Time Series</h2>
+        <p>بسیار خطرناک.</p>
+        <p>مثال:</p>
+        <p>Feature:</p>
+        <div class="box"><div class="chart">Average sales next month</div></div>
+        <p>برای پیش‌بینی امروز.</p>
+        <div class="inner-box">غلط.</div>
+        <p>چون آینده را استفاده کرده‌ای.</p>
+
+        <h2>20. Forecast Horizon</h2>
+        <p>یعنی:</p>
+        <div class="inner-box">چند قدم جلو را می‌خواهیم پیش‌بینی کنیم؟</div>
+        <div class="inner-box"><div class="inner-title">One-step Forecast</div></div>
+        <div class="formula">Y<sub>t+1</sub></div>
+        <p>مثلاً:</p>
+        <p>فردا.</p>
+        <div class="inner-box"><div class="inner-title">Multi-step Forecast</div></div>
+        <div class="formula">Y<sub>t+1</sub>, Y<sub>t+2</sub>, ..., Y<sub>t+h</sub></div>
+        <p>مثلاً:</p>
+        <p>12 ماه آینده.</p>
+
+        <h2>21. AR Model (Auto Regression)</h2>
+        <p>ایده:</p>
+        <div class="inner-box">آینده تابع گذشته است.</div>
+        <div class="formula">Y<sub>t</sub> = c + &phi;<sub>1</sub>Y<sub>t-1</sub> + ... + &phi;<sub>p</sub>Y<sub>t-p</sub></div>
+        <p>مثلاً AR(2):</p>
+        <div class="formula">Y<sub>t</sub> = c + &phi;<sub>1</sub>Y<sub>t-1</sub> + &phi;<sub>2</sub>Y<sub>t-2</sub></div>
+        <p>p:</p>
+        <p>تعداد lagها.</p>
+
+        <h2>22. MA Model (Moving Average)</h2>
+        <p>بر خلاف AR:</p>
+        <div class="inner-box">گذشته errorها را استفاده می‌کند.</div>
+        <div class="formula">Y<sub>t</sub> = &mu; + &epsilon;<sub>t</sub> + &theta;<sub>1</sub>&epsilon;<sub>t-1</sub></div>
+        <p>MA یعنی:</p>
+        <div class="inner-box">نه moving average feature.</div>
+        <p>بلکه:</p>
+        <div class="inner-box">Moving Average of residual errors.</div>
+
+        <h2>23. AR vs MA</h2>
+        <table>
+            <thead><tr><th></th><th>AR</th><th>MA</th></tr></thead>
+            <tbody>
+                <tr><td>وابسته به</td><td>گذشته خود سری</td><td>خطاهای گذشته</td></tr>
+                <tr><td>پارامتر</td><td>p</td><td>q</td></tr>
+                <tr><td>PACF</td><td>کمک می‌کند</td><td></td></tr>
+                <tr><td>ACF</td><td></td><td>کمک می‌کند</td></tr>
+            </tbody>
+        </table>
+
+        <h2>24. ARIMA</h2>
+        <p>مهم‌ترین مدل کلاسیک.</p>
+        <p>ARIMA:</p>
+        <div class="formula">AR + I + MA</div>
+        <p>یعنی:</p>
+        <div class="inner-box">AR</div>
+        <p>گذشته</p>
+        <div class="inner-box">I</div>
+        <p>Differencing</p>
+        <div class="inner-box">MA</div>
+        <p>خطاهای گذشته</p>
+        <p>فرم:</p>
+        <div class="formula">ARIMA(p, d, q)</div>
+
+        <h2>25. معنی p,d,q</h2>
+        <div class="inner-box"><div class="inner-title">p</div></div>
+        <p>تعداد lagهای AR</p>
+        <div class="inner-box"><div class="inner-title">d</div></div>
+        <p>تعداد differencing</p>
+        <div class="inner-box"><div class="inner-title">q</div></div>
+        <p>تعداد lagهای MA</p>
+        <p>مثال:</p>
+        <div class="formula">ARIMA(2, 1, 1)</div>
+        <p>یعنی:</p>
+        <div class="inner-box">AR دو مرحله</div>
+        <div class="inner-box">یک بار differencing</div>
+        <div class="inner-box">MA یک مرحله</div>
+
+        <h2>26. SARIMA</h2>
+        <p>ARIMA با Seasonality.</p>
+        <div class="formula">SARIMA(p, d, q)(P, D, Q, s)</div>
+        <p>قسمت دوم:</p>
+        <div class="inner-box">seasonal components</div>
+        <p>مثلاً:</p>
+        <p>فروش ماهانه:</p>
+        <div class="formula">s = 12</div>
+
+        <h2>27. Exponential Smoothing</h2>
+        <p>مدل‌های smoothing.</p>
+        <p>ایده:</p>
+        <div class="inner-box">داده‌های جدیدتر وزن بیشتری دارند.</div>
+        <p>فرمول ساده:</p>
+        <div class="formula">S<sub>t</sub> = &alpha;Y<sub>t</sub> + (1 - &alpha;)S<sub>t-1</sub></div>
+        <p>&alpha;:</p>
+        <p>بین 0 و 1</p>
+
+        <h2>28. انواع Exponential Smoothing</h2>
+        <div class="inner-box"><div class="inner-title">Simple</div></div>
+        <p>فقط level</p>
+        <div class="inner-box"><div class="inner-title">Holt</div></div>
+        <p>level + trend</p>
+        <div class="inner-box"><div class="inner-title">Holt-Winters</div></div>
+        <p>level + trend + seasonality</p>
+
+        <h2>29. Temporal Cross Validation</h2>
+        <p>در Time Series:</p>
+        <p>KFold معمولی غلط است.</p>
+        <p>چون:</p>
+        <div class="box"><div class="chart">Future
+|
+|
+Past</div></div>
+        <p>روش صحیح:</p>
+        <div class="inner-box"><div class="inner-title">Expanding Window</div></div>
+        <div class="box"><div class="chart">Train:
+Jan
+
+Validate:
+Feb
+
+
+Train:
+Jan-Feb
+
+Validate:
+Mar</div></div>
+        <div class="inner-box"><div class="inner-title">Rolling Window</div></div>
+        <div class="box"><div class="chart">Train:
+Jan-Mar
+
+Validate:
+Apr
+
+
+Train:
+Feb-Apr
+
+Validate:
+May</div></div>
+
+        <h2>30. مثال کامل Temporal CV</h2>
+        <p>داده:</p>
+        <div class="box"><div class="chart">2019
+2020
+2021
+2022
+2023</div></div>
+        <div class="inner-box"><div class="inner-title">Fold1:</div></div>
+        <div class="box"><div class="chart">Train:
+2019
+
+Test:
+2020</div></div>
+        <div class="inner-box"><div class="inner-title">Fold2:</div></div>
+        <div class="box"><div class="chart">Train:
+2019-2020
+
+Test:
+2021</div></div>
+        <div class="inner-box"><div class="inner-title">Fold3:</div></div>
+        <div class="box"><div class="chart">Train:
+2019-2021
+
+Test:
+2022</div></div>
+
+        <h2>31. مدل‌های ML برای Time Series</h2>
+        <p>امروزه فقط ARIMA استفاده نمی‌شود.</p>
+        <div class="inner-box"><div class="inner-title">Tree Based</div></div>
+        <div class="box"><div class="chart">XGBoost
+LightGBM
+CatBoost</div></div>
+        <p>با:</p>
+        <div class="box"><div class="chart">Lag features
+Rolling features</div></div>
+        <div class="inner-box"><div class="inner-title">Deep Learning</div></div>
+        <div class="inner-box"><div class="inner-title">RNN</div></div>
+        <div class="box"><div class="chart">LSTM
+GRU</div></div>
+        <div class="inner-box"><div class="inner-title">CNN</div></div>
+        <p>Temporal CNN</p>
+        <div class="inner-box"><div class="inner-title">Transformer</div></div>
+        <div class="box"><div class="chart">Temporal Fusion Transformer
+Informer</div></div>
+
+        <h2>32. Feature Engineering در Time Series</h2>
+        <p>Featureهای مهم:</p>
+        <div class="inner-box"><div class="inner-title">Calendar Features</div></div>
+        <div class="box"><div class="chart">day_of_week
+month
+holiday
+hour</div></div>
+        <div class="inner-box"><div class="inner-title">Lag Features</div></div>
+        <div class="box"><div class="chart">sales_1_day_ago
+sales_7_day_ago</div></div>
+        <div class="inner-box"><div class="inner-title">Rolling</div></div>
+        <div class="box"><div class="chart">mean_7
+std_30</div></div>
+        <div class="inner-box"><div class="inner-title">Trend Features</div></div>
+        <div class="box"><div class="chart">time_index</div></div>
+
+        <h2>33. Evaluation Metrics در Forecasting</h2>
+        <div class="inner-box"><div class="inner-title">MAE</div></div>
+        <div class="formula">(1/n) &Sigma; |y - &hat;y|</div>
+        <div class="inner-box"><div class="inner-title">RMSE</div></div>
+        <div class="formula">&radic;( (1/n) &Sigma; (y - &hat;y)<sup>2</sup> )</div>
+        <p>خطاهای بزرگ را بیشتر جریمه می‌کند.</p>
+        <div class="inner-box"><div class="inner-title">MAPE</div></div>
+        <div class="formula">|y - &hat;y| / y</div>
+        <p>مشکل:</p>
+        <p>وقتی:</p>
+        <div class="formula">y = 0</div>
+        <div class="inner-box"><div class="inner-title">sMAPE</div></div>
+        <p>نسخه بهتر MAPE.</p>
+
+        <h2>34. Common Time Series Mistakes (Senior Level)</h2>
+        <div class="inner-box"><div class="inner-title">1. Random train-test split</div></div>
+        <div class="inner-box">❌</div>
+        <div class="inner-box"><div class="inner-title">2. Scaling قبل از split</div></div>
+        <div class="inner-box">❌</div>
+        <p>Scaler باید فقط روی train fit شود.</p>
+        <div class="inner-box"><div class="inner-title">3. Using future information</div></div>
+        <div class="inner-box">❌ Leakage</div>
+        <div class="inner-box"><div class="inner-title">4. Ignoring seasonality</div></div>
+        <div class="inner-box">❌</div>
+        <div class="inner-box"><div class="inner-title">5. Wrong evaluation horizon</div></div>
+        <p>مثلاً:</p>
+        <div class="inner-box">مدل را برای 1 روز تست کنیم ولی در production برای 90 روز استفاده کنیم.</div>
+
+        <h2>35. Senior ML Workflow برای Time Series</h2>
+        <div class="box"><div class="chart">1. Understand business horizon
+
+2. Visualize series
+
+3. Check:
+   - trend
+   - seasonality
+   - stationarity
+
+4. Create lag features
+
+5. Create rolling features
+
+6. Time-based split
+
+7. Baseline model
+
+8. Train models
+
+9. Temporal CV
+
+10. Evaluate
+
+11. Backtesting
+
+12. Deploy monitoring</div></div>
+
+        <h2>36. Backtesting</h2>
+        <p>مثل تست واقعی گذشته.</p>
+        <p>مثلاً:</p>
+        <p>مدل را در:</p>
+        <div class="box"><div class="chart">2022</div></div>
+        <p>اجرا کنیم و ببینیم اگر آن زمان deploy می‌شد چه می‌شد.</p>
+
+        <h2>37. Forecasting vs Prediction</h2>
+        <p>Prediction:</p>
+        <div class="formula">Y = f(X)</div>
+        <p>Forecasting:</p>
+        <div class="formula">Y<sub>future</sub> = f(Y<sub>past</sub>, X)</div>
+        <p>Forecasting:</p>
+        <div class="inner-box">زمان جزء اصلی مسئله است.</div>
+
+        <h2>38. سوالات Senior Interview</h2>
+        <div class="inner-box"><div class="inner-title">چرا Random Split در Time Series بد است؟</div></div>
+        <p>چون:</p>
+        <div class="inner-box">Future information can leak into training.</div>
+        <div class="inner-box"><div class="inner-title">فرق AR و MA؟</div></div>
+        <p>AR:</p>
+        <div class="inner-box">گذشته خود سری را استفاده می‌کند.</div>
+        <p>MA:</p>
+        <div class="inner-box">گذشته residualها را استفاده می‌کند.</div>
+        <div class="inner-box"><div class="inner-title">ARIMA چیست؟</div></div>
+        <p>ترکیب:</p>
+        <div class="box"><div class="chart">Auto Regression
+Differencing
+Moving Average</div></div>
+        <div class="inner-box"><div class="inner-title">چرا Stationarity مهم است؟</div></div>
+        <p>چون مدل‌های کلاسیک فرض می‌کنند distribution در طول زمان ثابت است.</p>
+        <div class="inner-box"><div class="inner-title">ACF و PACF چه کاربردی دارند؟</div></div>
+        <p>برای:</p>
+        <div class="inner-box">تشخیص dependency</div>
+        <div class="inner-box">انتخاب p و q در ARIMA</div>
+        <div class="inner-box"><div class="inner-title">چرا Lag Feature می‌سازیم؟</div></div>
+        <p>چون مدل‌های ML معمولی memory زمانی ندارند.</p>
+
+        <h2>خلاصه Senior Level</h2>
+        <p>یک Senior ML Engineer در Time Series باید بفهمد:</p>
+        <div class="box"><div class="chart">Time is not a normal feature.
+
+Order matters.
+
+Past predicts future.
+
+Never leak future.
+
+Stationarity matters.
+
+Validation must respect time.
+
+Feature engineering is critical.
+
+ARIMA models assumptions about temporal dependency.
+
+Modern ML combines:
+Lag features + Gradient Boosting + Deep Learning.
+
+Evaluation must match production horizon.</div></div>
+        <p>و مهم‌ترین جمله:</p>
+        <div class="inner-box">در Time Series، بزرگ‌ترین دشمن مدل نه کمبود الگوریتم است، بلکه Data Leakage و Validation اشتباه است.</div>
+
+    </div>
+</body>
+</html>

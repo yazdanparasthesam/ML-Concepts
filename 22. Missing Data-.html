@@ -1,0 +1,1834 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Missing Data · Senior ML Level</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}]});"></script>
+    <style>
+        body {
+            background-color: #0d1117;
+            color: #e6edf3;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.8;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h1, h2, h3, h4 {
+            color: #e6edf3;
+            text-align: right;
+            border-bottom: 1px solid #444;
+            padding-bottom: 15px;
+            margin-top: 50px;
+        }
+        p, li {
+            text-align: right;
+        }
+
+        .box {
+            background-color: #21262d;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            color: #e6edf3;
+        }
+        .inner-box {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 10px;
+            border-right: 4px solid #58a6ff;
+        }
+        .inner-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .formula {
+            direction: ltr;
+            background-color: #000;
+            border: 1px solid #fff;
+            border-radius: 0;
+            padding: 20px;
+            margin: 20px auto;
+            width: fit-content;
+            max-width: 100%;
+            overflow-x: auto;
+            text-align: center;
+            font-size: 1.2em;
+            font-family: "Times New Roman", Times, serif;
+            color: #fff;
+        }
+
+        .chart {
+            direction: ltr;
+            text-align: left;
+            font-family: monospace;
+            background-color: #21262d;
+            border-radius: 8px;
+            padding: 15px;
+            overflow-x: auto;
+            white-space: pre;
+            border: 1px solid #444;
+        }
+        
+        .chart.rtl {
+            direction: ltr !important;
+            text-align: right !important;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            direction: rtl;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #444;
+            padding: 12px;
+            text-align: right;
+        }
+        th {
+            background-color: #21262d;
+        }
+
+        .code-block {
+            direction: ltr;
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 10px;
+            font-family: monospace;
+            color: #a5d6ff;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🕳️ 22. Missing Data — از پایه تا Senior ML</h1>
+
+        <p style="font-size:1.1rem;">حتماً. Missing Data از آن مباحثی است که در پروژه‌های واقعی ML خیلی بیشتر از چیزی که در دوره‌ها دیده می‌شود اهمیت دارد. در سطح Senior، فقط نباید بدانی «Median Imputation چیست»؛ باید بتوانی تشخیص بدهی چرا داده missing شده، آیا missingness خودش signal است، چه assumptionsی درباره mechanism داریم، آیا imputation باعث leakage می‌شود، و برای هر نوع missingness چه strategyای مناسب است.</p>
+
+        <h2>1. اول اصلاً Missing Data چیست؟</h2>
+        <p>فرض کن dataset ما این است:</p>
+        <div class="box" style="direction:ltr;">
+            <table style="direction:ltr; text-align:left;">
+                <thead><tr><th>Age</th><th>Income</th><th>Transaction</th><th>Fraud</th></tr></thead>
+                <tbody>
+                    <tr><td>35</td><td>5000</td><td>200</td><td>0</td></tr>
+                    <tr><td>42</td><td>NaN</td><td>1500</td><td>1</td></tr>
+                    <tr><td>28</td><td>3200</td><td>100</td><td>0</td></tr>
+                    <tr><td>NaN</td><td>9000</td><td>5000</td><td>1</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <p>NaN، NULL، None، empty string، -999 و ... می‌توانند نشان‌دهنده missing value باشند.</p>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <p>اما یک نکته بسیار مهم:</p>
+            <p><strong>Missing بودن یک مقدار الزاماً به معنی تصادفی بودن آن نیست.</strong></p>
+            <p>مثلاً Income ممکن است برای بعضی افراد missing باشد چون:</p>
+            <ul>
+                <li>کاربر نخواسته وارد کند</li>
+                <li>افراد کم‌درآمد کمتر آن را وارد می‌کنند</li>
+                <li>افراد پردرآمد بیشتر آن را وارد می‌کنند</li>
+                <li>سیستم برای بعضی کاربران این فیلد را collect نکرده</li>
+                <li>API در شرایط خاصی fail شده</li>
+                <li>feature فقط برای بعضی customerها تعریف شده</li>
+            </ul>
+        </div>
+        <p>بنابراین اولین سؤال Senior ML این نیست:</p>
+        <p>«با NaN چه کار کنم؟»</p>
+        <p>بلکه:</p>
+        <p>«چرا NaN ایجاد شده؟»</p>
+
+        <h2>2. Missingness را با یک متغیر تصادفی مدل کنیم</h2>
+        <p>این مفهوم برای فهم MCAR/MAR/MNAR بسیار مهم است.</p>
+        <p>فرض کن:</p>
+        <div class="formula">$$ X $$</div>
+        <p>feature واقعی است.</p>
+        <p>برای اینکه نشان دهیم آیا X missing است یا نه، متغیر:</p>
+        <div class="formula">$$ R $$</div>
+        <p>تعریف می‌کنیم.</p>
+        <p>مثلاً:</p>
+        <div class="formula">$$ R_X = \begin{cases} 1 & X \text{ observed}\\ 0 & X \text{ missing} \end{cases} $$</div>
+        <p>پس:</p>
+        <div class="chart rtl">X = مقدار واقعی feature
+
+R = آیا X را داریم؟</div>
+        <p>مثلاً:</p>
+        <div class="box" style="direction:ltr;">
+            <table style="direction:ltr; text-align:left;">
+                <thead><tr><th>Income</th><th>R_income</th></tr></thead>
+                <tbody>
+                    <tr><td>5000</td><td>1</td></tr>
+                    <tr><td>NaN</td><td>0</td></tr>
+                    <tr><td>3200</td><td>1</td></tr>
+                    <tr><td>NaN</td><td>0</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <p>این R کلید فهم Missing Data است.</p>
+
+        <h2>3. سه مکانیزم اصلی Missing Data</h2>
+        <p>سه مفهوم بسیار مهم:</p>
+        <div class="formula">$$ \boxed{MCAR} $$</div>
+        <div class="formula">$$ \boxed{MAR} $$</div>
+        <div class="formula">$$ \boxed{MNAR} $$</div>
+
+        <h2>4. MCAR — Missing Completely At Random</h2>
+        <p>یعنی:</p>
+        <p>Missing شدن داده هیچ ارتباطی با داده‌های observed یا مقدار واقعی missing ندارد.</p>
+        <p>به صورت رسمی:</p>
+        <div class="formula">$$ P(R|X_{obs},X_{mis}) = P(R) $$</div>
+        <p>یعنی احتمال missing شدن مستقل از داده است.</p>
+        <p><strong>مثال</strong></p>
+        <p>فرض کن هنگام ورود اطلاعات، به دلیل یک مشکل random شبکه، 2٪ از requestها بدون Income ذخیره شده‌اند.</p>
+        <p>این missingness تقریباً مستقل از:</p>
+        <div class="chart">Income
+Age
+Gender
+Fraud
+Customer type</div>
+        <p>است.</p>
+        <p>این می‌تواند MCAR باشد.</p>
+
+        <h2>5. مثال ساده MCAR</h2>
+        <p>فرض کن:</p>
+        <div class="chart">1000 rows</div>
+        <p>و به دلیل یک bug تصادفی:</p>
+        <div class="chart">20 rows</div>
+        <p>در feature age مقدارشان ذخیره نشده.</p>
+        <p>اگر این 20 رکورد هیچ تفاوت سیستماتیکی با بقیه نداشته باشند:</p>
+        <div class="formula">$$ MCAR $$</div>
+
+        <h2>6. چرا MCAR خوب است؟</h2>
+        <p>اگر داده واقعاً MCAR باشد، حذف رکوردها معمولاً bias سیستماتیک زیادی ایجاد نمی‌کند.</p>
+        <p>مثلاً:</p>
+        <div class="chart">10000 samples
+   ↓
+100 randomly missing
+   ↓
+9900 samples</div>
+        <p>اگر واقعاً MCAR باشد، Complete Case Analysis ممکن است قابل قبول باشد.</p>
+        <p>ولی همچنان:</p>
+        <div class="chartrtl">Information را از دست می‌دهی.</div>
+
+        <h2>7. نکته مهم درباره MCAR</h2>
+        <p>MCAR به معنی:</p>
+        <p>«missingness کم است»</p>
+        <p>نیست.</p>
+        <p>ممکن است:</p>
+        <div class="chart">40% data missing</div>
+        <p>ولی MCAR باشد.</p>
+        <p>و ممکن است:</p>
+        <div class="chart">1% data missing</div>
+        <p>ولی MNAR باشد.</p>
+        <p>پس:</p>
+        <div class="formula">$$ \boxed{ Amount\ of\ Missingness \neq Missingness\ Mechanism } $$</div>
+
+        <h2>8. MAR — Missing At Random</h2>
+        <p>این مفهوم مهم‌تر و کمی پیچیده‌تر است.</p>
+        <p>MAR یعنی:</p>
+        <p>Missing بودن یک feature می‌تواند به چیزهایی که observed هستند وابسته باشد، ولی بعد از conditioning روی observed information، دیگر به مقدار missing خودش وابسته نیست.</p>
+        <p>به صورت ساده:</p>
+        <div class="formula">$$ P(R|X_{obs},X_{mis}) = P(R|X_{obs}) $$</div>
+
+        <h2>9. مثال MAR</h2>
+        <p>فرض کن:</p>
+        <div class="chart">Income</div>
+        <p>برای بعضی افراد missing است.</p>
+        <p>ولی می‌بینیم missing بودن Income به:</p>
+        <div class="chart">Age
+Job
+Education
+Location</div>
+        <p>وابسته است.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Young people → بیشتر Income را وارد نمی‌کنند
+Older people → کمتر missing دارند</div>
+        <p>در این حالت missingness به Age که observed است وابسته است.</p>
+        <p>پس می‌تواند:</p>
+        <div class="formula">$$ MAR $$</div>
+        <p>باشد.</p>
+
+        <h2>10. مثال مهم‌تر</h2>
+        <p>فرض کن:</p>
+        <div class="chart">Age
+Income
+Education</div>
+        <p>داریم.</p>
+        <p>Income برای بعضی افراد missing است.</p>
+        <p>می‌بینیم:</p>
+        <div class="chart">Education = Low
+        ↓
+Probability(Income missing) ↑</div>
+        <p>اگر missingness فقط با Education و سایر observed variables توضیح داده شود، می‌تواند MAR باشد.</p>
+
+        <h2>11. MNAR — Missing Not At Random</h2>
+        <p>این مهم‌ترین و خطرناک‌ترین حالت است.</p>
+        <p>MNAR یعنی:</p>
+        <p>احتمال missing شدن داده به خود مقدار missing یا اطلاعاتی که observe نشده وابسته است.</p>
+        <p>یعنی:</p>
+        <div class="formula">$$ P(R|X_{obs},X_{mis}) \neq P(R|X_{obs}) $$</div>
+
+        <h2>12. مثال MNAR</h2>
+        <p>فرض کن:</p>
+        <div class="chart">Income</div>
+        <p>داریم.</p>
+        <p>افرادی که Income بسیار پایین دارند، احتمال بیشتری دارد Income خود را وارد نکنند.</p>
+        <p>پس:</p>
+        <div class="chart">Low Income
+    ↓
+Higher probability of missing</div>
+        <p>ولی مشکل اینجاست:</p>
+        <p>مقدار واقعی Income را برای رکورد missing نداریم.</p>
+        <p>پس نمی‌توانیم صرفاً با observed variables آن را به‌طور کامل توضیح دهیم.</p>
+        <p>این می‌تواند:</p>
+        <div class="formula">$$ MNAR $$</div>
+        <p>باشد.</p>
+
+        <h2>13. مثال پزشکی بسیار واضح</h2>
+        <p>فرض کن:</p>
+        <div class="chart">Patient Weight</div>
+        <p>بعضی بیماران وزن خود را اعلام نمی‌کنند.</p>
+        <p>ممکن است:</p>
+        <div class="chart">Very high weight
+       ↓
+Patient less likely to report weight</div>
+        <p>پس missingness به خود مقدار واقعی Weight وابسته است.</p>
+        <p>این می‌تواند MNAR باشد.</p>
+
+        <h2>14. مثال Business</h2>
+        <p>فرض کن:</p>
+        <div class="chart">Customer income</div>
+        <p>افرادی که درآمد بسیار بالایی دارند ممکن است عمداً آن را وارد نکنند.</p>
+        <p>پس:</p>
+        <div class="chart">High income
+    ↓
+Don't report income</div>
+        <p>در این حالت:</p>
+        <div class="formula">$$ Missingness \rightarrow Information $$</div>
+        <p>درباره مقدار واقعی دارد.</p>
+
+        <h2>15. MCAR vs MAR vs MNAR</h2>
+        <table>
+            <thead><tr><th>Mechanism</th><th>Missingness depends on</th></tr></thead>
+            <tbody>
+                <tr><td>MCAR</td><td>هیچ چیز سیستماتیکی</td></tr>
+                <tr><td>MAR</td><td>observed variables</td></tr>
+                <tr><td>MNAR</td><td>missing/unobserved value itself</td></tr>
+            </tbody>
+        </table>
+        <p>به صورت شهودی:</p>
+        <div class="chart">MCAR
+  │
+  └── Random
+
+MAR
+  │
+  └── Depends on observed information
+
+MNAR
+  │
+  └── Depends on missing/unobserved information</div>
+
+        <h2>16. نکته Senior-Level بسیار مهم</h2>
+        <p>MCAR / MAR / MNAR را معمولاً نمی‌توان فقط از dataset مشاهده‌شده به‌طور قطعی تشخیص داد.</p>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <p>این خیلی مهم است.</p>
+            <p>خصوصاً:</p>
+            <p>تفاوت MAR و MNAR از داده observed به‌تنهایی معمولاً قابل اثبات نیست.</p>
+        </div>
+        <p>برای تشخیص mechanism به:</p>
+        <div class="chart">knowledge از data collection process
+domain knowledge
+logging
+business process
+sensitivity analysis
+missingness modeling</div>
+        <p>نیاز داریم.</p>
+        <p>پس اگر کسی گفت:</p>
+        <p>«من با یک تست آماری ثابت کردم داده MAR است»</p>
+        <p>باید با احتیاط برخورد کنی.</p>
+
+        <h2>17. Missing Indicator</h2>
+        <p>گاهی خود missing بودن feature یک signal است.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Income = NaN</div>
+        <p>ممکن است اطلاعات مهمی داشته باشد.</p>
+        <p>پس یک feature جدید می‌سازیم:</p>
+        <div class="formula">$$ M_{income} = 1 $$</div>
+        <p>اگر missing باشد.</p>
+        <p>مثلاً:</p>
+        <div class="box" style="direction:ltr;">
+            <table style="direction:ltr; text-align:left;">
+                <thead><tr><th>Income</th><th>Income_missing</th></tr></thead>
+                <tbody>
+                    <tr><td>5000</td><td>0</td></tr>
+                    <tr><td>NaN</td><td>1</td></tr>
+                    <tr><td>3200</td><td>0</td></tr>
+                    <tr><td>NaN</td><td>1</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2>18. چرا Missing Indicator مهم است؟</h2>
+        <p>فرض کن:</p>
+        <div class="chart">Income missing</div>
+        <p>به این دلیل اتفاق می‌افتد که مشتری:</p>
+        <div class="chart">high-risk customer</div>
+        <p>است.</p>
+        <p>اگر فقط Median Imputation انجام دهی:</p>
+        <div class="chart">NaN → 5000</div>
+        <p>ممکن است signal را از بین ببری.</p>
+        <p>اما:</p>
+        <div class="chart">Income → 5000
+Income_missing → 1</div>
+        <p>مدل می‌تواند بفهمد:</p>
+        <p>این مقدار originally missing بوده.</p>
+
+        <h2>19. Missingness خودش Feature است</h2>
+        <p>این نکته خیلی مهم است:</p>
+        <div class="formula">$$ \boxed{ Missingness \ can\ be\ predictive } $$</div>
+        <p>در بسیاری از سیستم‌های واقعی:</p>
+        <div class="chart">Missingness pattern
+        ↓
+Customer behavior
+        ↓
+Prediction</div>
+        <p>مثلاً در:</p>
+        <div class="chart">Fraud detection
+Credit scoring
+Medical ML
+Churn prediction
+Insurance
+Recommendation</div>
+        <p>missingness می‌تواند signal باشد.</p>
+
+        <h2>20. اما Missing Indicator همیشه خوب نیست</h2>
+        <p>اگر missingness فقط به دلیل random technical failure باشد، indicator ممکن است صرفاً noise باشد.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Network timeout
+     ↓
+Income missing</div>
+        <p>اگر این timeout هیچ ارتباطی با target ندارد، indicator احتمالاً مفید نیست.</p>
+
+        <h2>21. Mean Imputation</h2>
+        <p>ساده‌ترین روش:</p>
+        <div class="formula">$$ x_{missing} = \mu $$</div>
+        <p>مثلاً:</p>
+        <div class="chart">Age:
+20
+30
+NaN
+40
+50</div>
+        <p>Mean:</p>
+        <div class="formula">$$ 35 $$</div>
+        <p>پس:</p>
+        <div class="chart">20
+30
+35
+40
+50</div>
+
+        <h2>22. مزیت Mean Imputation</h2>
+        <div class="chart">ساده
+سریع
+قابل تفسیر
+baseline خوب
+مناسب برای بعضی continuous features</div>
+
+        <h2>23. مشکل Mean Imputation</h2>
+        <p>Mean imputation:</p>
+        <p>Variance را کاهش می‌دهد.</p>
+        <p>چون همه missingها دقیقاً به mean تبدیل می‌شوند.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Original:
+20 30 40 50
+
+After:
+20 30 35 40 50</div>
+        <p>مقادیر مصنوعی در مرکز distribution قرار می‌گیرند.</p>
+        <p>در نتیجه:</p>
+        <div class="formula">$$ Variance \downarrow $$</div>
+
+        <h2>24. Mean Imputation و Outliers</h2>
+        <p>Mean به outlier حساس است.</p>
+        <p>مثلاً:</p>
+        <div class="chart">10
+11
+12
+13
+10000</div>
+        <p>Mean بسیار بزرگ می‌شود.</p>
+        <p>در این شرایط:</p>
+        <div class="formula">$$ Median $$</div>
+        <p>معمولاً robustتر است.</p>
+
+        <h2>25. Median Imputation</h2>
+        <div class="formula">$$ x_{missing} = Median(X) $$</div>
+        <p>مثلاً:</p>
+        <div class="chart">10
+11
+NaN
+12
+10000</div>
+        <p>Median:</p>
+        <div class="formula">$$ 11.5 $$</div>
+        <p>یا بسته به تعریف interpolation.</p>
+        <p>مزیت:</p>
+        <div class="chart">robust به outlier
+ساده
+مناسب برای skewed distributions</div>
+
+        <h2>26. Mean vs Median</h2>
+        <table>
+            <thead><tr><th>شرایط</th><th>انتخاب</th></tr></thead>
+            <tbody>
+                <tr><td>تقریباً symmetric</td><td>Mean</td></tr>
+                <tr><td>skewed</td><td>Median</td></tr>
+                <tr><td>outlier زیاد</td><td>Median</td></tr>
+                <tr><td>heavy-tailed</td><td>Median معمولاً بهتر</td></tr>
+            </tbody>
+        </table>
+        <p>ولی این یک rule مطلق نیست.</p>
+        <p>باید validation انجام دهی.</p>
+
+        <h2>27. Mode Imputation</h2>
+        <p>برای categorical features:</p>
+        <div class="formula">$$ x_{missing} = Mode(X) $$</div>
+        <p>مثلاً:</p>
+        <div class="chart">Gold
+Silver
+Gold
+NaN
+Gold
+Bronze</div>
+        <p>Mode:</p>
+        <div class="chart">Gold</div>
+        <p>پس:</p>
+        <div class="chart">NaN → Gold</div>
+
+        <h2>28. مشکل Mode Imputation</h2>
+        <p>ممکن است distribution categorical را تحریف کند.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Gold = 70%
+Silver = 20%
+Bronze = 10%</div>
+        <p>اگر 20٪ missing داشته باشیم و همه را Gold کنیم:</p>
+        <div class="chart">Gold ≈ بسیار dominant</div>
+        <p>در نتیجه bias ایجاد می‌شود.</p>
+        <p>در چنین شرایطی:</p>
+        <p>Missing را به عنوان category جداگانه نگه داشتن ممکن است بهتر باشد.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Gold
+Silver
+Bronze
+Missing</div>
+
+        <h2>29. Missing as Category</h2>
+        <p>برای categorical data گاهی:</p>
+        <div class="chart">NaN → "UNKNOWN"</div>
+        <p>یا:</p>
+        <div class="chart">NaN → "MISSING"</div>
+        <p>بهتر از Mode Imputation است.</p>
+        <p>چرا؟</p>
+        <p>چون:</p>
+        <div class="formula">$$ Missingness $$</div>
+        <p>ممکن است informative باشد.</p>
+
+        <h2>30. KNN Imputation</h2>
+        <p>ایده:</p>
+        <p>برای یک رکورد missing، رکوردهای مشابه را پیدا کن و از آنها مقدار را تخمین بزن.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Customer A:
+Age = 30
+Income = NaN
+Transactions = 25</div>
+        <p>می‌رویم نزدیک‌ترین customers را پیدا می‌کنیم:</p>
+        <div class="chart">Customer B:
+Age = 31
+Income = 5000
+Transactions = 24
+
+Customer C:
+Age = 29
+Income = 5200
+Transactions = 26
+
+Customer D:
+Age = 30
+Income = 4900
+Transactions = 27</div>
+        <p>بعد مثلاً:</p>
+        <div class="formula">$$ Income_{imputed} = mean(5000,5200,4900) $$</div>
+
+        <h2>31. KNN Imputation</h2>
+        <p>فرمول ساده:</p>
+        <div class="formula">$$ \hat{x}_i = \frac{1}{K} \sum_{j\in N_k(i)} x_j $$</div>
+        <p>یا weighted:</p>
+        <div class="formula">$$ \hat{x}_i = \frac{ \sum_j w_jx_j }{ \sum_jw_j } $$</div>
+        <p>که:</p>
+        <div class="formula">$$ w_j=\frac{1}{d(i,j)} $$</div>
+        <p>مثلاً هرچه neighbor نزدیک‌تر باشد، وزن بیشتری می‌گیرد.</p>
+
+        <h2>32. مشکل مهم KNN Imputation</h2>
+        <p>KNN بر اساس distance کار می‌کند.</p>
+        <p>پس:</p>
+        <div class="chart">Age = 30
+Income = 500000
+Transactions = 20</div>
+        <p>Scaleها متفاوت‌اند.</p>
+        <p>اگر scaling انجام نشود:</p>
+        <div class="chart">Income</div>
+        <p>ممکن است distance را dominate کند.</p>
+        <p>بنابراین KNN Imputation معمولاً به:</p>
+        <div class="formula">$$ Scaling $$</div>
+        <p>حساس است.</p>
+
+        <h2>33. KNN و Curse of Dimensionality</h2>
+        <p>در featureهای بسیار زیاد:</p>
+        <div class="chart">1000 features</div>
+        <p>distanceها ممکن است کمتر meaningful شوند.</p>
+        <p>این همان مسئله‌ای است که با:</p>
+        <div class="formula">$$ Curse\ of\ Dimensionality $$</div>
+        <p>مرتبط است.</p>
+        <p>پس KNN Imputation برای high-dimensional data همیشه ایده‌آل نیست.</p>
+
+        <h2>34. Iterative Imputation</h2>
+        <p>ایده بسیار قوی‌تر:</p>
+        <p>یک feature missing را با استفاده از سایر featureها پیش‌بینی کن.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Age
+Income
+Education
+Transactions</div>
+        <p>Income missing است.</p>
+        <p>مدل:</p>
+        <div class="formula">$$ Income \leftarrow Age + Education + Transactions $$</div>
+        <p>را یاد می‌گیرد.</p>
+
+        <h2>35. چگونه Iterative Imputation کار می‌کند؟</h2>
+        <p>فرض کن:</p>
+        <div class="chart">Age
+Income
+Education</div>
+        <p>داریم.</p>
+        <p>ابتدا missingها را ساده پر می‌کنیم:</p>
+        <div class="chart">Median</div>
+        <p>سپس:</p>
+        <div class="inner-box">
+            <div class="inner-title">Step 1</div>
+            <p>Income را با Age و Education پیش‌بینی کن.</p>
+            <div class="chart">Income ← Age + Education</div>
+        </div>
+        <div class="inner-box">
+            <div class="inner-title">Step 2</div>
+            <p>Age را با Income و Education پیش‌بینی کن.</p>
+            <div class="chart">Age ← Income + Education</div>
+        </div>
+        <div class="inner-box">
+            <div class="inner-title">Step 3</div>
+            <p>دوباره Income را update کن.</p>
+            <p>و این روند ادامه پیدا می‌کند.</p>
+        </div>
+
+        <h2>36. MICE</h2>
+        <p>MICE:</p>
+        <p>Multiple Imputation by Chained Equations</p>
+        <p>یکی از مهم‌ترین روش‌های missing-data است.</p>
+        <p>ایده:</p>
+        <div class="chart">Feature 1 missing
+       ↓
+Model Feature 1
+
+Feature 2 missing
+       ↓
+Model Feature 2
+
+Feature 3 missing
+       ↓
+Model Feature 3
+
+Repeat</div>
+
+        <h2>37. چرا اسمش Chained Equations است؟</h2>
+        <p>چون برای هر variable یک conditional model می‌سازیم:</p>
+        <div class="formula">$$ X_1|X_2,X_3,\ldots $$</div>
+        <div class="formula">$$ X_2|X_1,X_3,\ldots $$</div>
+        <div class="formula">$$ X_3|X_1,X_2,\ldots $$</div>
+        <p>و این مدل‌ها به شکل زنجیره‌ای update می‌شوند.</p>
+
+        <h2>38. مثال MICE</h2>
+        <p>فرض کن:</p>
+        <div class="chart">Age
+Income
+Education
+Debt</div>
+        <p>داریم.</p>
+        <p>می‌توانیم داشته باشیم:</p>
+        <div class="chart">Age ← Income + Education + Debt
+Income ← Age + Education + Debt
+Debt ← Age + Income + Education</div>
+        <p>این equations به صورت iterative اجرا می‌شوند.</p>
+
+        <h2>39. MICE vs Iterative Imputation</h2>
+        <p>این دو اصطلاح گاهی به جای هم استفاده می‌شوند، ولی دقیقاً یکی نیستند.</p>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">Iterative Imputation مفهوم عمومی‌تری است:</div>
+            <p>به‌صورت iterative از featureهای دیگر برای تخمین feature missing استفاده می‌کنیم.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">MICE یک چارچوب مشخص برای:</div>
+            <p>Multiple Imputation + Chained Equations</p>
+            <p>است.</p>
+        </div>
+        <p>در بسیاری از کتابخانه‌های ML، چیزی که با نام Iterative Imputer می‌بینی، از ایده chained equations استفاده می‌کند، ولی الزاماً تمام ویژگی‌های آماری MICE کلاسیک را ندارد.</p>
+
+        <h2>40. چرا Multiple در MICE مهم است؟</h2>
+        <p>این قسمت Senior-level است.</p>
+        <p>فرض کن:</p>
+        <div class="chart">Income = NaN</div>
+        <p>واقعاً نمی‌دانیم Income چه بوده.</p>
+        <p>ممکن است:</p>
+        <div class="chart">4900
+5100
+5300</div>
+        <p>همه plausible باشند.</p>
+        <p>اگر فقط:</p>
+        <div class="chart">Income = 5000</div>
+        <p>قرار دهیم، uncertainty را نادیده گرفته‌ایم.</p>
+        <p>MICE می‌تواند چند dataset imputed تولید کند:</p>
+        <div class="chart">Dataset 1 → Income = 4900
+Dataset 2 → Income = 5100
+Dataset 3 → Income = 5300
+...</div>
+        <p>بعد نتایج را combine می‌کنیم.</p>
+        <p>این به uncertainty ناشی از missingness توجه می‌کند.</p>
+
+        <h2>41. Single Imputation vs Multiple Imputation</h2>
+        <div class="chart">Single Imputation
+NaN
+ ↓
+5000
+
+یک مقدار.</div>
+        <div class="chart">Multiple Imputation
+NaN
+ ├── 4900
+ ├── 5100
+ ├── 5300
+ └── 5200
+
+چند plausible values.</div>
+
+        <h2>42. Model-Based Imputation</h2>
+        <p>یک دسته بزرگ‌تر از روش‌ها:</p>
+        <p>از یک ML model برای پیش‌بینی مقدار missing استفاده کنیم.</p>
+        <p>مثلاً:</p>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">Linear Regression</div>
+            <div class="formula">$$ Income=f(Age,Education,Debt) $$</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">Random Forest</div>
+            <div class="formula">$$ Income=f_{RF}(X) $$</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#3fb950;">
+            <div class="inner-title">Gradient Boosting</div>
+            <div class="formula">$$ Income=f_{GBM}(X) $$</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#d2a8ff;">
+            <div class="inner-title">Neural Network</div>
+            <div class="formula">$$ Income=f_{NN}(X) $$</div>
+        </div>
+
+        <h2>43. مزیت Model-Based Imputation</h2>
+        <p>می‌تواند روابط پیچیده را یاد بگیرد.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Income</div>
+        <p>ممکن است با:</p>
+        <div class="chart">Age
+Education
+Occupation
+Location
+Transactions
+Debt</div>
+        <p>رابطه nonlinear داشته باشد.</p>
+        <p>Median نمی‌تواند این رابطه را capture کند.</p>
+        <p>Random Forest یا Gradient Boosting می‌تواند.</p>
+
+        <h2>44. مشکل Model-Based Imputation</h2>
+        <p>ممکن است:</p>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">Overfit</div>
+            <p>مدل imputation بیش از حد داده training را یاد بگیرد.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">Leakage</div>
+            <p>اگر مدل imputation را اشتباه train کنی.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">Computational Cost</div>
+            <p>برای dataset بزرگ expensive می‌شود.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">Uncertainty</div>
+            <p>یک prediction قطعی ممکن است uncertainty را نادیده بگیرد.</p>
+        </div>
+
+        <h2>45. Regression Imputation vs Stochastic Imputation</h2>
+        <p>فرض کن:</p>
+        <div class="formula">$$ Income=f(X) $$</div>
+        <p>مدل می‌گوید:</p>
+        <div class="formula">$$ \hat{Income}=5000 $$</div>
+        <p>اگر همیشه همین را قرار دهیم:</p>
+        <div class="chart">NaN → 5000</div>
+        <p>اما stochastic imputation می‌تواند:</p>
+        <div class="formula">$$ Income = \hat{Income} + \epsilon $$</div>
+        <p>باشد.</p>
+        <p>مثلاً:</p>
+        <div class="chart">4900
+5100
+5200
+4800
+...</div>
+        <p>این variability را بهتر حفظ می‌کند.</p>
+
+        <h2>46. یک مسئله مهم: Imputation Distribution</h2>
+        <p>فرض کن distribution واقعی:</p>
+        <div class="chart">        /\
+       /  \
+     /      \
+____/________\____</div>
+        <p>است.</p>
+        <p>اگر همه missingها را با mean پر کنیم:</p>
+        <div class="chart">        /\
+       /  \
+______/████\______</div>
+        <p>تعداد زیادی sample مصنوعی دقیقاً در مرکز قرار می‌گیرند.</p>
+        <p>این می‌تواند:</p>
+        <div class="chart">variance را کاهش دهد
+correlation را تغییر دهد
+distribution را تحریف کند</div>
+
+        <h2>47. Imputation می‌تواند Correlation را خراب کند</h2>
+        <p>فرض کن:</p>
+        <div class="chart">Income ↔ Education</div>
+        <p>همبستگی واقعی زیاد است.</p>
+        <p>اگر Income را با mean پر کنیم، relationship بین:</p>
+        <div class="formula">$$ Income $$</div>
+        <p>و:</p>
+        <div class="formula">$$ Education $$</div>
+        <p>ممکن است ضعیف شود.</p>
+        <p>بنابراین:</p>
+        <div class="chart rtl">Imputation فقط روی feature موردنظر اثر نمی‌گذارد؛ می‌تواند structure کل dataset را تغییر دهد.</div>
+
+        <h2>48. مهم‌ترین نکته: Imputation Leakage</h2>
+        <p>این یکی از مهم‌ترین مسائل Senior ML است.</p>
+        <p>فرض کن:</p>
+        <div class="chart">Train
+Validation
+Test</div>
+        <p>داریم.</p>
+        <p>اشتباه:</p>
+        <div class="chart">Train + Validation + Test
+             ↓
+       calculate median
+             ↓
+          Impute</div>
+        <p>این leakage است.</p>
+
+        <h2>49. روش درست</h2>
+        <p>باید:</p>
+        <div class="chart">Train
+ ↓
+calculate median
+ ↓
+save median
+ ↓
+transform Train
+
+Validation
+ ↓
+use TRAIN median
+ ↓
+transform Validation
+
+Test
+ ↓
+use TRAIN median
+ ↓
+transform Test</div>
+        <p>یعنی:</p>
+        <div class="formula">$$ \boxed{ Fit\ imputer\ only\ on\ training\ data } $$</div>
+
+        <h2>50. مثال Leakage</h2>
+        <p>فرض کن:</p>
+        <div class="chart">Training:
+
+10
+20
+30
+NaN
+
+Test:
+
+100
+110
+NaN</div>
+        <p>اگر median کل dataset را استفاده کنی، اطلاعات test وارد preprocessing می‌شود.</p>
+        <p>حتی اگر label test را استفاده نکنی، distribution test را وارد pipeline کرده‌ای.</p>
+        <p>این:</p>
+        <div class="formula">$$ Train-Test\ Contamination $$</div>
+        <p>است.</p>
+
+        <h2>51. Cross-Validation و Imputation</h2>
+        <p>این نکته حتی مهم‌تر است.</p>
+        <p>فرض کن:</p>
+        <div class="chart">5-Fold CV</div>
+        <p>داری.</p>
+        <p>اشتباه:</p>
+        <div class="chart">Entire Dataset
+      ↓
+Fit Imputer
+      ↓
+5-Fold CV</div>
+        <p>چون validation fold در محاسبه imputation statistics شرکت کرده است.</p>
+        <p>روش درست:</p>
+        <div class="chart">Fold 1
+  Train → fit imputer
+  Valid → transform
+
+Fold 2
+  Train → fit imputer
+  Valid → transform
+
+...</div>
+        <p>در عمل:</p>
+        <div class="chart">Pipeline
+   ↓
+Imputer
+   ↓
+Model</div>
+        <p>را داخل CV قرار می‌دهیم.</p>
+
+        <h2>52. چرا Pipeline مهم است؟</h2>
+        <p>مثلاً در scikit-learn:</p>
+        <div class="code-block">Pipeline([
+    ("imputer", SimpleImputer(strategy="median")),
+    ("scaler", StandardScaler()),
+    ("model", LogisticRegression())
+])</div>
+        <p>و بعد:</p>
+        <div class="code-block">cross_val_score(pipeline, X, y, cv=5)</div>
+        <p>باعث می‌شود preprocessing داخل هر fold fit شود.</p>
+
+        <h2>53. Missing Values در Train و Production</h2>
+        <p>این یک مسئله بسیار مهم Production ML است.</p>
+        <p>ممکن است training:</p>
+        <div class="chart">missing_rate = 2%</div>
+        <p>باشد.</p>
+        <p>ولی production:</p>
+        <div class="chart">missing_rate = 15%</div>
+        <p>شود.</p>
+        <p>این می‌تواند:</p>
+        <div class="formula">$$ Data\ Drift $$</div>
+        <p>باشد.</p>
+        <p>یا حتی:</p>
+        <div class="formula">$$ Data\ Quality\ Incident $$</div>
+
+        <h2>54. Missingness Monitoring</h2>
+        <p>در Production فقط distribution featureها را monitor نکن.</p>
+        <p>Missing rate را هم monitor کن:</p>
+        <div class="box" style="direction:ltr;">
+            <pre style="direction:ltr; text-align:left; font-size: 0.9rem;">
+feature           train      production
+-----------------------------------------
+income             2%          2.4%
+age                0.5%        0.7%
+occupation         3%          18%
+device             1%          1.2%
+            </pre>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <p><code>occupation = 18%</code> باید alert ایجاد کند.</p>
+        </div>
+
+        <h2>55. Missingness Pattern</h2>
+        <p>فقط missing rate هر feature مهم نیست.</p>
+        <p>ممکن است pattern مهم باشد.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Income missing
++
+Occupation missing
++
+Education missing</div>
+        <p>با هم اتفاق بیفتند.</p>
+        <p>این را می‌توان با:</p>
+        <div class="chart">Missingness Matrix</div>
+        <p>بررسی کرد.</p>
+
+        <h2>56. Missingness Correlation</h2>
+        <p>می‌توانیم indicator بسازیم:</p>
+        <div class="formula">$$ M_{income} $$</div>
+        <div class="formula">$$ M_{occupation} $$</div>
+        <div class="formula">$$ M_{education} $$</div>
+        <p>و بررسی کنیم:</p>
+        <div class="formula">$$ Corr(M_{income},M_{occupation}) $$</div>
+        <p>اگر بالا باشد، ممکن است missingnessها به یک process مشترک مربوط باشند.</p>
+        <p>مثلاً:</p>
+        <p>یک API خاص برای customer segment خاص اطلاعات را نمی‌فرستد.</p>
+
+        <h2>57. Missingness و Target</h2>
+        <p>این قسمت بسیار مهم است.</p>
+        <p>فرض کن:</p>
+        <div class="chart">X = Income
+Y = Fraud</div>
+        <p>و:</p>
+        <div class="chart">Income missing</div>
+        <p>احتمال missing بودن Income برای Fraud customers بیشتر است.</p>
+        <p>یعنی:</p>
+        <div class="formula">$$ P(R_{income}|Y) $$</div>
+        <p>متفاوت است.</p>
+        <p>در این حالت missingness می‌تواند predictive باشد.</p>
+        <p>پس:</p>
+        <div class="chart">Income_missing</div>
+        <p>ممکن است feature بسیار خوبی باشد.</p>
+
+        <h2>58. اما مراقب Target Leakage باش</h2>
+        <p>فرض کن missing شدن یک feature بعد از تصمیم نهایی اتفاق می‌افتد.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Fraud investigation
+       ↓
+Additional field requested
+       ↓
+Field missing</div>
+        <p>اگر این feature را در مدل اولیه Fraud prediction استفاده کنی، ممکن است اطلاعات آینده وارد مدل شود.</p>
+        <p>پس سؤال Senior:</p>
+        <p>At what point in the prediction lifecycle does this missingness occur?</p>
+        <p>این از خود imputation مهم‌تر است.</p>
+
+        <h2>59. Missing Target vs Missing Feature</h2>
+        <p>این دو را نباید یکی فرض کرد.</p>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">Missing Feature</div>
+            <div class="chart">X = NaN
+Y = available</div>
+            <p>می‌توانی برای X imputation انجام دهی.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">Missing Target</div>
+            <div class="chart">X = available
+Y = NaN</div>
+            <p>اینجا مسئله متفاوت است.</p>
+            <p>مثلاً:</p>
+            <div class="chart">Customer
+features = available
+fraud_label = missing</div>
+            <p>نمی‌توانی صرفاً مثل یک feature با آن رفتار کنی.</p>
+            <p>ممکن است نیاز باشد:</p>
+            <div class="chart rtl">
+            حذف sample از supervised training
+label acquisition
+semi-supervised learning
+positive-unlabeled learning
+delayed labels</div>
+            <p>بررسی شود.</p>
+        </div>
+
+        <h2>60. Missing Data و Time Series</h2>
+        <p>در time series داستان متفاوت است.</p>
+        <p>مثلاً:</p>
+        <div class="chart">10:00 → 100
+10:01 → 102
+10:02 → NaN
+10:03 → 106</div>
+        <p>ممکن است از:</p>
+        <div class="chart">Forward Fill
+$$ x_t=x_{t-1} $$</div>
+        <p>استفاده شود.</p>
+        <div class="chart">100
+102
+102
+106</div>
+        <p>یا:</p>
+        <div class="chart">Interpolation
+102
+NaN
+106</div>
+        <p>ممکن است:</p>
+        <div class="formula">$$ 104 $$</div>
+        <p>شود.</p>
+        <p>ولی باید بسیار مراقب باشی که از آینده برای prediction گذشته استفاده نکنی.</p>
+
+        <h2>61. Time-Series Leakage</h2>
+        <p>فرض کن در ساعت 10:02 مقدار missing است.</p>
+        <p>اگر برای پر کردن آن از مقدار 10:03 استفاده کنی:</p>
+        <div class="chart">10:02 ← 10:03</div>
+        <p>در offline experiment ممکن است عالی به نظر برسد.</p>
+        <p>اما در production، وقتی در 10:02 prediction می‌زنی:</p>
+        <p>10:03 هنوز وجود ندارد.</p>
+        <p>پس:</p>
+        <div class="formula">$$ Future\ Leakage $$</div>
+        <p>رخ داده است.</p>
+
+        <h2>62. Forward Fill هم همیشه درست نیست</h2>
+        <p>فرض کن:</p>
+        <div class="chart">10:00 = 100
+10:01 = NaN
+10:02 = NaN
+10:03 = NaN
+10:04 = 200</div>
+        <p>اگر forward fill کنیم:</p>
+        <div class="chart">100
+100
+100
+100
+200</div>
+        <p>ممکن است کاملاً غیرواقعی باشد.</p>
+        <p>پس باید domain را بفهمی.</p>
+
+        <h2>63. Missing Data و Categorical Features</h2>
+        <p>برای categorical:</p>
+        <div class="chart">Option 1
+Mode:
+NaN → Most Frequent
+
+Option 2
+Explicit category:
+NaN → "MISSING"
+
+Option 3
+Model-based
+Category ← Other Features</div>
+        <p>در بسیاری از production systems، گزینه 2 بسیار جذاب است چون missingness را حفظ می‌کند.</p>
+
+        <h2>64. Missing Data در Tree Models</h2>
+        <p>یک نکته مهم:</p>
+        <p>بعضی مدل‌ها missing values را native پشتیبانی می‌کنند.</p>
+        <p>برخی implementationهای tree-based می‌توانند هنگام split تصمیم بگیرند که missing value به کدام branch برود.</p>
+        <p>پس:</p>
+        <p>الزاماً همیشه لازم نیست قبل از XGBoost/LightGBM/CatBoost تمام NaNها را با mean/median پر کنیم.</p>
+        <p>اما رفتار دقیق به الگوریتم و implementation بستگی دارد.</p>
+
+        <h2>65. آیا Tree Model به Imputation نیاز دارد؟</h2>
+        <p>پاسخ Senior:</p>
+        <p>بستگی دارد.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Linear Regression
+→ معمولاً missing را مستقیم قبول نمی‌کند
+
+KNN
+→ نیاز به handling دارد
+
+SVM
+→ معمولاً نیاز به handling دارد
+
+Neural Network
+→ معمولاً باید handling شود
+
+Some Tree Boosting implementations
+→ ممکن است native missing handling داشته باشند</div>
+
+        <h2>66. چرا Median Imputation برای Linear Models محبوب است؟</h2>
+        <p>فرض کن:</p>
+        <div class="formula">$$ y=\beta_0+\beta_1x $$</div>
+        <p>اگر NaN داشته باشیم، مدل نمی‌تواند مستقیماً محاسبه کند.</p>
+        <p>Median imputation:</p>
+        <div class="chart">NaN → median</div>
+        <p>یک baseline ساده و robust می‌دهد.</p>
+        <p>اما اگر missingness informative باشد:</p>
+        <div class="chart">Median
++
+Missing Indicator</div>
+        <p>اغلب بهتر است.</p>
+
+        <h2>67. یک Strategy بسیار خوب برای Numerical Features</h2>
+        <div class="chart">Baseline:
+
+Numerical
+    ↓
+Median Imputation
+    +
+Missing Indicator
+
+مثلاً:
+Income
+Income_missing</div>
+        <p>این strategy اغلب baseline بسیار خوبی برای مقایسه است.</p>
+
+        <h2>68. یک Strategy برای Categorical</h2>
+        <div class="chart">Categorical
+      ↓
+"MISSING" category
+      ↓
+Encoding</div>
+        <p>به جای:</p>
+        <div class="chart">NaN → Mode</div>
+        <p>این approach ممکن است missingness را بهتر حفظ کند.</p>
+
+        <h2>69. چه زمانی KNN بهتر است؟</h2>
+        <p>KNN می‌تواند مناسب باشد وقتی:</p>
+        <div class="chart">dataset خیلی بزرگ نیست
+features meaningful هستند
+distance meaningful است
+correlation بین features وجود دارد
+dimensionality خیلی بالا نیست</div>
+        <p>مثلاً:</p>
+        <div class="chart">Age
+Weight
+Height
+BMI
+BloodPressure</div>
+        <p>که relationships قوی دارند.</p>
+
+        <h2>70. چه زمانی KNN بد است؟</h2>
+        <p>اگر:</p>
+        <div class="chart">1,000,000 rows
+10,000 features</div>
+        <p>داشته باشی، KNN imputation می‌تواند بسیار expensive و غیرقابل‌اعتماد شود.</p>
+        <p>همچنین اگر featureها scaleهای بسیار متفاوت داشته باشند و preprocessing مناسب انجام نشود، distance مشکل‌دار می‌شود.</p>
+
+        <h2>71. چه زمانی Iterative/MICE مناسب است؟</h2>
+        <p>وقتی:</p>
+        <div class="chart">missingness قابل توجه است
+featureها relationships قوی دارند
+تعداد featureها manageable است
+می‌خواهی structure داده حفظ شود
+uncertainty برایت مهم است</div>
+        <p>ولی computational cost و complexity بیشتر است.</p>
+
+        <h2>72. مقایسه روش‌ها</h2>
+        <table>
+            <thead><tr><th>روش</th><th>مزیت</th><th>مشکل</th></tr></thead>
+            <tbody>
+                <tr><td>Mean</td><td>بسیار ساده</td><td>variance کاهش می‌یابد</td></tr>
+                <tr><td>Median</td><td>robust</td><td>relationshipها را نادیده می‌گیرد</td></tr>
+                <tr><td>Mode</td><td>ساده</td><td>distribution را تحریف می‌کند</td></tr>
+                <tr><td>Missing Indicator</td><td>missingness را حفظ می‌کند</td><td>ممکن است noise باشد</td></tr>
+                <tr><td>KNN</td><td>relationships را استفاده می‌کند</td><td>expensive + distance-sensitive</td></tr>
+                <tr><td>Iterative</td><td>relationshipهای چندمتغیره</td><td>computational cost</td></tr>
+                <tr><td>MICE</td><td>uncertainty را بهتر مدل می‌کند</td><td>پیچیده‌تر</td></tr>
+                <tr><td>Model-Based</td><td>nonlinear relationships</td><td>overfit/leakage</td></tr>
+                <tr><td>Native Model Handling</td><td>ساده‌تر</td><td>وابسته به model</td></tr>
+            </tbody>
+        </table>
+
+        <h2>73. یک اشتباه رایج</h2>
+        <p>این کار:</p>
+        <div class="code-block">X.fillna(X.mean())</div>
+        <p>قبل از:</p>
+        <div class="code-block">train_test_split()</div>
+        <p>اشتباه است.</p>
+        <p>چون mean کل dataset را استفاده کرده‌ای.</p>
+        <p>درست:</p>
+        <div class="chart">Split
+ ↓
+Fit imputer on train
+ ↓
+Transform train
+ ↓
+Transform validation/test</div>
+
+        <h2>74. اشتباه رایج دوم</h2>
+        <p>این کار در CV:</p>
+        <div class="code-block">X_imputed = imputer.fit_transform(X)
+
+cross_val_score(model, X_imputed, y, cv=5)</div>
+        <p>می‌تواند leakage ایجاد کند.</p>
+        <p>چون imputer قبل از CV روی کل X fit شده.</p>
+        <p>درست:</p>
+        <div class="code-block">Pipeline([
+    ("imputer", ...),
+    ("model", ...)
+])</div>
+        <p>و pipeline را وارد CV کن.</p>
+
+        <h2>75. اشتباه رایج سوم: استفاده از Target در Imputation</h2>
+        <p>فرض کن:</p>
+        <div class="chart">X1 = Age
+X2 = Income
+Y = Fraud</div>
+        <p>Income missing است.</p>
+        <p>ممکن است بگویی:</p>
+        <div class="chart">Income ← Age + Fraud</div>
+        <p>اما در production هنگام prediction:</p>
+        <div class="chart">Fraud</div>
+        <p>هنوز unknown است!</p>
+        <p>پس نمی‌توانی از Y برای impute کردن X استفاده کنی، مگر اینکه طراحی مسئله واقعاً اجازه دهد و train/inference setup با آن سازگار باشد.</p>
+        <p>این یک نکته بسیار مهم در Senior ML است.</p>
+
+        <h2>76. یک نکته ظریف‌تر درباره استفاده از Target</h2>
+        <p>در بعضی روش‌های آماری Multiple Imputation ممکن است target در فرآیند imputation training لحاظ شود تا رابطه بین variables بهتر مدل شود.</p>
+        <p>اما برای predictive ML pipeline باید مشخص کنی:</p>
+        <p>آیا این information در زمان inference available است؟</p>
+        <p>اگر:</p>
+        <div class="formula">$$ Y_{test} $$</div>
+        <p>unknown است، استفاده از آن در preprocessing مربوط به X می‌تواند باعث leakage شود.</p>
+
+        <h2>77. Imputation و Validation Strategy</h2>
+        <p>فرض کن:</p>
+        <div class="chart">80% Train
+20% Test</div>
+        <p>و Train خودش missing دارد.</p>
+        <p>باید:</p>
+        <div class="chart">Train
+ ↓
+Imputer.fit()
+ ↓
+Train.transform()
+
+و:
+
+Test
+ ↓
+Imputer.transform()</div>
+        <p>نه:</p>
+        <div class="chart">Test
+ ↓
+Imputer.fit_transform()</div>
+        <p>حتی نباید برای test یک median جداگانه بسازی.</p>
+
+        <h2>78. Imputation و Distribution Shift</h2>
+        <p>فرض کن:</p>
+        <div class="chart">Training:
+$$ MissingRate=1\% $$
+
+Production:
+$$ MissingRate=20\% $$</div>
+        <p>حتی اگر model performance هنوز خراب نشده باشد، این یک warning است.</p>
+        <p>ممکن است:</p>
+        <div class="chart">Data pipeline changed
+یا
+Upstream API broken
+یا
+User behavior changed</div>
+        <p>باشد.</p>
+
+        <h2>79. Missingness Drift</h2>
+        <p>می‌توانی missing rate را در زمان monitor کنی:</p>
+        <div class="formula">$$ M_t = \frac{\#Missing_t}{\#Total_t} $$</div>
+        <p>مثلاً:</p>
+        <div class="chart">Day 1 → 1.2%
+Day 2 → 1.3%
+Day 3 → 1.1%
+...
+Day 20 → 14.8%</div>
+        <p>این یک signal جدی برای data quality است.</p>
+
+        <h2>80. Missingness و Distribution Shift</h2>
+        <p>گاهی feature distribution ظاهراً ثابت است:</p>
+        <div class="chart">Age distribution ≈ same</div>
+        <p>ولی:</p>
+        <div class="chart">Age missingness</div>
+        <p>از:</p>
+        <div class="chart">2%</div>
+        <p>به:</p>
+        <div class="chart">15%</div>
+        <p>رسیده.</p>
+        <p>پس فقط feature values را monitor کردن کافی نیست.</p>
+
+        <h2>81. آیا باید Missing Data را همیشه Impute کنیم؟</h2>
+        <p>نه.</p>
+        <p>این یکی از مهم‌ترین پاسخ‌های Senior است.</p>
+        <p>گزینه‌ها:</p>
+        <div class="chart">Missing
+ ├── Impute
+ ├── Drop rows
+ ├── Drop feature
+ ├── Missing category
+ ├── Missing indicator
+ ├── Native model handling
+ └── Model-based approach</div>
+        <p>انتخاب به:</p>
+        <div class="chart">mechanism
+amount
+business meaning
+model
+deployment
+computational cost</div>
+        <p>وابسته است.</p>
+
+        <h2>82. چه زمانی Drop Row؟</h2>
+        <p>اگر:</p>
+        <div class="chart">Missing rate بسیار کم
+و
+MCAR plausible</div>
+        <p>باشد، حذف رکورد ممکن است منطقی باشد.</p>
+        <p>مثلاً:</p>
+        <div class="chart">1,000,000 rows
+100 missing</div>
+        <p>اما اگر:</p>
+        <div class="chart">40% rows missing</div>
+        <p>حذف کردن احتمالاً فاجعه است.</p>
+
+        <h2>83. چه زمانی Feature را Drop کنیم؟</h2>
+        <p>اگر:</p>
+        <div class="chart">Feature missingness = 95%
+و
+remaining information low</div>
+        <p>ممکن است حذف feature بهتر باشد.</p>
+        <p>ولی:</p>
+        <p>فقط missing percentage را نگاه نکن.</p>
+        <p>ممکن است یک feature با 90٪ missing، در 10٪ باقی‌مانده signal بسیار ارزشمندی داشته باشد.</p>
+
+        <h2>84. Missingness و Business Meaning</h2>
+        <p>مثلاً:</p>
+        <div class="chart">Previous Loan = NaN</div>
+        <p>ممکن است معنی آن:</p>
+        <div class="chart">No previous loan</div>
+        <p>باشد.</p>
+        <p>در این حالت NaN واقعاً missing نیست!</p>
+        <p>بلکه:</p>
+        <div class="formula">$$ NaN = "Not\ Applicable" $$</div>
+        <p>است.</p>
+        <p>این تفاوت بسیار مهم است.</p>
+
+        <h2>85. Missing vs Not Applicable</h2>
+        <p>مثلاً:</p>
+        <div class="chart">Pregnancy-related feature</div>
+        <p>برای یک گروه از افراد ممکن است اصلاً applicable نباشد.</p>
+        <p>اگر همه را به median تبدیل کنی، مفهوم را خراب کرده‌ای.</p>
+        <p>بنابراین باید بین:</p>
+        <div class="chart">Missing
+Not Applicable
+Unknown
+Not Collected
+System Error</div>
+        <p>تمایز قائل شوی.</p>
+
+        <h2>86. این یکی از مهم‌ترین نکات Production ML است</h2>
+        <p>در data engineering بهتر است missing reason را حفظ کنیم.</p>
+        <p>به جای:</p>
+        <div class="chart">income = NaN</div>
+        <p>اگر ممکن است:</p>
+        <div class="chart">income = NaN
+income_status = NOT_PROVIDED</div>
+        <p>یا:</p>
+        <div class="chart">income_status =
+    NOT_COLLECTED
+    NOT_APPLICABLE
+    UNKNOWN
+    SYSTEM_ERROR</div>
+        <p>این اطلاعات می‌تواند بسیار ارزشمند باشد.</p>
+
+        <h2>87. Missing Data و Causal Interpretation</h2>
+        <p>اگر missingness به رفتار انسان وابسته باشد:</p>
+        <div class="chart">Customer chooses not to provide income</div>
+        <p>missingness ممکن است خودش نتیجه یک process باشد.</p>
+        <p>پس:</p>
+        <div class="formula">$$ Missingness $$</div>
+        <p>ممکن است:</p>
+        <div class="chart">cause
+effect
+proxy
+selection mechanism</div>
+        <p>باشد.</p>
+        <p>این موضوع در causal inference بسیار مهم است.</p>
+
+        <h2>88. Selection Bias و Missing Data</h2>
+        <p>فرض کن فقط کسانی که فرم را کامل پر کرده‌اند وارد dataset شوند:</p>
+        <div class="chart">Population
+    ↓
+Complete respondents
+    ↓
+Dataset</div>
+        <p>اگر افراد خاصی بیشتر فرم را کامل کنند، dataset نماینده population نیست.</p>
+        <p>در نتیجه:</p>
+        <div class="formula">$$ Selection\ Bias $$</div>
+        <p>ایجاد می‌شود.</p>
+        <p>Missing data می‌تواند مستقیماً باعث selection bias شود.</p>
+
+        <h2>89. یک مثال بسیار مهم</h2>
+        <p>فرض کن:</p>
+        <div class="chart">Loan Application</div>
+        <p>افراد low-income بیشتر:</p>
+        <div class="chart">Income field → Missing</div>
+        <p>و بعد فقط complete applications را نگه می‌داریم.</p>
+        <p>در نتیجه:</p>
+        <div class="chart">Dataset</div>
+        <p>بیش از حد افراد high-income را شامل می‌شود.</p>
+        <p>مدل:</p>
+        <div class="chart">Training data ≠ Real population</div>
+        <p>و performance در production ممکن است خراب شود.</p>
+
+        <h2>90. Missing Data و Fairness</h2>
+        <p>اگر missingness بین گروه‌ها متفاوت باشد:</p>
+        <div class="chart">Group A → 2% missing
+Group B → 25% missing</div>
+        <p>imputation می‌تواند روی دو گروه اثر متفاوت بگذارد.</p>
+        <p>مثلاً Median Imputation:</p>
+        <div class="chart">Group A → little impact
+Group B → huge impact</div>
+        <p>پس باید بررسی کنی:</p>
+        <div class="formula">$$ MissingRate(Group) $$</div>
+        <p>و همچنین:</p>
+        <div class="formula">$$ Performance(Group) $$</div>
+
+        <h2>91. Missing Data و Calibration</h2>
+        <p>اگر imputation probability estimates را تغییر دهد، ممکن است:</p>
+        <div class="chart">AUC</div>
+        <p>تقریباً خوب بماند ولی:</p>
+        <div class="chart">Calibration</div>
+        <p>بدتر شود.</p>
+        <p>مثلاً مدل:</p>
+        <div class="chart">Predicted probability = 0.8</div>
+        <p>ولی در واقع:</p>
+        <div class="chart">Observed frequency = 0.6</div>
+        <p>است.</p>
+        <p>پس بعد از imputation فقط Accuracy/F1 را بررسی نکن.</p>
+
+        <h2>92. Missing Data و Uncertainty</h2>
+        <p>وقتی مقدار missing را impute می‌کنی، در واقع uncertainty داریم.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Income = NaN</div>
+        <p>ممکن است:</p>
+        <div class="formula">$$ Income\in[4000,6000] $$</div>
+        <p>باشد.</p>
+        <p>اگر:</p>
+        <div class="chart">Income = 5000</div>
+        <p>قرار دهیم، وانمود می‌کنیم که مقدار را دقیقاً می‌دانیم.</p>
+        <p>در حالی که نمی‌دانیم.</p>
+        <p>این یکی از دلایل اهمیت:</p>
+        <div class="formula">$$ Multiple\ Imputation $$</div>
+        <p>است.</p>
+
+        <h2>93. یک نکته Senior-Level درباره Imputation Quality</h2>
+        <p>نباید فقط بپرسی:</p>
+        <p>«کدام روش کمترین imputation error را دارد؟»</p>
+        <p>چون هدف نهایی ما معمولاً:</p>
+        <div class="formula">$$ Prediction $$</div>
+        <p>است.</p>
+        <p>ممکن است:</p>
+        <div class="chart">Method A
+Imputation RMSE = 10
+
+و:
+
+Method B
+Imputation RMSE = 15</div>
+        <p>باشد.</p>
+        <p>ولی Method B:</p>
+        <div class="chart">Better downstream classification</div>
+        <p>ایجاد کند.</p>
+        <p>بنابراین:</p>
+        <div class="formula">$$ \boxed{ Imputation\ Quality \neq Prediction\ Quality } $$</div>
+        <p>باید هر دو را بررسی کنی.</p>
+
+        <h2>94. چطور روش Imputation را انتخاب کنیم؟</h2>
+        <p>یک decision framework خوب:</p>
+        <div class="chart">                 Missing Data
+                      │
+          ┌───────────┴───────────┐
+          │                       │
+   Understand Cause        Measure Missingness
+          │                       │
+      MCAR/MAR/MNAR          Rate + Pattern
+          │                       │
+          └───────────┬───────────┘
+                      ↓
+              Is Missingness
+                 Informative?
+                      │
+             ┌────────┴────────┐
+             │                 │
+            Yes                No
+             │                 │
+      Missing Indicator    Simple Imputation
+             │                 │
+             └────────┬────────┘
+                      ↓
+             Evaluate Alternatives
+                      │
+       ┌──────────────┼──────────────┐
+       │              │              │
+    Median           KNN          Iterative
+       │              │              │
+       └──────────────┼──────────────┘
+                      ↓
+                Cross Validation
+                      ↓
+             Production Monitoring</div>
+
+        <h2>95. یک مثال واقعی Fraud Detection</h2>
+        <p>فرض کن:</p>
+        <div class="chart">Age
+Income
+Device
+TransactionAmount
+Location
+PreviousTransactions</div>
+        <p>داریم.</p>
+        <p>و:</p>
+        <div class="chart">Income missing = 8%
+Device missing = 2%
+Location missing = 0.5%</div>
+        <p>اول بررسی می‌کنیم:</p>
+        <p>Why is Income missing?</p>
+        <p>می‌بینیم:</p>
+        <div class="chart">Income missing
+        ↓
+Certain customer segment
+        ↓
+Higher fraud rate</div>
+        <p>پس missingness احتمالاً informative است.</p>
+        <p>Strategy:</p>
+        <div class="chart">Income
+   ↓
+Median Imputation
+
++
+Income_missing</div>
+        <p>بعد:</p>
+        <div class="chart">Pipeline
+ ↓
+Cross Validation
+ ↓
+Compare:
+   Median
+   Median + Indicator
+   Iterative
+   Native Missing Handling</div>
+        <p>و در نهایت:</p>
+        <div class="chart">AUC
+PR-AUC
+F1
+Recall
+Calibration
+Business Cost</div>
+        <p>را مقایسه می‌کنیم.</p>
+
+        <h2>96. یک نکته بسیار مهم برای Imbalanced Classification</h2>
+        <p>اگر target شدیداً imbalanced باشد:</p>
+        <div class="chart">Fraud = 1%
+Normal = 99%</div>
+        <p>Missingness ممکن است با Fraud ارتباط داشته باشد.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Missing Income:
+Fraud = 8%
+Normal = 1%</div>
+        <p>در این حالت:</p>
+        <div class="formula">$$ IncomeMissing $$</div>
+        <p>می‌تواند feature بسیار powerful باشد.</p>
+        <p>اما باید بررسی کنیم که آیا این رابطه:</p>
+        <div class="chart">واقعی است؟
+پایدار است؟
+causal است؟
+یا فقط artifact دیتاست است؟</div>
+
+        <h2>97. Missingness Pattern به عنوان Feature</h2>
+        <p>گاهی به جای فقط:</p>
+        <div class="chart">Income_missing</div>
+        <p>یک vector می‌سازیم:</p>
+        <div class="formula">$$ M=(M_1,M_2,\ldots,M_p) $$</div>
+        <p>مثلاً:</p>
+        <div class="chart">[0,1,0,1,1,0]</div>
+        <p>این pattern می‌تواند اطلاعات زیادی داشته باشد.</p>
+        <p>در بعضی مدل‌ها حتی:</p>
+        <div class="formula">$$ Missingness\ Pattern $$</div>
+        <p>به تنهایی predictive است.</p>
+
+        <h2>98. خلاصه سه مکانیزم</h2>
+        <div class="chart">MCAR
+Random
+   ↓
+Missing
+
+MAR
+Observed X
+    ↓
+Missingness
+
+MNAR
+Unobserved / Missing Value
+          ↓
+      Missingness</div>
+        <p>و مهم:</p>
+        <div class="formula">$$ \boxed{ MAR/MNAR\ cannot\ generally\ be\ distinguished\ from\ observed\ data\ alone } $$</div>
+
+        <h2>99. خلاصه روش‌ها</h2>
+        <div class="chart">Mean
+$$ x_{mis}=\mu $$
+ساده ولی variance را کاهش می‌دهد.
+
+Median
+$$ x_{mis}=Median(X) $$
+robustتر به outlier.
+
+Mode
+$$ x_{mis}=Mode(X) $$
+برای categorical.
+
+KNN
+$$ x_{mis} \leftarrow similar\ samples $$
+relationship-based.
+
+Iterative
+$$ X_j \leftarrow f(X_{-j}) $$
+featureها را از یکدیگر پیش‌بینی می‌کند.
+
+MICE
+Multiple Imputation
++
+Chained Equations
+uncertainty را بهتر مدل می‌کند.
+
+Missing Indicator
+$$ M_j=\mathbb{1}(X_j\ missing) $$
+missingness را به feature تبدیل می‌کند.
+
+Model-Based
+Missing value
+      ↓
+ML model
+      ↓
+Prediction</div>
+
+        <h2>100. ⭐ مهم‌ترین نکات Senior ML</h2>
+        <p>اگر بخواهم کل این chapter را به 15 نکته مصاحبه‌ای تبدیل کنم:</p>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">1.</div>
+            <p>قبل از imputation بپرس:</p>
+            <p>Why is the data missing?</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">2.</div>
+            <p>MCAR یعنی missingness مستقل از observed و unobserved data است.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#3fb950;">
+            <div class="inner-title">3.</div>
+            <p>MAR یعنی بعد از conditioning روی observed information، missingness به مقدار missing وابسته نیست.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#d2a8ff;">
+            <div class="inner-title">4.</div>
+            <p>MNAR یعنی missingness به مقدار missing/unobserved information وابسته است.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">5.</div>
+            <p>MAR و MNAR را معمولاً نمی‌توان صرفاً از داده observed به‌طور قطعی تشخیص داد.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">6.</div>
+            <p>Mean/Median imputation variance را می‌تواند کاهش دهد.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#3fb950;">
+            <div class="inner-title">7.</div>
+            <p>Median برای skew/outlier معمولاً robustتر است.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#d2a8ff;">
+            <div class="inner-title">8.</div>
+            <p>Categorical را می‌توان با Mode یا یک category جداگانه مثل MISSING مدیریت کرد.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">9.</div>
+            <p>Missingness خودش ممکن است signal باشد.</p>
+            <div class="formula">$$ \boxed{ Missingness \neq Noise } $$</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">10.</div>
+            <p>Missing Indicator در این حالت بسیار مفید است.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#3fb950;">
+            <div class="inner-title">11.</div>
+            <p>KNN به distance و scaling حساس است.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#d2a8ff;">
+            <div class="inner-title">12.</div>
+            <p>Iterative/MICE روابط بین featureها را بهتر capture می‌کنند، ولی پیچیده‌تر و expensiveترند.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">13.</div>
+            <p>Imputer باید فقط روی Train fit شود.</p>
+            <div class="chart">Train → fit
+Validation/Test → transform</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">14.</div>
+            <p>در Cross-Validation، imputation باید داخل Pipeline و داخل هر fold انجام شود.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#3fb950;">
+            <div class="inner-title">15.</div>
+            <p>در Production، فقط feature drift را monitor نکن؛</p>
+            <div class="formula">$$ \boxed{ Missingness\ Drift } $$</div>
+            <p>را هم monitor کن.</p>
+        </div>
+
+        <h2>🧠 مهم‌ترین تصویر ذهنی کل مبحث</h2>
+        <div class="chart">                    MISSING DATA
+                         │
+                         ▼
+              ┌─────────────────────┐
+              │ Why is it missing?  │
+              └──────────┬──────────┘
+                         │
+             ┌───────────┼───────────┐
+             ▼           ▼           ▼
+            MCAR        MAR         MNAR
+             │           │           │
+             └───────────┼───────────┘
+                         ▼
+                 Missingness Analysis
+                         │
+            ┌────────────┼─────────────┐
+            │            │             │
+            ▼            ▼             ▼
+        Imputation   Indicator    Native Handling
+            │            │
+      ┌─────┼─────┐      │
+      ▼     ▼     ▼      │
+    Mean  Median  KNN     │
+                  │       │
+                  ▼       │
+             Iterative    │
+                  │       │
+                  ▼       │
+                 MICE     │
+                  │       │
+                  └───────┘
+                      │
+                      ▼
+              Train-only Fitting
+                      │
+                      ▼
+                Cross Validation
+                      │
+                      ▼
+               Model Evaluation
+                      │
+                      ▼
+             Production Monitoring
+                      │
+                      ▼
+              Missingness Drift</div>
+
+        <p>و اگر بخواهی این مبحث را واقعاً Senior-level جمع‌بندی کنی، مهم‌ترین ارتباط‌ها این‌ها هستند:</p>
+        <div class="formula">$$ \boxed{ Missingness \rightarrow Bias \rightarrow Selection\ Bias } $$</div>
+        <div class="formula">$$ \boxed{ Imputation \rightarrow Variance / Distribution / Correlation } $$</div>
+        <div class="formula">$$ \boxed{ Imputation \rightarrow Potential\ Leakage } $$</div>
+        <div class="formula">$$ \boxed{ Missingness\ Indicator \rightarrow Predictive\ Signal } $$</div>
+        <div class="formula">$$ \boxed{ MCAR/MAR/MNAR \rightarrow Choice\ of\ Missing\ Data\ Strategy } $$</div>
+
+        <p>و مهم‌تر از همه:</p>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <p>در ML حرفه‌ای، هدف صرفاً این نیست که NaN را حذف کنیم؛ هدف این است که فرآیند تولید missingness را بفهمیم، اطلاعات مفید آن را از بین نبریم، uncertainty و bias را مدیریت کنیم، و مطمئن شویم preprocessing در هیچ مرحله‌ای information از validation/test/future وارد training نمی‌کند.</p>
+        </div>
+
+        <hr style="border:1px solid #444; margin:50px 0;" />
+        <p style="text-align:center; color:#8b949e; font-size:0.85rem; padding:16px 0;">Missing Data · Senior ML · تمام نکات ریز 🧠</p>
+    </div>
+</body>
+</html>

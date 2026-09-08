@@ -1,0 +1,1494 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error Analysis · Senior ML Level</title>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}]});"></script>
+
+    <style>
+        body {
+            background-color: #0d1117;
+            color: #e6edf3;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.8;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h1, h2, h3, h4 {
+            color: #e6edf3;
+            text-align: right;
+            border-bottom: 2px solid #30363d;
+            padding-bottom: 12px;
+            margin-top: 50px;
+        }
+        h1 {
+            border-bottom: 4px double #58a6ff;
+            text-align: center;
+        }
+        p, li {
+            text-align: right;
+        }
+
+        .box {
+            background-color: #21262d;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            color: #e6edf3;
+        }
+        .inner-box {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 10px;
+            border-right: 4px solid #58a6ff;
+        }
+        .inner-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .formula {
+            direction: ltr;
+            background-color: #000;
+            border: 1px solid #fff;
+            border-radius: 0;
+            padding: 20px;
+            margin: 20px auto;
+            width: fit-content;
+            max-width: 100%;
+            overflow-x: auto;
+            text-align: center;
+            font-size: 1.2em;
+            font-family: "Times New Roman", Times, serif;
+            color: #fff;
+        }
+
+        .chart {
+            direction: ltr;
+            text-align: left;
+            font-family: 'Consolas', 'Courier New', monospace;
+            background-color: #21262d;
+            border-radius: 8px;
+            padding: 15px;
+            overflow-x: auto;
+            white-space: pre;
+            border: 1px solid #30363d;
+            color: #a5d6ff;
+            font-size: 0.95rem;
+        }
+
+        .highlight-box {
+            background-color: #2d333b;
+            border-right: 4px solid #58a6ff;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            direction: rtl;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #30363d;
+            padding: 12px;
+            text-align: right;
+        }
+        th {
+            background-color: #21262d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 25. Error Analysis — از پایه تا Senior ML</h1>
+
+        <p style="font-size:1.1rem;">حتماً. این بخش واقعاً یکی از تفاوت‌های اصلی Junior/Intermediate ML با Senior ML Engineer است.</p>
+        
+        <div class="highlight-box">
+            <p>یک Junior ممکن است بگوید:</p>
+            <div class="chart">F1 = 0.91</div>
+            <p>اما یک Senior می‌پرسد:</p>
+            <p>این 9٪ خطا دقیقاً کجا اتفاق می‌افتد، چرا اتفاق می‌افتد، چه کسانی/چه داده‌هایی را تحت تأثیر قرار می‌دهد، و برای کاهش آن چه تغییری بیشترین ROI را دارد؟</p>
+        </div>
+
+        <h2>1. Error Analysis چیست؟</h2>
+        <p>Error Analysis یعنی بررسی سیستماتیک predictionهای مدل برای پیدا کردن:</p>
+        <div class="chart">مدل کجا اشتباه می‌کند؟
+چه نوع نمونه‌هایی برای مدل سخت هستند؟
+آیا خطاها الگوی مشخصی دارند؟
+آیا مشکل از model است یا data؟
+آیا label اشتباه است؟
+آیا feature کافی نداریم؟
+آیا distribution تغییر کرده؟
+آیا threshold اشتباه است؟
+آیا یک گروه خاص performance ضعیف‌تری دارد؟</div>
+        <p>یعنی به جای اینکه فقط بگویی:</p>
+        <div class="formula">$$ F1=0.91 $$</div>
+        <p>می‌گویی:</p>
+        <div class="formula">$$ \boxed{ Where,\ Why,\ and\ How\ does\ the\ model\ fail? } $$</div>
+
+        <h2>2. چرا Error Analysis از Hyperparameter Tuning مهم‌تر است؟</h2>
+        <p>فرض کن:</p>
+        <div class="chart">Model A
+F1 = 0.91</div>
+        <p>و با tuning می‌توانی:</p>
+        <div class="chart">F1 = 0.913</div>
+        <p>اما Error Analysis نشان می‌دهد:</p>
+        <div class="chart">Product A       F1 = 0.97
+Product B       F1 = 0.94
+Product C       F1 = 0.71</div>
+        <div class="highlight-box">
+            <p>اگر Product C بخش مهمی از business باشد، احتمالاً:</p>
+            <p>رفع مشکل Product C ارزش بسیار بیشتری از tuning برای رسیدن از 0.91 به 0.913 دارد.</p>
+        </div>
+
+        <h2>3. یک مدل ذهنی مهم</h2>
+        <p>Performance کلی:</p>
+        <div class="formula">$$ Metric_{global} $$</div>
+        <p>در واقع aggregation تعداد زیادی sub-population است.</p>
+        <p>مثلاً:</p>
+        <div class="formula">$$ F1_{global} $$</div>
+        <p>می‌تواند ترکیبی از:</p>
+        <div class="chart">Customer type
+Product
+Region
+Time
+Transaction amount
+Device
+Language
+Age group</div>
+        <p>باشد.</p>
+        <p>پس:</p>
+        <div class="formula">$$ \boxed{ Global\ Metric\ can\ hide\ local\ failures. } $$</div>
+
+        <h2>4. اولین مرحله: Confusion Matrix</h2>
+        <p>در classification ابتدا:</p>
+        <table>
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>Predicted Positive</th>
+                    <th>Predicted Negative</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Actual Positive</strong></td>
+                    <td>TP</td>
+                    <td>FN</td>
+                </tr>
+                <tr>
+                    <td><strong>Actual Negative</strong></td>
+                    <td>FP</td>
+                    <td>TN</td>
+                </tr>
+            </tbody>
+        </table>
+        <p>داریم.</p>
+
+        <h2>5. False Positive</h2>
+        <p>False Positive:</p>
+        <div class="formula">$$ Actual=0,\ Prediction=1 $$</div>
+        <p>یعنی:</p>
+        <p>مدل گفته positive، ولی واقعاً negative بوده.</p>
+        <p>مثلاً Fraud Detection:</p>
+        <div class="chart">Normal transaction
+       ↓
+Model → Fraud</div>
+        <p>ممکن است مشتری واقعی را block کنیم.</p>
+
+        <h2>6. False Negative</h2>
+        <p>False Negative:</p>
+        <div class="formula">$$ Actual=1,\ Prediction=0 $$</div>
+        <p>یعنی:</p>
+        <p>مدل positive واقعی را از دست داده.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Fraud transaction
+       ↓
+Model → Normal</div>
+        <p>Fraud عبور می‌کند.</p>
+
+        <h2>7. چرا باید FP و FN را جدا تحلیل کنیم؟</h2>
+        <p>چون علتشان معمولاً متفاوت است.</p>
+        <div class="inner-box">
+            <div class="inner-title">FP ممکن است ناشی از:</div>
+            <div class="chart">• threshold پایین
+• feature ambiguity
+• false positive patterns
+• noisy data</div>
+            <p>باشد.</p>
+        </div>
+        <div class="inner-box">
+            <div class="inner-title">FN ممکن است ناشی از:</div>
+            <div class="chart">• signal ضعیف
+• rare patterns
+• threshold بالا
+• missing features</div>
+            <p>باشد.</p>
+        </div>
+
+        <h2>8. فقط تعداد FP/FN کافی نیست</h2>
+        <p>مثلاً:</p>
+        <div class="chart">FP = 1000
+FN = 100</div>
+        <p>به‌تنهایی نمی‌گوید کدام مهم‌تر است.</p>
+        <p>باید cost را بدانیم.</p>
+        <p>مثلاً:</p>
+        <div class="formula">$$ Cost(FN)=100 $$</div>
+        <p>و:</p>
+        <div class="formula">$$ Cost(FP)=1 $$</div>
+        <p>در این صورت:</p>
+        <div class="formula">$$ 100 FN \times 100 = 10,000 $$</div>
+        <p>در حالی که:</p>
+        <div class="formula">$$ 1000 FP \times 1 = 1,000 $$</div>
+        <p>پس FN بسیار مهم‌تر است.</p>
+
+        <h2>9. Cost-Based Error Analysis</h2>
+        <p>در سطح Senior باید error را به business cost وصل کنی.</p>
+        <div class="formula">$$ Expected\ Cost = C_{FP}FP+C_{FN}FN $$</div>
+        <p>مثلاً در fraud:</p>
+        <div class="formula">$$ C_{FN} \gg C_{FP} $$</div>
+        <p>اما در بعضی سیستم‌ها برعکس است.</p>
+
+        <h2>10. Error Analysis فقط برای Classification نیست</h2>
+        <p>در regression هم می‌توانی بررسی کنی:</p>
+        <div class="formula">$$ e_i = y_i - \hat{y}_i $$</div>
+        <p>و بپرسی:</p>
+        <div class="chart">کجا error بزرگ است؟
+چه گروهی error بیشتری دارد؟
+آیا error با target magnitude افزایش می‌یابد؟
+آیا residual pattern داریم؟</div>
+
+        <h2>11. Residual Analysis</h2>
+        <p>برای regression:</p>
+        <div class="formula">$$ Residual = y - \hat{y} $$</div>
+        <p>اگر residualها pattern داشته باشند، احتمالاً مدل چیزی را یاد نگرفته.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Actual
+ ^
+ |       •
+ |     •
+ |   •
+ | •
+ +----------------> Prediction</div>
+        <p>اگر residualها random باشند، وضعیت بهتر است.</p>
+
+        <h2>12. Error Distribution</h2>
+        <p>Residual distribution را بررسی کن.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Residual
+  ^
+  |       /\
+  |      /  \
+  |_____/____\____
+       0</div>
+        <p>اگر:</p>
+        <div class="formula">$$ E[e] \neq 0 $$</div>
+        <p>باشد، ممکن است bias سیستماتیک داشته باشیم.</p>
+
+        <h2>13. Error Analysis باید از Dataset شروع شود</h2>
+        <p>یک dataframe برای prediction بساز:</p>
+        <div class="chart">df["prediction"] = model.predict(X)
+df["probability"] = model.predict_proba(X)[:, 1]
+df["error_type"] = ...</div>
+        <p>مثلاً:</p>
+        <div class="chart">id
+true_label
+prediction
+probability
+error_type
+customer_group
+product
+region
+timestamp</div>
+        <p>این تبدیل prediction به analysis dataset بسیار مهم است.</p>
+
+        <h2>14. Error Taxonomy</h2>
+        <p>یک Senior معمولاً errorها را دسته‌بندی می‌کند.</p>
+        <p>مثلاً در fraud:</p>
+        <div class="chart">Errors
+│
+├── False Positive
+│
+├── False Negative
+│
+├── Rare Pattern
+│
+├── Missing Feature
+│
+├── Label Noise
+│
+├── Data Quality
+│
+├── Distribution Shift
+│
+└── Model Limitation</div>
+
+        <h2>15. Error Bucketing</h2>
+        <p>به جای بررسی تک‌تک predictionها، آنها را bucket می‌کنیم.</p>
+        <p>مثلاً amount:</p>
+        <div class="chart">0–100
+100–500
+500–1000
+1000–5000
+5000+</div>
+        <p>بعد metric را برای هر bucket محاسبه می‌کنیم.</p>
+
+        <h2>16. Error Analysis بر اساس User Group</h2>
+        <p>مثلاً:</p>
+        <div class="chart">User Type       Recall
+-----------------------
+New Users        0.62
+Existing Users   0.94</div>
+        <p>مدل global:</p>
+        <div class="chart">Recall = 0.91</div>
+        <p>به نظر خوب است.</p>
+        <p>اما:</p>
+        <div class="chart">New Users مشکل جدی دارند.</div>
+
+        <h2>17. Specific Products</h2>
+        <p>مثلاً payment model:</p>
+        <div class="chart">Product A → F1 = .95
+Product B → F1 = .93
+Product C → F1 = .67</div>
+        <p>ممکن است Product C:</p>
+        <div class="chart">• رفتار متفاوتی داشته باشد
+• featureهای متفاوتی داشته باشد
+• label quality پایین‌تری داشته باشد
+• data کمتری داشته باشد</div>
+
+        <h2>18. Time-Based Error Analysis</h2>
+        <p>performance را بر اساس زمان بررسی کن:</p>
+        <div class="chart">Jan → F1 .93
+Feb → F1 .92
+Mar → F1 .91
+Apr → F1 .75</div>
+        <p>این یک red flag است.</p>
+        <p>ممکن است:</p>
+        <div class="formula">$$ Concept\ Drift $$</div>
+        <p>یا:</p>
+        <div class="formula">$$ Data\ Drift $$</div>
+        <p>رخ داده باشد.</p>
+
+        <h2>19. Seasonal Error</h2>
+        <p>گاهی مدل در:</p>
+        <div class="chart">Weekdays</div>
+        <p>خوب است ولی:</p>
+        <div class="chart">Weekends</div>
+        <p>بد.</p>
+        <p>یا:</p>
+        <div class="chart">Normal days → .95
+Holiday → .72</div>
+        <p>این ممکن است نشان دهد مدل seasonality را درست capture نکرده.</p>
+
+        <h2>20. Error Analysis و Distribution Shift</h2>
+        <p>اگر:</p>
+        <div class="formula">$$ P_{train}(X) \neq P_{production}(X) $$</div>
+        <p>باشد، performance ممکن است کاهش پیدا کند.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Training:
+Mobile = 30%
+
+Production:
+Mobile = 80%</div>
+        <p>ممکن است model behavior تغییر کند.</p>
+
+        <h2>21. Feature-Level Error Analysis</h2>
+        <p>فرض کن FNها را جدا می‌کنی.</p>
+        <p>می‌بینی:</p>
+        <div class="chart">FN:
+Average transaction amount = low
+Device age = new
+Velocity = high</div>
+        <p>شاید:</p>
+        <p>مدل در ترکیب این featureها مشکل دارد.</p>
+        <p>اینجاست که Feature Engineering می‌تواند ارزشمند شود.</p>
+
+        <h2>22. Error Analysis برای Interactionها</h2>
+        <p>فرض کن:</p>
+        <div class="chart">age
+income</div>
+        <p>هر دو به تنهایی خوب هستند.</p>
+        <p>اما:</p>
+        <div class="formula">$$ Age \times Income $$</div>
+        <p>ممکن است signal مهمی باشد.</p>
+        <p>مثلاً مدل برای:</p>
+        <div class="chart">young + high-income + high-velocity</div>
+        <p>زیاد اشتباه می‌کند.</p>
+        <p>این یک clue برای interaction feature است.</p>
+
+        <h2>23. Rare Cases</h2>
+        <p>یکی از مهم‌ترین بخش‌ها:</p>
+        <div class="chart">Rare cases</div>
+        <p>مثلاً:</p>
+        <div class="chart">Normal:
+99.9%
+
+Fraud:
+0.1%</div>
+        <p>ممکن است مدل روی majority عالی باشد ولی روی rare patterns ضعیف.</p>
+
+        <h2>24. چرا Rare Cases مهم‌اند؟</h2>
+        <p>چون metric global ممکن است آنها را پنهان کند.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Accuracy = 99.9%</div>
+        <p>اما مدل:</p>
+        <div class="chart">Recall(Fraud) = 10%</div>
+        <p>دارد.</p>
+        <p>پس:</p>
+        <div class="formula">$$ Global\ Metric \neq Business\ Quality $$</div>
+
+        <h2>25. Error Analysis و Class Imbalance</h2>
+        <p>در class imbalance باید حتماً error را بر اساس class بررسی کنی.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Normal:
+Precision = .99
+
+Fraud:
+Recall = .52</div>
+        <p>Accuracy شاید 99% باشد.</p>
+        <p>ولی مدل برای هدف اصلی business ضعیف است.</p>
+
+        <h2>26. Confidence-Based Error Analysis</h2>
+        <p>Prediction probability را هم بررسی کن.</p>
+        <p>مثلاً:</p>
+        <div class="chart">True = 1
+Pred = 0
+Probability = 0.51</div>
+        <p>در مقابل:</p>
+        <div class="chart">True = 1
+Pred = 0
+Probability = 0.01</div>
+        <p>این دو FN کاملاً متفاوت‌اند.</p>
+
+        <h2>27. Hard Errors vs Borderline Errors</h2>
+        <div class="inner-box">
+            <div class="inner-title">Borderline Error</div>
+            <p>مثلاً:</p>
+            <div class="formula">$$ P(y=1|x)=0.48 $$</div>
+            <p>مدل uncertainty زیادی دارد.</p>
+        </div>
+        <div class="inner-box">
+            <div class="inner-title">Hard Error</div>
+            <p>مثلاً:</p>
+            <div class="formula">$$ P(y=1|x)=0.001 $$</div>
+            <p>ولی label واقعاً positive است.</p>
+            <p>Hard errors بسیار جالب‌اند.</p>
+            <p>ممکن است:</p>
+            <div class="chart">label غلط باشد
+feature missing باشد
+distribution shift باشد
+rare pattern باشد</div>
+        </div>
+
+        <h2>28. Error vs Confidence</h2>
+        <p>یک تحلیل بسیار مفید:</p>
+        <div class="chart">Probability Bucket       Error Rate
+0.0–0.1                    2%
+0.1–0.2                    5%
+...
+0.9–1.0                    15%</div>
+        <p>اگر high-confidence errors زیاد باشند:</p>
+        <p>مدل calibration یا data problem جدی دارد.</p>
+
+        <h2>29. Calibration و Error Analysis</h2>
+        <p>مثلاً مدل می‌گوید:</p>
+        <div class="chart">P(Fraud)=0.95</div>
+        <p>ولی در مواردی که probability حدود 0.95 است فقط:</p>
+        <div class="chart">70%</div>
+        <p>واقعاً fraud هستند.</p>
+        <p>مدل overconfident است.</p>
+        <p>این برای تصمیم‌های risk-sensitive مهم است.</p>
+
+        <h2>30. Error Analysis و Threshold</h2>
+        <p>فرض کن:</p>
+        <div class="formula">$$ threshold = 0.5 $$</div>
+        <p>است.</p>
+        <p>اما error analysis نشان می‌دهد:</p>
+        <div class="chart">0.4–0.6</div>
+        <p>بیشتر errors هستند.</p>
+        <p>می‌توانی threshold را تغییر دهی.</p>
+        <p>مثلاً:</p>
+        <div class="formula">$$ threshold = 0.35 $$</div>
+        <p>ممکن است Recall افزایش دهد.</p>
+
+        <h2>31. Threshold Tuning خودش Model Improvement نیست</h2>
+        <p>این نکته مهم است.</p>
+        <p>اگر:</p>
+        <div class="formula">$$ P(y|x) $$</div>
+        <p>مدل ثابت باشد و فقط threshold را تغییر دهی:</p>
+        <p>representation مدل تغییر نکرده.</p>
+        <p>فقط decision policy تغییر کرده.</p>
+        <p>پس:</p>
+        <div class="chart">Model Quality</div>
+        <p>و:</p>
+        <div class="chart">Decision Policy</div>
+        <p>را جدا کن.</p>
+
+        <h2>32. Label Error Analysis</h2>
+        <p>یکی از مهم‌ترین یافته‌ها:</p>
+        <p>بعضی model errors واقعاً model errors نیستند.</p>
+        <p>ممکن است:</p>
+        <div class="formula">$$ y_{observed} \neq y_{true} $$</div>
+        <p>باشد.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Model prediction = Fraud
+Stored label = Normal</div>
+        <p>بعد investigation نشان می‌دهد:</p>
+        <div class="chart">label اشتباه بوده.</div>
+
+        <h2>33. Noisy Labels</h2>
+        <p>اگر label noise داشته باشی:</p>
+        <div class="chart">True → Fraud
+Annotation → Normal</div>
+        <p>مدل را نمی‌توانی به‌سادگی با tuning اصلاح کنی.</p>
+        <p>راه‌حل‌ها:</p>
+        <div class="chart">relabeling
+multiple annotators
+label auditing
+consensus labels
+probabilistic labels</div>
+
+        <h2>34. Data Quality Errors</h2>
+        <p>ممکن است مشکل:</p>
+        <div class="chart">Age = -20
+Amount = 999999999
+Country = NULL
+Timestamp = wrong timezone</div>
+        <p>باشد.</p>
+        <p>مدل روی چنین داده‌ای ممکن است fail کند.</p>
+
+        <h2>35. Missing Feature</h2>
+        <p>ممکن است مدل prediction اشتباه کند چون feature کلیدی در inference وجود ندارد.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Feature:
+device_risk_score</div>
+        <p>در training موجود بوده ولی در production:</p>
+        <div class="chart">missing</div>
+        <p>این یک pipeline problem است، نه صرفاً model problem.</p>
+
+        <h2>36. Training-Serving Skew</h2>
+        <p>یکی از مشکلات بسیار مهم production ML:</p>
+        <div class="formula">$$ P_{training}(X) \neq P_{serving}(X) $$</div>
+        <p>مثلاً preprocessing در training:</p>
+        <div class="chart">log(amount)</div>
+        <p>ولی production:</p>
+        <div class="chart">raw(amount)</div>
+        <p>است.</p>
+        <p>مدل ممکن است ناگهان خراب شود.</p>
+
+        <h2>37. Data Leakage و Error Analysis</h2>
+        <p>گاهی metric بسیار خوب است ولی error analysis نشان می‌دهد:</p>
+        <p>بعضی featureها در production وجود ندارند.</p>
+        <p>مثلاً:</p>
+        <div class="chart">chargeback_status</div>
+        <p>که بعد از وقوع fraud مشخص می‌شود.</p>
+        <p>اگر آن را در training استفاده کرده باشی:</p>
+        <div class="chart">leakage.</div>
+
+        <h2>38. Slice-Based Evaluation</h2>
+        <p>این یکی از مهم‌ترین مفاهیم Senior ML است.</p>
+        <p>به جای:</p>
+        <div class="formula">$$ Metric(D) $$</div>
+        <p>محاسبه کن:</p>
+        <div class="formula">$$ Metric(D_s) $$</div>
+        <p>برای sliceهای مختلف.</p>
+        <p>مثلاً:</p>
+        <div class="formula">$$ F1_{country=IR} $$</div>
+        <div class="formula">$$ F1_{country=TR} $$</div>
+        <div class="formula">$$ F1_{country=DE} $$</div>
+
+        <h2>39. Sliceها می‌توانند چندبعدی باشند</h2>
+        <p>مثلاً:</p>
+        <div class="chart">Country = TR
+AND
+Device = Mobile
+AND
+User = New</div>
+        <p>ممکن است:</p>
+        <div class="chart">F1 = .55</div>
+        <p>باشد.</p>
+        <p>در حالی که global:</p>
+        <div class="chart">F1 = .91</div>
+        <p>است.</p>
+        <p>این یک hidden failure mode است.</p>
+
+        <h2>40. اما مراقب Multiple Comparisons باش</h2>
+        <p>اگر 10,000 slice بسازی:</p>
+        <div class="chart">Country
+× Product
+× Device
+× Age
+× Time
+× ...</div>
+        <p>احتمالاً بعضی sliceها به‌صورت تصادفی performance بد نشان می‌دهند.</p>
+        <p>بنابراین:</p>
+        <p>هر subgroup anomaly الزاماً واقعی نیست.</p>
+        <p>باید:</p>
+        <div class="chart">sample size
+confidence interval
+statistical significance
+effect size</div>
+        <p>را بررسی کنی.</p>
+
+        <h2>41. Small Slice Problem</h2>
+        <p>مثلاً:</p>
+        <div class="chart">Group A:
+N = 1,000,000
+F1 = .91
+
+Group B:
+N = 10
+F1 = .60</div>
+        <p>نباید نتیجه بگیری:</p>
+        <p>مدل روی Group B افتضاح است.</p>
+        <p>چون:</p>
+        <div class="formula">$$ N=10 $$</div>
+        <p>خیلی کوچک است.</p>
+
+        <h2>42. Confidence Interval برای Slice Metrics</h2>
+        <p>مثلاً:</p>
+        <div class="chart">Group A:
+Recall = 0.91 ± 0.01
+
+Group B:
+Recall = 0.82 ± 0.20</div>
+        <p>Group B uncertainty زیادی دارد.</p>
+        <p>پس قبل از تصمیم‌گیری:</p>
+        <p>data بیشتری لازم است.</p>
+
+        <h2>43. Error Analysis و Fairness</h2>
+        <p>Slice analysis می‌تواند fairness problems را هم آشکار کند.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Group A:
+FNR = 5%
+
+Group B:
+FNR = 20%</div>
+        <p>این اختلاف ممکن است از:</p>
+        <div class="chart">data imbalance
+label quality
+feature quality
+representation
+threshold
+distribution</div>
+        <p>ناشی شود.</p>
+
+        <h2>44. Error Analysis و Root Cause Analysis</h2>
+        <p>هدف نهایی:</p>
+        <div class="chart">Error
+ ↓
+Pattern
+ ↓
+Hypothesis
+ ↓
+Root Cause
+ ↓
+Intervention
+ ↓
+Experiment</div>
+        <p>مثلاً:</p>
+        <div class="chart">FN زیاد
+ ↓
+Mostly new customers
+ ↓
+New customers feature history ندارند
+ ↓
+Model relies on historical behavior
+ ↓
+Cold-start problem
+ ↓
+Add onboarding/device/network signals</div>
+        <p>این دقیقاً workflow یک Senior است.</p>
+
+        <h2>45. Error Analysis نباید فقط Descriptive باشد</h2>
+        <p>گفتن:</p>
+        <div class="chart">70% errors مربوط به Product C است.</div>
+        <p>کافی نیست.</p>
+        <p>باید بپرسی:</p>
+        <div class="chart">چرا؟</div>
+        <p>و سپس:</p>
+        <div class="chart">Product C
+ ↓
+Different user behavior
+ ↓
+Training data insufficient
+ ↓
+Model under-represents this population</div>
+
+        <h2>46. Error Analysis و Hypothesis Testing</h2>
+        <p>فرض کن می‌گویی:</p>
+        <p>مدل روی mobile بدتر است.</p>
+        <p>این را باید تست کنی.</p>
+        <p>مثلاً:</p>
+        <div class="formula">$$ H_0: Performance_{mobile} = Performance_{desktop} $$</div>
+        <p>و:</p>
+        <div class="formula">$$ H_1: Performance_{mobile} \neq Performance_{desktop} $$</div>
+        <p>اما فقط p-value کافی نیست.</p>
+        <p>Effect size و CI هم مهم‌اند.</p>
+
+        <h2>47. Error Analysis و Data Collection</h2>
+        <p>گاهی نتیجه:</p>
+        <p>Model problem نیست؛ data coverage مشکل دارد.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Training:
+
+Product A → 80%
+Product B → 15%
+Product C → 5%
+
+اما production:
+
+Product C → 40%</div>
+        <p>راه‌حل ممکن است:</p>
+        <div class="chart">جمع‌آوری data بیشتر برای Product C</div>
+        <p>باشد.</p>
+
+        <h2>48. Error Analysis و Active Learning</h2>
+        <p>می‌توانی سخت‌ترین نمونه‌ها را برای labeling انتخاب کنی.</p>
+        <p>مثلاً:</p>
+        <div class="chart">High uncertainty
+      ↓
+Select samples
+      ↓
+Human labeling
+      ↓
+Add to training</div>
+        <p>این:</p>
+        <div class="formula">$$ Active\ Learning $$</div>
+        <p>است.</p>
+
+        <h2>49. Error Analysis و Hard Negative Mining</h2>
+        <p>در classification مخصوصاً retrieval/search بسیار مهم است.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Query:
+"apple"
+
+Wrong negative:
+"banana"
+
+Hard negative:
+"apple watch"</div>
+        <p>Hard negative بسیار شبیه positive است.</p>
+        <p>با اضافه کردن hard negatives می‌توان representation را بهتر کرد.</p>
+
+        <h2>50. Error Analysis در Search/RAG</h2>
+        <p>فرض کن RAG داری.</p>
+        <p>به جای فقط:</p>
+        <div class="chart">Answer Accuracy = 85%</div>
+        <p>باید بررسی کنی:</p>
+        <div class="chart">Retrieval Error
+Generation Error</div>
+
+        <h2>51. Retrieval Error</h2>
+        <p>اگر document درست اصلاً retrieve نشده:</p>
+        <div class="chart">User Query
+ ↓
+Retriever
+ ↓
+❌ Correct document not retrieved</div>
+        <p>LLM نمی‌تواند answer درست بدهد.</p>
+        <p>پس:</p>
+        <p>مشکل generation نیست.</p>
+
+        <h2>52. Generation Error</h2>
+        <p>اگر document درست retrieve شده:</p>
+        <div class="chart">Query
+ ↓
+Correct Context
+ ↓
+LLM
+ ↓
+❌ Wrong answer</div>
+        <p>اینجا مشکل generation/reasoning/prompt/model است.</p>
+        <p>این distinction در سیستم‌های Agentic/RAG بسیار مهم است.</p>
+
+        <h2>53. Error Analysis در Computer Vision</h2>
+        <p>مثلاً classifier:</p>
+        <div class="chart">Cat / Dog</div>
+        <p>errors را بررسی کن.</p>
+        <p>ممکن است:</p>
+        <div class="chart">Low light
+Occlusion
+Blur
+Small objects
+Multiple objects
+Unusual viewpoint</div>
+        <p>باشند.</p>
+        <p>بعد augmentation هدفمند انجام می‌دهی.</p>
+
+        <h2>54. Error Analysis در NLP</h2>
+        <p>مثلاً sentiment classification.</p>
+        <p>ممکن است model روی:</p>
+        <div class="chart">Sarcasm
+Negation
+Long sentences
+Slang
+Code-switching
+Typos
+Rare words</div>
+        <p>ضعیف باشد.</p>
+        <p>به جای tuning کورکورانه:</p>
+        <p>dataset را برای همین cases تقویت می‌کنی.</p>
+
+        <h2>55. Error Analysis در Time Series</h2>
+        <p>بررسی کن:</p>
+        <div class="chart">Hour
+Day
+Week
+Month
+Season
+Holiday
+Promotion</div>
+        <p>مثلاً:</p>
+        <div class="chart">Normal → RMSE = 10
+Holiday → RMSE = 80</div>
+        <p>این ممکن است signal مهمی باشد.</p>
+
+        <h2>56. Error Analysis در Fraud Detection</h2>
+        <p>یک framework بسیار خوب:</p>
+        <div class="chart">                    Fraud Errors
+                         │
+          ┌──────────────┴──────────────┐
+          │                             │
+         FP                            FN
+          │                             │
+    ┌─────┴─────┐                ┌──────┴─────┐
+    │           │                │            │
+ New User   High Amount      New Pattern   Low Amount
+    │           │                │            │
+    ▼           ▼                ▼            ▼
+Feature      Threshold        Missing      Weak
+Problem       Issue            Signal       Signal</div>
+
+        <h2>57. Error Severity</h2>
+        <p>همه errors یکسان نیستند.</p>
+        <p>می‌توانی error را rank کنی:</p>
+        <div class="formula">$$ Severity_i = Probability_i \times Cost_i $$</div>
+        <p>یا مثلاً:</p>
+        <div class="chart">Critical
+High
+Medium
+Low</div>
+
+        <h2>58. Error Prioritization</h2>
+        <p>اگر 100 نوع error داری، همه را همزمان fix نکن.</p>
+        <p>اول:</p>
+        <div class="formula">$$ Expected\ Impact $$</div>
+        <p>را محاسبه کن.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Error	Frequency	Cost	Priority
+FP-New User	20%	Low	Medium
+FN-Fraud	5%	Very High	Critical
+Product C	10%	High	High</div>
+
+        <h2>59. Error Analysis و Pareto Principle</h2>
+        <p>ممکن است:</p>
+        <div class="formula">$$ 20\% $$</div>
+        <p>از error categories مسئول:</p>
+        <div class="formula">$$ 80\% $$</div>
+        <p>از business impact باشند.</p>
+        <p>پس اول همان‌ها را fix کن.</p>
+        <p>این بسیار بهتر از random tuning است.</p>
+
+        <h2>60. Error Analysis و Model Iteration</h2>
+        <p>چرخه حرفه‌ای:</p>
+        <div class="chart">Train
+  ↓
+Evaluate
+  ↓
+Error Analysis
+  ↓
+Find Failure Modes
+  ↓
+Hypothesis
+  ↓
+Data / Features / Model change
+  ↓
+Retrain
+  ↓
+Evaluate
+  ↓
+Error Analysis again</div>
+        <p>ML یک چرخه است، نه:</p>
+        <div class="chart">Train once → F1 → Done</div>
+
+        <h2>61. Error Analysis و Experiment Design</h2>
+        <p>هر تغییر باید hypothesis داشته باشد.</p>
+        <p>بد:</p>
+        <div class="chart">Let's try XGBoost.</div>
+        <p>خوب:</p>
+        <div class="chart">FN rate for new users is high because historical-behavior features are missing. Adding device and velocity features should reduce FN rate for this slice.</div>
+        <p>بعد experiment:</p>
+        <div class="chart">Baseline
+vs
+New Features</div>
+        <p>و فقط global metric را مقایسه نکن.</p>
+
+        <h2>62. Global + Slice Metrics</h2>
+        <p>مثلاً:</p>
+        <div class="chart">Metric	Baseline	New Model
+Global F1	.91	.92
+New User F1	.65	.78
+Existing User F1	.95	.94
+Product C F1	.70	.82</div>
+        <p>حالا می‌فهمی واقعاً چه اتفاقی افتاده.</p>
+
+        <h2>63. یک نکته بسیار مهم: Regression Error Analysis</h2>
+        <p>برای regression فقط:</p>
+        <div class="formula">$$ RMSE $$</div>
+        <p>نگاه نکن.</p>
+        <p>Residual را بر اساس:</p>
+        <div class="chart">Target magnitude
+Customer
+Product
+Region
+Time
+Prediction range</div>
+        <p>بررسی کن.</p>
+
+        <h2>64. Heteroscedasticity</h2>
+        <p>ممکن است error با magnitude افزایش یابد.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Small values:
+Error ≈ 2
+
+Large values:
+Error ≈ 100</div>
+        <p>یعنی variance residual constant نیست.</p>
+        <p>ممکن است نیاز باشد:</p>
+        <div class="chart">log transform
+weighted loss
+different model
+quantile regression</div>
+        <p>را بررسی کنی.</p>
+
+        <h2>65. Error Analysis و Calibration</h2>
+        <p>در classification:</p>
+        <p>دو مدل ممکن است:</p>
+        <div class="formula">$$ F1 = .91 $$</div>
+        <p>داشته باشند.</p>
+        <p>ولی:</p>
+        <div class="chart">Model A:
+well calibrated
+
+Model B:
+overconfident</div>
+        <p>باشد.</p>
+        <p>اگر downstream decision بر اساس probability باشد:</p>
+        <p>Model A ممکن است بسیار بهتر باشد.</p>
+
+        <h2>66. Error Analysis و Ranking</h2>
+        <p>در ranking/search:</p>
+        <p>فقط accuracy کافی نیست.</p>
+        <p>بررسی کن:</p>
+        <div class="chart">relevant document missing؟
+false positives در top-k؟
+query categories؟
+long-tail queries؟
+ambiguous queries؟
+zero-result queries؟</div>
+        <p>مثلاً:</p>
+        <div class="chart">Head queries → NDCG .95
+Tail queries → NDCG .61</div>
+        <p>این یک failure mode است.</p>
+
+        <h2>67. Error Analysis در LLM</h2>
+        <p>برای LLM حتی پیچیده‌تر است.</p>
+        <p>Error taxonomy می‌تواند:</p>
+        <div class="chart">Hallucination
+Retrieval Failure
+Reasoning Error
+Instruction Following
+Formatting Error
+Tool Selection Error
+Tool Execution Error
+Context Overflow
+Prompt Injection
+Safety Failure</div>
+        <p>باشد.</p>
+        <p>یعنی:</p>
+        <p>یک metric مثل accuracy برای LLM کافی نیست.</p>
+
+        <h2>68. Error Analysis در Agentic AI</h2>
+        <p>مثلاً agent داری:</p>
+        <div class="chart">User
+ ↓
+Planner
+ ↓
+Retriever
+ ↓
+Tool
+ ↓
+LLM
+ ↓
+Answer</div>
+        <p>اگر answer غلط است، باید مشخص کنی:</p>
+        <div class="chart">Planner error?
+Retrieval error?
+Tool error?
+Tool result interpretation?
+LLM reasoning?
+Final response?</div>
+        <p>این همان:</p>
+        <div class="formula">$$ Component-level\ Error\ Analysis $$</div>
+        <p>است.</p>
+
+        <h2>69. Error Analysis و Observability</h2>
+        <p>در production باید predictionها قابل trace باشند.</p>
+        <p>مثلاً ذخیره:</p>
+        <div class="chart">request_id
+model_version
+feature_version
+prediction
+probability
+threshold
+true_label
+timestamp
+error_type</div>
+        <p>تا بتوانی بعداً error را تحلیل کنی.</p>
+
+        <h2>70. Model Version مهم است</h2>
+        <p>مثلاً:</p>
+        <div class="chart">Model v1:
+FN = 10%
+
+Model v2:
+FN = 6%</div>
+        <p>ولی شاید:</p>
+        <div class="chart">Product C:
+v1 = 8%
+v2 = 20%</div>
+        <p>باشد.</p>
+        <p>پس deployment می‌تواند:</p>
+        <p>global metric را بهتر ولی یک critical slice را بدتر کرده باشد.</p>
+
+        <h2>71. Error Analysis و A/B Testing</h2>
+        <p>اگر مدل جدید deploy شد:</p>
+        <div class="chart">Control → Model A
+Treatment → Model B</div>
+        <p>فقط average metric را نگاه نکن.</p>
+        <p>Slice-level experiment هم انجام بده.</p>
+
+        <h2>72. Error Analysis و Monitoring</h2>
+        <p>بعد از deployment:</p>
+        <div class="chart">Offline Error Analysis
+          ↓
+Production Monitoring
+          ↓
+New Errors
+          ↓
+Error Analysis
+          ↓
+Retraining</div>
+        <p>یعنی Error Analysis بخشی از MLOps lifecycle است.</p>
+
+        <h2>73. Error Analysis و Drift Detection</h2>
+        <p>مثلاً:</p>
+        <div class="chart">Offline:
+Recall = 94%
+
+Production:
+Recall = 80%</div>
+        <p>باید بررسی کنی:</p>
+        <div class="chart">Data Drift?
+Concept Drift?
+Label Delay?
+Pipeline Issue?
+Feature Missing?</div>
+
+        <h2>74. Label Delay</h2>
+        <p>در production ممکن است ground truth فوری نداشته باشی.</p>
+        <p>مثلاً fraud واقعی:</p>
+        <p>30 روز بعد مشخص می‌شود.</p>
+        <p>پس Error Analysis real-time ممکن نیست.</p>
+        <p>باید:</p>
+        <div class="chart">Prediction
+ ↓
+Wait for label
+ ↓
+Join with outcome
+ ↓
+Error Analysis</div>
+        <p>انجام دهی.</p>
+
+        <h2>75. Delayed Feedback</h2>
+        <p>این در:</p>
+        <div class="chart">fraud
+churn
+credit risk
+recommendation</div>
+        <p>خیلی مهم است.</p>
+        <p>مدل ممکن است امروز prediction بدهد ولی label هفته‌ها بعد بیاید.</p>
+
+        <h2>76. Error Analysis و Feedback Loop</h2>
+        <p>یک خطر:</p>
+        <div class="chart">Model
+ ↓
+Decision
+ ↓
+Human
+ ↓
+New Label
+ ↓
+Training
+ ↓
+Model</div>
+        <p>اگر model bias داشته باشد، labels آینده هم می‌توانند biased شوند.</p>
+        <p>مثلاً model فقط بعضی transactions را برای بررسی انتخاب کند.</p>
+        <p>در نتیجه:</p>
+        <p>training data آینده تحت تأثیر model قبلی قرار می‌گیرد.</p>
+
+        <h2>77. Selection Bias در Error Analysis</h2>
+        <p>اگر فقط نمونه‌هایی که model flag کرده بررسی شوند:</p>
+        <p>کل population را نمی‌بینی.</p>
+        <p>مثلاً fraud model فقط flagged transactions را می‌فرستد برای investigation.</p>
+        <p>پس درباره unflagged transactions uncertainty داری.</p>
+
+        <h2>78. Error Analysis و Counterfactual Thinking</h2>
+        <p>بپرس:</p>
+        <p>اگر این feature تغییر می‌کرد، prediction عوض می‌شد؟</p>
+        <p>مثلاً:</p>
+        <div class="chart">Prediction = Fraud</div>
+        <p>و با حذف یک feature:</p>
+        <div class="chart">Prediction = Normal</div>
+        <p>این می‌تواند clue باشد، ولی:</p>
+        <div class="chart">counterfactual ≠ causal explanation</div>
+
+        <h2>79. Error Analysis و SHAP</h2>
+        <p>می‌توانی برای errors:</p>
+        <div class="chart">False Positive</div>
+        <p>SHAP را بررسی کنی.</p>
+        <p>مثلاً:</p>
+        <div class="chart">FP:
+
+device_risk       +2.1
+velocity          +1.8
+amount            +1.2
+location          +0.8</div>
+        <p>می‌بینی چرا مدل این نمونه را fraud تشخیص داده.</p>
+
+        <h2>80. ولی SHAP علت واقعی نیست</h2>
+        <p>SHAP نشان می‌دهد:</p>
+        <p>model prediction چگونه به featureها نسبت داده شده.</p>
+        <p>نمی‌گوید:</p>
+        <p>feature واقعاً causal reason است.</p>
+        <p>این distinction بسیار مهم است.</p>
+
+        <h2>81. Error Analysis و Clustering</h2>
+        <p>یکی از تکنیک‌های جالب:</p>
+        <p>Errorها را cluster کن.</p>
+        <p>مثلاً تمام FNها را embedding کن:</p>
+        <div class="chart">FN embeddings
+      ↓
+Clustering
+      ↓
+Cluster 1 → rare device pattern
+Cluster 2 → international transactions
+Cluster 3 → new users</div>
+        <p>این می‌تواند failure modeهای ناشناخته را پیدا کند.</p>
+
+        <h2>82. Error Analysis و Embeddings</h2>
+        <p>در NLP/CV می‌توان:</p>
+        <div class="chart">Embedding
+ ↓
+Nearest neighbors
+ ↓
+Misclassified examples</div>
+        <p>را بررسی کرد.</p>
+        <p>مثلاً ببینی یک error به کدام نمونه‌های training شبیه است.</p>
+
+        <h2>83. Nearest Neighbor Error Analysis</h2>
+        <p>برای یک false negative:</p>
+        <div class="chart">FN sample
+   ↓
+Find nearest training samples
+   ↓
+Mostly normal?
+Mostly fraud?
+Mixed?</div>
+        <p>اگر neighbors mostly fraud باشند ولی model negative داده:</p>
+        <p>احتمالاً representation/model problem داریم.</p>
+
+        <h2>84. Error Analysis و Data Augmentation</h2>
+        <p>اگر errors عمدتاً:</p>
+        <div class="chart">blurred images</div>
+        <p>هستند:</p>
+        <p>augmentation:</p>
+        <div class="chart">blur augmentation</div>
+        <p>ممکن است منطقی باشد.</p>
+        <p>اما اگر errors عمدتاً:</p>
+        <div class="chart">wrong labels</div>
+        <p>هستند:</p>
+        <p>augmentation راه‌حل نیست.</p>
+
+        <h2>85. Feature Engineering و Error Analysis</h2>
+        <p>اگر:</p>
+        <div class="chart">FN:
+high transaction velocity</div>
+        <p>ولی model velocity را ندارد:</p>
+        <p>Feature engineering منطقی است.</p>
+        <p>مثلاً:</p>
+        <div class="formula">$$ velocity = \frac{\#transactions}{time\ window} $$</div>
+
+        <h2>86. Model Selection و Error Analysis</h2>
+        <p>گاهی error analysis می‌گوید:</p>
+        <div class="chart">complex nonlinear interactions</div>
+        <p>زیاد هستند.</p>
+        <p>آن‌وقت:</p>
+        <div class="chart">Linear model</div>
+        <p>ممکن است محدود باشد.</p>
+        <p>در چنین حالتی مدل‌هایی مثل:</p>
+        <div class="chart">Gradient Boosting
+XGBoost
+LightGBM
+Neural Network</div>
+        <p>ممکن است بهتر باشند.</p>
+
+        <h2>87. ولی Model Switching آخرین راه نیست</h2>
+        <p>Senior نباید بلافاصله بگوید:</p>
+        <div class="chart">Let's use a bigger model</div>
+        <p>اول:</p>
+        <div class="chart">Data?
+Labels?
+Features?
+Split?
+Leakage?
+Threshold?
+Distribution?</div>
+        <p>بعد:</p>
+        <div class="chart">model.</div>
+
+        <h2>88. Error Analysis و Root Cause Tree</h2>
+        <p>مثلاً:</p>
+        <div class="chart">Why is Recall low?
+│
+├── Threshold?
+│
+├── Data?
+│   ├── Missing cases?
+│   ├── Rare cases?
+│   └── Label noise?
+│
+├── Features?
+│   ├── Missing signal?
+│   └── Bad transformations?
+│
+├── Model?
+│   ├── Capacity?
+│   └── Optimization?
+│
+└── Distribution?
+    ├── Data drift?
+    └── Concept drift?</div>
+        <p>این طرز فکر بسیار مهم است.</p>
+
+        <h2>89. یک Error Analysis Pipeline حرفه‌ای</h2>
+        <div class="chart">                    Predictions
+                         │
+                         ▼
+                  Error Dataset
+                         │
+          ┌──────────────┼──────────────┐
+          │              │              │
+          ▼              ▼              ▼
+       FP/FN          Confidence       Residuals
+          │              │              │
+          └──────────────┼──────────────┘
+                         ▼
+                    Slice Analysis
+                         │
+       ┌─────────────────┼─────────────────┐
+       ▼                 ▼                 ▼
+      User             Product           Time
+       │                 │                 │
+       └─────────────────┼─────────────────┘
+                         ▼
+                  Failure Patterns
+                         │
+                         ▼
+                    Root Cause
+                         │
+          ┌──────────────┼──────────────┐
+          ▼              ▼              ▼
+        Data           Features        Model
+          │              │              │
+          └──────────────┼──────────────┘
+                         ▼
+                     Experiment
+                         │
+                         ▼
+                    Re-evaluate</div>
+
+        <h2>90. Error Analysis Checklist</h2>
+        <p>وقتی مدل performance خوبی ندارد، این checklist را اجرا کن:</p>
+        <div class="chart">Dataset
+• آیا data representative است؟
+• آیا rare cases داریم؟
+• آیا duplicate داریم؟
+• آیا missing data داریم؟
+• آیا label noise داریم؟
+
+Split
+• آیا split درست است؟
+• آیا leakage داریم؟
+• آیا temporal issue داریم؟
+• آیا group leakage داریم؟
+
+Prediction
+• FP چقدر است؟
+• FN چقدر است؟
+• confidence چقدر است؟
+• threshold مناسب است؟
+
+Slice
+• User؟
+• Product؟
+• Region؟
+• Device؟
+• Time؟
+• Language؟
+• Customer type؟
+
+Model
+• Capacity؟
+• Bias؟
+• Variance؟
+• Calibration؟
+• Feature interactions؟
+
+Production
+• Data drift؟
+• Concept drift؟
+• Training-serving skew؟
+• Feature pipeline failure؟
+• Label delay؟</div>
+
+        <h2>91. Error Analysis Framework خیلی مهم</h2>
+        <p>یک framework کاربردی برای حفظ کردن:</p>
+        <div class="formula">$$ \boxed{ WHO? } $$</div>
+        <p>چه کسانی؟</p>
+        <div class="chart">User groups
+Products
+Regions</div>
+        <div class="formula">$$ \boxed{ WHEN? } $$</div>
+        <p>چه زمانی؟</p>
+        <div class="chart">Hour
+Day
+Month
+Season</div>
+        <div class="formula">$$ \boxed{ WHAT? } $$</div>
+        <p>چه نوع نمونه‌ای؟</p>
+        <div class="chart">Rare
+Large
+Small
+Ambiguous</div>
+        <div class="formula">$$ \boxed{ WHY? } $$</div>
+        <p>چرا؟</p>
+        <div class="chart">Data
+Features
+Labels
+Model
+Threshold
+Distribution</div>
+
+        <h2>92. Senior ML Mental Model</h2>
+        <div class="inner-box">
+            <div class="inner-title">Junior:</div>
+            <div class="chart">Model accuracy is 95%.</div>
+        </div>
+        <div class="inner-box">
+            <div class="inner-title">Intermediate:</div>
+            <div class="chart">Model has high recall and acceptable precision.</div>
+        </div>
+        <div class="inner-box">
+            <div class="inner-title">Senior:</div>
+            <div class="highlight-box">
+                <p>The global metric is acceptable, but the model has a concentrated failure mode: 65% of false negatives come from new users with less than three historical interactions. Their recall is 61% versus 94% for established users. This suggests a cold-start/data-coverage issue rather than a generic model-capacity problem. Before changing the model, I would test whether adding behavioral/device features available at inference time improves this slice, while monitoring the global metric and business cost.</p>
+            </div>
+            <p>این دقیقاً سطح تفکر Senior است.</p>
+        </div>
+
+        <h2>93. مهم‌ترین نکته کل Chapter</h2>
+        <p>به این ترتیب فکر کن:</p>
+        <div class="chart">Metric
+  ↓
+Where?
+  ↓
+Which slice?
+  ↓
+Which error type?
+  ↓
+Why?
+  ↓
+Root cause
+  ↓
+What intervention?
+  ↓
+Does it improve the target slice?
+  ↓
+Does it improve global/business objective?</div>
+        <p>نه اینکه:</p>
+        <div class="chart">F1 = 0.91
+      ↓
+Try Random Forest
+      ↓
+Try XGBoost
+      ↓
+Tune 500 parameters</div>
+
+        <h2>🎯 جمع‌بندی Senior-Level</h2>
+        <p>اگر فقط 10 چیز از Error Analysis بخواهی به خاطر بسپاری:</p>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">1. Global metrics failure modes را پنهان می‌کنند.</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">2. همیشه FP و FN را جدا بررسی کن.</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#3fb950;">
+            <div class="inner-title">3. Errorها را بر اساس slice بررسی کن: user/product/time/region/device/...</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#d2a8ff;">
+            <div class="inner-title">4. Rare cases را جداگانه بررسی کن.</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">5. Confidence predictionها را بررسی کن.</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">6. قبل از تغییر model، data و label quality را بررسی کن.</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#3fb950;">
+            <div class="inner-title">7. Training-serving skew و distribution shift را جدی بگیر.</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#d2a8ff;">
+            <div class="inner-title">8. برای هر failure mode یک hypothesis درباره root cause بساز.</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">9. تغییرات را با slice metrics + global metrics + business cost ارزیابی کن.</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">10. هدف Error Analysis پیدا کردن اقدام بعدی با بیشترین impact است، نه صرفاً پیدا کردن نمونه‌های اشتباه.</div>
+        </div>
+
+        <p>و مهم‌تر از همه:</p>
+        <div class="formula" style="font-size: 1.1rem;">
+            $$ \boxed{ \text{A Senior ML Engineer doesn't just measure model performance; they diagnose model behavior.} } $$
+        </div>
+        <p>و دقیقاً به همین دلیل است که در پروژه‌های واقعی، Error Analysis خیلی وقت‌ها ارزش بیشتری از Hyperparameter Tuning دارد.</p>
+    </div>
+</body>
+</html>

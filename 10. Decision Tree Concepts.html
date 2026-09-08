@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Decision Tree Concepts · Senior ML Level</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}]});"></script>
+    <style>
+        body {
+            background-color: #0d1117;
+            color: #e6edf3;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.8;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h1,
+        h2,
+        h3 {
+            color: #e6edf3;
+            text-align: right;
+            border-bottom: 1px solid #444;
+            padding-bottom: 15px;
+            margin-top: 50px;
+        }
+        p,
+        li {
+            text-align: right;
+        }
+
+        .box {
+            background-color: #21262d;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            color: #e6edf3;
+        }
+        .inner-box {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 10px;
+            border-right: 4px solid #58a6ff;
+        }
+        .inner-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .formula {
+            direction: ltr;
+            background-color: #000;
+            border: 1px solid #fff;
+            border-radius: 0;
+            padding: 20px;
+            margin: 20px auto;
+            width: fit-content;
+            max-width: 100%;
+            overflow-x: auto;
+            text-align: center;
+            font-size: 1.2em;
+            font-family: "Times New Roman", Times, serif;
+            color: #fff;
+        }
+
+        .chart {
+            direction: ltr;
+            text-align: left;
+            font-family: monospace;
+            background-color: #21262d;
+            border-radius: 8px;
+            padding: 15px;
+            overflow-x: auto;
+            white-space: pre;
+            border: 1px solid #444;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            direction: rtl;
+            margin-bottom: 20px;
+        }
+        th,
+        td {
+            border: 1px solid #444;
+            padding: 12px;
+            text-align: right;
+        }
+        th {
+            background-color: #21262d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌲 10. Decision Tree Concepts</h1>
+
+        <p style="font-size:1.1rem;">حتماً. این بخش برای Senior ML خیلی مهم است، چون Decision Tree فقط یک الگوریتم نیست؛ بخش بزرگی از Random Forest، Gradient Boosting، XGBoost، LightGBM و CatBoost روی همین مفاهیم بنا شده‌اند.</p>
+
+        <p style="font-size:1.1rem;">من از پایه شروع می‌کنم و تا نکات ریاضی، تفاوت معیارها، pruning، complexity، feature importance و نکات مصاحبه‌ای می‌روم.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;" />
+
+        <h2>1. Decision Tree چیست؟</h2>
+        <p>Decision Tree مدلی است که فضای Featureها را به مجموعه‌ای از نواحی تقسیم می‌کند.</p>
+        <p>مثلاً فرض کن می‌خواهیم تشخیص دهیم یک تراکنش:</p>
+        <div class="chart">Fraud / Not Fraud</div>
+        <p>است.</p>
+        <p>درخت ممکن است بپرسد:</p>
+        <div class="chart">              Amount > 10,000?
+                 /        \
+               Yes         No
+               /            \
+        Night Transaction?   Legit
+          /      \
+        Yes       No
+        /          \
+     Fraud       Legit</div>
+        <p>هر node یک تصمیم می‌گیرد.</p>
+        <p>ساختار کلی:</p>
+        <div class="chart">                Root
+                 │
+          ┌──────┴──────┐
+          │             │
+       Internal       Internal
+        Node             Node
+       /    \           /    \
+      ...   ...        ...   ...
+                         │
+                       Leaf</div>
+
+        <h2>2. اجزای Decision Tree</h2>
+        <p>چهار مفهوم اصلی:</p>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">Root</div>
+            <p>اولین node.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">Internal Node</div>
+            <p>یک شرط/split انجام می‌دهد.</p>
+            <p>مثلاً:</p>
+            <div class="chart">Age < 30</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">Branch</div>
+            <p>مسیر خروجی split.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">Leaf</div>
+            <p>Prediction نهایی.</p>
+            <p>در Classification:</p>
+            <div class="chart">Leaf → class / probability</div>
+            <p>در Regression:</p>
+            <div class="chart">Leaf → numeric prediction</div>
+        </div>
+
+        <h2>3. Splitting چیست؟</h2>
+        <p>مهم‌ترین کار Decision Tree:</p>
+        <div class="chart">پیدا کردن بهترین Split.</div>
+        <p>فرض کن feature داریم:</p>
+        <div class="chart">Age</div>
+        <p>و می‌خواهیم:</p>
+        <div class="chart">Age < 30</div>
+        <p>یا:</p>
+        <div class="chart">Age >= 30</div>
+        <p>را بررسی کنیم.</p>
+        <p>Tree بررسی می‌کند:</p>
+        <div class="chart">آیا این split باعث می‌شود child nodeها pureتر شوند؟</div>
+        <p>اگر بله، split خوب است.</p>
+
+        <h2>4. Pure و Impure یعنی چه؟</h2>
+        <p>فرض کن یک node داریم:</p>
+        <div class="chart">100 samples
+
+Fraud      = 50
+Not Fraud  = 50</div>
+        <p>این node بسیار:</p>
+        <div class="chart">Impure</div>
+        <p>است.</p>
+        <p>اما:</p>
+        <div class="chart">Fraud     = 100
+Not Fraud = 0</div>
+        <p>کاملاً:</p>
+        <div class="chart">Pure</div>
+        <p>است.</p>
+        <p>هدف Tree در Classification معمولاً این است که با split کردن:</p>
+        <div class="chart">Impurity ↓</div>
+        <p>شود.</p>
+
+        <h2>5. Entropy</h2>
+        <p>Entropy یکی از معیارهای impurity است.</p>
+        <p>فرمول:</p>
+        <div class="formula">$$H(S) = -\sum_{k=1}^{K} p_k \log_2(p_k)$$</div>
+        <p>که:</p>
+        <div class="chart">p_k</div>
+        <p>احتمال کلاس k در node است.</p>
+
+        <h2>6. Entropy برای Binary Classification</h2>
+        <p>اگر:</p>
+        <div class="chart">p = P(y = 1)</div>
+        <p>باشد:</p>
+        <div class="formula">$$H(p) = -p \log_2 p - (1-p) \log_2(1-p)$$</div>
+
+        <h2>7. Entropy چه شکلی دارد؟</h2>
+        <p>برای دو کلاس:</p>
+        <div class="chart">p = 0
+Entropy = 0
+
+p = 0.5
+Entropy = 1
+
+p = 1
+Entropy = 0</div>
+        <p>یعنی:</p>
+        <div class="chart">Entropy
+   ↑
+  1│       ●
+   │      / \
+   │     /   \
+   │    /     \
+  0│●────────────●
+   └──────────────→ p
+     0    .5      1</div>
+        <p>Maximum uncertainty زمانی است که:</p>
+        <div class="chart">p_1 = p_2 = 0.5</div>
+
+        <h2>8. چرا Entropy در pure node صفر است؟</h2>
+        <p>اگر:</p>
+        <div class="chart">p = 1</div>
+        <p>باشد:</p>
+        <div class="formula">$$-p \log p = -1 \times \log 1 = 0$$</div>
+        <p>پس:</p>
+        <div class="chart">H = 0</div>
+        <p>یعنی uncertainty نداریم.</p>
+
+        <h2>9. Entropy برای چند کلاس</h2>
+        <p>مثلاً سه کلاس:</p>
+        <div class="chart">A = 1/3
+B = 1/3
+C = 1/3</div>
+        <p>داریم:</p>
+        <div class="formula">$$H = -3 \left( \frac{1}{3} \log_2 \frac{1}{3} \right)$$</div>
+        <p>که تقریباً:</p>
+        <div class="chart">H = 1.585</div>
+        <p>است.</p>
+        <p>Maximum Entropy برای K کلاس:</p>
+        <div class="formula">$$H_{max} = \log_2 K$$</div>
+
+        <h2>10. Information Gain</h2>
+        <p>حالا سؤال مهم:</p>
+        <div class="chart">از بین splitهای مختلف، کدام را انتخاب کنیم؟</div>
+        <p>Information Gain این را اندازه می‌گیرد.</p>
+        <p>فرمول:</p>
+        <div class="formula">$$IG = H(parent) - \sum_j \frac{N_j}{N} H(child_j)$$</div>
+        <p>یعنی:</p>
+        <div class="chart">Information Gain
+=
+Parent uncertainty
+-
+Weighted child uncertainty</div>
+        <p>هرچه:</p>
+        <div class="chart">IG ↑</div>
+        <p>باشد، split بهتر است.</p>
+
+        <h2>11. مثال Information Gain</h2>
+        <p>فرض کن node اولیه:</p>
+        <div class="chart">10 samples
+
+5 Cat
+5 Dog</div>
+        <p>Entropy:</p>
+        <div class="chart">H(parent) = 1</div>
+        <p>حالا split انجام می‌دهیم:</p>
+        <div class="chart">Left:
+5 Cat
+0 Dog
+
+Right:
+0 Cat
+5 Dog</div>
+        <p>هر دو child کاملاً pure هستند:</p>
+        <div class="chart">H(left) = 0
+H(right) = 0</div>
+        <p>بنابراین:</p>
+        <div class="chart">IG = 1 - 0 = 1</div>
+        <p>یعنی split عالی است.</p>
+
+        <h2>12. اگر Split بد باشد؟</h2>
+        <p>فرض کن:</p>
+        <div class="chart">Left:
+3 Cat
+2 Dog
+
+Right:
+2 Cat
+3 Dog</div>
+        <p>هر دو child هنوز تقریباً impure هستند.</p>
+        <p>پس:</p>
+        <div class="chart">H(children)</div>
+        <p>بالاست و:</p>
+        <div class="chart">IG</div>
+        <p>کم می‌شود.</p>
+
+        <h2>13. نکته Senior درباره Information Gain</h2>
+        <p>Information Gain یک معیار:</p>
+        <div class="chart">Absolute reduction in entropy</div>
+        <p>است.</p>
+        <p>اما یک مشکل مهم دارد.</p>
+
+        <h2>14. مشکل Information Gain — Many-Valued Features</h2>
+        <p>فرض کن feature:</p>
+        <div class="chart">Customer_ID</div>
+        <p>داریم.</p>
+        <p>اگر هر Customer_ID تقریباً unique باشد، Tree می‌تواند:</p>
+        <div class="chart">ID = 1
+ID = 2
+ID = 3
+...</div>
+        <p>بسازد.</p>
+        <p>این ممکن است training data را تقریباً perfectly جدا کند.</p>
+        <p>پس:</p>
+        <div class="chart">IG</div>
+        <p>ممکن است زیاد شود.</p>
+        <p>ولی مدل:</p>
+        <div class="chart">Generalize</div>
+        <p>نمی‌کند.</p>
+        <p>این یک شکل کلاسیک از:</p>
+        <div class="chart">Overfitting</div>
+        <p>است.</p>
+
+        <h2>15. Gain Ratio</h2>
+        <p>Gain Ratio برای کاهش این bias معرفی شده است.</p>
+        <p>فرمول:</p>
+        <div class="formula">$$Gain Ratio = \frac{Information Gain}{Split Information}$$</div>
+
+        <h2>16. Split Information</h2>
+        <p>فرمول:</p>
+        <div class="formula">$$SplitInfo = -\sum_j \frac{N_j}{N} \log_2 \frac{N_j}{N}$$</div>
+        <p>این معیار می‌گوید split چقدر داده را به قسمت‌های مختلف تقسیم کرده است.</p>
+
+        <h2>17. چرا Gain Ratio مفید است؟</h2>
+        <p>فرض کن:</p>
+        <div class="chart">Feature A
+→ 2 groups
+
+Feature B
+→ 1000 groups</div>
+        <p>Feature B ممکن است Information Gain بالایی بگیرد فقط به خاطر تعداد زیاد partitions.</p>
+        <p>Gain Ratio این را penalize می‌کند.</p>
+
+        <h2>18. Gain Ratio در کدام الگوریتم معروف است؟</h2>
+        <p>به‌خصوص در:</p>
+        <div class="chart">C4.5</div>
+        <p>استفاده شده است.</p>
+        <p>در حالی که:</p>
+        <div class="chart">ID3</div>
+        <p>معمولاً با:</p>
+        <div class="chart">Information Gain</div>
+        <p>شناخته می‌شود.</p>
+
+        <h2>19. Gini Impurity</h2>
+        <p>معیار بسیار مهم دیگر:</p>
+        <div class="formula">$$Gini = 1 - \sum_k p_k^2$$</div>
+        <p>است.</p>
+
+        <h2>20. Gini برای Binary</h2>
+        <p>اگر:</p>
+        <div class="chart">p = P(y = 1)</div>
+        <p>باشد:</p>
+        <div class="formula">$$Gini = 1 - p^2 - (1-p)^2$$</div>
+        <p>که ساده می‌شود:</p>
+        <div class="formula">$$Gini = 2p(1-p)$$</div>
+
+        <h2>21. Gini چه زمانی صفر است؟</h2>
+        <p>اگر node کاملاً pure باشد:</p>
+        <div class="chart">p = 1</div>
+        <p>پس:</p>
+        <div class="chart">Gini = 0</div>
+        <p>اگر:</p>
+        <div class="chart">p = 0</div>
+        <p>هم:</p>
+        <div class="chart">Gini = 0</div>
+
+        <h2>22. Maximum Gini</h2>
+        <p>برای binary classification:</p>
+        <div class="chart">p = 0.5</div>
+        <p>داریم:</p>
+        <div class="chart">Gini = 0.5</div>
+        <p>پس:</p>
+        <div class="chart">Pure → Gini = 0
+Maximum uncertainty → Gini = 0.5</div>
+
+        <h2>23. Entropy vs Gini</h2>
+        <p>برای Binary Classification:</p>
+        <div style="overflow-x:auto;">
+            <table>
+                <thead><tr><th>ویژگی</th><th>Entropy</th><th>Gini</th></tr></thead>
+                <tbody>
+                    <tr><td>Formula</td><td>−Σp log p</td><td>1−Σp²</td></tr>
+                    <tr><td>Pure node</td><td>0</td><td>0</td></tr>
+                    <tr><td>Max binary</td><td>1</td><td>0.5</td></tr>
+                    <tr><td>Computation</td><td>کمی سنگین‌تر</td><td>ساده‌تر</td></tr>
+                    <tr><td>رفتار</td><td>مشابه</td><td>مشابه</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <p>در عمل معمولاً:</p>
+        <div class="chart">Gini و Entropy اغلب splitهای مشابهی انتخاب می‌کنند.</div>
+
+        <h2>24. آیا Gini همیشه بهتر است؟</h2>
+        <p>نه.</p>
+        <p>تفاوت عملی اغلب کوچک است.</p>
+        <p>در بسیاری از datasets:</p>
+        <div class="chart">Gini
+≈
+Entropy</div>
+        <p>از نظر performance.</p>
+        <p>پس انتخاب را با:</p>
+        <div class="chart">validation / CV</div>
+        <p>انجام بده، نه با فرض اینکه یکی همیشه بهتر است.</p>
+
+        <h2>25. Splitting برای Regression</h2>
+        <p>در Regression دیگر کلاس نداریم.</p>
+        <p>پس Entropy/Gini مناسب نیستند.</p>
+        <p>می‌توان از:</p>
+        <div class="chart">MSE / Variance Reduction</div>
+        <p>استفاده کرد.</p>
+        <p>مثلاً:</p>
+        <div class="formula">$$MSE = \frac{1}{N} \sum_i (y_i - \bar{y})^2$$</div>
+        <p>Tree splitی را انتخاب می‌کند که impurity regression را بیشتر کاهش دهد.</p>
+
+        <h2>26. Prediction در Regression Tree</h2>
+        <p>در یک leaf معمولاً:</p>
+        <div class="formula">$$\hat{y}_{leaf} = \frac{1}{N} \sum_i y_i$$</div>
+        <p>یعنی:</p>
+        <div class="chart">Mean target values داخل leaf.</div>
+        <p>به همین دلیل outlierها می‌توانند روی prediction اثر بگذارند.</p>
+
+        <h2>27. Splitting برای Continuous Features</h2>
+        <p>فرض کن:</p>
+        <div class="chart">Age:
+
+20
+25
+28
+31
+40
+50</div>
+        <p>Tree candidate thresholdها را بررسی می‌کند:</p>
+        <div class="chart">Age < 22.5
+Age < 26.5
+Age < 29.5
+Age < 35.5
+Age < 45</div>
+        <p>و بهترین را انتخاب می‌کند.</p>
+
+        <h2>28. برای Categorical Features چه می‌شود؟</h2>
+        <p>بسته به implementation متفاوت است.</p>
+        <p>مثلاً می‌توان:</p>
+        <div class="chart">City ∈ {Tehran, Istanbul}</div>
+        <p>داشت.</p>
+        <p>یا categoryها encode شوند.</p>
+        <p>در الگوریتم‌هایی مثل:</p>
+        <div class="chart">CatBoost</div>
+        <p>روش‌های sophisticatedتری برای categorical features وجود دارد.</p>
+
+        <h2>29. Greedy Splitting</h2>
+        <p>Decision Tree معمولاً:</p>
+        <div class="chart">Greedy</div>
+        <p>است.</p>
+        <p>یعنی در هر node:</p>
+        <div class="chart">بهترین split فعلی را انتخاب می‌کند.</div>
+        <p>اما:</p>
+        <div class="chart">تضمینی نیست که بهترین global tree را پیدا کند.</div>
+        <p>این نکته خیلی مهم است.</p>
+
+        <h2>30. چرا Tree Greedy است؟</h2>
+        <p>پیدا کردن optimal tree در حالت کلی مسئله بسیار سختی است.</p>
+        <p>پس الگوریتم به‌جای جستجوی تمام treeهای ممکن:</p>
+        <div class="chart">Best split now
+      ↓
+Best split next
+      ↓
+...</div>
+        <p>را انجام می‌دهد.</p>
+
+        <h2>31. مشکل Greedy Strategy</h2>
+        <p>ممکن است:</p>
+        <div class="chart">Best split now</div>
+        <p>در بلندمدت:</p>
+        <div class="chart">بهترین tree را ایجاد نکند.</div>
+        <p>ولی در عمل greedy tree induction بسیار مؤثر است.</p>
+
+        <h2>32. Tree Depth</h2>
+        <p>Depth تعداد سطوح tree است.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Depth 0
+
+       Root
+
+Depth 1
+
+      Root
+      /  \
+
+Depth 2
+
+      Root
+      /  \
+     A    B
+    / \  / \</div>
+
+        <h2>33. Depth چه اثری دارد؟</h2>
+        <p>با افزایش depth:</p>
+        <div class="chart">Depth ↑</div>
+        <p>ظرفیت مدل افزایش می‌یابد.</p>
+        <p>پس معمولاً:</p>
+        <div class="chart">Bias ↓
+Variance ↑</div>
+
+        <h2>34. Tree خیلی کم‌عمق</h2>
+        <p>مثلاً:</p>
+        <div class="chart">max_depth = 1</div>
+        <p>Decision Stump است.</p>
+        <p>ممکن است:</p>
+        <div class="chart">Underfit</div>
+        <p>کند.</p>
+
+        <h2>35. Tree خیلی عمیق</h2>
+        <p>مثلاً:</p>
+        <div class="chart">max_depth = unlimited</div>
+        <p>ممکن است:</p>
+        <div class="chart">Training error ≈ 0
+Validation error ↑</div>
+        <p>شود.</p>
+        <p>یعنی:</p>
+        <div class="chart">Overfitting.</div>
+
+        <h2>36. Leaf Size</h2>
+        <p>یکی دیگر از hyperparameterهای مهم:</p>
+        <div class="chart">Minimum samples per leaf</div>
+        <p>است.</p>
+        <p>مثلاً:</p>
+        <div class="chart">min_samples_leaf = 10</div>
+        <p>یعنی هر leaf باید حداقل 10 sample داشته باشد.</p>
+
+        <h2>37. اثر Leaf Size</h2>
+        <p>اگر:</p>
+        <div class="chart">min_samples_leaf ↑</div>
+        <p>باشد:</p>
+        <div class="chart">Tree complexity ↓
+Variance ↓
+Bias ↑</div>
+        <p>اگر خیلی کوچک باشد:</p>
+        <div class="chart">Leaf size = 1</div>
+        <p>مدل می‌تواند بسیار flexible شود.</p>
+
+        <h2>38. Depth vs Leaf Size</h2>
+        <p>هر دو:</p>
+        <div class="chart">Complexity را کنترل می‌کنند.</div>
+        <p>اما متفاوت هستند.</p>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">max_depth</div>
+            <p>کنترل می‌کند:</p>
+            <div class="chart">چند سطح می‌توانیم برویم.</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">min_samples_leaf</div>
+            <p>کنترل می‌کند:</p>
+            <div class="chart">هر ناحیه حداقل چند observation داشته باشد.</div>
+        </div>
+
+        <h2>39. Pre-Pruning</h2>
+        <p>Pre-Pruning یعنی:</p>
+        <div class="chart">قبل از رشد کامل، رشد tree را محدود کنیم.</div>
+        <p>پارامترها:</p>
+        <div class="chart">max_depth
+min_samples_split
+min_samples_leaf
+max_leaf_nodes
+max_features
+min_impurity_decrease</div>
+
+        <h2>40. مثال Pre-Pruning</h2>
+        <p>به جای اینکه tree تا pure شدن کامل رشد کند:</p>
+        <div class="chart">max_depth=5</div>
+        <p>می‌گذاری.</p>
+        <p>Tree بیشتر از depth 5 رشد نمی‌کند.</p>
+
+        <h2>41. مزیت Pre-Pruning</h2>
+        <div class="chart">training سریع‌تر
+tree کوچک‌تر
+overfitting کمتر
+memory کمتر</div>
+
+        <h2>42. مشکل Pre-Pruning</h2>
+        <p>ممکن است:</p>
+        <div class="chart">early stopping بیش از حد شدید</div>
+        <p>باشد.</p>
+        <p>یعنی splitی که الان ظاهراً کوچک به نظر می‌رسد، ممکن بود در depthهای بعدی بسیار مفید شود.</p>
+        <p>پس:</p>
+        <div class="chart">Underfitting</div>
+        <p>ممکن است رخ دهد.</p>
+
+        <h2>43. Post-Pruning</h2>
+        <p>در Post-Pruning:</p>
+        <div class="chart">Grow Tree
+    ↓
+Large Tree
+    ↓
+Prune unnecessary branches</div>
+        <p>ابتدا tree را می‌سازی، سپس branches کم‌ارزش را حذف می‌کنی.</p>
+
+        <h2>44. چرا Post-Pruning؟</h2>
+        <p>ممکن است اطلاعات لازم برای تصمیم‌گیری درباره ارزش یک branch را فقط بعداً داشته باشیم.</p>
+        <p>پس:</p>
+        <div class="chart">Post-pruning</div>
+        <p>گاهی انعطاف بیشتری دارد.</p>
+
+        <h2>45. Cost-Complexity Pruning</h2>
+        <p>یکی از روش‌های معروف:</p>
+        <div class="chart">Minimal Cost-Complexity Pruning</div>
+        <p>است.</p>
+        <p>Objective:</p>
+        <div class="formula">$$R_{\alpha}(T) = R(T) + \alpha |T|$$</div>
+        <p>که:</p>
+        <div class="chart">R(T): tree error
+|T|: تعداد leaves
+α: complexity penalty</div>
+        <p>است.</p>
+
+        <h2>46. Interpretation</h2>
+        <p>اگر:</p>
+        <div class="chart">α = 0</div>
+        <p>باشد:</p>
+        <div class="chart">complexity penalty نداریم.</div>
+        <p>اگر:</p>
+        <div class="chart">α ↑</div>
+        <p>شود:</p>
+        <div class="chart">tree کوچک‌تر ترجیح داده می‌شود.</div>
+        <p>یعنی:</p>
+        <div class="chart">α ↑
+↓
+Leaves ↓
+↓
+Complexity ↓
+↓
+Variance ↓
+Bias ↑</div>
+
+        <h2>47. Pre-Pruning vs Post-Pruning</h2>
+        <div style="overflow-x:auto;">
+            <table>
+                <thead><tr><th></th><th>Pre-Pruning</th><th>Post-Pruning</th></tr></thead>
+                <tbody>
+                    <tr><td>زمان</td><td>حین رشد</td><td>بعد از رشد</td></tr>
+                    <tr><td>سرعت</td><td>سریع‌تر</td><td>معمولاً بیشتر</td></tr>
+                    <tr><td>کنترل</td><td>محدود کردن رشد</td><td>حذف branch</td></tr>
+                    <tr><td>ریسک Underfit</td><td>ممکن</td><td>معمولاً انعطاف‌پذیرتر</td></tr>
+                    <tr><td>مثال</td><td>max_depth</td><td>cost-complexity</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2>48. Feature Importance</h2>
+        <p>Decision Tree می‌تواند importance هر feature را تخمین بزند.</p>
+        <p>یکی از روش‌های رایج:</p>
+        <div class="chart">Mean Decrease in Impurity — MDI</div>
+        <p>است.</p>
+
+        <h2>49. MDI چگونه محاسبه می‌شود؟</h2>
+        <p>اگر feature j در split باعث reduction در impurity شود:</p>
+        <div class="chart">ΔI</div>
+        <p>اهمیت آن feature به این reduction وابسته است.</p>
+        <p>به صورت مفهومی:</p>
+        <div class="formula">$$Importance_j = \sum_{splits\ using\ j} weighted\ impurity\ reduction$$</div>
+        <p>وزن node معمولاً بر اساس تعداد samples عبوری از node است.</p>
+
+        <h2>50. مثال</h2>
+        <p>فرض کن:</p>
+        <div class="chart">Feature A
+→ impurity reduction = 0.4
+
+Feature B
+→ 0.1
+
+Feature C
+→ 0.05</div>
+        <p>A اهمیت بیشتری دارد.</p>
+        <p>اما یک نکته بسیار مهم:</p>
+        <div class="chart">Feature Importance به معنی Causality نیست.</div>
+        <p>اگر:</p>
+        <div class="chart">A important = 0.8</div>
+        <p>باشد، نمی‌توانی نتیجه بگیری:</p>
+        <div class="chart">A باعث target شده است.</div>
+
+        <h2>51. مشکل MDI Feature Importance</h2>
+        <p>MDI می‌تواند نسبت به:</p>
+        <div class="chart">High-cardinality features</div>
+        <p>bias داشته باشد.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Customer_ID</div>
+        <p>یا featureهایی با تعداد زیادی possible split.</p>
+        <p>همچنین correlated features می‌توانند importance را بین خودشان تقسیم کنند یا interpretation را دشوار کنند.</p>
+
+        <h2>52. Permutation Importance</h2>
+        <p>روش دیگری:</p>
+        <div class="chart">Permutation Importance</div>
+        <p>است.</p>
+        <p>ایده:</p>
+        <div class="chart">1. مدل را روی validation data اجرا کن.
+2. Performance را اندازه بگیر.
+3. Feature A را shuffle کن.
+4. دوباره performance را اندازه بگیر.
+5. افت performance را اندازه بگیر.</div>
+        <p>اگر:</p>
+        <div class="chart">Performance_original - Performance_permuted</div>
+        <p>زیاد باشد:</p>
+        <div class="chart">feature مهم‌تر است.</div>
+
+        <h2>53. مزیت Permutation Importance</h2>
+        <p>به جای نگاه کردن به internal tree structure:</p>
+        <div class="chart">effect feature on predictive performance</div>
+        <p>را اندازه می‌گیرد.</p>
+        <p>اما باز هم:</p>
+        <div class="chart">correlation بین features</div>
+        <p>می‌تواند interpretation را مشکل کند.</p>
+
+        <h2>54. Correlated Features و Importance</h2>
+        <p>فرض کن:</p>
+        <div class="chart">X1 = Age
+X2 = Age + noise</div>
+        <p>هر دو اطلاعات مشابه دارند.</p>
+        <p>اگر X1 را shuffle کنی:</p>
+        <div class="chart">X2 هنوز اطلاعات را نگه می‌دارد.</div>
+        <p>پس افت performance ممکن است کم باشد.</p>
+        <p>نتیجه:</p>
+        <div class="chart">X1 ظاهراً کم‌اهمیت به نظر می‌رسد.</div>
+        <p>در حالی که اطلاعاتش واقعاً مهم است.</p>
+
+        <h2>55. Random Feature Selection</h2>
+        <p>این مفهوم مخصوصاً برای:</p>
+        <div class="chart">Random Forest</div>
+        <p>بسیار مهم است.</p>
+        <p>در هر split، به جای بررسی تمام features:</p>
+        <div class="chart">p</div>
+        <p>فقط subsetی از features را بررسی می‌کنیم:</p>
+        <div class="chart">m < p</div>
+
+        <h2>56. چرا Random Feature Selection؟</h2>
+        <p>فرض کن:</p>
+        <div class="chart">X1
+X2
+X3
+...
+X100</div>
+        <p>داریم.</p>
+        <p>اگر همه treeها همیشه بهترین feature را انتخاب کنند:</p>
+        <div class="chart">Tree 1 → X1
+Tree 2 → X1
+Tree 3 → X1
+Tree 4 → X1</div>
+        <p>treeها خیلی شبیه می‌شوند.</p>
+        <p>در نتیجه:</p>
+        <div class="chart">Correlation بین trees بالا می‌رود.</div>
+
+        <h2>57. Random Feature Selection چه می‌کند؟</h2>
+        <p>مثلاً:</p>
+        <div class="chart">Tree 1:
+X1 X4 X8 X12
+
+Tree 2:
+X2 X3 X7 X10
+
+Tree 3:
+X1 X5 X9 X11</div>
+        <p>در نتیجه treeها diverseتر می‌شوند.</p>
+
+        <h2>58. Diversity در Ensemble</h2>
+        <p>این اصل بسیار مهم است:</p>
+        <div class="chart">Ensemble فقط به مدل‌های قوی نیاز ندارد؛ diversity بین مدل‌ها هم مهم است.</div>
+        <p>اگر:</p>
+        <div class="chart">Tree_1 = Tree_2 = Tree_3</div>
+        <p>باشد، averaging فایده زیادی ندارد.</p>
+        <p>اما اگر خطاها تا حدی متفاوت باشند:</p>
+        <div class="chart">Correlation(errors) ↓</div>
+        <p>ensemble بهتر می‌شود.</p>
+
+        <h2>59. ارتباط Random Feature Selection با Bias-Variance</h2>
+        <p>Random Feature Selection:</p>
+        <div class="chart">Tree diversity ↑
+Correlation ↓
+Variance of ensemble ↓</div>
+        <p>ولی randomness زیاد می‌تواند:</p>
+        <div class="chart">Bias ↑</div>
+        <p>کند.</p>
+        <p>پس باز هم:</p>
+        <div class="chart">Bias–Variance Tradeoff</div>
+        <p>داریم.</p>
+
+        <h2>60. max_features</h2>
+        <p>در Random Forest پارامتری مثل:</p>
+        <div class="chart">max_features</div>
+        <p>تعیین می‌کند در هر split چند feature بررسی شود.</p>
+        <p>اگر زیاد باشد:</p>
+        <div class="chart">Feature randomness ↓
+Tree correlation ↑
+Variance reduction ↓</div>
+        <p>اگر کم باشد:</p>
+        <div class="chart">Tree diversity ↑
+Correlation ↓
+Potential bias ↑</div>
+
+        <h2>61. Decision Tree برای Classification Probability</h2>
+        <p>یک leaf می‌تواند probability کلاس را بر اساس class proportions بدهد.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Leaf:
+
+Fraud     = 80
+Legit     = 20</div>
+        <p>پس:</p>
+        <div class="chart">P(Fraud) = 0.8</div>
+        <p>اما این probability الزاماً:</p>
+        <div class="chart">well-calibrated</div>
+        <p>نیست.</p>
+        <p>این نکته مهم است.</p>
+
+        <h2>62. Decision Tree و Calibration</h2>
+        <p>Treeهای deep معمولاً probabilityهای:</p>
+        <div class="chart">0
+1</div>
+        <p>را زیاد تولید می‌کنند.</p>
+        <p>ولی ممکن است overconfident باشند.</p>
+        <p>پس اگر probability واقعی برای business مهم است، باید:</p>
+        <div class="chart">Calibration</div>
+        <p>را بررسی کنیم.</p>
+        <p>روش‌ها:</p>
+        <div class="chart">Platt Scaling
+Isotonic Regression</div>
+        <p>که قبلاً در Classification Concepts دیدیم.</p>
+
+        <h2>63. Missing Values</h2>
+        <p>رفتار Missing Value به implementation بستگی دارد.</p>
+        <p>Decision Tree کلاسیک ممکن است نیاز به:</p>
+        <div class="chart">Imputation</div>
+        <p>داشته باشد.</p>
+        <p>ولی برخی الگوریتم‌های مدرن مثل:</p>
+        <div class="chart">XGBoost / LightGBM</div>
+        <p>مکانیزم‌هایی برای handling missing values دارند.</p>
+        <p>پس نباید بگویی:</p>
+        <div class="chart">«Treeها همیشه missing values را خودکار حل می‌کنند.»</div>
+
+        <h2>64. Outliers</h2>
+        <p>Treeها معمولاً نسبت به scaling و outlierها از Linear Models مقاوم‌تر هستند.</p>
+        <p>چرا؟</p>
+        <p>چون split بر اساس:</p>
+        <div class="chart">x < t</div>
+        <p>است.</p>
+        <p>اما outlier همچنان می‌تواند:</p>
+        <div class="chart">splitهای خاص ایجاد کند
+leafهای کوچک بسازد
+tree را پیچیده کند</div>
+        <p>پس:</p>
+        <div class="chart">Tree ≠ immune to outliers</div>
+
+        <h2>65. چرا Decision Tree Feature Scaling نمی‌خواهد؟</h2>
+        <p>فرض کن:</p>
+        <div class="chart">Age:
+20
+30
+40
+50</div>
+        <p>اگر Standardize کنیم:</p>
+        <div class="chart">-1.3
+-0.6
+0.1
+0.8</div>
+        <p>ordering حفظ شده.</p>
+        <p>Split:</p>
+        <div class="chart">Age < 35</div>
+        <p>تبدیل می‌شود به:</p>
+        <div class="chart">Age_scaled < threshold</div>
+        <p>پس split ساختاری تقریباً همان است.</p>
+
+        <h2>66. Tree و Monotonic Transformation</h2>
+        <p>اگر transformation ترتیب داده‌ها را حفظ کند، مثل:</p>
+        <div class="chart">x → log(x)</div>
+        <p>در بسیاری از شرایط splitهای tree تغییر اساسی نمی‌کنند.</p>
+        <p>این یکی از دلایل:</p>
+        <div class="chart">Scale Invariance</div>
+        <p>درخت است.</p>
+
+        <h2>67. ولی یک نکته ظریف</h2>
+        <p>این به معنی این نیست که:</p>
+        <div class="chart">تمام preprocessing برای Tree بی‌اهمیت است.</div>
+        <p>مثلاً:</p>
+        <div class="chart">missing handling
+categorical encoding
+leakage prevention
+feature construction</div>
+        <p>همچنان بسیار مهم هستند.</p>
+
+        <h2>68. Entropy vs Gini — نکته مصاحبه</h2>
+        <p>اگر interviewer پرسید:</p>
+        <div class="chart">«Gini یا Entropy؟»</div>
+        <p>جواب Senior:</p>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <p>هر دو impurity measure هستند و معمولاً رفتار مشابهی دارند. Gini از نظر محاسباتی کمی ساده‌تر است، در حالی که Entropy از مفهوم information-theoretic می‌آید. در بسیاری از datasets تفاوت predictive performance ناچیز است، بنابراین انتخاب را بهتر است با validation انجام دهیم.</p>
+        </div>
+
+        <h2>69. Information Gain vs Gain Ratio</h2>
+        <p>اگر پرسید:</p>
+        <div class="chart">چرا Gain Ratio ساخته شد؟</div>
+        <p>جواب:</p>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <p>Information Gain به features با تعداد زیادی possible splits یا categories تمایل دارد. Gain Ratio با نرمال‌سازی Information Gain بر اساس Split Information این bias را کاهش می‌دهد.</p>
+        </div>
+
+        <h2>70. چرا Treeها Overfit می‌کنند؟</h2>
+        <p>چون می‌توانند فضای feature را بسیار ریز تقسیم کنند:</p>
+        <div class="chart">        Data
+         ↓
+       split
+      /     \
+   split   split
+   / \      / \
+ ...</div>
+        <p>در نهایت ممکن است هر leaf:</p>
+        <div class="chart">1 sample</div>
+        <p>داشته باشد.</p>
+        <p>در نتیجه:</p>
+        <div class="chart">Training error → 0</div>
+        <p>ولی:</p>
+        <div class="chart">Generalization error ↑</div>
+
+        <h2>71. چگونه Overfitting را کنترل کنیم؟</h2>
+        <p>سه دسته ابزار مهم:</p>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">محدود کردن Tree</div>
+            <div class="chart">max_depth
+min_samples_leaf
+min_samples_split
+max_leaf_nodes</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">Pruning</div>
+            <div class="chart">cost-complexity pruning</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#3fb950;">
+            <div class="inner-title">Ensemble</div>
+            <div class="chart">Random Forest
+Gradient Boosting + regularization</div>
+        </div>
+
+        <h2>72. نکته بسیار مهم: Deep Tree همیشه بد نیست</h2>
+        <p>این اشتباه است که بگوییم:</p>
+        <div class="chart">هرچه tree عمیق‌تر باشد بدتر است.</div>
+        <p>نه.</p>
+        <p>درست‌تر:</p>
+        <div class="chart">Depth</div>
+        <p>یک hyperparameter است.</p>
+        <p>باید با:</p>
+        <div class="chart">Cross-Validation</div>
+        <p>تنظیم شود.</p>
+
+        <h2>73. Decision Tree و Bias-Variance</h2>
+        <p>به صورت مفهومی:</p>
+        <div class="chart">Depth ↑
+       │
+Bias   ↓
+Variance ↑
+       │
+Overfit risk ↑</div>
+        <p>و:</p>
+        <div class="chart">Depth ↓
+       │
+Bias ↑
+Variance ↓
+       │
+Underfit risk ↑</div>
+
+        <h2>74. Tree و Random Forest</h2>
+        <p>یک Decision Tree:</p>
+        <div class="chart">High variance</div>
+        <p>است.</p>
+        <p>Random Forest:</p>
+        <div class="chart">Many diverse trees
++
+Averaging</div>
+        <p>بنابراین:</p>
+        <div class="chart">Variance ↓</div>
+
+        <h2>75. Tree و Boosting</h2>
+        <p>Boosting از treeهای معمولاً:</p>
+        <div class="chart">shallow / weak</div>
+        <p>استفاده می‌کند.</p>
+        <p>هر tree جدید خطاهای قبلی را اصلاح می‌کند.</p>
+        <p>پس:</p>
+        <div class="chart">Weak learners
+       ↓
+Sequential correction
+       ↓
+Strong learner</div>
+
+        <h2>76. نکته بسیار مهم درباره Feature Importance</h2>
+        <p>سه مفهوم را از هم جدا کن:</p>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">MDI</div>
+            <p>بر اساس:</p>
+            <div class="chart">impurity reduction</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">Permutation Importance</div>
+            <p>بر اساس:</p>
+            <div class="chart">performance drop after shuffling</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#3fb950;">
+            <div class="inner-title">SHAP</div>
+            <p>بر اساس:</p>
+            <div class="chart">contribution of feature to prediction</div>
+        </div>
+        <p>این سه تا:</p>
+        <div class="chart">یک چیز نیستند.</div>
+
+        <h2>77. Feature Importance ≠ Feature Selection</h2>
+        <p>Feature importance می‌گوید:</p>
+        <div class="chart">کدام feature در مدل اهمیت بیشتری داشته است.</div>
+        <p>Feature selection می‌گوید:</p>
+        <div class="chart">کدام featureها را نگه داریم و کدام را حذف کنیم.</div>
+        <p>ممکن است یک feature importance پایین داشته باشد ولی حذف آن به خاطر interactionها performance را خراب کند.</p>
+
+        <h2>78. Feature Importance ≠ Causal Importance</h2>
+        <p>این جمله را حتماً به خاطر بسپار:</p>
+        <div class="formula">$$Predictive\ importance \neq Causal\ importance$$</div>
+        <p>اگر feature X prediction را بهتر کند، لزوماً:</p>
+        <div class="chart">X → Y</div>
+        <p>را ثابت نمی‌کند.</p>
+
+        <h2>79. یک مثال واقعی برای Fraud Detection</h2>
+        <p>فرض کن:</p>
+        <div class="chart">Features:
+
+amount
+merchant_id
+hour
+country
+device_id
+velocity</div>
+        <p>Tree ممکن است یاد بگیرد:</p>
+        <div class="chart">velocity > threshold
+       ↓
+high fraud probability</div>
+        <p>اما اگر:</p>
+        <div class="chart">velocity</div>
+        <p>با یک feature دیگر highly correlated باشد، importance ممکن است بین آن‌ها پخش شود.</p>
+        <p>پس فقط با Feature Importance تصمیم به حذف feature نگیر.</p>
+
+        <h2>80. Senior Interview Cheat Sheet</h2>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">Entropy</div>
+            <div class="formula">$$H = -\sum p \log p$$</div>
+            <p>اندازه‌گیری uncertainty.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">Information Gain</div>
+            <div class="formula">$$IG = H(parent) - H(children)$$</div>
+            <p>کاهش entropy.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#3fb950;">
+            <div class="inner-title">Gini</div>
+            <div class="formula">$$Gini = 1 - \sum p^2$$</div>
+            <p>اندازه‌گیری impurity.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#d2a8ff;">
+            <div class="inner-title">Gain Ratio</div>
+            <div class="formula">$$GR = \frac{IG}{SplitInfo}$$</div>
+            <p>کاهش bias نسبت به multi-valued features.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">Depth</div>
+            <div class="chart">Depth ↑ ⇒ Bias ↓, Variance ↑</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">Leaf Size</div>
+            <div class="chart">Leaf Size ↑ ⇒ Complexity ↓</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#3fb950;">
+            <div class="inner-title">Pre-Pruning</div>
+            <p>محدود کردن رشد tree قبل از کامل شدن.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#d2a8ff;">
+            <div class="inner-title">Post-Pruning</div>
+            <p>ساخت tree و سپس حذف branches غیرضروری.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">Random Feature Selection</div>
+            <p>انتخاب subset تصادفی از features در هر split برای افزایش diversity و کاهش correlation بین trees.</p>
+        </div>
+
+        <h2>🧠 مهم‌ترین تصویر ذهنی</h2>
+        <p>اگر بخواهم تمام این فصل را در یک زنجیره خلاصه کنم:</p>
+        <div class="chart">                    DATA
+                      │
+                      ▼
+                Choose Split
+                      │
+          ┌───────────┴───────────┐
+          │                       │
+       Entropy                  Gini
+          │                       │
+          └───────────┬───────────┘
+                      ▼
+              Impurity Reduction
+                      │
+                      ▼
+              Information Gain
+                      │
+                      ▼
+               Best Split
+                      │
+                      ▼
+                Grow Tree
+                      │
+          ┌───────────┴───────────┐
+          │                       │
+     Pre-Pruning            Full Growth
+          │                       │
+          │                 Post-Pruning
+          │                       │
+          └───────────┬───────────┘
+                      ▼
+                 Final Tree
+                      │
+             ┌────────┴────────┐
+             │                 │
+       Feature Importance   Prediction
+             │                 │
+       MDI / Permutation    Class / Value</div>
+        <p>و بعد:</p>
+        <div class="chart">                    Decision Tree
+                         │
+          ┌──────────────┴──────────────┐
+          │                             │
+     Random Feature                Sequential Trees
+       Selection                        │
+          │                             │
+          ▼                             ▼
+    Random Forest                 Gradient Boosting
+          │                       /      |       \
+          │                    XGBoost LightGBM CatBoost
+          │
+    Variance Reduction</div>
+        <p>اگر این connection را بفهمی، در واقع فقط Decision Tree را یاد نگرفته‌ای؛ بلکه بخش بزرگی از معماری و منطق Tree-based ML را فهمیده‌ای.</p>
+
+        <hr style="border:1px solid #444; margin:50px 0;" />
+        <p style="text-align:center; color:#8b949e; font-size:0.85rem; padding:16px 0;">Decision Tree Concepts · Senior ML · تمام نکات ریز 🧠</p>
+
+    </div>
+</body>
+</html>

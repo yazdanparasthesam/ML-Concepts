@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deep Learning Fundamentals - Senior ML Level</title>
+    <style>
+        body { background-color: #0d1117; color: #e6edf3; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.8; margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1, h2, h3 { color: #e6edf3; text-align: right; border-bottom: 1px solid #444; padding-bottom: 15px; margin-top: 50px; }
+        p, li { text-align: right; }
+        
+        /* Boxes: Force RTL for Persian */
+        .box { background-color: #21262d; border: 1px solid #30363d; border-radius: 8px; padding: 15px; margin: 15px 0; color: #e6edf3; direction: rtl !important; text-align: right !important; }
+        .inner-box { background-color: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 15px; margin: 10px; direction: rtl !important; text-align: right !important; }
+        .inner-title { font-weight: bold; margin-bottom: 5px; text-align: right !important; }
+
+        /* Formula Box: Force LTR, no raw $$ or \[ \] */
+        .formula {
+            direction: ltr !important;
+            background-color: #000;
+            border: 1px solid #fff;
+            border-radius: 0;
+            padding: 20px;
+            margin: 20px auto;
+            width: fit-content;
+            max-width: 100%;
+            overflow-x: auto;
+            text-align: center;
+            font-size: 1.2em;
+            font-family: "Times New Roman", Times, serif;
+            color: #fff;
+        }
+
+        /* Charts / Flowcharts / ASCII Art: Force LTR */
+        .chart { direction: ltr !important; text-align: left !important; font-family: monospace; background-color: #21262d; border-radius: 8px; padding: 15px; overflow-x: auto; white-space: pre; border: 1px solid #444; }
+
+        /* Tables */
+        table { width: 100%; border-collapse: collapse; direction: rtl; margin-bottom: 20px; }
+        th, td { border: 1px solid #444; padding: 12px; text-align: right; }
+        th { background-color: #21262d; }
+        
+        .highlight { color: #58a6ff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 31. Deep Learning Fundamentals — از پایه تا Senior ML Engineer</h1>
+
+        <p>Deep Learning در واقع یک زیرمجموعه از Machine Learning است که با استفاده از Neural Networks با تعداد زیادی لایه تلاش می‌کند representationهای پیچیده را از داده یاد بگیرد.</p>
+        <p>تفاوت اصلی Deep Learning با ML کلاسیک:</p>
+        <div class="inner-box"><div class="inner-title">در ML کلاسیک:</div></div>
+        <div class="box"><div class="chart">Raw Data
+   |
+Feature Engineering
+   |
+Model
+   |
+Prediction</div></div>
+        <div class="inner-box"><div class="inner-title">در Deep Learning:</div></div>
+        <div class="box"><div class="chart">Raw Data
+   |
+Neural Network
+   |
+Feature Learning
+   |
+Prediction</div></div>
+        <p>یعنی شبکه خودش feature استخراج می‌کند.</p>
+
+        <h2>1. Perceptron</h2>
+        <p>Perceptron ساده‌ترین واحد Neural Network است.</p>
+        <p>در سال 1958 توسط Frank Rosenblatt معرفی شد.</p>
+        <p>یک perceptron:</p>
+        <p>ورودی‌ها:</p>
+        <div class="formula">x<sub>1</sub>, x<sub>2</sub>, ..., x<sub>n</sub></div>
+        <p>وزن‌ها:</p>
+        <div class="formula">w<sub>1</sub>, w<sub>2</sub>, ..., w<sub>n</sub></div>
+        <p>Bias:</p>
+        <div class="formula">b</div>
+        <p>محاسبه:</p>
+        <div class="formula">z = w<sup>T</sup>x + b</div>
+        <p>یعنی:</p>
+        <div class="formula">z = w<sub>1</sub>x<sub>1</sub> + w<sub>2</sub>x<sub>2</sub> + ... + w<sub>n</sub>x<sub>n</sub> + b</div>
+        <p>بعد activation:</p>
+        <div class="formula">y = f(z)</div>
+
+        <div class="inner-box"><div class="inner-title">مثال</div></div>
+        <p>فرض:</p>
+        <p>تشخیص spam:</p>
+        <p>Features:</p>
+        <div class="box"><div class="chart">x1 = تعداد لینک
+x2 = تعداد کلمات خاص
+x3 = طول ایمیل</div></div>
+        <p>Perceptron:</p>
+        <div class="box"><div class="chart">Spam probability
+=
+w1*x1+w2*x2+w3*x3+b</div></div>
+
+        <h2>2. محدودیت Perceptron</h2>
+        <p>Perceptron فقط مسائل Linear قابل حل را یاد می‌گیرد.</p>
+        <p>مثال:</p>
+        <p>AND:</p>
+        <div class="box"><div class="chart">0 0 -> 0
+0 1 -> 0
+1 0 -> 0
+1 1 -> 1</div></div>
+        <p>قابل حل است.</p>
+        <p>اما XOR:</p>
+        <div class="box"><div class="chart">0 0 ->0
+0 1 ->1
+1 0 ->1
+1 1 ->0</div></div>
+        <p>با یک خط جدا نمی‌شود.</p>
+        <p>این مشکل باعث شد Neural Networks چندلایه ایجاد شوند.</p>
+
+        <h2>3. Neural Network</h2>
+        <p>یک Neural Network مجموعه‌ای از Perceptronهاست.</p>
+        <p>ساختار:</p>
+        <div class="box"><div class="chart">Input Layer
+
+      ↓
+
+Hidden Layer 1
+
+      ↓
+
+Hidden Layer 2
+
+      ↓
+
+Output Layer</div></div>
+
+        <h2>4. Layer چیست؟</h2>
+        <p>هر Layer تعدادی neuron دارد.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Input:
+784 pixels
+
+
+Hidden:
+512 neurons
+
+
+Hidden:
+256 neurons
+
+
+Output:
+10 classes</div></div>
+
+        <h2>5. Deep یعنی چه؟</h2>
+        <p>Deep یعنی تعداد زیاد hidden layer.</p>
+        <p>مثلاً:</p>
+        <p>Shallow:</p>
+        <div class="box"><div class="chart">Input
+ |
+Hidden
+ |
+Output</div></div>
+        <p>Deep:</p>
+        <div class="box"><div class="chart">Input
+ |
+Hidden
+ |
+Hidden
+ |
+Hidden
+ |
+Hidden
+ |
+Output</div></div>
+
+        <h2>6. Forward Propagation</h2>
+        <p>Forward propagation یعنی:</p>
+        <div class="inner-box">داده از ورودی عبور می‌کند تا prediction تولید شود.</div>
+        <p>برای یک layer:</p>
+        <div class="formula">z = Wx + b</div>
+        <p>بعد:</p>
+        <div class="formula">a = f(z)</div>
+        <p>Activation خروجی neuron است.</p>
+        <p>مثال:</p>
+        <p>Layer اول:</p>
+        <div class="formula">z<sub>1</sub> = W<sub>1</sub>x + b<sub>1</sub></div>
+        <p>Activation:</p>
+        <div class="formula">a<sub>1</sub> = f(z<sub>1</sub>)</div>
+        <p>Layer دوم:</p>
+        <div class="formula">z<sub>2</sub> = W<sub>2</sub>a<sub>1</sub> + b<sub>2</sub></div>
+        <p>در نهایت:</p>
+        <p>Prediction:</p>
+        <div class="formula">&#770;y</div>
+
+        <h2>7. Loss Function</h2>
+        <p>بعد از prediction باید ببینیم چقدر اشتباه داریم.</p>
+        <p>مثلاً:</p>
+        <p>Regression:</p>
+        <div class="formula">MSE = (y - &#770;y)<sup>2</sup></div>
+        <p>Classification:</p>
+        <div class="formula">CrossEntropy</div>
+        <p>هدف:</p>
+        <p>کمینه کردن Loss:</p>
+        <div class="formula">min L(y, &#770;y)</div>
+
+        <h2>8. Backpropagation</h2>
+        <p>یکی از مهم‌ترین مفاهیم Deep Learning.</p>
+        <p>Backpropagation یعنی:</p>
+        <div class="inner-box">محاسبه اینکه هر weight چقدر در error نقش داشته است.</div>
+        <p>از خروجی به عقب حرکت می‌کنیم.</p>
+        <p>مثال:</p>
+        <div class="box"><div class="chart">Prediction
+
+   ↓
+
+Loss
+
+   ↓
+
+Gradient
+
+   ↓
+
+Weights update</div></div>
+
+        <h2>9. Gradient چیست؟</h2>
+        <p>Gradient نشان می‌دهد:</p>
+        <div class="inner-box">اگر وزن را کمی تغییر دهیم، Loss چقدر تغییر می‌کند.</div>
+        <p>برای weight:</p>
+        <div class="formula">&part;L / &part;w</div>
+        <p>اگر gradient مثبت باشد:</p>
+        <div class="inner-box">وزن باید کاهش پیدا کند.</div>
+        <p>اگر منفی باشد:</p>
+        <div class="inner-box">وزن باید افزایش پیدا کند.</div>
+
+        <h2>10. Gradient Descent در Neural Network</h2>
+        <p>Update:</p>
+        <div class="formula">w = w - &eta;&nabla;L</div>
+        <p>که:</p>
+        <div class="formula">&eta;</div>
+        <p>learning rate است.</p>
+
+        <h2>11. Activation Function</h2>
+        <p>چرا نیاز داریم؟</p>
+        <p>اگر activation نداشته باشیم:</p>
+        <div class="inner-box">چند layer تبدیل می‌شود به:</div>
+        <div class="formula">Wx</div>
+        <p>یعنی فقط یک linear transformation.</p>
+        <p>Activation باعث non-linearity می‌شود.</p>
+
+        <h2>12. Sigmoid</h2>
+        <p>فرمول:</p>
+        <div class="formula">&sigma;(x) = 1 / (1 + e<sup>-x</sup>)</div>
+        <p>خروجی:</p>
+        <p>بین:</p>
+        <div class="formula">0, 1</div>
+        <p>کاربرد:</p>
+        <p>Binary classification output.</p>
+        <p>مثلاً:</p>
+        <div class="formula">P(class = 1)</div>
+        <p>مشکل:</p>
+        <div class="inner-box"><div class="inner-title">Vanishing Gradient</div></div>
+        <p>برای مقادیر بزرگ:</p>
+        <div class="inner-box">gradient نزدیک صفر می‌شود.</div>
+
+        <h2>13. Tanh</h2>
+        <p>فرمول:</p>
+        <div class="formula">tanh(x)</div>
+        <p>خروجی:</p>
+        <div class="formula">[-1, 1]</div>
+        <p>مزیت:</p>
+        <div class="inner-box">zero-centered است.</div>
+        <p>مشکل:</p>
+        <div class="inner-box">باز هم vanishing gradient.</div>
+
+        <h2>14. ReLU</h2>
+        <p>مهم‌ترین activation در Deep Learning.</p>
+        <p>فرمول:</p>
+        <div class="formula">f(x) = max(0, x)</div>
+        <p>یعنی:</p>
+        <p>اگر:</p>
+        <div class="formula">x > 0</div>
+        <p>همان x</p>
+        <p>اگر:</p>
+        <div class="formula">x < 0</div>
+        <p>صفر</p>
+        <p>مزایا:</p>
+        <div class="inner-box">ساده</div>
+        <div class="inner-box">سریع</div>
+        <div class="inner-box">کاهش vanishing gradient</div>
+        <p>مشکل:</p>
+        <div class="inner-box"><div class="inner-title">Dying ReLU</div></div>
+        <p>اگر neuron همیشه:</p>
+        <div class="formula">x < 0</div>
+        <p>باشد:</p>
+        <p>خروجی همیشه صفر.</p>
+        <p>Neuron می‌میرد.</p>
+
+        <h2>15. Leaky ReLU</h2>
+        <p>حل Dying ReLU.</p>
+        <p>فرمول:</p>
+        <div class="formula">f(x) = { x &nbsp;&nbsp;&nbsp; x > 0 ; &alpha;x &nbsp;&nbsp;&nbsp; x < 0 }</div>
+        <p>مثلاً:</p>
+        <div class="formula">&alpha; = 0.01</div>
+        <p>قسمت منفی کاملاً صفر نمی‌شود.</p>
+
+        <h2>16. GELU</h2>
+        <p>Gaussian Error Linear Unit</p>
+        <p>در Transformerها بسیار استفاده می‌شود.</p>
+        <p>فرمول تقریبی:</p>
+        <div class="formula">GELU(x) = x &Phi;(x)</div>
+        <p>مزیت:</p>
+        <div class="inner-box">برخلاف ReLU:</div>
+        <div class="inner-box">transition نرم دارد.</div>
+        <p>استفاده:</p>
+        <div class="inner-box">BERT</div>
+        <div class="inner-box">GPT</div>
+        <div class="inner-box">Vision Transformer</div>
+
+        <h2>17. Softmax</h2>
+        <p>برای Multi-class classification.</p>
+        <p>فرض:</p>
+        <p>سه کلاس:</p>
+        <div class="box"><div class="chart">Cat
+Dog
+Bird</div></div>
+        <p>Logits:</p>
+        <div class="box"><div class="chart">[2.0, 1.0, 0.1]</div></div>
+        <p>Softmax تبدیل می‌کند:</p>
+        <div class="box"><div class="chart">Cat: 0.65
+Dog: 0.25
+Bird: 0.10</div></div>
+        <p>فرمول:</p>
+        <div class="formula">&sigma;(z<sub>i</sub>) = e<sup>z<sub>i</sub></sup> / &Sigma;<sub>j</sub> e<sup>z<sub>j</sub></sup></div>
+
+        <h2>18. Weight Initialization</h2>
+        <p>شروع آموزش بسیار مهم است.</p>
+        <p>اگر همه وزن‌ها صفر باشند:</p>
+        <div class="inner-box">تمام neuronها یکسان یاد می‌گیرند.</div>
+        <p>پس باید random initialization داشته باشیم.</p>
+
+        <h2>19. Xavier Initialization</h2>
+        <p>برای:</p>
+        <div class="inner-box">Sigmoid</div>
+        <div class="inner-box">Tanh</div>
+        <p>هدف:</p>
+        <p>حفظ variance activationها.</p>
+        <p>فرمول:</p>
+        <div class="formula">Var(W) = 2 / (n<sub>in</sub> + n<sub>out</sub>)</div>
+
+        <h2>20. He Initialization</h2>
+        <p>برای ReLU.</p>
+        <p>فرمول:</p>
+        <div class="formula">Var(W) = 2 / n<sub>in</sub></div>
+        <p>چون ReLU نصف activationها را صفر می‌کند.</p>
+
+        <h2>21. Batch Normalization</h2>
+        <p>یکی از تکنیک‌های مهم training.</p>
+        <p>هدف:</p>
+        <p>Normalize کردن activationها.</p>
+        <p>قبل:</p>
+        <div class="box"><div class="chart">Layer output:
+
+100
+200
+300</div></div>
+        <p>بعد:</p>
+        <div class="box"><div class="chart">-1
+0
+1</div></div>
+        <p>فرمول:</p>
+        <div class="formula">&#770;x = (x - &mu;) / &radic;(&sigma;<sup>2</sup> + &epsilon;)</div>
+        <p>بعد:</p>
+        <p>دو پارامتر قابل یادگیری:</p>
+        <div class="formula">&gamma;, &beta;</div>
+        <p>مزایا:</p>
+        <div class="inner-box">Training سریع‌تر</div>
+        <div class="inner-box">اجازه learning rate بالاتر</div>
+        <div class="inner-box">کاهش internal covariate shift</div>
+
+        <h2>22. BatchNorm مشکل دارد؟</h2>
+        <p>بله.</p>
+        <div class="inner-box">به batch size وابسته است.</div>
+        <p>برای batch کوچک:</p>
+        <div class="inner-box">آمار mean و variance بد می‌شود.</div>
+
+        <h2>23. Layer Normalization</h2>
+        <p>برخلاف BatchNorm:</p>
+        <p>BatchNorm:</p>
+        <div class="inner-box">روی batch normalize می‌کند.</div>
+        <p>LayerNorm:</p>
+        <div class="inner-box">روی featureها.</div>
+        <p>در Transformer بسیار مهم است.</p>
+        <div class="inner-box">چون batch size و sequence length تغییر می‌کند.</div>
+
+        <h2>24. BatchNorm vs LayerNorm</h2>
+        <table>
+            <thead><tr><th></th><th>BatchNorm</th><th>LayerNorm</th></tr></thead>
+            <tbody>
+                <tr><td>Normalize</td><td>Batch</td><td>Feature</td></tr>
+                <tr><td>CV</td><td>خیلی استفاده</td><td>کمتر</td></tr>
+                <tr><td>Transformer</td><td>نه</td><td>بله</td></tr>
+                <tr><td>RNN</td><td>مشکل دارد</td><td>بهتر</td></tr>
+            </tbody>
+        </table>
+
+        <h2>25. Dropout</h2>
+        <p>Regularization technique.</p>
+        <p>در training:</p>
+        <div class="inner-box">تصادفی بعضی neuronها را خاموش می‌کنیم.</div>
+        <p>مثلاً:</p>
+        <div class="formula">Dropout = 0.5</div>
+        <p>یعنی:</p>
+        <div class="inner-box">50% neuronها random حذف.</div>
+        <p>هدف:</p>
+        <p>جلوگیری از:</p>
+        <div class="inner-box">Overfitting</div>
+        <p>در inference:</p>
+        <div class="inner-box">Dropout خاموش است.</div>
+
+        <h2>26. Residual Connections</h2>
+        <p>معرفی شده در ResNet.</p>
+        <p>مشکل:</p>
+        <div class="inner-box">شبکه‌های خیلی عمیق:</div>
+        <div class="inner-box">gradient vanishing</div>
+        <p>راه حل:</p>
+        <p>به جای:</p>
+        <div class="formula">H(x)</div>
+        <p>یاد بگیر:</p>
+        <div class="formula">F(x) + x</div>
+        <p>یعنی:</p>
+        <div class="box"><div class="chart">Input
+ |
+ |------+
+ |
+Layer
+ |
+ +----> Add</div></div>
+        <p>مزیت:</p>
+        <div class="inner-box">Gradient راحت‌تر عبور می‌کند.</div>
+        <p>استفاده:</p>
+        <div class="inner-box">ResNet</div>
+        <div class="inner-box">Transformers</div>
+
+        <h2>27. CNN (Convolutional Neural Network)</h2>
+        <p>برای داده‌های grid مانند:</p>
+        <div class="inner-box">Image</div>
+        <div class="inner-box">Video</div>
+        <div class="inner-box">Signal</div>
+        <p>ایده:</p>
+        <p>به جای connected کامل:</p>
+        <div class="inner-box">Filter استفاده می‌کنیم.</div>
+        <p>مثلاً تصویر:</p>
+        <div class="box"><div class="chart">224x224x3</div></div>
+        <p>Filter:</p>
+        <div class="box"><div class="chart">3x3</div></div>
+        <p>روی تصویر حرکت می‌کند.</p>
+
+        <h2>28. Convolution</h2>
+        <p>عمل:</p>
+        <div class="formula">Feature Map = Input * Kernel</div>
+        <p>Kernel ویژگی استخراج می‌کند.</p>
+        <p>مثلاً:</p>
+        <div class="inner-box">Edge</div>
+        <div class="inner-box">Texture</div>
+        <div class="inner-box">Shape</div>
+
+        <h2>29. CNN Layers</h2>
+        <p>معمولاً:</p>
+        <div class="box"><div class="chart">Image
+
+↓
+
+Conv
+
+↓
+
+Activation
+
+↓
+
+Pooling
+
+↓
+
+Conv
+
+↓
+
+FC
+
+↓
+
+Output</div></div>
+
+        <h2>30. Pooling</h2>
+        <p>کاهش ابعاد.</p>
+        <div class="inner-box"><div class="inner-title">Max Pooling</div></div>
+        <div class="inner-box">بزرگترین مقدار.</div>
+        <div class="inner-box"><div class="inner-title">Average Pooling</div></div>
+        <div class="inner-box">میانگین.</div>
+
+        <h2>31. RNN</h2>
+        <p>برای Sequence data.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Sentence
+
+word1
+word2
+word3</div></div>
+        <p>RNN حافظه دارد.</p>
+        <p>فرمول:</p>
+        <div class="formula">h<sub>t</sub> = f(Wx<sub>t</sub> + Uh<sub>t-1</sub>)</div>
+        <p>یعنی:</p>
+        <p>حالت فعلی:</p>
+        <div class="inner-box">به گذشته وابسته است.</div>
+
+        <h2>32. مشکل RNN</h2>
+        <div class="inner-box">Vanishing Gradient.</div>
+        <p>برای sequence طولانی:</p>
+        <div class="inner-box">حافظه از بین می‌رود.</div>
+
+        <h2>33. LSTM</h2>
+        <p>Long Short-Term Memory</p>
+        <p>برای حل مشکل RNN ساخته شد.</p>
+        <p>دارای:</p>
+        <div class="inner-box">Cell State</div>
+        <div class="inner-box">Gates</div>
+
+        <h2>34. LSTM Gates</h2>
+        <p>سه gate:</p>
+        <div class="inner-box"><div class="inner-title">Forget Gate</div></div>
+        <div class="inner-box">چه چیزی را حذف کنیم؟</div>
+        <div class="inner-box"><div class="inner-title">Input Gate</div></div>
+        <div class="inner-box">چه چیزی ذخیره کنیم؟</div>
+        <div class="inner-box"><div class="inner-title">Output Gate</div></div>
+        <div class="inner-box">چه چیزی خروجی بدهیم؟</div>
+
+        <h2>35. GRU</h2>
+        <p>نسخه ساده‌تر LSTM.</p>
+        <p>دارای:</p>
+        <div class="inner-box">Update Gate</div>
+        <div class="inner-box">Reset Gate</div>
+        <p>مقایسه:</p>
+        <table>
+            <thead><tr><th></th><th>LSTM</th><th>GRU</th></tr></thead>
+            <tbody>
+                <tr><td>Gate</td><td>3</td><td>2</td></tr>
+                <tr><td>پارامتر</td><td>بیشتر</td><td>کمتر</td></tr>
+                <tr><td>سرعت</td><td>کمتر</td><td>بیشتر</td></tr>
+            </tbody>
+        </table>
+
+        <h2>36. Attention</h2>
+        <p>یکی از بزرگ‌ترین انقلاب‌های Deep Learning.</p>
+        <p>ایده:</p>
+        <div class="inner-box">همه قسمت‌های ورودی اهمیت یکسان ندارند.</div>
+        <p>مثال ترجمه:</p>
+        <div class="box"><div class="chart">I love machine learning</div></div>
+        <p>برای ترجمه love:</p>
+        <div class="inner-box">باید به love توجه کنیم.</div>
+
+        <h2>37. Attention Formula</h2>
+        <p>سه مفهوم:</p>
+        <div class="inner-box">Query</div>
+        <div class="inner-box">Key</div>
+        <div class="inner-box">Value</div>
+        <div class="formula">Attention(Q, K, V) = softmax( QK<sup>T</sup> / &radic;d )V</div>
+
+        <h2>38. Self Attention</h2>
+        <p>در Self Attention:</p>
+        <p>Query:</p>
+        <div class="inner-box">از همان sequence</div>
+        <p>Key:</p>
+        <div class="inner-box">از همان sequence</div>
+        <p>Value:</p>
+        <div class="inner-box">از همان sequence</div>
+        <p>مثلاً:</p>
+        <p>در جمله:</p>
+        <div class="box"><div class="chart">The animal didn't cross the street because it was tired</div></div>
+        <p>Attention می‌تواند بفهمد:</p>
+        <div class="inner-box">it &rarr; animal</div>
+
+        <h2>39. Transformer</h2>
+        <p>معماری مبتنی بر Attention.</p>
+        <p>معماری:</p>
+        <div class="box"><div class="chart">Input
+
+↓
+
+Embedding
+
+↓
+
+Multi Head Attention
+
+↓
+
+Feed Forward
+
+↓
+
+LayerNorm
+
+↓
+
+Output</div></div>
+
+        <h2>40. چرا Transformer مهم شد؟</h2>
+        <p>چون:</p>
+        <p>RNN:</p>
+        <div class="inner-box">Sequential</div>
+        <p>Transformer:</p>
+        <div class="inner-box">Parallel</div>
+        <p>مزایا:</p>
+        <div class="inner-box">سرعت بیشتر</div>
+        <div class="inner-box">Long context</div>
+        <div class="inner-box">Scale بهتر</div>
+
+        <h2>41. Multi Head Attention</h2>
+        <p>به جای یک attention:</p>
+        <div class="inner-box">چند attention داریم.</div>
+        <p>هر head:</p>
+        <div class="inner-box">یک نوع relation یاد می‌گیرد.</div>
+        <p>مثلاً:</p>
+        <p>Head1:</p>
+        <div class="inner-box">syntax</div>
+        <p>Head2:</p>
+        <div class="inner-box">semantic</div>
+
+        <h2>42. Position Encoding</h2>
+        <p>Transformer ذاتاً ترتیب را نمی‌فهمد.</p>
+        <p>پس position اضافه می‌کنیم.</p>
+        <p>مثلاً:</p>
+        <div class="inner-box">Word embedding + Position embedding</div>
+
+        <h2>43. Deep Learning Training Pipeline</h2>
+        <p>در سطح Senior:</p>
+        <div class="box"><div class="chart">Data
+
+↓
+
+Normalization
+
+↓
+
+Initialization
+
+↓
+
+Forward
+
+↓
+
+Loss
+
+↓
+
+Backward
+
+↓
+
+Optimizer
+
+↓
+
+Update
+
+↓
+
+Evaluation
+
+↓
+
+Regularization</div></div>
+
+        <h2>44. مشکلات رایج Deep Learning</h2>
+        <div class="inner-box"><div class="inner-title">Vanishing Gradient</div></div>
+        <p>gradient کوچک می‌شود.</p>
+        <p>راه حل:</p>
+        <div class="inner-box">ReLU</div>
+        <div class="inner-box">Residual</div>
+        <div class="inner-box">BatchNorm</div>
+        <div class="inner-box"><div class="inner-title">Exploding Gradient</div></div>
+        <p>gradient خیلی بزرگ.</p>
+        <p>راه حل:</p>
+        <div class="inner-box">Gradient clipping</div>
+        <div class="inner-box">Normalization</div>
+        <div class="inner-box"><div class="inner-title">Overfitting</div></div>
+        <p>راه حل:</p>
+        <div class="inner-box">Dropout</div>
+        <div class="inner-box">Weight decay</div>
+        <div class="inner-box">Data augmentation</div>
+
+        <h2>45. انتخاب Architecture</h2>
+        <div class="inner-box"><div class="inner-title">Image</div></div>
+        <p>CNN / Vision Transformer</p>
+        <div class="inner-box"><div class="inner-title">Text</div></div>
+        <p>Transformer</p>
+        <div class="inner-box"><div class="inner-title">Time Series</div></div>
+        <p>LSTM / Transformer / Temporal CNN</p>
+        <div class="inner-box"><div class="inner-title">Tabular</div></div>
+        <p>اغلب:</p>
+        <div class="inner-box">XGBoost بهتر از Deep Learning</div>
+
+        <h2>46. مقایسه معماری‌ها</h2>
+        <table>
+            <thead><tr><th>Model</th><th>Best For</th></tr></thead>
+            <tbody>
+                <tr><td>CNN</td><td>Image</td></tr>
+                <tr><td>RNN</td><td>Sequence</td></tr>
+                <tr><td>LSTM</td><td>Long sequence</td></tr>
+                <tr><td>GRU</td><td>Efficient sequence</td></tr>
+                <tr><td>Transformer</td><td>Language + General sequence</td></tr>
+                <tr><td>ResNet</td><td>Very deep vision</td></tr>
+            </tbody>
+        </table>
+
+        <h2>47. Senior ML Interview Questions</h2>
+        <div class="inner-box"><div class="inner-title">چرا ReLU بهتر از Sigmoid است؟</div></div>
+        <p>چون:</p>
+        <div class="inner-box">gradient بهتر</div>
+        <div class="inner-box">محاسبه سریع‌تر</div>
+        <div class="inner-box">کاهش vanishing gradient</div>
+        
+        <div class="inner-box"><div class="inner-title">چرا Transformer از RNN بهتر است؟</div></div>
+        <p>چون:</p>
+        <div class="inner-box">parallelization</div>
+        <div class="inner-box">long-range dependency</div>
+        <div class="inner-box">scalability</div>
+
+        <div class="inner-box"><div class="inner-title">تفاوت BatchNorm و LayerNorm؟</div></div>
+        <p>BatchNorm:</p>
+        <div class="inner-box">batch statistics</div>
+        <p>LayerNorm:</p>
+        <div class="inner-box">feature statistics</div>
+
+        <div class="inner-box"><div class="inner-title">Residual Connection چرا مهم است؟</div></div>
+        <p>چون:</p>
+        <div class="inner-box">gradient flow را بهتر می‌کند و شبکه‌های عمیق‌تر ممکن می‌شوند.</div>
+
+        <div class="inner-box"><div class="inner-title">Attention چه مشکلی را حل کرد؟</div></div>
+        <div class="inner-box">وابستگی‌های طولانی در sequence.</div>
+
+        <h2>جمع‌بندی Senior Level</h2>
+        <p>یک Senior ML Engineer باید Deep Learning را فقط به عنوان "لایه و نورون" نداند، بلکه باید بفهمد:</p>
+        <div class="box"><div class="chart">Perceptron
+ ↓
+MLP
+ ↓
+Activation
+ ↓
+Optimization
+ ↓
+Normalization
+ ↓
+Regularization
+ ↓
+CNN/RNN
+ ↓
+Attention
+ ↓
+Transformer</div></div>
+        <p>و بداند هر تکنیک برای چه مشکلی ساخته شده:</p>
+        <table>
+            <thead><tr><th>Problem</th><th>Solution</th></tr></thead>
+            <tbody>
+                <tr><td>Non-linearity</td><td>Activation</td></tr>
+                <tr><td>Vanishing Gradient</td><td>ReLU, Residual</td></tr>
+                <tr><td>Overfitting</td><td>Dropout, Weight Decay</td></tr>
+                <tr><td>Training instability</td><td>BatchNorm, LayerNorm</td></tr>
+                <tr><td>Long dependency</td><td>LSTM, Attention</td></tr>
+                <tr><td>Scaling sequence models</td><td>Transformer</td></tr>
+            </tbody>
+        </table>
+        <p>این دیدگاه تفاوت بین کسی که فقط PyTorch بلد است و یک Senior ML Engineer را مشخص می‌کند.</p>
+
+    </div>
+</body>
+</html>

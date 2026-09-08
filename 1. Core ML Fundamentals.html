@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Core ML Fundamentals - Senior Level</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}]});"></script>
+    <style>
+        body { background-color: #0d1117; color: #e6edf3; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.8; margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1, h2, h3 { color: #e6edf3; text-align: right; border-bottom: 1px solid #444; padding-bottom: 15px; margin-top: 50px; }
+        p, li { text-align: right; }
+        .box { background-color: #21262d; border: 1px solid #30363d; border-radius: 8px; padding: 15px; margin: 15px 0; color: #e6edf3; }
+        .inner-box { background-color: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 15px; margin: 10px; }
+        .inner-title { font-weight: bold; margin-bottom: 5px; }
+        .formula {
+            direction: ltr;
+            background-color: #000;
+            border: 1px solid #fff;
+            border-radius: 0;
+            padding: 20px;
+            margin: 20px auto;
+            width: fit-content;
+            max-width: 100%;
+            overflow-x: auto;
+            text-align: center;
+            font-size: 1.2em;
+            font-family: "Times New Roman", Times, serif;
+            color: #fff;
+        }
+        .chart { direction: ltr; text-align: left; font-family: monospace; background-color: #21262d; border-radius: 8px; padding: 15px; overflow-x: auto; white-space: pre; border: 1px solid #444; }
+        table { width: 100%; border-collapse: collapse; direction: rtl; margin-bottom: 20px; }
+        th, td { border: 1px solid #444; padding: 12px; text-align: right; }
+        th { background-color: #21262d; }
+        .highlight { color: #58a6ff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧠 Core ML Fundamentals — Senior Level</h1>
+        
+        <p>حتماً. این بخش را در سطح Senior ML Engineer توضیح می‌دهم؛ یعنی فقط تعریف حفظی نمی‌دهم، بلکه برای هر مفهوم intuition، فرمول، مثال، ارتباط با مفاهیم دیگر، trade-offها، اشتباهات رایج و نکات مصاحبه‌ای را هم می‌گویم.</p>
+
+        <p>قبل از ورود به تک‌تک مباحث، یک تصویر کلی داشته باش:</p>
+        <div class="box">
+            <div class="chart">
+                         MACHINE LEARNING
+                                │
+             ┌──────────────────┼──────────────────┐
+             │                  │                  │
+          Learning            Model              Data
+           Setup              Behavior          Assumptions
+             │                  │                  │
+     ┌───────┼───────┐    ┌─────┼─────┐      IID / Shift
+     │       │       │    │           │
+ Supervised  Semi   RL   Bias      Variance
+     │       │            │           │
+ Unsupervised │        Underfit    Overfit
+     │        │            │           │
+ Self-Supervised       Generalization
+                            │
+                     Expected Risk
+                            │
+                    Bayes Error / Noise
+            </div>
+        </div>
+
+        <h3>1. Supervised Learning</h3>
+        <div class="inner-box"><div class="inner-title">تعریف</div></div>
+        <p>در Supervised Learning، ما داده‌ای داریم که برای هر ورودی X، خروجی یا Label Y را هم می‌دانیم.</p>
+        <p>یعنی Dataset داریم:</p>
+        <div class="formula">$$D = \{ (x_i, y_i) \}_{i=1}^n$$</div>
+        <p>و می‌خواهیم تابعی یاد بگیریم:</p>
+        <div class="formula">$$f: X \rightarrow Y$$</div>
+        <p>که روی داده‌های جدید:</p>
+        <div class="formula">$$\hat{y} = f(x)$$</div>
+        <p>پیش‌بینی خوبی داشته باشد.</p>
+
+        <div class="inner-box"><div class="inner-title">مثال Classification</div></div>
+        <p>تشخیص Fraud:</p>
+        <div class="box">
+            <div class="chart">
+Transaction
+    │
+    ├── amount
+    ├── country
+    ├── device
+    ├── time
+    └── ...
+         ↓
+      Model
+         ↓
+ P(Fraud | X)
+         ↓
+    Fraud / Normal
+            </div>
+        </div>
+        <p>اینجا:</p>
+        <div class="box"><div class="chart">X = Transaction Features
+Y = Fraud / Normal</div></div>
+
+        <div class="inner-box"><div class="inner-title">مثال Regression</div></div>
+        <p>پیش‌بینی قیمت:</p>
+        <div class="box"><div class="chart">X = [size, rooms, location, age]
+Y = price</div></div>
+        <p>مدل:</p>
+        <div class="formula">$$f(X) \rightarrow Price$$</div>
+
+        <div class="inner-box"><div class="inner-title">دو نوع اصلی</div></div>
+        <div class="inner-box"><div class="inner-title">Classification</div></div>
+        <div class="formula">$$Y \in \{0, 1, ..., K\}$$</div>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Fraud / Normal
+Cat / Dog
+Spam / Not Spam</div></div>
+        
+        <div class="inner-box"><div class="inner-title">Regression</div></div>
+        <div class="formula">$$Y \in \mathbb{R}$$</div>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Price
+Temperature
+Revenue
+Demand</div></div>
+
+        <div class="inner-box"><div class="inner-title">نکته Senior</div></div>
+        <p>هدف Supervised Learning صرفاً این نیست که:</p>
+        <div class="inner-box">Training Data را خوب fit کنیم.</div>
+        <p>هدف واقعی:</p>
+        <div class="inner-box">Generalization</div>
+        <p>یعنی روی نمونه‌ای از همان Distribution که مدل ندیده است خوب عمل کند.</p>
+        <p>این دقیقاً ما را به:</p>
+        <div class="inner-box">Bias / Variance / Generalization Error</div>
+        <p>می‌رساند.</p>
+
+        <h3>2. Unsupervised Learning</h3>
+        <p>اینجا Label نداریم.</p>
+        <p>Dataset:</p>
+        <div class="formula">$$D = \{ x_1, x_2, ..., x_n \}$$</div>
+        <p>و مدل باید ساختار موجود در X را پیدا کند.</p>
+
+        <div class="inner-box"><div class="inner-title">مثال Clustering</div></div>
+        <p>فرض کن رفتار مشتریان را داری:</p>
+        <div class="box">
+            <div class="chart">
+Customer
+ ├── spending
+ ├── frequency
+ ├── age
+ └── transaction_count
+            </div>
+        </div>
+        <p>اما نمی‌دانی مشتری‌ها چه گروه‌هایی دارند.</p>
+        <p>می‌توانی:</p>
+        <div class="inner-box">K-Means</div>
+        <p>اجرا کنی:</p>
+        <div class="box">
+            <div class="chart">
+Dataset
+   │
+   ▼
+K-Means
+   │
+   ├── Cluster 1 → High-value customers
+   ├── Cluster 2 → Low-value customers
+   └── Cluster 3 → Occasional customers
+            </div>
+        </div>
+        <p>مدل خودش ساختار را پیدا می‌کند.</p>
+
+        <div class="inner-box"><div class="inner-title">انواع مهم Unsupervised Learning</div></div>
+        <div class="inner-box"><div class="inner-title">Clustering</div></div>
+        <div class="box"><div class="chart">K-Means
+DBSCAN
+HDBSCAN
+GMM
+Hierarchical Clustering</div></div>
+        
+        <div class="inner-box"><div class="inner-title">Dimensionality Reduction</div></div>
+        <div class="box"><div class="chart">PCA
+SVD
+UMAP
+t-SNE</div></div>
+        
+        <div class="inner-box"><div class="inner-title">Density Estimation</div></div>
+        <p>یادگیری:</p>
+        <div class="formula">$$P(X)$$</div>
+        
+        <div class="inner-box"><div class="inner-title">Anomaly Detection</div></div>
+        <p>پیدا کردن نمونه‌هایی که با Distribution اصلی متفاوت‌اند.</p>
+
+        <div class="inner-box"><div class="inner-title">نکته مهم</div></div>
+        <p>Unsupervised Learning الزاماً یعنی:</p>
+        <div class="inner-box">«داده بدون هیچ اطلاعاتی»</div>
+        <p>نیست.</p>
+        <p>بلکه یعنی Label صریح Y نداریم.</p>
+
+        <h3>3. Semi-Supervised Learning</h3>
+        <p>این یکی بین Supervised و Unsupervised قرار دارد.</p>
+        <p>فرض کن:</p>
+        <div class="box"><div class="chart">100,000 samples</div></div>
+        <p>داری ولی فقط:</p>
+        <div class="box"><div class="chart">1,000 labeled
+99,000 unlabeled</div></div>
+        <p>داریم.</p>
+        <div class="box">
+            <div class="chart">
+                    Dataset
+                       │
+              ┌────────┴────────┐
+              │                 │
+           Labeled           Unlabeled
+            1,000              99,000
+              │                 │
+              └────────┬────────┘
+                       ↓
+               Semi-Supervised
+            </div>
+        </div>
+
+        <div class="inner-box"><div class="inner-title">چرا مهم است؟</div></div>
+        <p>Label کردن داده ممکن است گران باشد.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Medical Imaging
+Fraud Detection
+Legal Documents
+Speech
+Phishing URLs</div></div>
+        <p>ممکن است میلیون‌ها نمونه داشته باشی ولی Label کردن آنها توسط انسان هزینه‌بر باشد.</p>
+
+        <div class="inner-box"><div class="inner-title">روش‌های رایج</div></div>
+        <div class="inner-box"><div class="inner-title">Pseudo-Labeling</div></div>
+        <p>مدل روی داده بدون Label prediction می‌زند:</p>
+        <div class="box">
+            <div class="chart">
+Unlabeled X
+    ↓
+Model
+    ↓
+P(Y|X) = 0.99
+    ↓
+Pseudo Label = Y
+            </div>
+        </div>
+        <p>بعد آن را به Training Data اضافه می‌کنیم.</p>
+
+        <div class="inner-box"><div class="inner-title">Consistency Regularization</div></div>
+        <p>ایده:</p>
+        <p>اگر ورودی را کمی تغییر بدهیم:</p>
+        <div class="box">
+            <div class="chart">
+X
+↓
+Model
+↓
+P(Y|X)
+            </div>
+        </div>
+        <p>و:</p>
+        <div class="box">
+            <div class="chart">
+Augmented X
+↓
+Model
+↓
+P(Y|X')
+            </div>
+        </div>
+        <p>پیش‌بینی‌ها باید مشابه باشند.</p>
+
+        <div class="inner-box"><div class="inner-title">نکته Senior</div></div>
+        <p>Semi-Supervised Learning وقتی خوب کار می‌کند که:</p>
+        <div class="inner-box">Unlabeled Data واقعاً از همان یا Distribution مرتبط با مسئله آمده باشد.</div>
+        <p>اگر Unlabeled Data کاملاً متفاوت باشد، ممکن است عملکرد بدتر شود.</p>
+
+        <h3>4. Self-Supervised Learning</h3>
+        <p>یکی از مهم‌ترین مفاهیم ML مدرن.</p>
+        <p>در Self-Supervised Learning، Label را خود داده تولید می‌کند.</p>
+        <p>یعنی:</p>
+        <div class="box">
+            <div class="chart">
+Raw Data
+   ↓
+Construct Training Task
+   ↓
+Pseudo Target
+   ↓
+Train Model
+            </div>
+        </div>
+
+        <div class="inner-box"><div class="inner-title">مثال کلاسیک NLP</div></div>
+        <p>جمله:</p>
+        <div class="box"><div class="chart">The cat is sitting on the ___</div></div>
+        <p>مدل باید:</p>
+        <div class="box"><div class="chart">mat</div></div>
+        <p>را پیش‌بینی کند.</p>
+        <p>در اینجا کسی Label نزده.</p>
+        <p>خود متن Target را فراهم کرده.</p>
+
+        <div class="inner-box"><div class="inner-title">مثال LLM</div></div>
+        <p>در Language Modeling:</p>
+        <div class="formula">$$P(x_t | x_1, ..., x_{t-1})$$</div>
+        <p>مدل Token بعدی را پیش‌بینی می‌کند.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">I love machine</div></div>
+        <p>Target:</p>
+        <div class="box"><div class="chart">learning</div></div>
+
+        <div class="inner-box"><div class="inner-title">Masked Language Modeling</div></div>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">The cat is [MASK] on the mat.</div></div>
+        <p>مدل باید:</p>
+        <div class="box"><div class="chart">sitting</div></div>
+        <p>را پیش‌بینی کند.</p>
+        <p>BERT از این ایده استفاده کرد.</p>
+
+        <div class="inner-box"><div class="inner-title">تفاوت Semi-Supervised و Self-Supervised</div></div>
+        <p>خیلی مهم:</p>
+        <div class="inner-box"><div class="inner-title">Semi-Supervised</div></div>
+        <p>داریم:</p>
+        <div class="box"><div class="chart">Labeled + Unlabeled</div></div>
+        
+        <div class="inner-box"><div class="inner-title">Self-Supervised</div></div>
+        <p>Label از خود داده ساخته می‌شود:</p>
+        <div class="box">
+            <div class="chart">
+Data
+ ↓
+Automatically generated target
+            </div>
+        </div>
+        <p>پس Self-Supervised معمولاً یک روش ساخت سیگنال آموزشی است، نه صرفاً «نوع داده».</p>
+
+        <h3>5. Reinforcement Learning</h3>
+        <p>در RL دیگر Dataset کلاسیک (X,Y) نداریم.</p>
+        <p>یک Agent با Environment تعامل می‌کند.</p>
+        <div class="box">
+            <div class="chart">
+              Environment
+             ↑          │
+             │          ↓
+          Reward ←      Action
+             │          ↑
+             └── Agent ─┘
+            </div>
+        </div>
+        <p>Agent:</p>
+        <div class="box">
+            <div class="chart">
+State
+  ↓
+Policy
+  ↓
+Action
+  ↓
+Environment
+  ↓
+Reward + Next State
+            </div>
+        </div>
+
+        <div class="inner-box"><div class="inner-title">اجزای اصلی</div></div>
+        <div class="inner-box"><div class="inner-title">State</div></div>
+        <div class="formula">$$S_t$$</div>
+        <p>وضعیت محیط.</p>
+        
+        <div class="inner-box"><div class="inner-title">Action</div></div>
+        <div class="formula">$$A_t$$</div>
+        <p>کاری که Agent انجام می‌دهد.</p>
+        
+        <div class="inner-box"><div class="inner-title">Reward</div></div>
+        <div class="formula">$$R_t$$</div>
+        <p>پاداش.</p>
+        
+        <div class="inner-box"><div class="inner-title">Policy</div></div>
+        <div class="formula">$$\pi(a|s)$$</div>
+        <p>می‌گوید در State خاص چه Actionای انجام دهیم.</p>
+        
+        <div class="inner-box"><div class="inner-title">Value</div></div>
+        <div class="formula">$$V^{\pi}(s)$$</div>
+        <p>Expected cumulative reward از State s.</p>
+
+        <div class="inner-box"><div class="inner-title">هدف RL</div></div>
+        <p>بیشینه کردن:</p>
+        <div class="formula">$$E \left[ \sum_{t=0}^{\infty} \gamma^t R_t \right]$$</div>
+        <p>که γ همان Discount Factor است.</p>
+
+        <div class="inner-box"><div class="inner-title">Exploration vs Exploitation</div></div>
+        <p>یکی از بنیادی‌ترین Tradeoffهای RL:</p>
+        <div class="inner-box"><div class="inner-title">Exploitation</div></div>
+        <p>کاری را انجام بده که می‌دانی خوب است.</p>
+        <div class="inner-box"><div class="inner-title">Exploration</div></div>
+        <p>کار جدید را امتحان کن تا شاید چیز بهتری پیدا کنی.</p>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">
+Restaurant A
+→ همیشه خوب بوده
+
+Restaurant B
+→ نمی‌دانی خوب است یا بد
+            </div>
+        </div>
+        <p>اگر همیشه A را انتخاب کنی:</p>
+        <div class="box">
+            <div class="chart">
+Exploitation ↑
+Exploration ↓
+            </div>
+        </div>
+        <p>ممکن است هیچ‌وقت بفهمی B بهتر بوده.</p>
+
+        <h3>6. Parametric vs Non-Parametric Models</h3>
+        <p>این یکی خیلی مهم است.</p>
+
+        <div class="inner-box"><div class="inner-title">Parametric Model</div></div>
+        <p>فرض می‌کنیم مدل یک ساختار مشخص با تعداد مشخصی Parameter دارد.</p>
+        <p>مثلاً Linear Regression:</p>
+        <div class="formula">$$y = w^T x + b$$</div>
+        <p>اگر 100 Feature داشته باشی، تعداد پارامترها تقریباً:</p>
+        <div class="box"><div class="chart">101</div></div>
+        <p>است.</p>
+        <p>با افزایش Dataset از:</p>
+        <div class="box"><div class="chart">10,000 → 1,000,000</div></div>
+        <p>تعداد Parameters مدل تغییر نمی‌کند.</p>
+        <p>مثال‌ها</p>
+        <div class="box"><div class="chart">Linear Regression
+Logistic Regression
+Naive Bayes</div></div>
+
+        <div class="inner-box"><div class="inner-title">Non-Parametric</div></div>
+        <p>مدل فرض نمی‌کند که ساختار تابع از ابتدا محدود و ثابت است.</p>
+        <p>ظرفیت مؤثر مدل می‌تواند با Dataset افزایش پیدا کند.</p>
+        <p>مثلاً:</p>
+        <div class="inner-box">KNN</div>
+        <p>برای Prediction عملاً به نمونه‌های Training وابسته است.</p>
+        <p>اگر:</p>
+        <div class="box"><div class="chart">10,000 samples</div></div>
+        <p>داشته باشی، Representation مدل هم به این داده‌ها وابسته است.</p>
+        
+        <div class="inner-box">Decision Tree</div>
+        <p>پیچیدگی Tree می‌تواند با داده رشد کند.</p>
+
+        <div class="inner-box"><div class="inner-title">یک اشتباه رایج</div></div>
+        <div class="inner-box">Non-Parametric به معنی "بدون Parameter" نیست.</div>
+        <p>این خیلی مهم است.</p>
+        <p>Non-parametric یعنی:</p>
+        <div class="inner-box">تعداد/ساختار پارامترهای مدل به شکل ثابتی از قبل محدود نشده است.</div>
+
+        <h3>7. Model Capacity</h3>
+        <p>Capacity یعنی:</p>
+        <div class="inner-box">مدل چقدر توانایی یادگیری توابع/الگوهای پیچیده را دارد؟</div>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">
+Linear Model
+     ↓
+Low Capacity
+            </div>
+        </div>
+        <p>در مقابل:</p>
+        <div class="box">
+            <div class="chart">
+Deep Neural Network
+     ↓
+High Capacity
+            </div>
+        </div>
+
+        <div class="inner-box"><div class="inner-title">Capacity بالا یعنی چه؟</div></div>
+        <p>مدل می‌تواند Functionهای پیچیده‌تری را represent کند.</p>
+        <p>اما:</p>
+        <div class="box"><div class="chart">Capacity ↑</div></div>
+        <p>لزوماً به معنی:</p>
+        <div class="box"><div class="chart">Performance ↑</div></div>
+        <p>نیست.</p>
+        <p>چرا؟</p>
+        <p>چون ممکن است:</p>
+        <div class="box">
+            <div class="chart">
+Capacity ↑
+↓
+Training Error ↓
+↓
+Overfitting Risk ↑
+            </div>
+        </div>
+
+        <div class="inner-box"><div class="inner-title">رابطه Capacity با Bias/Variance</div></div>
+        <p>در تصویر کلاسیک:</p>
+        <div class="box">
+            <div class="chart">
+Model Capacity
+     ↑
+     │
+Bias  \ 
+       \
+        \
+         \________
+                  \
+                   \ Variance
+                    \
+                     ↑
+            </div>
+        </div>
+        <p>به طور کلی:</p>
+        <div class="box">
+            <div class="chart">
+Capacity ↑
+    ↓
+Bias ↓
+    +
+Variance ↑
+            </div>
+        </div>
+        <p>ولی در Deep Learning مدرن این رابطه همیشه ساده نیست.</p>
+
+        <h3>8. Bias–Variance Tradeoff</h3>
+        <p>این را قبلاً گفتیم، ولی در سطح Senior باید یک مرحله عمیق‌تر ببینی.</p>
+        <p>برای Squared Error:</p>
+        <div class="formula">$$E[(Y - \hat{f}(X))^2]$$</div>
+        <p>به صورت مفهومی:</p>
+        <div class="formula">$$Bias^2 + Variance + Noise$$</div>
+
+        <div class="inner-box"><div class="inner-title">Bias</div></div>
+        <p>مدل به دلیل محدودیت/فرض نادرست، سیستماتیک اشتباه می‌کند.</p>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">
+True relationship = nonlinear
+Model = linear
+            </div>
+        </div>
+        <p>→ Bias بالا.</p>
+
+        <div class="inner-box"><div class="inner-title">Variance</div></div>
+        <p>مدل به Training Dataset بیش از حد حساس است.</p>
+        <div class="box">
+            <div class="chart">
+Dataset A → Model A
+Dataset B → Model B
+            </div>
+        </div>
+        <p>اگر Model A و B خیلی متفاوت باشند:</p>
+        <p>→ Variance بالا.</p>
+
+        <h3>9. Underfitting</h3>
+        <p>مدل بیش از حد ساده است.</p>
+        <div class="box">
+            <div class="chart">
+Train Error   ↑
+Validation Error ↑
+            </div>
+        </div>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">
+Complex nonlinear problem
+        ↓
+Linear Model
+            </div>
+        </div>
+        
+        <div class="inner-box"><div class="inner-title">راه‌های کاهش Underfitting</div></div>
+        <ul>
+            <li>Model capacity ↑</li>
+            <li>Features بهتر</li>
+            <li>Feature engineering</li>
+            <li>Training بیشتر</li>
+            <li>Regularization کمتر</li>
+            <li>مدل مناسب‌تر</li>
+        </ul>
+
+        <h3>10. Overfitting</h3>
+        <p>مدل Training Data را بیش از حد یاد گرفته.</p>
+        <div class="box">
+            <div class="chart">
+Train Error ↓↓↓
+Validation Error ↑
+            </div>
+        </div>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">
+Noise
+ ↓
+Model memorizes noise
+ ↓
+Excellent train
+ ↓
+Poor test
+            </div>
+        </div>
+        
+        <div class="inner-box"><div class="inner-title">راه‌های کاهش Overfitting</div></div>
+        <ul>
+            <li>More data</li>
+            <li>Regularization</li>
+            <li>Simpler model</li>
+            <li>Feature selection</li>
+            <li>Data augmentation</li>
+            <li>Dropout</li>
+            <li>Early stopping</li>
+            <li>Cross-validation</li>
+            <li>Ensemble methods</li>
+        </ul>
+
+        <div class="inner-box"><div class="inner-title">نکته خیلی مهم Senior</div></div>
+        <p>Overfitting فقط به معنی:</p>
+        <div class="inner-box">«مدل خیلی پیچیده است»</div>
+        <p>نیست.</p>
+        <p>ممکن است به علت:</p>
+        <ul>
+            <li>Data Leakage</li>
+            <li>Dataset کوچک</li>
+            <li>Noise</li>
+            <li>Hyperparameter Search زیاد</li>
+            <li>Distribution mismatch</li>
+            <li>Poor sampling</li>
+        </ul>
+        <p>هم باشد.</p>
+
+        <h3>11. Generalization</h3>
+        <p>این احتمالاً مهم‌ترین مفهوم کل ML است.</p>
+        <p>مدل را روی:</p>
+        <div class="formula">$$P_{train}(X, Y)$$</div>
+        <p>آموزش می‌دهی.</p>
+        <p>ولی می‌خواهی روی نمونه جدید:</p>
+        <div class="formula">$$(X, Y) \sim P_{data}$$</div>
+        <p>خوب عمل کند.</p>
+        <p>یعنی:</p>
+        <div class="inner-box">Generalization</div>
+
+        <div class="inner-box"><div class="inner-title">Generalization Gap</div></div>
+        <div class="formula">$$Generalization \ Gap = Test \ Error - Train \ Error$$</div>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">
+Train Error = 2%
+Test Error  = 12%
+
+Gap = 10%
+            </div>
+        </div>
+        <p>Gap بزرگ می‌تواند نشانه Overfitting باشد.</p>
+
+        <h3>12. Empirical Risk</h3>
+        <p>فرض کن Loss داریم:</p>
+        <div class="formula">$$L(f(x), y)$$</div>
+        <p>روی Dataset:</p>
+        <div class="formula">$$D = \{ (x_i, y_i) \}_{i=1}^n$$</div>
+        <p>Empirical Risk:</p>
+        <div class="formula">$$\hat{R}(f) = \frac{1}{n} \sum_{i=1}^{n} L(f(x_i), y_i)$$</div>
+        <p>یعنی:</p>
+        <div class="inner-box">Average Loss روی داده‌ای که داریم.</div>
+        <p>مثلاً:</p>
+        <div class="formula">$$MSE = \frac{1}{n} \sum (y_i - \hat{y}_i)^2$$</div>
+
+        <h3>13. Expected Risk</h3>
+        <p>ولی چیزی که واقعاً برایمان مهم است:</p>
+        <div class="formula">$$R(f) = E_{(X,Y) \sim P}[L(f(X), Y)]$$</div>
+        <p>یعنی:</p>
+        <div class="inner-box">اگر از Distribution واقعی داده یک نمونه جدید بگیریم، انتظار داریم مدل چقدر خطا کند؟</div>
+        
+        <div class="inner-box"><div class="inner-title">مشکل</div></div>
+        <p>ما P(X,Y) واقعی را نمی‌دانیم.</p>
+        <p>پس Expected Risk را مستقیماً نمی‌توانیم حساب کنیم.</p>
+        <p>از Empirical Risk استفاده می‌کنیم:</p>
+        <div class="box">
+            <div class="chart">
+Expected Risk
+      ↑
+   unknown
+      │
+      ↓
+Empirical Risk
+      │
+ Training Data
+            </div>
+        </div>
+
+        <h3>14. ERM — Empirical Risk Minimization</h3>
+        <p>بسیاری از الگوریتم‌های ML در اصل دارند این کار را می‌کنند:</p>
+        <div class="formula">$$\hat{f} = \arg\min_f \frac{1}{n} \sum_{i=1}^{n} L(f(x_i), y_i)$$</div>
+        <p>یعنی:</p>
+        <div class="inner-box">مدلی پیدا کن که Training Loss را کمینه کند.</div>
+        <p>این می‌شود:</p>
+        <div class="inner-box">Empirical Risk Minimization</div>
+
+        <div class="inner-box"><div class="inner-title">نکته مهم</div></div>
+        <p>ERM به تنهایی تضمین نمی‌کند Generalization خوب باشد.</p>
+        <p>ممکن است:</p>
+        <div class="box">
+            <div class="chart">
+Training Risk ≈ 0
+            </div>
+        </div>
+        <p>ولی:</p>
+        <div class="box">
+            <div class="chart">
+Test Risk = High
+            </div>
+        </div>
+        <p>چرا؟</p>
+        <p>Overfitting.</p>
+        <p>اینجاست که:</p>
+        <div class="box">
+            <div class="chart">
+Regularization
+Inductive Bias
+Model Selection
+Data Quantity
+            </div>
+        </div>
+        <p>مهم می‌شوند.</p>
+
+        <h3>15. Training Error</h3>
+        <p>Training Error:</p>
+        <div class="formula">$$\hat{R}_{train}$$</div>
+        <p>خطای مدل روی همان داده‌ای که با آن آموزش دیده.</p>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">
+Training Accuracy = 99.9%
+            </div>
+        </div>
+        <p>به تنهایی تقریباً هیچ تضمینی درباره Generalization نمی‌دهد.</p>
+
+        <h3>16. Generalization Error</h3>
+        <p>خطایی که مدل روی نمونه‌های جدید از Distribution واقعی دارد.</p>
+        <p>تقریباً:</p>
+        <div class="formula">$$R(f)$$</div>
+        <p>ولی چون Distribution واقعی را نمی‌دانیم، معمولاً با Validation/Test آن را تخمین می‌زنیم.</p>
+
+        <h3>17. Bayes Error</h3>
+        <p>این یکی بسیار مهم است.</p>
+        <p>فرض کن بهترین classifier ممکن را داشته باشیم.</p>
+        <p>باز هم ممکن است بعضی نمونه‌ها ذاتاً ambiguous باشند.</p>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">
+X = Email Features
+Y = Spam / Not Spam
+            </div>
+        </div>
+        <p>گاهی دو Email با Featureهای تقریباً یکسان داریم ولی یکی Spam و یکی Not Spam است.</p>
+        <p>حتی بهترین classifier هم ممکن است اشتباه کند.</p>
+        <p>حداقل خطای ممکن:</p>
+        <div class="inner-box">Bayes Error</div>
+
+        <div class="inner-box"><div class="inner-title">Bayes Optimal Classifier</div></div>
+        <p>اگر Distribution واقعی را بدانیم، برای Classification بهترین تصمیم:</p>
+        <div class="formula">$$f^*(x) = \arg\max_y P(Y=y|X=x)$$</div>
+        <p>است.</p>
+        <p>یعنی:</p>
+        <div class="inner-box">در هر X، کلاسی را انتخاب کن که بیشترین احتمال Posterior را دارد.</div>
+        <p>خطایی که حتی این classifier هم نمی‌تواند حذف کند، Bayes Error است.</p>
+
+        <h3>18. Irreducible Error</h3>
+        <p>در داده Noise وجود دارد:</p>
+        <div class="box">
+            <div class="chart">
+Measurement Noise
+Label Noise
+Intrinsic Randomness
+Missing Variables
+            </div>
+        </div>
+        <p>این خطا ممکن است قابل حذف نباشد.</p>
+        <p>پس:</p>
+        <div class="box">
+            <div class="chart">
+Total Error
+   =
+Reducible Error
++
+Irreducible Error
+            </div>
+        </div>
+        <p>Reducible Error را می‌توان با مدل بهتر کم کرد.</p>
+        <p>Irreducible Error را نمی‌توان به طور کامل حذف کرد.</p>
+
+        <div class="inner-box"><div class="inner-title">Bayes Error vs Irreducible Noise</div></div>
+        <p>این دو خیلی نزدیک‌اند ولی کاملاً یکی نیستند.</p>
+        <p>Irreducible noise یک مفهوم کلی‌تر درباره Noise/Randomness است.</p>
+        <p>Bayes Error حداقل خطای classification تحت Distribution واقعی و Loss مشخص است.</p>
+        <p>در مصاحبه اگر پرسیدند:</p>
+        <div class="inner-box">What is Bayes error?</div>
+        <p>بگو:</p>
+        <div class="inner-box">The irreducible minimum classification error achievable by the Bayes-optimal classifier given the true data distribution.</div>
+
+        <h3>19. Model Complexity</h3>
+        <p>Model Complexity یعنی ظرفیت مدل برای represent کردن الگوهای پیچیده.</p>
+        <p>مثلاً در Polynomial Regression:</p>
+        <div class="box">
+            <div class="chart">
+Degree 1
+Degree 2
+Degree 5
+Degree 20
+            </div>
+        </div>
+        <p>هرچه Degree بیشتر:</p>
+        <div class="box"><div class="chart">Complexity ↑</div></div>
+        <p>معمولاً در دیدگاه کلاسیک:</p>
+        <div class="box">
+            <div class="chart">
+Complexity ↑
+        ↓
+Bias ↓
+        ↓
+Training Error ↓
+        ↓
+Variance ↑
+            </div>
+        </div>
+        <p>اما بعداً می‌بینیم که در Deep Learning داستان می‌تواند پیچیده‌تر شود.</p>
+
+        <h3>20. Model Complexity و Regularization</h3>
+        <p>فرض کن:</p>
+        <div class="formula">$$Loss = TrainingLoss$$</div>
+        <p>اگر Regularization اضافه کنیم:</p>
+        <div class="formula">$$Objective = TrainingLoss + \lambda ComplexityPenalty$$</div>
+        <p>مثلاً Ridge:</p>
+        <div class="formula">$$MSE + \lambda \sum_j w_j^2$$</div>
+        <p>پس مدل فقط نمی‌گوید:</p>
+        <p>Training Error را کم کن.</p>
+        <p>بلکه می‌گوید:</p>
+        <p>Training Error را کم کن، ولی مدل را هم بیش از حد پیچیده نکن.</p>
+
+        <h3>21. Inductive Bias</h3>
+        <p>این یکی در لیست قبلی نبود ولی برای فهم همه این‌ها بسیار مهم است.</p>
+        <p>Inductive Bias یعنی:</p>
+        <div class="inner-box">فرض‌هایی که الگوریتم درباره مسئله دارد تا بتواند از داده محدود Generalize کند.</div>
+        <p>مثلاً:</p>
+        
+        <div class="inner-box"><div class="inner-title">Linear Regression</div></div>
+        <p>فرض ضمنی:</p>
+        <div class="box"><div class="chart">Relationship ≈ Linear</div></div>
+        
+        <div class="inner-box"><div class="inner-title">KNN</div></div>
+        <p>فرض:</p>
+        <div class="box">
+            <div class="chart">
+Nearby points
+→ Similar labels
+            </div>
+        </div>
+        
+        <div class="inner-box"><div class="inner-title">CNN</div></div>
+        <p>Inductive Biasهایی مثل:</p>
+        <div class="box">
+            <div class="chart">
+Locality
+Translation-related structure
+Weight sharing
+            </div>
+        </div>
+        
+        <div class="inner-box"><div class="inner-title">Transformer</div></div>
+        <p>Inductive Bias متفاوتی دارد و Attention را برای مدل‌سازی روابط بین عناصر استفاده می‌کند.</p>
+        <p>بدون Inductive Bias، داده محدود برای Generalization کافی نیست.</p>
+
+        <h3>22. No Free Lunch Theorem</h3>
+        <p>یک مفهوم بسیار مهم در Theory.</p>
+        <p>به صورت ساده:</p>
+        <div class="inner-box">هیچ الگوریتم ML وجود ندارد که روی همه مسائل بهتر از همه الگوریتم‌های دیگر باشد.</div>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">XGBoost</div></div>
+        <p>ممکن است برای Tabular Data عالی باشد.</p>
+        <p>ولی:</p>
+        <div class="box"><div class="chart">Raw Image</div></div>
+        <p>لزوماً بهترین انتخاب نیست.</p>
+        <p>و:</p>
+        <div class="box"><div class="chart">CNN</div></div>
+        <p>برای Image بسیار مناسب است، ولی برای بعضی Tabular problems الزاماً بهترین نیست.</p>
+
+        <div class="inner-box"><div class="inner-title">پیام اصلی No Free Lunch</div></div>
+        <p>برای انتخاب مدل باید به:</p>
+        <div class="box">
+            <div class="chart">
+Data
++
+Problem Structure
++
+Inductive Bias
++
+Objective
++
+Constraints
+            </div>
+        </div>
+        <p>توجه کنی.</p>
+
+        <h3>23. Curse of Dimensionality</h3>
+        <p>یکی از مهم‌ترین مفاهیم ML.</p>
+        <p>فرض کن یک بعد داری:</p>
+        <div class="box"><div class="chart">[0, 1]</div></div>
+        <p>اگر بخواهی فضای آن را با resolution مشخص پوشش دهی، کار نسبتاً ساده است.</p>
+        <p>اما اگر 10 Dimension داشته باشی:</p>
+        <div class="box"><div class="chart">[0, 1]^10</div></div>
+        <p>تعداد نواحی لازم به شدت زیاد می‌شود.</p>
+        <p>اگر برای هر Dimension به 10 قسمت نیاز داشته باشی:</p>
+        <div class="formula">$$10^d$$</div>
+        <p>برای:</p>
+        <div class="box">
+            <div class="chart">
+d=1 → 10
+d=2 → 100
+d=3 → 1,000
+d=10 → 10,000,000,000
+            </div>
+        </div>
+        <p>یعنی 10 میلیارد سلول!</p>
+
+        <div class="inner-box"><div class="inner-title">نتیجه چیست؟</div></div>
+        <p>با افزایش Dimensions:</p>
+        <div class="box">
+            <div class="chart">
+Dimensions ↑
+      ↓
+Space Volume ↑
+      ↓
+Data Sparsity ↑
+      ↓
+Need More Data ↑
+      ↓
+Learning becomes harder
+            </div>
+        </div>
+
+        <h3>24. مشکل Distance در High Dimensions</h3>
+        <p>در KNN فرض می‌کنیم:</p>
+        <p>نقاط نزدیک، رفتار مشابه دارند.</p>
+        <p>ولی در High Dimensions، فاصله‌ها ممکن است کمتر informative شوند.</p>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">
+2D:
+
+A ●
+  │
+  │ close
+  ● B
+            </div>
+        </div>
+        <p>در 100 Dimension:</p>
+        <div class="box">
+            <div class="chart">
+Distance(A,B)
+Distance(A,C)
+Distance(A,D)
+...
+            </div>
+        </div>
+        <p>ممکن است خیلی به هم نزدیک شوند.</p>
+        <p>این phenomenon را می‌توان به شکل distance concentration دید.</p>
+
+        <h3>25. Curse of Dimensionality و KNN</h3>
+        <p>KNN در ابعاد پایین خوب می‌تواند کار کند.</p>
+        <p>اما:</p>
+        <div class="box">
+            <div class="chart">
+Dimensions ↑
+     ↓
+Nearest Neighbor
+not really "near"
+     ↓
+KNN Performance ↓
+            </div>
+        </div>
+        <p>راه‌حل‌های احتمالی:</p>
+        <div class="box">
+            <div class="chart">
+Feature Selection
+PCA
+Dimensionality Reduction
+Better Representation
+More Data
+            </div>
+        </div>
+
+        <h3>26. Curse of Dimensionality فقط KNN نیست</h3>
+        <p>روی بسیاری از روش‌ها اثر دارد:</p>
+        <ul>
+            <li>KNN</li>
+            <li>Kernel Methods</li>
+            <li>Density Estimation</li>
+            <li>Clustering</li>
+            <li>Distance-based algorithms</li>
+            <li>Statistical estimation</li>
+        </ul>
+        <p>ولی Deep Learning یک نکته ظریف دارد:</p>
+        <p>Neural Networks می‌توانند در فضای بسیار high-dimensional کار کنند، چون Representation Learning و ساختارهای inductive مناسب می‌توانند مشکل را تا حدی مدیریت کنند.</p>
+        <p>پس:</p>
+        <div class="inner-box">High-dimensional ≠ Neural Network automatically fails.</div>
+
+        <h3>27. رابطه همه مفاهیم</h3>
+        <p>حالا مهم‌ترین قسمت.</p>
+        <p>همه این مفاهیم جدا از هم نیستند.</p>
+        <p>یک زنجیره واقعی ML این است:</p>
+        <div class="box">
+            <div class="chart">
+                   DATA
+                     │
+                     ▼
+             Data Distribution
+                     │
+                     ▼
+              Inductive Bias
+                     │
+                     ▼
+                Model Class
+                     │
+                     ▼
+              Model Capacity
+                     │
+             ┌───────┴────────┐
+             │                │
+          Too Low          Too High
+             │                │
+          Bias ↑          Variance ↑
+             │                │
+        Underfitting       Overfitting
+             │                │
+             └───────┬────────┘
+                     ▼
+              Generalization
+                     │
+                     ▼
+              Expected Risk
+                     │
+                     ▼
+              Test Performance
+            </div>
+        </div>
+        <p>و در طرف دیگر:</p>
+        <div class="box">
+            <div class="chart">
+Training Data
+     │
+     ▼
+Empirical Risk
+     │
+     ▼
+Optimization
+     │
+     ▼
+Training Error
+            </div>
+        </div>
+        <p>ولی چیزی که واقعاً می‌خواهیم:</p>
+        <div class="box">
+            <div class="chart">
+Expected Risk
+     ↓
+Generalization
+            </div>
+        </div>
+
+        <h3>28. یک مثال کامل Senior-Level</h3>
+        <p>فرض کن یک Fraud Detection Model داریم.</p>
+        <p>Dataset</p>
+        <div class="box"><div class="chart">1,000,000 transactions</div></div>
+        <p>ولی:</p>
+        <div class="box"><div class="chart">Fraud = 0.2%</div></div>
+        
+        <div class="inner-box"><div class="inner-title">مرحله اول</div></div>
+        <p>XGBoost را آموزش می‌دهیم.</p>
+        <p>Training:</p>
+        <div class="box"><div class="chart">F1 = 0.99</div></div>
+        <p>Validation:</p>
+        <div class="box"><div class="chart">F1 = 0.72</div></div>
+        <p>تشخیص:</p>
+        <div class="box">
+            <div class="chart">
+Training Error ↓
+Validation Error ↑
+            </div>
+        </div>
+        <div class="inner-box">→ احتمالاً Overfitting / High Variance</div>
+        <p>راه‌حل</p>
+        <div class="box">
+            <div class="chart">
+Regularization
+max_depth ↓
+More data
+Feature engineering
+Proper CV
+            </div>
+        </div>
+
+        <div class="inner-box"><div class="inner-title">مشکل دوم</div></div>
+        <p>می‌بینیم بعضی Userها هم در Train و هم Validation هستند.</p>
+        <div class="box">
+            <div class="chart">
+User A
+ ├── Train
+ └── Validation
+            </div>
+        </div>
+        <p>ممکن است:</p>
+        <div class="inner-box">Group Leakage</div>
+        <p>داشته باشیم.</p>
+        <p>راه‌حل:</p>
+        <div class="box"><div class="chart">StratifiedGroupKFold</div></div>
+
+        <div class="inner-box"><div class="inner-title">مشکل سوم</div></div>
+        <p>Feature:</p>
+        <div class="box"><div class="chart">number_of_chargebacks_next_30_days</div></div>
+        <p>را پیدا می‌کنیم.</p>
+        <p>این Feature مربوط به آینده است.</p>
+        <div class="inner-box">→ Target/Temporal Leakage</div>
+
+        <div class="inner-box"><div class="inner-title">مشکل چهارم</div></div>
+        <p>Model:</p>
+        <div class="box"><div class="chart">P(Fraud) = 0.8</div></div>
+        <p>ولی Probabilityها خوب calibrated نیستند.</p>
+        <p>Accuracy/F1 خوب است اما:</p>
+        <div class="box"><div class="chart">Calibration = Poor</div></div>
+        <p>اگر Probability برای تصمیم مالی استفاده می‌شود، این مشکل مهم است.</p>
+
+        <div class="inner-box"><div class="inner-title">مشکل پنجم</div></div>
+        <p>شش ماه بعد:</p>
+        <div class="box"><div class="chart">Fraud Pattern Changed</div></div>
+        <p>Performance:</p>
+        <div class="box"><div class="chart">F1: 0.94 → 0.76</div></div>
+        <div class="inner-box">→ Concept Drift</div>
+        <p>پس مسئله دیگر فقط Model نیست.</p>
+        <p>مشکل:</p>
+        <div class="formula">$$P(Y|X)$$</div>
+        <p>تغییر کرده.</p>
+
+        <h3>29. تفاوت مفاهیمی که خیلی‌ها قاطی می‌کنند</h3>
+        <div class="inner-box"><div class="inner-title">Model Capacity vs Model Complexity</div></div>
+        <p>خیلی نزدیک‌اند ولی دقیقاً مترادف نیستند.</p>
+        <p>Capacity بیشتر به توانایی مدل برای represent کردن توابع مختلف اشاره دارد.</p>
+        <p>Complexity می‌تواند به ساختار/پیچیدگی مدل یا راهی که complexity را اندازه می‌گیریم اشاره کند.</p>
+        
+        <div class="inner-box"><div class="inner-title">Noise vs Bias</div></div>
+        <p>Noise:</p>
+        <div class="inner-box">Data uncertainty</div>
+        <p>Bias:</p>
+        <div class="inner-box">Model systematic error</div>
+        
+        <div class="inner-box"><div class="inner-title">Training Error vs Generalization Error</div></div>
+        <p>Training:</p>
+        <div class="inner-box">Seen Data</div>
+        <p>Generalization:</p>
+        <div class="inner-box">Unseen Data</div>
+        
+        <div class="inner-box"><div class="inner-title">Validation vs Test</div></div>
+        <p>Validation:</p>
+        <div class="inner-box">Used for decisions</div>
+        <p>Test:</p>
+        <div class="inner-box">Used for final evaluation</div>
+        
+        <div class="inner-box"><div class="inner-title">Unsupervised vs Self-Supervised</div></div>
+        <p>Unsupervised:</p>
+        <div class="inner-box">No explicit labels</div>
+        <p>Self-supervised:</p>
+        <div class="inner-box">Targets generated from the data itself</div>
+        
+        <div class="inner-box"><div class="inner-title">Semi-Supervised vs Self-Supervised</div></div>
+        <p>Semi:</p>
+        <div class="inner-box">Labeled + Unlabeled</div>
+        <p>Self:</p>
+        <div class="inner-box">Automatically generated targets</div>
+
+        <h2>🎯 30. چیزهایی که در مصاحبه Senior باید بتوانی توضیح بدهی</h2>
+        <p>اگر interviewer این سؤال‌ها را بپرسد:</p>
+
+        <div class="inner-box">«چرا Training Accuracy بالا ولی Test Accuracy پایین است؟»</div>
+        <p>باید بگویی:</p>
+        <div class="inner-box">High variance / overfitting، ولی قبل از نتیجه‌گیری باید Data Leakage، Distribution Shift، Dataset Size و Evaluation Pipeline را هم بررسی کنم.</div>
+
+        <div class="inner-box">«آیا مدل پیچیده‌تر همیشه بهتر است؟»</div>
+        <p>نه.</p>
+        <p>Complexity می‌تواند Bias را کاهش دهد ولی در classical setting ممکن است Variance را افزایش دهد؛ علاوه بر این، در modern overparameterized models رفتارهایی مثل double descent نشان می‌دهند که رابطه کلاسیک همیشه کافی نیست.</p>
+
+        <div class="inner-box">«آیا صفر کردن Training Error خوب است؟»</div>
+        <p>نه الزاماً.</p>
+        <p>هدف:</p>
+        <div class="formula">$$min Expected Risk$$</div>
+        <p>است، نه:</p>
+        <div class="formula">$$min Training Error$$</div>
+
+        <div class="inner-box">«چرا مدل‌های مختلف روی یک Dataset رفتار متفاوت دارند؟»</div>
+        <p>به دلیل:</p>
+        <div class="box">
+            <div class="chart">
+Inductive Bias
+Capacity
+Optimization
+Regularization
+Representation
+            </div>
+        </div>
+
+        <div class="inner-box">«آیا بیشتر کردن داده همیشه مشکل را حل می‌کند؟»</div>
+        <p>نه.</p>
+        <p>اگر مشکل:</p>
+        <div class="box">
+            <div class="chart">
+Label Noise
+Data Leakage
+Distribution Shift
+Wrong Features
+Wrong Objective
+            </div>
+        </div>
+        <p>باشد، داده بیشتر لزوماً مشکل را حل نمی‌کند.</p>
+
+        <h2>🧠 نقشه ذهنی نهایی</h2>
+        <p>اگر بخواهم کل این فصل را در یک تصویر ذهنی خلاصه کنم:</p>
+        <div class="box">
+            <div class="chart">
+                         ML
+                         │
+        ┌────────────────┼────────────────┐
+        │                │                │
+     Learning          Models            Data
+        │                │                │
+ ┌──────┼──────┐     Capacity         Distribution
+ │      │      │        │                │
+Sup    Un   Reinforce   │          IID / Shift
+ │      │      │        │
+Semi  Self     RL       │
+ │      │               │
+ └──────┴───────┐       │
+                │       │
+                ▼       ▼
+             Generalization
+                   │
+          ┌────────┴────────┐
+          │                 │
+        Bias             Variance
+          │                 │
+      Underfit          Overfit
+          │                 │
+          └────────┬────────┘
+                   ▼
+             Expected Risk
+                   │
+             ┌─────┴─────┐
+             │           │
+        Reducible    Irreducible
+          Error         Error
+             │           │
+         Model         Bayes
+         choices       Error
+            </div>
+        </div>
+        <p>و یک لایه بالاتر:</p>
+        <div class="box">
+            <div class="chart">
+Data
+ ↓
+Inductive Bias
+ ↓
+Model Class
+ ↓
+Capacity / Complexity
+ ↓
+Optimization
+ ↓
+Empirical Risk
+ ↓
+Training Error
+ ↓
+Generalization
+ ↓
+Expected Risk
+ ↓
+Bayes Error + Reducible Error
+            </div>
+        </div>
+        <p>این دقیقاً همان Core ML Mental Model است که اگر در ذهنت جا بیفتد، خیلی از الگوریتم‌های مختلف ML دیگر مجموعه‌ای از فرمول‌های جداگانه به نظر نمی‌رسند؛ می‌بینی همه دارند یک مسئله مشترک را از زاویه‌های مختلف حل می‌کنند: چطور از داده محدود، یک تابع یاد بگیریم که روی داده جدید Generalize کند.</p>
+    </div>
+</body>
+</html>

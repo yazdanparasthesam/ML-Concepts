@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Production ML / MLOps - Senior ML Level</title>
+    <style>
+        body { background-color: #0d1117; color: #e6edf3; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.8; margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1, h2, h3 { color: #e6edf3; text-align: right; border-bottom: 1px solid #444; padding-bottom: 15px; margin-top: 50px; }
+        p, li { text-align: right; }
+        
+        /* Boxes: Force RTL for Persian */
+        .box { background-color: #21262d; border: 1px solid #30363d; border-radius: 8px; padding: 15px; margin: 15px 0; color: #e6edf3; direction: rtl !important; text-align: right !important; }
+        .inner-box { background-color: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 15px; margin: 10px; direction: rtl !important; text-align: right !important; }
+        .inner-title { font-weight: bold; margin-bottom: 5px; text-align: right !important; }
+
+        /* Formula Box: Force LTR, no raw $$ or \[ \] */
+        .formula {
+            direction: ltr !important;
+            background-color: #000;
+            border: 1px solid #fff;
+            border-radius: 0;
+            padding: 20px;
+            margin: 20px auto;
+            width: fit-content;
+            max-width: 100%;
+            overflow-x: auto;
+            text-align: center;
+            font-size: 1.2em;
+            font-family: "Times New Roman", Times, serif;
+            color: #fff;
+        }
+
+        /* Charts / Flowcharts / ASCII Art: Force LTR */
+        .chart { direction: ltr !important; text-align: left !important; font-family: monospace; background-color: #21262d; border-radius: 8px; padding: 15px; overflow-x: auto; white-space: pre; border: 1px solid #444; }
+
+        /* Tables */
+        table { width: 100%; border-collapse: collapse; direction: rtl; margin-bottom: 20px; }
+        th, td { border: 1px solid #444; padding: 12px; text-align: right; }
+        th { background-color: #21262d; }
+        
+        .highlight { color: #58a6ff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏭 34. Production ML / MLOps — سطح Senior ML Engineer</h1>
+
+        <p>در این بخش از ساخت مدل وارد دنیای واقعی می‌شویم.</p>
+        <p>بسیاری از ML Engineerهای Junior فقط این را بلدند:</p>
+        <div class="box"><div class="chart">Dataset
+   |
+Train Model
+   |
+Accuracy = 95%</div></div>
+        <p>اما در Production سؤال‌های اصلی این‌ها هستند:</p>
+        <div class="inner-box">این مدل چگونه دوباره train می‌شود؟</div>
+        <div class="inner-box">اگر داده تغییر کرد چه می‌کنیم؟</div>
+        <div class="inner-box">کدام نسخه مدل در Production است؟</div>
+        <div class="inner-box">چگونه مدل را deploy کنیم بدون downtime؟</div>
+        <div class="inner-box">اگر مدل خراب شد چگونه rollback کنیم؟</div>
+        <div class="inner-box">چگونه بفهمیم performance افت کرده؟</div>
+        <div class="inner-box">چگونه experimentها را reproduce کنیم؟</div>
+        <p>یک Senior ML Engineer باید کل lifecycle مدل را بفهمد:</p>
+        <div class="box"><div class="chart">                ML Lifecycle
+
+Data
+ |
+ |
+Feature Engineering
+ |
+ |
+Training Pipeline
+ |
+ |
+Experiment Tracking
+ |
+ |
+Model Registry
+ |
+ |
+Deployment
+ |
+ |
+Monitoring
+ |
+ |
+Retraining
+ |
+ |
+Rollback</div></div>
+
+        <h2>1. Training Pipeline</h2>
+        <div class="inner-box"><div class="inner-title">تعریف</div></div>
+        <p>Training Pipeline یعنی:</p>
+        <div class="inner-box">مجموعه مراحل اتوماتیک برای تولید یک مدل ML.</div>
+        <p>به جای اینکه دستی اجرا کنیم:</p>
+        <div class="box"><div class="chart">Python</div><div class="chart">python train.py</div></div>
+        <p>یک workflow داریم.</p>
+
+        <div class="inner-box"><div class="inner-title">Pipeline ساده</div></div>
+        <div class="box"><div class="chart">Raw Data
+
+   |
+   v
+
+Data Validation
+
+   |
+   v
+
+Data Preprocessing
+
+   |
+   v
+
+Feature Engineering
+
+   |
+   v
+
+Train Model
+
+   |
+   v
+
+Evaluate
+
+   |
+   v
+
+Register Model</div></div>
+
+        <div class="inner-box"><div class="inner-title">چرا Training Pipeline مهم است؟</div></div>
+        <p>فرض کنید امروز مدل Fraud Detection ساختید.</p>
+        <p>سه ماه بعد:</p>
+        <div class="inner-box">داده جدید آمده</div>
+        <div class="inner-box">feature جدید اضافه شده</div>
+        <div class="inner-box">مدل باید دوباره train شود</div>
+        <p>اگر pipeline نداشته باشید:</p>
+        <div class="box"><div class="chart">Engineer
+ |
+Manual Steps
+ |
+Errors
+ |
+Different Results</div></div>
+        <p>با pipeline:</p>
+        <div class="box"><div class="chart">New Data
+
+  |
+  v
+
+Automatic Training
+
+  |
+  v
+
+Validation
+
+  |
+  v
+
+Deployment</div></div>
+
+        <div class="inner-box"><div class="inner-title">اجزای یک Training Pipeline حرفه‌ای</div></div>
+        <div class="inner-box"><div class="inner-title">1. Data Ingestion</div></div>
+        <p>دریافت داده:</p>
+        <p>مثلاً:</p>
+        <div class="inner-box">Database</div>
+        <div class="inner-box">Kafka</div>
+        <div class="inner-box">Data Lake</div>
+        <div class="inner-box">API</div>
+
+        <div class="inner-box"><div class="inner-title">2. Data Validation</div></div>
+        <p>بررسی:</p>
+        <p>Schema</p>
+        <p>مثلاً:</p>
+        <p>قبلاً:</p>
+        <div class="box"><div class="chart">age:int
+income:float</div></div>
+        <p>الان:</p>
+        <div class="box"><div class="chart">age:string</div></div>
+        <p>مشکل.</p>
+        <p>Data Quality</p>
+        <p>بررسی:</p>
+        <div class="inner-box">Missing values</div>
+        <div class="inner-box">Outliers</div>
+        <div class="inner-box">Distribution</div>
+        <p>ابزارها:</p>
+        <div class="inner-box">Great Expectations</div>
+        <div class="inner-box">TensorFlow Data Validation</div>
+
+        <div class="inner-box"><div class="inner-title">3. Data Processing</div></div>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Raw Data
+
+      |
+      v
+
+Cleaning
+
+      |
+      v
+
+Encoding
+
+      |
+      v
+
+Scaling</div></div>
+
+        <div class="inner-box"><div class="inner-title">4. Training</div></div>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Python</div><div class="chart">model.fit(X_train,y_train)</div></div>
+
+        <div class="inner-box"><div class="inner-title">5. Evaluation</div></div>
+        <p>Metric:</p>
+        <p>Classification:</p>
+        <div class="inner-box">F1</div>
+        <div class="inner-box">AUC</div>
+        <div class="inner-box">Precision</div>
+        <p>Regression:</p>
+        <div class="inner-box">RMSE</div>
+        <div class="inner-box">MAE</div>
+
+        <div class="inner-box"><div class="inner-title">6. Model Validation</div></div>
+        <p>مثلاً:</p>
+        <p>Model جدید:</p>
+        <div class="box"><div class="chart">AUC = 0.93</div></div>
+        <p>Model قبلی:</p>
+        <div class="box"><div class="chart">AUC = 0.91</div></div>
+        <p>Deploy.</p>
+
+        <h2>2. Feature Store</h2>
+        <p>یکی از مهم‌ترین مفاهیم MLOps.</p>
+        <div class="inner-box"><div class="inner-title">مشکل چیست؟</div></div>
+        <p>فرض کنید:</p>
+        <p>Training:</p>
+        <div class="box"><div class="chart">Python Script
+
+feature:
+
+customer_age
+avg_transaction</div></div>
+        <p>Production:</p>
+        <div class="box"><div class="chart">API Service
+
+feature:
+
+customer_age
+avg_transaction</div></div>
+        <p>ممکن است calculation متفاوت باشد.</p>
+        <p>این مشکل:</p>
+        <div class="inner-box">Training-Serving Skew</div>
+
+        <div class="inner-box"><div class="inner-title">Feature Store چیست؟</div></div>
+        <p>یک سیستم مرکزی برای مدیریت featureها.</p>
+        <p>Architecture:</p>
+        <div class="box"><div class="chart">                 Data Sources
+
+                     |
+                     |
+
+              Feature Pipeline
+
+                     |
+                     |
+
+              Feature Store
+
+              /          \
+
+       Offline          Online
+
+          |                |
+
+     Training          Prediction</div></div>
+
+        <div class="inner-box"><div class="inner-title">Offline Feature Store</div></div>
+        <p>برای training.</p>
+        <p>مثلاً:</p>
+        <p>Historical features:</p>
+        <div class="box"><div class="chart">customer_id
+
+avg_purchase_last_30_days</div></div>
+
+        <div class="inner-box"><div class="inner-title">Online Feature Store</div></div>
+        <p>برای inference.</p>
+        <p>مثلاً:</p>
+        <p>در زمان درخواست:</p>
+        <div class="box"><div class="chart">Customer buys something
+
+        |
+
+Need fraud score
+
+        |
+
+Get latest features</div></div>
+        <p>Latency:</p>
+        <div class="inner-box">milliseconds.</div>
+
+        <div class="inner-box"><div class="inner-title">Feature Store Responsibilities</div></div>
+        <div class="inner-box"><div class="inner-title">Feature Definition</div></div>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">average_transaction_30d
+=
+sum(transactions)/30</div></div>
+        <div class="inner-box"><div class="inner-title">Feature Versioning</div></div>
+        <p>Feature تغییر کرد:</p>
+        <p>v1:</p>
+        <div class="box"><div class="chart">avg transaction 7 days</div></div>
+        <p>v2:</p>
+        <div class="box"><div class="chart">avg transaction 30 days</div></div>
+        <div class="inner-box"><div class="inner-title">Feature Monitoring</div></div>
+        <p>بررسی:</p>
+        <div class="inner-box">Drift</div>
+        <div class="inner-box">Missing</div>
+        <div class="inner-box">Distribution</div>
+        <p>ابزارها:</p>
+        <div class="inner-box">Feast</div>
+        <div class="inner-box">Tecton</div>
+        <div class="inner-box">Vertex Feature Store</div>
+        <div class="inner-box">Databricks Feature Store</div>
+
+        <h2>3. Model Registry</h2>
+        <p>Model Registry یعنی:</p>
+        <div class="inner-box">محل مدیریت نسخه‌های مدل.</div>
+        <p>مثل Git برای مدل.</p>
+        <p>مثال:</p>
+        <div class="box"><div class="chart">Models
+
+Fraud_Model
+
+
+v1.0
+
+accuracy:
+0.91
+
+
+v1.1
+
+accuracy:
+0.93
+
+
+v2.0
+
+accuracy:
+0.95</div></div>
+
+        <div class="inner-box"><div class="inner-title">Model Registry نگه می‌دارد:</div></div>
+        <div class="inner-box"><div class="inner-title">Model Artifact</div></div>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">model.pkl</div></div>
+        <p>یا:</p>
+        <div class="box"><div class="chart">model.pt</div></div>
+        <div class="inner-box"><div class="inner-title">Metadata</div></div>
+        <p>مثل:</p>
+        <div class="box"><div class="chart">JSON</div><div class="chart">{
+"model":"fraud",
+"version":"2.1",
+"accuracy":0.95,
+"dataset":"2025_data"
+}</div></div>
+        <div class="inner-box"><div class="inner-title">Stage</div></div>
+        <p>معمولاً:</p>
+        <div class="box"><div class="chart">Development
+
+     |
+
+Staging
+
+     |
+
+Production</div></div>
+        <p>ابزارها:</p>
+        <div class="inner-box">MLflow Registry</div>
+        <div class="inner-box">AWS SageMaker Registry</div>
+        <div class="inner-box">Vertex AI Registry</div>
+
+        <h2>4. Model Versioning</h2>
+        <p>مانند Git.</p>
+        <div class="inner-box"><div class="inner-title">مشکل:</div></div>
+        <p>امروز:</p>
+        <div class="box"><div class="chart">model.pkl</div></div>
+        <p>فردا:</p>
+        <div class="box"><div class="chart">model_final.pkl
+
+model_final2.pkl
+
+model_best.pkl</div></div>
+        <p>هیچ‌کس نمی‌داند کدام چیست.</p>
+        <div class="inner-box"><div class="inner-title">Versioning:</div></div>
+        <div class="box"><div class="chart">fraud-model:
+
+v1
+
+v2
+
+v3</div></div>
+        <p>همراه با:</p>
+        <div class="inner-box">code version</div>
+        <div class="inner-box">data version</div>
+        <div class="inner-box">feature version</div>
+        <div class="inner-box">dependency version</div>
+
+        <h2>5. Experiment Tracking</h2>
+        <p>در ML هزاران experiment داریم.</p>
+        <p>مثلاً:</p>
+        <p>Experiment 1:</p>
+        <div class="box"><div class="chart">Model:
+XGBoost
+
+max_depth=5
+
+AUC=0.91</div></div>
+        <p>Experiment 2:</p>
+        <div class="box"><div class="chart">max_depth=10
+
+AUC=0.93</div></div>
+        <p>باید ذخیره شود:</p>
+        <div class="inner-box"><div class="inner-title">Parameters</div></div>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">learning_rate=0.01</div></div>
+        <div class="inner-box"><div class="inner-title">Metrics</div></div>
+        <div class="box"><div class="chart">F1=0.92</div></div>
+        <div class="inner-box"><div class="inner-title">Artifacts</div></div>
+        <p>مثل:</p>
+        <div class="inner-box">plots</div>
+        <div class="inner-box">confusion matrix</div>
+        <div class="inner-box">model file</div>
+        <p>ابزار:</p>
+        <div class="inner-box">MLflow</div>
+        <p>معروف‌ترین.</p>
+
+        <h2>6. Reproducibility</h2>
+        <p>یکی از مهم‌ترین موارد Senior.</p>
+        <p>سؤال:</p>
+        <div class="inner-box">اگر 6 ماه بعد دوباره train کنیم:</div>
+        <div class="inner-box">آیا همان مدل تولید می‌شود؟</div>
+        <p>برای reproducibility:</p>
+        <div class="inner-box"><div class="inner-title">Random Seed</div></div>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Python</div><div class="chart">np.random.seed(42)</div></div>
+        <div class="inner-box"><div class="inner-title">Version کردن:</div></div>
+        <div class="inner-box"><div class="inner-title">Data</div></div>
+        <p>مثلاً:</p>
+        <div class="inner-box">DVC</div>
+        <div class="inner-box"><div class="inner-title">Code</div></div>
+        <p>Git</p>
+        <div class="inner-box"><div class="inner-title">Environment</div></div>
+        <p>Docker:</p>
+        <div class="box"><div class="chart">Python 3.11
+
+PyTorch 2.5
+
+CUDA 12</div></div>
+        <div class="inner-box"><div class="inner-title">Dependencies</div></div>
+        <div class="inner-box">requirements.txt</div>
+        <p>یا:</p>
+        <div class="inner-box">poetry.lock</div>
+
+        <h2>7. Model Serving</h2>
+        <p>یعنی:</p>
+        <div class="inner-box">ارائه مدل برای prediction.</div>
+        <p>دو نوع اصلی:</p>
+        <div class="inner-box"><div class="inner-title">7.1 Online Inference</div></div>
+        <p>Real-time prediction.</p>
+        <p>مثال:</p>
+        <p>پرداخت انجام می‌شود:</p>
+        <div class="box"><div class="chart">Transaction
+
+     |
+
+API
+
+     |
+
+ML Model
+
+     |
+
+Fraud Score</div></div>
+        <p>خصوصیات:</p>
+        <p>Latency پایین.</p>
+        <p>مثلاً:</p>
+        <div class="inner-box"><100ms</div>
+        <p>Architecture:</p>
+        <div class="box"><div class="chart">Client
+
+ |
+
+API Gateway
+
+ |
+
+Model Server
+
+ |
+
+Model</div></div>
+        <p>ابزارها:</p>
+        <div class="inner-box">FastAPI</div>
+        <div class="inner-box">TorchServe</div>
+        <div class="inner-box">TensorFlow Serving</div>
+        <div class="inner-box">Triton</div>
+
+        <div class="inner-box"><div class="inner-title">7.2 Batch Inference</div></div>
+        <p>Prediction روی حجم زیاد.</p>
+        <p>مثلاً:</p>
+        <p>هر شب:</p>
+        <div class="box"><div class="chart">10 million customers
+
+       |
+
+Model
+
+       |
+
+Risk Score</div></div>
+        <p>Latency مهم نیست.</p>
+        <p>Throughput مهم است.</p>
+        <p>مثال:</p>
+        <p>Credit scoring روزانه.</p>
+
+        <div class="inner-box"><div class="inner-title">Batch vs Online</div></div>
+        <table>
+            <thead><tr><th></th><th>Online</th><th>Batch</th></tr></thead>
+            <tbody>
+                <tr><td>Latency</td><td>کم</td><td>زیاد</td></tr>
+                <tr><td>Data</td><td>single request</td><td>large dataset</td></tr>
+                <tr><td>Example</td><td>Fraud transaction</td><td>Daily scoring</td></tr>
+                <tr><td>Infrastructure</td><td>API</td><td>Jobs</td></tr>
+            </tbody>
+        </table>
+
+        <h2>8. Shadow Deployment</h2>
+        <p>روش بسیار امن deploy.</p>
+        <p>ایده:</p>
+        <p>مدل جدید:</p>
+        <div class="inner-box">در کنار مدل قدیمی اجرا می‌شود.</div>
+        <p>ولی:</p>
+        <div class="inner-box">Output استفاده نمی‌شود.</div>
+        <p>Architecture:</p>
+        <div class="box"><div class="chart">User
+
+ |
+
+Old Model
+ |
+Production Result
+
+
+
+New Model
+ |
+Shadow Result
+(ignored)</div></div>
+        <p>هدف:</p>
+        <p>مقایسه بدون ریسک.</p>
+        <p>مثلاً:</p>
+        <p>Model A:</p>
+        <div class="box"><div class="chart">Fraud probability:
+0.1</div></div>
+        <p>Model B:</p>
+        <div class="box"><div class="chart">0.8</div></div>
+        <p>بررسی می‌کنیم.</p>
+
+        <h2>9. Canary Deployment</h2>
+        <p>Deploy تدریجی.</p>
+        <p>مثلاً:</p>
+        <p>مرحله اول:</p>
+        <div class="box"><div class="chart">99% traffic
+
+Old Model
+
+
+1%
+
+New Model</div></div>
+        <p>اگر خوب بود:</p>
+        <div class="box"><div class="chart">50%
+
+50%</div></div>
+        <p>بعد:</p>
+        <div class="box"><div class="chart">100%
+
+New</div></div>
+        <p>مزیت:</p>
+        <p>Risk کم.</p>
+
+        <h2>10. A/B Testing</h2>
+        <p>دو مدل واقعی روی کاربران.</p>
+        <p>مثلاً:</p>
+        <p>Group A:</p>
+        <div class="box"><div class="chart">Model A</div></div>
+        <p>Group B:</p>
+        <div class="box"><div class="chart">Model B</div></div>
+        <p>مقایسه:</p>
+        <div class="inner-box">Conversion</div>
+        <div class="inner-box">Revenue</div>
+        <div class="inner-box">CTR</div>
+        <p>فرق Canary و A/B:</p>
+        <p>Canary:</p>
+        <div class="inner-box">تمرکز روی stability.</div>
+        <p>A/B:</p>
+        <div class="inner-box">تمرکز روی business outcome.</div>
+
+        <h2>11. Model Monitoring</h2>
+        <p>بعد از deployment کار تمام نمی‌شود.</p>
+        <p>مدل ممکن است خراب شود.</p>
+        <p>Monitoring چهار دسته:</p>
+        <div class="inner-box"><div class="inner-title">1. System Monitoring</div></div>
+        <p>زیرساخت:</p>
+        <div class="inner-box">CPU</div>
+        <div class="inner-box">GPU</div>
+        <div class="inner-box">Memory</div>
+        <div class="inner-box">Latency</div>
+        <div class="inner-box"><div class="inner-title">2. Data Monitoring</div></div>
+        <p>داده تغییر کرده؟</p>
+        <div class="inner-box"><div class="inner-title">3. Prediction Monitoring</div></div>
+        <p>خروجی مدل تغییر کرده؟</p>
+        <div class="inner-box"><div class="inner-title">4. Performance Monitoring</div></div>
+        <p>Metric واقعی.</p>
+
+        <h2>12. Data Drift</h2>
+        <p>تغییر distribution ورودی.</p>
+        <p>مثلاً:</p>
+        <p>Training:</p>
+        <div class="box"><div class="chart">Age:
+
+20-40</div></div>
+        <p>Production:</p>
+        <div class="box"><div class="chart">Age:
+
+60-80</div></div>
+        <p>مدل قبلی شاید خوب کار نکند.</p>
+        <p>Metricها:</p>
+        <div class="inner-box">PSI</div>
+        <p>Population Stability Index</p>
+        <div class="inner-box">KL Divergence</div>
+        <div class="inner-box">KS Test</div>
+
+        <h2>13. Concept Drift</h2>
+        <p>مهم‌تر از Data Drift.</p>
+        <p>یعنی:</p>
+        <p>رابطه:</p>
+        <div class="formula">X &rarr; Y</div>
+        <p>تغییر کرده.</p>
+        <p>مثال:</p>
+        <p>قبل:</p>
+        <div class="box"><div class="chart">Feature:
+High transaction
+
+Meaning:
+Fraud</div></div>
+        <p>بعد:</p>
+        <div class="box"><div class="chart">High transaction
+
+Meaning:
+Normal customer</div></div>
+        <p>Data همان است.</p>
+        <p>اما مفهوم تغییر کرده.</p>
+
+        <h2>14. Performance Monitoring</h2>
+        <p>مثلاً:</p>
+        <p>Fraud Model:</p>
+        <p>January:</p>
+        <div class="box"><div class="chart">F1=0.92</div></div>
+        <p>March:</p>
+        <div class="box"><div class="chart">F1=0.80</div></div>
+        <p>مشکل.</p>
+        <p>دلایل:</p>
+        <div class="inner-box">Drift</div>
+        <div class="inner-box">Bad data</div>
+        <div class="inner-box">New behavior</div>
+
+        <h2>15. Retraining</h2>
+        <p>وقتی مدل باید دوباره train شود.</p>
+        <p>روش‌ها:</p>
+        <div class="inner-box"><div class="inner-title">Periodic Retraining</div></div>
+        <p>مثلاً:</p>
+        <p>هر هفته.</p>
+        <div class="inner-box"><div class="inner-title">Trigger-based Retraining</div></div>
+        <p>وقتی:</p>
+        <div class="box"><div class="chart">Drift > threshold</div></div>
+        <p>یا:</p>
+        <div class="box"><div class="chart">Performance < threshold</div></div>
+
+        <h2>16. Rollback</h2>
+        <p>اگر مدل جدید خراب شد:</p>
+        <p>برگردیم نسخه قبلی.</p>
+        <p>مثلاً:</p>
+        <p>Current:</p>
+        <div class="box"><div class="chart">v2</div></div>
+        <p>مشکل:</p>
+        <p>Rollback:</p>
+        <div class="box"><div class="chart">v1</div></div>
+        <p>نیازمند:</p>
+        <div class="inner-box">Model Registry</div>
+        <div class="inner-box">Versioning</div>
+        <div class="inner-box">Deployment Automation</div>
+
+        <h2>17. Production ML Architecture واقعی</h2>
+        <p>یک معماری Senior:</p>
+        <div class="box"><div class="chart">                  Data Sources
+
+                       |
+
+                 Data Lake
+
+                       |
+
+              Feature Pipeline
+
+                       |
+
+                 Feature Store
+
+                       |
+
+              Training Pipeline
+
+                       |
+
+              Experiment Tracking
+
+                       |
+
+              Model Registry
+
+                       |
+
+              Deployment
+
+                       |
+
+              Model Serving
+
+                       |
+
+              Monitoring
+
+                       |
+
+             Drift Detection
+
+                       |
+
+                Retraining</div></div>
+
+        <h2>18. CI/CD برای ML (CI/CD/CT)</h2>
+        <p>در Software:</p>
+        <p>CI/CD</p>
+        <p>در ML:</p>
+        <div class="inner-box"><div class="inner-title">Continuous Integration</div></div>
+        <p>بررسی:</p>
+        <div class="inner-box">code</div>
+        <div class="inner-box">tests</div>
+        <div class="inner-box">data validation</div>
+        <div class="inner-box"><div class="inner-title">Continuous Deployment</div></div>
+        <p>Deploy model.</p>
+        <div class="inner-box"><div class="inner-title">Continuous Training</div></div>
+        <p>مدل خودکار retrain شود.</p>
+
+        <h2>19. MLOps Tools Landscape</h2>
+        <div class="inner-box"><div class="inner-title">Pipeline</div></div>
+        <div class="inner-box">Airflow</div>
+        <div class="inner-box">Kubeflow</div>
+        <div class="inner-box">Argo Workflows</div>
+        <div class="inner-box"><div class="inner-title">Tracking</div></div>
+        <div class="inner-box">MLflow</div>
+        <div class="inner-box">Weights & Biases</div>
+        <div class="inner-box"><div class="inner-title">Feature Store</div></div>
+        <div class="inner-box">Feast</div>
+        <div class="inner-box">Tecton</div>
+        <div class="inner-box"><div class="inner-title">Serving</div></div>
+        <div class="inner-box">Kubernetes</div>
+        <div class="inner-box">Triton</div>
+        <div class="inner-box">BentoML</div>
+        <div class="inner-box"><div class="inner-title">Monitoring</div></div>
+        <div class="inner-box">Evidently</div>
+        <div class="inner-box">Prometheus</div>
+        <div class="inner-box">Grafana</div>
+
+        <h2>20. Senior Interview Questions</h2>
+        <div class="inner-box"><div class="inner-title">چرا Model Registry لازم است؟</div></div>
+        <p>برای:</p>
+        <div class="inner-box">versioning</div>
+        <div class="inner-box">rollback</div>
+        <div class="inner-box">governance</div>
+        <div class="inner-box">reproducibility</div>
+        <div class="inner-box"><div class="inner-title">فرق Shadow و Canary؟</div></div>
+        <p>Shadow:</p>
+        <div class="inner-box">کاربر نمی‌بیند.</div>
+        <p>Canary:</p>
+        <div class="inner-box">بخشی از کاربران می‌بینند.</div>
+        <div class="inner-box"><div class="inner-title">Data Drift vs Concept Drift؟</div></div>
+        <p>Data Drift:</p>
+        <div class="inner-box">تغییر X</div>
+        <p>Concept Drift:</p>
+        <div class="inner-box">تغییر رابطه X و Y</div>
+        <div class="inner-box"><div class="inner-title">چرا Feature Store؟</div></div>
+        <p>برای جلوگیری از:</p>
+        <div class="inner-box">Training-serving skew.</div>
+        <div class="inner-box"><div class="inner-title">چرا Experiment Tracking؟</div></div>
+        <p>برای اینکه بدانیم:</p>
+        <div class="inner-box">کدام experiment چرا بهتر بوده.</div>
+
+        <h2>جمع‌بندی Senior Mental Model</h2>
+        <p>یک ML Engineer معمولی:</p>
+        <div class="box"><div class="chart">Train Model
+Accuracy
+Done</div></div>
+        <p>یک Senior ML Engineer:</p>
+        <div class="box"><div class="chart">Can I reproduce it?
+
+Can I deploy it?
+
+Can I monitor it?
+
+Can I detect failure?
+
+Can I rollback?
+
+Can I retrain automatically?
+
+Can I explain why performance changed?</div></div>
+        <p>Production ML یعنی تبدیل یک مدل آزمایشگاهی به یک سیستم قابل اعتماد، قابل مانیتور و قابل نگهداری در مقیاس واقعی.</p>
+
+    </div>
+</body>
+</html>

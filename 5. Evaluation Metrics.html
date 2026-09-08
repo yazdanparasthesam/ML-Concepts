@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evaluation Metrics - Senior ML Level</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}]});"></script>
+    <style>
+        body { background-color: #0d1117; color: #e6edf3; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.8; margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1, h2, h3 { color: #e6edf3; text-align: right; border-bottom: 1px solid #444; padding-bottom: 15px; margin-top: 50px; }
+        p, li { text-align: right; }
+        
+        /* Boxes */
+        .box { background-color: #21262d; border: 1px solid #30363d; border-radius: 8px; padding: 15px; margin: 15px 0; color: #e6edf3; }
+        .inner-box { background-color: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 15px; margin: 10px; }
+        .inner-title { font-weight: bold; margin-bottom: 5px; }
+
+        /* Formula Box */
+        .formula {
+            direction: ltr;
+            background-color: #000;
+            border: 1px solid #fff;
+            border-radius: 0;
+            padding: 20px;
+            margin: 20px auto;
+            width: fit-content;
+            max-width: 100%;
+            overflow-x: auto;
+            text-align: center;
+            font-size: 1.2em;
+            font-family: "Times New Roman", Times, serif;
+            color: #fff;
+        }
+
+        /* Charts / Flowcharts / ASCII Art */
+        .chart { direction: ltr; text-align: left; font-family: monospace; background-color: #21262d; border-radius: 8px; padding: 15px; overflow-x: auto; white-space: pre; border: 1px solid #444; }
+
+        /* Tables */
+        table { width: 100%; border-collapse: collapse; direction: rtl; margin-bottom: 20px; }
+        th, td { border: 1px solid #444; padding: 12px; text-align: right; }
+        th { background-color: #21262d; }
+        
+        .highlight { color: #58a6ff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📈 5. Evaluation Metrics</h1>
+        <p><strong>Classification:</strong></p>
+        <ul>
+            <li>Accuracy</li>
+            <li>Precision</li>
+            <li>Recall</li>
+            <li>Specificity</li>
+            <li>F1</li>
+            <li>Fβ</li>
+            <li>Macro F1</li>
+            <li>Micro F1</li>
+            <li>Weighted F1</li>
+            <li>ROC-AUC</li>
+            <li>PR-AUC</li>
+            <li>Log Loss</li>
+            <li>Matthews Correlation Coefficient</li>
+            <li>Cohen's Kappa</li>
+            <li>Balanced Accuracy</li>
+            <li>Top-K Accuracy</li>
+        </ul>
+        <p><strong>Regression:</strong></p>
+        <ul>
+            <li>MAE</li>
+            <li>MSE</li>
+            <li>RMSE</li>
+            <li>R²</li>
+            <li>Adjusted R²</li>
+            <li>MAPE</li>
+            <li>sMAPE</li>
+            <li>MSLE</li>
+            <li>RMSLE</li>
+        </ul>
+        <p><strong>مهم‌تر</strong>: Metric Selection based on Business Objective</p>
+        
+        <p>حتماً. این بخش Evaluation Metrics را در سطح Senior ML Engineer می‌خواهی، پس باید علاوه بر فرمول، دقیق بدانی هر Metric چه چیزی را اندازه می‌گیرد، چه زمانی مناسب است، چه زمانی گمراه‌کننده است، چه رابطه‌ای با Confusion Matrix دارد، تحت Class Imbalance چه اتفاقی می‌افتد، Threshold چه اثری دارد، و چطور Metric را بر اساس Business Objective انتخاب کنیم.</p>
+
+        <h2>📈 5. Evaluation Metrics — Senior ML Level</h2>
+        <p>قبل از ورود به Metricها یک اصل بسیار مهم:</p>
+        <div class="inner-box">هیچ Metricای ذاتاً بهترین نیست. Metric باید متناسب با نوع مسئله، Distribution داده، هزینه خطاها و Business Objective انتخاب شود.</div>
+        <p>مثلاً مدلی با:</p>
+        <div class="box"><div class="chart">Accuracy = 99.5%</div></div>
+        <p>ممکن است فوق‌العاده باشد.</p>
+        <p>یا ممکن است کاملاً بی‌ارزش باشد.</p>
+        <p>همه‌چیز به مسئله بستگی دارد.</p>
+
+        <h3>1. Confusion Matrix — پایه‌ی تمام Classification Metrics</h3>
+        <p>قبل از Metrics باید این چهار مورد را کاملاً بلد باشی.</p>
+        <p>فرض کن:</p>
+        <div class="box"><div class="chart">Positive = Fraud
+Negative = Normal</div></div>
+        <p>Confusion Matrix:</p>
+        <table>
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>Predicted Positive</th>
+                    <th>Predicted Negative</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Actual Positive</strong></td>
+                    <td>TP</td>
+                    <td>FN</td>
+                </tr>
+                <tr>
+                    <td><strong>Actual Negative</strong></td>
+                    <td>FP</td>
+                    <td>TN</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="inner-box"><div class="inner-title">TP — True Positive</div></div>
+        <p>واقعاً Positive بوده و مدل هم Positive گفته.</p>
+        <div class="box"><div class="chart">Actual = Fraud
+Prediction = Fraud</div></div>
+        
+        <div class="inner-box"><div class="inner-title">TN — True Negative</div></div>
+        <p>واقعاً Negative بوده و مدل هم Negative گفته.</p>
+        <div class="box"><div class="chart">Actual = Normal
+Prediction = Normal</div></div>
+        
+        <div class="inner-box"><div class="inner-title">FP — False Positive</div></div>
+        <p>واقعاً Negative بوده ولی مدل Positive گفته.</p>
+        <div class="box"><div class="chart">Actual = Normal
+Prediction = Fraud</div></div>
+        <p>به آن:</p>
+        <div class="inner-box">Type I Error</div>
+        <p>هم می‌گوییم.</p>
+
+        <div class="inner-box"><div class="inner-title">FN — False Negative</div></div>
+        <p>واقعاً Positive بوده ولی مدل Negative گفته.</p>
+        <div class="box"><div class="chart">Actual = Fraud
+Prediction = Normal</div></div>
+        <p>به آن:</p>
+        <div class="inner-box">Type II Error</div>
+        <p>هم می‌گوییم.</p>
+
+        <h3>2. Accuracy</h3>
+        <p>فرمول:</p>
+        <div class="formula">$$Accuracy = \frac{TP + TN}{TP + TN + FP + FN}$$</div>
+        <p>یعنی:</p>
+        <div class="inner-box">چه درصدی از کل Predictionها درست بوده‌اند؟</div>
+        
+        <div class="inner-box"><div class="inner-title">مثال</div></div>
+        <div class="box"><div class="chart">TP = 80
+TN = 900
+FP = 50
+FN = 20</div></div>
+        <p>پس:</p>
+        <div class="formula">$$Accuracy = \frac{80 + 900}{1050} \approx 93.3\%$$</div>
+
+        <div class="inner-box"><div class="inner-title">مشکل مهم Accuracy</div></div>
+        <p>فرض کن:</p>
+        <div class="box"><div class="chart">Fraud = 1%
+Normal = 99%</div></div>
+        <p>مدل:</p>
+        <div class="box"><div class="chart">Always predict Normal</div></div>
+        <p>می‌گوید.</p>
+        <p>آنگاه:</p>
+        <div class="formula">$$Accuracy = 99\%$$</div>
+        <p>ولی:</p>
+        <div class="formula">$$Recall_{Fraud} = 0$$</div>
+        <p>پس مدل برای Fraud Detection عملاً بی‌فایده است.</p>
+
+        <div class="inner-box"><div class="inner-title">چه زمانی Accuracy مناسب است؟</div></div>
+        <p>وقتی:</p>
+        <ul>
+            <li>Classes نسبتاً balanced هستند.</li>
+            <li>هزینه FP و FN تقریباً مشابه است.</li>
+            <li>همه خطاها اهمیت مشابه دارند.</li>
+        </ul>
+        <p>مثلاً یک Classification ساده با Class Distribution متعادل.</p>
+
+        <h3>3. Precision</h3>
+        <p>فرمول:</p>
+        <div class="formula">$$Precision = \frac{TP}{TP + FP}$$</div>
+        <p>سؤال Precision:</p>
+        <div class="inner-box">از بین چیزهایی که مدل Positive اعلام کرده، چند درصد واقعاً Positive بوده‌اند؟</div>
+
+        <div class="inner-box"><div class="inner-title">مثال</div></div>
+        <p>مدل 100 تراکنش را Fraud اعلام کرده:</p>
+        <div class="box"><div class="chart">80 واقعی Fraud
+20 واقعی Normal</div></div>
+        <p>پس:</p>
+        <div class="formula">$$Precision = \frac{80}{100} = 80\%$$</div>
+        
+        <div class="inner-box"><div class="inner-title">Precision بالا یعنی چه؟</div></div>
+        <p>یعنی:</p>
+        <div class="inner-box">وقتی مدل Positive می‌گوید، معمولاً درست می‌گوید.</div>
+        <p>پس Precision با False Positive مرتبط است.</p>
+
+        <div class="inner-box"><div class="inner-title">چه زمانی Precision مهم است؟</div></div>
+        <p>وقتی FP هزینه زیادی دارد.</p>
+        <p>مثلاً:</p>
+        <div class="inner-box">سیستم Block کردن تراکنش</div>
+        <p>اگر مدل اشتباهی تراکنش سالم را Block کند:</p>
+        <div class="box"><div class="chart">Customer frustration
+Lost revenue
+Support cost</div></div>
+        <p>بالا می‌رود.</p>
+        <p>پس Precision اهمیت زیادی دارد.</p>
+
+        <h3>4. Recall</h3>
+        <p>فرمول:</p>
+        <div class="formula">$$Recall = \frac{TP}{TP + FN}$$</div>
+        <p>که به آن:</p>
+        <ul>
+            <li>Sensitivity</li>
+            <li>True Positive Rate</li>
+            <li>TPR</li>
+        </ul>
+        <p>هم می‌گوییم.</p>
+        <p>سؤال Recall:</p>
+        <div class="inner-box">از بین تمام Positiveهای واقعی، مدل چند درصد را پیدا کرده؟</div>
+
+        <div class="inner-box"><div class="inner-title">مثال</div></div>
+        <p>100 Fraud واقعی داریم:</p>
+        <div class="box"><div class="chart">90 را پیدا کرده
+10 را از دست داده</div></div>
+        <p>پس:</p>
+        <div class="formula">$$Recall = 90\%$$</div>
+
+        <div class="inner-box"><div class="inner-title">Recall بالا یعنی چه؟</div></div>
+        <p>یعنی:</p>
+        <div class="inner-box">مدل Positiveهای واقعی را کمتر از دست می‌دهد.</div>
+        <p>پس Recall با:</p>
+        <div class="inner-box">FN</div>
+        <p>مرتبط است.</p>
+
+        <div class="inner-box"><div class="inner-title">چه زمانی Recall مهم است؟</div></div>
+        <p>وقتی FN خیلی پرهزینه است.</p>
+        <p>مثلاً:</p>
+        <div class="inner-box">تشخیص بیماری</div>
+        <p>اگر بیمار واقعی را سالم اعلام کنیم:</p>
+        <div class="box"><div class="chart">False Negative</div></div>
+        <p>ممکن است عواقب جدی داشته باشد.</p>
+        <p>پس:</p>
+        <div class="inner-box">Recall مهم‌تر از Precision می‌شود.</div>
+
+        <h3>5. Specificity</h3>
+        <p>فرمول:</p>
+        <div class="formula">$$Specificity = \frac{TN}{TN + FP}$$</div>
+        <p>که:</p>
+        <div class="inner-box">True Negative Rate</div>
+        <p>هم نامیده می‌شود.</p>
+        <p>سؤال Specificity</p>
+        <div class="inner-box">از بین تمام Negativeهای واقعی، مدل چند درصد را درست Negative تشخیص داده؟</div>
+
+        <div class="inner-box"><div class="inner-title">رابطه با FPR</div></div>
+        <div class="formula">$$FPR = \frac{FP}{FP + TN}$$</div>
+        <p>بنابراین:</p>
+        <div class="formula">$$Specificity = 1 - FPR$$</div>
+
+        <div class="inner-box"><div class="inner-title">مثال پزشکی</div></div>
+        <p>اگر 1000 فرد سالم داریم و مدل:</p>
+        <div class="box"><div class="chart">950 → correctly healthy
+50 → incorrectly sick</div></div>
+        <p>آنگاه:</p>
+        <div class="formula">$$Specificity = 95\%$$</div>
+
+        <div class="inner-box"><div class="inner-title">Precision vs Specificity</div></div>
+        <p>خیلی مهم:</p>
+        <div class="inner-box">Precision</div>
+        <p>بین Predictionهای Positive:</p>
+        <div class="formula">$$TP / (TP + FP)$$</div>
+        <div class="inner-box">Specificity</div>
+        <p>بین Actual Negativeها:</p>
+        <div class="formula">$$TN / (TN + FP)$$</div>
+        <p>پس این دو با هم یکی نیستند.</p>
+
+        <h3>6. F1 Score</h3>
+        <p>F1 میانگین هارمونیک Precision و Recall است:</p>
+        <div class="formula">$$F1 = 2 \cdot \frac{Precision \times Recall}{Precision + Recall}$$</div>
+
+        <div class="inner-box"><div class="inner-title">چرا میانگین هارمونیک؟</div></div>
+        <p>چون اگر یکی از Precision و Recall خیلی پایین باشد، F1 هم پایین می‌آید.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Precision = 0.99
+Recall = 0.10</div></div>
+        <p>F1:</p>
+        <div class="formula">$$F1 \approx 0.18$$</div>
+        <p>پس نمی‌توانی با Precision خیلی بالا ضعف Recall را پنهان کنی.</p>
+
+        <div class="inner-box"><div class="inner-title">چرا Arithmetic Mean نه؟</div></div>
+        <p>Arithmetic Mean:</p>
+        <div class="formula">$$(0.99 + 0.10) / 2 = 0.545$$</div>
+        <p>که ممکن است گمراه‌کننده باشد.</p>
+        <p>Harmonic Mean رفتار سخت‌گیرانه‌تری دارد.</p>
+
+        <h3>7. F1 چه چیزی را اندازه می‌گیرد؟</h3>
+        <p>ترکیبی از:</p>
+        <div class="box"><div class="chart">Precision
++
+Recall</div></div>
+        <p>اما یک نکته مهم:</p>
+        <div class="inner-box">F1 هیچ توجه مستقیمی به TN ندارد.</div>
+        <p>این برای مسائل Imbalanced مهم است.</p>
+        <p>ممکن است F1 خوب باشد ولی Specificity ضعیف باشد.</p>
+
+        <h3>8. Fβ Score</h3>
+        <p>F1 در واقع یک حالت خاص از Fβ است.</p>
+        <p>فرمول:</p>
+        <div class="formula">$$F_{\beta} = (1 + \beta^2) \cdot \frac{Precision \cdot Recall}{\beta^2 Precision + Recall}$$</div>
+
+        <div class="inner-box"><div class="inner-title">β چه کار می‌کند؟</div></div>
+        <div class="inner-box"><div class="inner-title">β > 1</div></div>
+        <p>Recall اهمیت بیشتری پیدا می‌کند.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">F₂</div></div>
+        <p>یعنی Recall اهمیت بیشتری دارد.</p>
+        <div class="inner-box"><div class="inner-title">β < 1</div></div>
+        <p>Precision اهمیت بیشتری پیدا می‌کند.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">F₀.₅</div></div>
+        <p>یعنی Precision مهم‌تر است.</p>
+
+        <div class="inner-box"><div class="inner-title">مثال</div></div>
+        <p>در Fraud Detection:</p>
+        <p>اگر:</p>
+        <div class="inner-box">Miss کردن Fraud خیلی خطرناک است.</div>
+        <p>می‌توانی:</p>
+        <div class="box"><div class="chart">F₂</div></div>
+        <p>را بررسی کنی.</p>
+        <p>اگر:</p>
+        <div class="inner-box">False Positive بسیار گران است.</div>
+        <p>می‌توانی:</p>
+        <div class="box"><div class="chart">F₀.₅</div></div>
+        <p>را بررسی کنی.</p>
+
+        <h3>9. Macro F1</h3>
+        <p>فرض کن 3 کلاس داریم:</p>
+        <div class="box"><div class="chart">A
+B
+C</div></div>
+        <p>برای هر کلاس یک F1 داریم:</p>
+        <div class="formula">$$F1_A, F1_B, F1_C$$</div>
+        <p>Macro F1:</p>
+        <div class="formula">$$MacroF1 = \frac{F1_A + F1_B + F1_C}{3}$$</div>
+        <p>یعنی همه کلاس‌ها وزن برابر دارند.</p>
+
+        <div class="inner-box"><div class="inner-title">چرا Macro F1 مهم است؟</div></div>
+        <p>اگر:</p>
+        <div class="box"><div class="chart">Class A = 90%
+Class B = 9%
+Class C = 1%</div></div>
+        <p>باشد، Macro F1 اجازه نمی‌دهد Class A به‌تنهایی Metric را dominate کند.</p>
+
+        <h3>10. Micro F1</h3>
+        <p>در Micro averaging ابتدا تمام:</p>
+        <div class="box"><div class="chart">TP
+FP
+FN</div></div>
+        <p>را بین کلاس‌ها جمع می‌کنیم.</p>
+        <p>بعد:</p>
+        <div class="formula">$$Precision_{micro} = \frac{\sum TP}{\sum TP + \sum FP}$$</div>
+        <p>و:</p>
+        <div class="formula">$$Recall_{micro} = \frac{\sum TP}{\sum TP + \sum FN}$$</div>
+        <p>سپس F1.</p>
+
+        <div class="inner-box"><div class="inner-title">چه زمانی Micro F1 مهم است؟</div></div>
+        <p>وقتی می‌خواهی:</p>
+        <div class="inner-box">عملکرد کلی در سطح تمام نمونه‌ها</div>
+        <p>را اندازه بگیری.</p>
+        <p>در Multi-Class Single-Label classification، یک نکته مهم:</p>
+        <div class="inner-box">Micro F1 معمولاً با Accuracy برابر می‌شود.</div>
+
+        <h3>11. Weighted F1</h3>
+        <p>F1 هر کلاس را محاسبه می‌کنیم، اما به اندازه Support هر کلاس وزن می‌دهیم.</p>
+        <div class="formula">$$WeightedF1 = \sum_{c} w_c F1_c$$</div>
+        <p>که:</p>
+        <div class="formula">$$w_c = \frac{Support_c}{N}$$</div>
+        <p>است.</p>
+
+        <div class="inner-box"><div class="inner-title">تفاوت سه F1</div></div>
+        <table>
+            <thead><tr><th>Metric</th><th>کلاس‌ها</th></tr></thead>
+            <tbody>
+                <tr><td>Macro F1</td><td>همه برابر</td></tr>
+                <tr><td>Micro F1</td><td>نمونه‌ها به‌طور جمعی</td></tr>
+                <tr><td>Weighted F1</td><td>متناسب با تعداد نمونه‌های هر کلاس</td></tr>
+            </tbody>
+        </table>
+
+        <div class="inner-box"><div class="inner-title">یک مثال مهم</div></div>
+        <p>فرض کن:</p>
+        <div class="box"><div class="chart">Class A → 900 samples → F1=0.95
+Class B → 90 samples  → F1=0.60
+Class C → 10 samples  → F1=0.10</div></div>
+        <div class="inner-box"><div class="inner-title">Macro F1</div></div>
+        <div class="formula">$$(0.95 + 0.60 + 0.10) / 3 = 0.55$$</div>
+        <p>این نشان می‌دهد مدل روی کلاس‌های اقلیت ضعیف است.</p>
+        <div class="inner-box"><div class="inner-title">Weighted F1</div></div>
+        <p>به A وزن بیشتری می‌دهد، پس احتمالاً عدد خیلی بالاتر خواهد بود.</p>
+
+        <h3>12. ROC Curve</h3>
+        <p>ROC بین:</p>
+        <div class="inner-box">TPR</div>
+        <p>و:</p>
+        <div class="inner-box">FPR</div>
+        <p>را در Thresholdهای مختلف رسم می‌کند.</p>
+        <p>یعنی:</p>
+        <div class="formula">$$TPR = \frac{TP}{TP + FN}$$</div>
+        <p>و:</p>
+        <div class="formula">$$FPR = \frac{FP}{FP + TN}$$</div>
+
+        <div class="inner-box"><div class="inner-title">ROC چه چیزی را نشان می‌دهد؟</div></div>
+        <p>رفتار مدل را در Thresholdهای مختلف.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Threshold = 0.9
+Threshold = 0.8
+Threshold = 0.7
+...
+Threshold = 0.1</div></div>
+        <p>در هر Threshold:</p>
+        <div class="box"><div class="chart">TPR
+FPR</div></div>
+        <p>محاسبه می‌شود.</p>
+
+        <h3>13. ROC-AUC</h3>
+        <p>AUC:</p>
+        <div class="inner-box">Area Under the ROC Curve</div>
+        <p>است.</p>
+        <p>به‌صورت شهودی:</p>
+        <div class="inner-box">احتمال اینکه مدل یک Positive را بالاتر از یک Negative رتبه‌بندی کند.</div>
+        <p>این یک interpretation بسیار مفید برای AUC است.</p>
+
+        <div class="inner-box"><div class="inner-title">مقادیر</div></div>
+        <p>تقریباً:</p>
+        <div class="box"><div class="chart">AUC = 1    → Ranking عالی</div></div>
+        <div class="box"><div class="chart">AUC = 0.5  → مثل Random</div></div>
+        <div class="box"><div class="chart">AUC < 0.5  → مدل بدتر از Random؛ گاهی با برعکس‌کردن Score می‌توان از آن استفاده کرد، ولی باید علت بررسی شود.</div></div>
+
+        <h3>14. ROC-AUC Threshold Independent است؟</h3>
+        <p>تا حد زیادی:</p>
+        <div class="inner-box">AUC از یک Threshold خاص مستقل است.</div>
+        <p>اما این به معنی مستقل بودن از همه تصمیمات نیست.</p>
+        <p>ROC-AUC عملکرد Ranking را روی Thresholdهای مختلف خلاصه می‌کند.</p>
+
+        <h3>15. مشکل ROC-AUC در Imbalanced Data</h3>
+        <p>فرض کن:</p>
+        <div class="box"><div class="chart">Positive = 0.1%
+Negative = 99.9%</div></div>
+        <p>ممکن است:</p>
+        <div class="formula">$$ROC - AUC = 0.99$$</div>
+        <p>داشته باشی.</p>
+        <p>ولی در ناحیه Precision برایت مهم است، مدل عملکرد چندان خوبی نداشته باشد.</p>
+        <p>چرا؟</p>
+        <p>چون FPR ممکن است ظاهراً کوچک باشد، ولی وقتی تعداد Negativeها بسیار زیاد است، همین FPR کوچک می‌تواند تعداد زیادی FP تولید کند.</p>
+
+        <h3>16. PR Curve</h3>
+        <p>Precision-Recall Curve بین:</p>
+        <div class="inner-box">Precision</div>
+        <p>و:</p>
+        <div class="inner-box">Recall</div>
+        <p>در Thresholdهای مختلف رسم می‌شود.</p>
+        <p>برای Rare Positive Classes بسیار مهم است.</p>
+
+        <h3>17. PR-AUC</h3>
+        <p>Area Under Precision-Recall Curve.</p>
+        <p>به‌خصوص برای:</p>
+        <div class="box"><div class="chart">Rare events
+Fraud detection
+Medical diagnosis
+Anomaly detection</div></div>
+        <p>بسیار مفید است.</p>
+
+        <h3>18. ROC-AUC vs PR-AUC</h3>
+        <div class="box">
+            <div class="inner-title">ROC-AUC</div>
+            <p>مناسب برای نگاه کلی به:</p>
+            <div class="chart">TPR vs FPR</div>
+        </div>
+        <div class="box">
+            <div class="inner-title">PR-AUC</div>
+            <p>تمرکز بیشتر روی:</p>
+            <div class="chart">Positive class
+Precision vs Recall</div>
+        </div>
+        
+        <div class="inner-box"><div class="inner-title">یک نکته Senior خیلی مهم</div></div>
+        <p>در Classification شدیداً Imbalanced:</p>
+        <div class="inner-box">PR-AUC معمولاً تصویری informativeتر از عملکرد کلاس مثبت می‌دهد.</div>
+        <p>اما:</p>
+        <div class="inner-box">این به معنی بی‌ارزش بودن ROC-AUC نیست.</div>
+        <p>بهتر است متناسب با Business Objective هر دو را در صورت لزوم بررسی کنی.</p>
+
+        <h3>19. Baseline در PR-AUC</h3>
+        <p>یک نکته ظریف:</p>
+        <p>در Binary Classification، baseline مربوط به PR Curve به prevalence کلاس مثبت وابسته است.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Positive prevalence = 1%</div></div>
+        <p>یک classifier تصادفی در مقیاس Precision/Recall حدوداً حول همان prevalence رفتار می‌کند.</p>
+        <p>بنابراین:</p>
+        <div class="formula">$$PR - AUC = 0.10$$</div>
+        <p>در یک مسئله با prevalence برابر 1٪ ممکن است بسیار بهتر از baseline باشد، حتی اگر عدد ظاهراً کوچک به نظر برسد.</p>
+
+        <h3>20. Log Loss</h3>
+        <p>در Binary Classification:</p>
+        <div class="formula">$$LogLoss = - \frac{1}{N} \sum_{i} [y_i \log p_i + (1 - y_i) \log(1 - p_i)]$$</div>
+        <p>در واقع همان Mean Binary Cross Entropy است.</p>
+
+        <div class="inner-box"><div class="inner-title">Log Loss چه چیزی را اندازه می‌گیرد؟</div></div>
+        <p>نه فقط درست/غلط بودن.</p>
+        <p>بلکه:</p>
+        <div class="inner-box">Quality of predicted probabilities</div>
+
+        <div class="inner-box"><div class="inner-title">مثال</div></div>
+        <p>فرض کن Target=1.</p>
+        <div class="inner-box"><div class="inner-title">Model A</div></div>
+        <div class="box"><div class="chart">P=0.51</div></div>
+        <div class="inner-box"><div class="inner-title">Model B</div></div>
+        <div class="box"><div class="chart">P=0.99</div></div>
+        <p>هر دو اگر Threshold=0.5 باشد درست‌اند.</p>
+        <p>اما Log Loss به Model B پاداش بیشتری می‌دهد.</p>
+        <p>ولی اگر B اشتباه کند:</p>
+        <div class="box"><div class="chart">True y=1
+P=0.01</div></div>
+        <p>Loss بسیار بزرگ می‌شود.</p>
+        <p>پس Log Loss به:</p>
+        <div class="inner-box">Confident Wrong Predictions</div>
+        <p>شدیداً حساس است.</p>
+
+        <h3>21. Log Loss و Calibration</h3>
+        <p>این دو به هم مرتبط‌اند.</p>
+        <p>مدلی که Probabilityهای خوبی تولید می‌کند:</p>
+        <div class="box"><div class="chart">P=0.8</div></div>
+        <p>باید واقعاً تقریباً:</p>
+        <div class="box"><div class="chart">80%</div></div>
+        <p>موفقیت داشته باشد.</p>
+        <p>Log Loss یک معیار مناسب برای کیفیت Probabilityهای پیش‌بینی‌شده است، ولی:</p>
+        <div class="inner-box">Log Loss به تنهایی یک تضمین کامل برای Calibration نیست.</div>
+
+        <h3>22. Matthews Correlation Coefficient — MCC</h3>
+        <p>MCC یکی از Metrics بسیار خوب برای Binary Classification، مخصوصاً در Imbalanced Data است.</p>
+        <p>فرمول:</p>
+        <div class="formula">$$MCC = \frac{TP \cdot TN - FP \cdot FN}{\sqrt{(TP + FP)(TP + FN)(TN + FP)(TN + FN)}}$$</div>
+
+        <div class="inner-box"><div class="inner-title">دامنه MCC</div></div>
+        <div class="formula">$$-1 \le MCC \le 1$$</div>
+        <div class="box"><div class="chart">+1     → Prediction کامل.</div></div>
+        <div class="box"><div class="chart">0      → تقریباً no better than random / no association.</div></div>
+        <div class="box"><div class="chart">-1     → کاملاً معکوس.</div></div>
+
+        <div class="inner-box"><div class="inner-title">چرا MCC جالب است؟</div></div>
+        <p>برخلاف F1:</p>
+        <div class="inner-box">هم Positive و هم Negative را در نظر می‌گیرد.</div>
+        <p>پس برای Imbalanced Classification می‌تواند بسیار informative باشد.</p>
+
+        <h3>23. MCC و Accuracy</h3>
+        <p>ممکن است:</p>
+        <div class="box"><div class="chart">Accuracy = 99%</div></div>
+        <p>داشته باشی، ولی:</p>
+        <div class="box"><div class="chart">MCC ≈ 0</div></div>
+        <p>اگر مدل تقریباً همیشه یک کلاس را پیش‌بینی کند.</p>
+        <p>به همین دلیل MCC برای بعضی مسائل شدیداً Imbalanced بسیار مفید است.</p>
+
+        <h3>24. Cohen's Kappa</h3>
+        <p>Cohen's Kappa می‌خواهد:</p>
+        <div class="inner-box">Agreement مدل و Ground Truth را بعد از درنظرگرفتن Agreement ناشی از شانس اندازه بگیرد.</div>
+        <p>فرمول:</p>
+        <div class="formula">$$\kappa = \frac{p_o - p_e}{1 - p_e}$$</div>
+        <p>که:</p>
+        <ul>
+            <li>\(p_o\) = observed agreement</li>
+            <li>\(p_e\) = expected agreement by chance</li>
+        </ul>
+
+        <div class="inner-box"><div class="inner-title">مثال</div></div>
+        <p>اگر:</p>
+        <div class="box"><div class="chart">Observed Agreement = 90%</div></div>
+        <p>ولی به علت توزیع کلاس‌ها:</p>
+        <div class="box"><div class="chart">Chance Agreement = 80%</div></div>
+        <p>آنگاه:</p>
+        <div class="formula">$$\kappa = \frac{0.9 - 0.8}{1 - 0.8} = 0.5$$</div>
+        <p>پس 90٪ Accuracy الزاماً به معنی Agreement فوق‌العاده نیست.</p>
+
+        <div class="inner-box"><div class="inner-title">دامنه Kappa</div></div>
+        <p>معمولاً:</p>
+        <div class="box"><div class="chart">1    → Perfect agreement
+0    → Chance-level agreement
+<0   → Worse than chance</div></div>
+
+        <div class="inner-box"><div class="inner-title">نکته مهم Kappa</div></div>
+        <p>Kappa تحت Class Imbalance می‌تواند رفتار غیر-intuitive داشته باشد.</p>
+        <p>بنابراین در کاربردهای Imbalanced نباید آن را بدون بررسی Distribution تفسیر کرد.</p>
+
+        <h3>25. Balanced Accuracy</h3>
+        <p>برای Binary:</p>
+        <div class="formula">$$BalancedAccuracy = \frac{Sensitivity + Specificity}{2}$$</div>
+        <p>یعنی:</p>
+        <div class="formula">$$BalancedAccuracy = \frac{TPR + TNR}{2}$$</div>
+
+        <div class="inner-box"><div class="inner-title">چرا Balanced Accuracy؟</div></div>
+        <p>در Dataset نامتوازن:</p>
+        <div class="box"><div class="chart">99% Negative
+1% Positive</div></div>
+        <p>Accuracy می‌تواند گمراه‌کننده باشد.</p>
+        <p>Balanced Accuracy به هر کلاس وزن برابر می‌دهد.</p>
+
+        <div class="inner-box"><div class="inner-title">مثال</div></div>
+        <p>فرض کن:</p>
+        <div class="box"><div class="chart">Recall Positive = 80%
+Specificity = 90%</div></div>
+        <p>پس:</p>
+        <div class="formula">$$BalancedAccuracy = \frac{0.8 + 0.9}{2} = 85\%$$</div>
+
+        <div class="inner-box"><div class="inner-title">Balanced Accuracy vs Macro Recall</div></div>
+        <p>در Binary/Multi-Class، Balanced Accuracy بسیار نزدیک/مرتبط با میانگین Recall کلاس‌هاست؛ در Multi-Class معمولاً:</p>
+        <div class="formula">$$BalancedAccuracy = \frac{1}{C} \sum_{c=1}^{C} Recall_c$$</div>
+        <p>پس در Multi-Class به Macro Recall مربوط می‌شود.</p>
+
+        <h3>26. Top-K Accuracy</h3>
+        <p>در Multi-Class Classification.</p>
+        <p>فرض کن مدل:</p>
+        <div class="box"><div class="chart">Cat   = 0.40
+Dog   = 0.30
+Horse = 0.20
+Bird  = 0.10</div></div>
+        <p>Target:</p>
+        <div class="box"><div class="chart">Horse</div></div>
+        <p>Top-1:</p>
+        <div class="box"><div class="chart">Cat</div></div>
+        <p>→ اشتباه.</p>
+        <p>Top-3:</p>
+        <div class="box"><div class="chart">Cat
+Dog
+Horse</div></div>
+        <p>→ درست.</p>
+        <p>Top-K Accuracy</p>
+        <div class="inner-box">اگر Label واقعی در بین K Prediction اول باشد:</div>
+        <div class="box"><div class="chart">Correct</div></div>
+        <p>مثلاً:</p>
+        <div class="inner-box">Top-5Accuracy</div>
+        <p>در ImageNet بسیار رایج بود/است.</p>
+
+        <div class="inner-box"><div class="inner-title">چه زمانی Top-K مفید است؟</div></div>
+        <p>وقتی:</p>
+        <div class="inner-box">چند Prediction برتر برای سیستم قابل قبول‌اند.</div>
+        <p>مثلاً:</p>
+        <ul>
+            <li>Image classification</li>
+            <li>Recommendation</li>
+            <li>Search suggestion</li>
+            <li>Large-scale classification</li>
+        </ul>
+
+        <div class="inner-box"><div class="inner-title">یک نکته مهم</div></div>
+        <p>Top-K Accuracy برای همه Businessها مناسب نیست.</p>
+        <p>اگر باید:</p>
+        <div class="inner-box">فقط یک تصمیم نهایی بگیری</div>
+        <p>Top-1 یا Metricهای threshold-based مهم‌ترند.</p>
+
+        <h2>بخش Regression Metrics</h2>
+        <p>حالا برویم سراغ Regression.</p>
+
+        <h3>27. MAE</h3>
+        <div class="formula">$$MAE = \frac{1}{N} \sum |y_i - \hat{y}_i|$$</div>
+        <p>سؤال:</p>
+        <div class="inner-box">Prediction به‌طور متوسط چند واحد با مقدار واقعی فاصله دارد؟</div>
+
+        <div class="inner-box"><div class="inner-title">مثال</div></div>
+        <p>اگر:</p>
+        <div class="box"><div class="chart">MAE = 10</div></div>
+        <p>و Target بر حسب تومان باشد، یعنی:</p>
+        <div class="inner-box">به‌طور متوسط 10 واحد خطا داریم.</div>
+        <p>این Metric قابل‌تفسیر است.</p>
+
+        <h3>28. MSE</h3>
+        <div class="formula">$$MSE = \frac{1}{N} \sum (y_i - \hat{y}_i)^2$$</div>
+        <p>واحدش مربع می‌شود.</p>
+        <p>اگر Target:</p>
+        <div class="box"><div class="chart">USD</div></div>
+        <p>باشد:</p>
+        <div class="formula">$$USD^2$$</div>
+        <p>پس از نظر Interpretability ضعیف‌تر از MAE است.</p>
+        <p>ولی:</p>
+        <div class="inner-box">Outlierها را بیشتر جریمه می‌کند.</div>
+
+        <h3>29. RMSE</h3>
+        <div class="formula">$$RMSE = \sqrt{\frac{1}{N} \sum (y_i - \hat{y}_i)^2}$$</div>
+        <p>مزیت مهم:</p>
+        <div class="inner-box">واحد RMSE با Target یکی است.</div>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">RMSE = $20</div></div>
+
+        <div class="inner-box"><div class="inner-title">MAE vs RMSE</div></div>
+        <div class="box"><div class="chart">MAE     → Robust‌تر</div></div>
+        <div class="box"><div class="chart">RMSE    → Outlier-sensitive</div></div>
+        <p>اگر خطای بزرگ بسیار مهم باشد:</p>
+        <div class="inner-box">RMSE مناسب‌تر است.</div>
+
+        <h3>30. رابطه MAE و RMSE</h3>
+        <p>برای خطاهای finite:</p>
+        <div class="formula">$$RMSE \ge MAE$$</div>
+        <p>و اگر همه Absolute Errors برابر باشند، برابر می‌شوند.</p>
+
+        <h3>31. R²</h3>
+        <p>فرمول:</p>
+        <div class="formula">$$R^2 = 1 - \frac{SS_{res}}{SS_{tot}}$$</div>
+        <p>که:</p>
+        <div class="formula">$$SS_{res} = \sum (y_i - \hat{y}_i)^2$$</div>
+        <p>و:</p>
+        <div class="formula">$$SS_{tot} = \sum (y_i - \bar{y})^2$$</div>
+        <p>است.</p>
+
+        <div class="inner-box"><div class="inner-title">R² چه می‌گوید؟</div></div>
+        <p>به‌صورت شهودی:</p>
+        <div class="inner-box">مدل نسبت به یک baseline که همیشه Mean را پیش‌بینی می‌کند، چقدر Variation را توضیح می‌دهد؟</div>
+
+        <div class="inner-box"><div class="inner-title">مثال</div></div>
+        <div class="formula">$$R^2 = 0.8$$</div>
+        <p>یعنی در یک تفسیر استاندارد، مدل نسبت به predicting the mean، حدود 80٪ از Sum of Squared Error/variation criterion را بهبود داده است.</p>
+        <p>اما جمله:</p>
+        <div class="inner-box">«مدل دقیقاً 80٪ از واقعیت را توضیح می‌دهد»</div>
+        <p>ممکن است oversimplification باشد.</p>
+
+        <h3>32. آیا R² همیشه بین 0 و 1 است؟</h3>
+        <p>نه.</p>
+        <p>این یک نکته مهم مصاحبه است.</p>
+        <p>می‌تواند:</p>
+        <div class="formula">$$R^2 < 0$$</div>
+        <p>شود.</p>
+        <p>اگر مدل از baseline mean prediction بدتر باشد.</p>
+
+        <h3>33. R² با Correlation² یکی است؟</h3>
+        <p>در Linear Regression with an intercept در بعضی شرایط:</p>
+        <div class="formula">$$R^2 = r^2$$</div>
+        <p>ولی به‌صورت عمومی نباید این دو را یکی فرض کنی.</p>
+
+        <h3>34. Adjusted R²</h3>
+        <p>مشکل R²:</p>
+        <p>با اضافه کردن Feature جدید، R² روی Training Data معمولاً کاهش پیدا نمی‌کند؛ حتی اگر Feature مفید نباشد.</p>
+        <p>Adjusted R² یک penalty برای تعداد Predictors دارد.</p>
+        <p>فرمول:</p>
+        <div class="formula">$$Adjusted R^2 = 1 - (1 - R^2) \frac{n - 1}{n - p - 1}$$</div>
+        <p>که:</p>
+        <ul>
+            <li>n = number of observations</li>
+            <li>p = number of predictors</li>
+        </ul>
+
+        <div class="inner-box"><div class="inner-title">چه زمانی Adjusted R² مفید است؟</div></div>
+        <p>وقتی می‌خواهی مدل‌های Regression با تعداد Featureهای متفاوت را مقایسه کنی.</p>
+        <p>اما:</p>
+        <div class="inner-box">این Metric جایگزین Validation/CV نیست.</div>
+
+        <h3>35. MAPE</h3>
+        <div class="formula">$$MAPE = \frac{100}{N} \sum \left| \frac{y_i - \hat{y}_i}{y_i} \right|$$</div>
+        
+        <div class="inner-box"><div class="inner-title">مزیت MAPE</div></div>
+        <p>Relative error می‌دهد.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">MAPE = 10%</div></div>
+        <p>یعنی خطای نسبی متوسط تقریباً 10٪.</p>
+
+        <div class="inner-box"><div class="inner-title">مشکل بسیار مهم MAPE</div></div>
+        <p>اگر:</p>
+        <div class="formula">$$y = 0$$</div>
+        <p>باشد، تقسیم بر صفر داریم.</p>
+        <p>و اگر y خیلی نزدیک صفر باشد:</p>
+        <p>MAPE می‌تواند بسیار بزرگ و ناپایدار شود.</p>
+
+        <div class="inner-box"><div class="inner-title">مشکل دیگر MAPE</div></div>
+        <p>MAPE نسبت به Positive/Negative بودن Target و جهت خطا رفتار خاصی دارد و در داده‌هایی که Target می‌تواند صفر یا نزدیک صفر باشد انتخاب خوبی نیست.</p>
+
+        <h3>36. sMAPE</h3>
+        <p>برای کاهش بعضی مشکلات MAPE، از:</p>
+        <div class="inner-box">Symmetric Mean Absolute Percentage Error</div>
+        <p>استفاده می‌شود.</p>
+        <p>یک فرم رایج:</p>
+        <div class="formula">$$sMAPE = \frac{100}{N} \sum \frac{|y - \hat{y}|}{(|y| + |\hat{y}|) / 2}$$</div>
+        <p>معادل:</p>
+        <div class="formula">$$sMAPE = \frac{200}{N} \sum \frac{|y - \hat{y}|}{|y| + |\hat{y}|}$$</div>
+        <p>بسته به Convention.</p>
+
+        <div class="inner-box"><div class="inner-title">چرا sMAPE؟</div></div>
+        <p>Denominator از هر دو مقدار واقعی و Prediction استفاده می‌کند.</p>
+        <p>ولی:</p>
+        <div class="inner-box">اسم «symmetric» به این معنی نیست که تمام مشکلات asymmetry را کاملاً حل کرده است.</div>
+        <p>هنوز در نزدیکی صفر باید با احتیاط تفسیر شود و Definitions مختلف sMAPE در منابع وجود دارند.</p>
+
+        <h3>37. MSLE</h3>
+        <div class="formula">$$MSLE = \frac{1}{N} \sum (\log(1 + y) - \log(1 + \hat{y}))^2$$</div>
+        <p>معمولاً برای Targetهای:</p>
+        <div class="box"><div class="chart">Non-negative
+Right-skewed</div></div>
+        <p>مفید است.</p>
+
+        <div class="inner-box"><div class="inner-title">چرا Log Transform؟</div></div>
+        <p>اگر Target:</p>
+        <div class="box"><div class="chart">10
+100
+1000
+100000</div></div>
+        <p>باشد، MSE خطاهای بزرگ را بسیار dominate می‌کند.</p>
+        <p>MSLE فضای Log را بررسی می‌کند.</p>
+        <p>پس بیشتر به Relative Differences حساس می‌شود تا Absolute Differences.</p>
+
+        <div class="inner-box"><div class="inner-title">مثال</div></div>
+        <p>فرق:</p>
+        <div class="box"><div class="chart">10 → 20</div></div>
+        <p>و:</p>
+        <div class="box"><div class="chart">1000 → 2000</div></div>
+        <p>از نظر نسبت تقریباً مشابه‌اند:</p>
+        <div class="formula">$$\times 2$$</div>
+        <p>MSLE این نوع تفاوت را بهتر منعکس می‌کند.</p>
+
+        <h3>38. محدودیت MSLE</h3>
+        <p>به دلیل:</p>
+        <div class="formula">$$\log(1 + y)$$</div>
+        <p>Target باید معمولاً:</p>
+        <div class="formula">$$y \ge 0$$</div>
+        <p>باشد.</p>
+        <p>برای Targetهای منفی مناسب نیست.</p>
+
+        <h3>39. RMSLE</h3>
+        <div class="formula">$$RMSLE = \sqrt{\frac{1}{N} \sum (\log(1 + y) - \log(1 + \hat{y}))^2}$$</div>
+        <p>مثل RMSE است ولی در فضای Log.</p>
+
+        <h3>40. MAE vs MSE vs RMSE</h3>
+        <table>
+            <thead><tr><th>Metric</th><th>Robustness</th><th>Outlier</th><th>Unit</th></tr></thead>
+            <tbody>
+                <tr><td>MAE</td><td>زیاد</td><td>کمتر حساس</td><td>Original</td></tr>
+                <tr><td>MSE</td><td>کم</td><td>بسیار حساس</td><td>Squared</td></tr>
+                <tr><td>RMSE</td><td>کم</td><td>حساس</td><td>Original</td></tr>
+            </tbody>
+        </table>
+
+        <h3>41. MAPE vs sMAPE vs MSLE/RMSLE</h3>
+        <div class="inner-box"><div class="inner-title">MAPE</div></div>
+        <p>برای:</p>
+        <div class="inner-box">Relative percentage error</div>
+        <p>اما مشکل:</p>
+        <div class="box"><div class="chart">y ≈ 0</div></div>
+        
+        <div class="inner-box"><div class="inner-title">sMAPE</div></div>
+        <p>برای:</p>
+        <div class="inner-box">Relative error با denominator متقارن‌تر</div>
+        <p>اما همچنان مشکلات نزدیک صفر دارد.</p>
+        
+        <div class="inner-box"><div class="inner-title">MSLE/RMSLE</div></div>
+        <p>برای:</p>
+        <div class="inner-box">Multiplicative / relative-scale errors</div>
+        <p>خصوصاً Targetهای non-negative و skewed.</p>
+
+        <h3>42. Metric Selection بر اساس Business Objective</h3>
+        <p>این مهم‌ترین قسمت این فصل است.</p>
+        <p>نباید بگویی:</p>
+        <div class="inner-box">«برای Classification همیشه F1 استفاده می‌کنم.»</div>
+        <p>یا:</p>
+        <div class="inner-box">«برای Regression همیشه RMSE.»</div>
+        <p>این پاسخ Senior نیست.</p>
+
+        <div class="inner-box"><div class="inner-title">مثال 1 — Fraud Detection</div></div>
+        <p>فرض کن:</p>
+        <div class="box"><div class="chart">Fraud = rare</div></div>
+        <p>هدف:</p>
+        <div class="inner-box">Fraud واقعی را از دست ندهیم.</div>
+        <p>پس:</p>
+        <div class="box"><div class="chart">Recall
+PR-AUC
+Fβ with β>1</div></div>
+        <p>ممکن است مهم باشند.</p>
+        <p>اما اگر Block کردن Customer هزینه زیادی داشته باشد:</p>
+        <div class="box"><div class="chart">Precision
+Precision@Recall
+Expected Cost</div></div>
+        <p>مهم‌تر می‌شوند.</p>
+
+        <h3>43. Cost Matrix</h3>
+        <p>فرض کن:</p>
+        <div class="box"><div class="chart">False Positive = $5
+False Negative = $500</div></div>
+        <p>آنگاه:</p>
+        <div class="inner-box">FN</div>
+        <p>100 برابر گران‌تر است.</p>
+        <p>پس چرا باید:</p>
+        <div class="box"><div class="chart">Accuracy</div></div>
+        <p>را Metric اصلی کنیم؟</p>
+        <p>منطقی نیست.</p>
+
+        <h3>44. Expected Cost</h3>
+        <p>می‌توانی هزینه را صریح تعریف کنی:</p>
+        <div class="formula">$$ExpectedCost = C_{FP} P(FP) + C_{FN} P(FN)$$</div>
+        <p>در عمل می‌توانی آن را روی تعداد نمونه‌ها محاسبه کنی:</p>
+        <div class="formula">$$TotalCost = C_{FP} \cdot FP + C_{FN} \cdot FN$$</div>
+        <p>این گاهی از F1 بسیار Business-relevantتر است.</p>
+
+        <h3>45. Medical Screening</h3>
+        <p>هدف:</p>
+        <div class="inner-box">بیماری واقعی را از دست نده.</div>
+        <p>پس:</p>
+        <div class="box"><div class="chart">Recall / Sensitivity</div></div>
+        <p>اهمیت بالایی دارد.</p>
+        <p>ولی بعداً:</p>
+        <div class="inner-box">Specificity</div>
+        <p>هم اهمیت دارد، چون False Positive زیاد باعث آزمایش‌های اضافی می‌شود.</p>
+
+        <h3>46. Spam Detection</h3>
+        <p>اگر False Positive خیلی بد باشد:</p>
+        <div class="inner-box">ایمیل سالم را Spam تلقی کنیم.</div>
+        <p>پس:</p>
+        <div class="box"><div class="chart">Precision</div></div>
+        <p>می‌تواند مهم‌تر از Recall باشد.</p>
+
+        <h3>47. Search Engine</h3>
+        <p>در Search:</p>
+        <div class="box"><div class="chart">Precision@K
+Recall@K
+MAP
+NDCG
+MRR</div></div>
+        <p>معمولاً مناسب‌ترند.</p>
+        <p>حتی اگر Classification Model داشته باشی، Accuracy معیار طبیعی Search نیست.</p>
+
+        <h3>48. Recommendation System</h3>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Top-10 recommendations</div></div>
+        <p>می‌خواهی بدانیم:</p>
+        <div class="inner-box">آیا آیتم‌های مرتبط در Top 10 قرار گرفته‌اند؟</div>
+        <p>پس:</p>
+        <div class="box"><div class="chart">Recall@K
+Precision@K
+NDCG@K
+MAP@K
+Hit Rate@K</div></div>
+        <p>مفیدند.</p>
+
+        <h3>49. Regression — Business Choice</h3>
+        <p>فرض کن قیمت را پیش‌بینی می‌کنی.</p>
+        <p>اگر:</p>
+        <div class="inner-box">همه خطاها تقریباً اهمیت مشابه دارند.</div>
+        <p>MAE مناسب است.</p>
+        <p>اگر:</p>
+        <div class="inner-box">خطاهای بزرگ خیلی پرهزینه‌اند.</div>
+        <p>RMSE مناسب‌تر است.</p>
+        <p>اگر:</p>
+        <div class="inner-box">Relative error مهم‌تر از Absolute error است.</div>
+        <p>MAPE/sMAPE یا Log-based metrics ممکن است مناسب‌تر باشند.</p>
+
+        <h3>50. مثال Revenue Forecasting</h3>
+        <p>اگر:</p>
+        <div class="box"><div class="chart">Revenue = $10,000</div></div>
+        <p>باشد، خطای:</p>
+        <div class="box"><div class="chart">$1,000</div></div>
+        <p>خیلی مهم است.</p>
+        <p>اما برای:</p>
+        <div class="box"><div class="chart">Revenue = $10,000,000</div></div>
+        <p>خطای:</p>
+        <div class="box"><div class="chart">$1,000</div></div>
+        <p>ممکن است ناچیز باشد.</p>
+        <p>پس Absolute Error شاید Metric مناسبی نباشد و Relative Error یا Log-based Evaluation بهتر باشد.</p>
+
+        <h3>51. Metric و Threshold</h3>
+        <p>Metrics مختلف به Threshold حساس‌اند.</p>
+        <p>مثلاً:</p>
+        <div class="inner-box">Precision, Recall, F1, Specificity, Balanced Accuracy</div>
+        <p>همگی می‌توانند با تغییر:</p>
+        <div class="inner-box">Threshold</div>
+        <p>تغییر کنند.</p>
+
+        <h3>52. ROC-AUC و PR-AUC</h3>
+        <p>بر خلاف Threshold Metrics:</p>
+        <p>ROC-AUC و PR-AUC</p>
+        <p>عملکرد را در طیف Thresholdهای مختلف خلاصه می‌کنند.</p>
+        <p>ولی در نهایت اگر سیستم یک تصمیم binary می‌گیرد:</p>
+        <p>باید Threshold را با Business Objective تعیین کنی.</p>
+
+        <h3>53. مثلاً مدل Fraud</h3>
+        <p>Model:</p>
+        <div class="inner-box">P(Fraud)</div>
+        <p>می‌دهد.</p>
+        <p>سه Threshold:</p>
+        <div class="box"><div class="chart">0.2 → Recall بالا
+0.5 → balanced
+0.8 → Precision بالا</div></div>
+        <p>هیچ Threshold جادویی وجود ندارد.</p>
+
+        <h3>54. Precision-Recall Tradeoff</h3>
+        <p>معمولاً:</p>
+        <div class="inner-box">Threshold ↓ → Positive predictions ↑ → Recall ↑ → Precision ممکن است ↓</div>
+        <p>و:</p>
+        <div class="inner-box">Threshold ↑ → Positive predictions ↓ → Precision ممکن است ↑ → Recall ↓</div>
+        <p>البته رفتار دقیق به Score Distribution وابسته است.</p>
+
+        <h3>55. Metric و Calibration</h3>
+        <p>فرض کن:</p>
+        <div class="inner-box">Model A: AUC = 0.95</div>
+        <p>و:</p>
+        <div class="inner-box">Model B: AUC = 0.93</div>
+        <p>ولی:</p>
+        <div class="inner-box">Model A: poor probability calibration</div>
+        <p>و:</p>
+        <div class="inner-box">Model B: excellent calibration</div>
+        <p>اگر از Probability برای:</p>
+        <div class="inner-box">Expected Loss, Risk Scoring, Pricing, Credit Decision</div>
+        <p>استفاده می‌کنی، AUC بالاتر الزاماً به معنی Model بهتر نیست.</p>
+
+        <h3>56. Ranking Metrics</h3>
+        <p>برای Search/Recommendation، Metrics بسیار مهم دیگری هم وجود دارند که در لیست فعلی نبودند:</p>
+        <div class="inner-box"><div class="inner-title">Precision@K</div></div>
+        <p>از Top-K چند مورد Relevant هستند؟</p>
+        <div class="formula">$$Precision@K = \frac{\#Relevant in TopK}{K}$$</div>
+        <div class="inner-box"><div class="inner-title">Recall@K</div></div>
+        <p>از تمام Relevantها، چند تا در Top-K آمده‌اند؟</p>
+        <div class="formula">$$Recall@K = \frac{\#Relevant in TopK}{\#AllRelevant}$$</div>
+        <div class="inner-box"><div class="inner-title">NDCG@K</div></div>
+        <p>به ترتیب Ranking اهمیت می‌دهد.</p>
+        <p>Relevant item در Rank 1 ارزش بیشتری از Rank 10 دارد.</p>
+
+        <h3>57. چرا Metric باید با Business Objective هماهنگ باشد؟</h3>
+        <p>فرض کن دو مدل داریم:</p>
+        <table>
+            <thead><tr><th>Metric</th><th>Model A</th><th>Model B</th></tr></thead>
+            <tbody>
+                <tr><td>Accuracy</td><td>99.0%</td><td>98.5%</td></tr>
+                <tr><td>Recall</td><td>40%</td><td>95%</td></tr>
+                <tr><td>Precision</td><td>90%</td><td>50%</td></tr>
+            </tbody>
+        </table>
+        <p>کدام بهتر است؟</p>
+        <p>پاسخ:</p>
+        <p>بستگی به Business دارد.</p>
+        <p>اگر Miss کردن Positive فاجعه باشد:</p>
+        <div class="inner-box">Model B</div>
+        <p>ممکن است بهتر باشد.</p>
+        <p>اگر False Alarm خیلی پرهزینه باشد:</p>
+        <div class="inner-box">Model A</div>
+        <p>ممکن است بهتر باشد.</p>
+
+        <h3>58. یک Framework حرفه‌ای برای انتخاب Metric</h3>
+        <p>به جای حفظ کردن Metricها، این 5 سؤال را بپرس:</p>
+        <ol>
+            <li>چه چیزی را می‌خواهم درست پیدا کنم؟ (Positive؟ Negative؟ Ranking؟ Magnitude؟ Probability؟)</li>
+            <li>کدام نوع خطا گران‌تر است؟ (\(C_{FP}\) یا \(C_{FN}\))</li>
+            <li>آیا Class Imbalance دارم؟ (اگر بله: Accuracy معمولاً باید با احتیاط استفاده شود.)</li>
+            <li>آیا Probability مهم است؟ (اگر بله: Log Loss, Calibration, Brier Score مهم‌تر می‌شوند.)</li>
+            <li>آیا Ranking مهم است؟ (اگر بله: NDCG@K, MAP@K, MRR, Precision@K, Recall@K)</li>
+        </ol>
+
+        <h3>59. Cheat Sheet — Classification</h3>
+        <table>
+            <thead><tr><th>Metric</th><th>بهترین سؤالش</th></tr></thead>
+            <tbody>
+                <tr><td>Accuracy</td><td>چند درصد کل Predictionها درست‌اند؟</td></tr>
+                <tr><td>Precision</td><td>از Positiveهایی که گفتیم، چندتا درست‌اند؟</td></tr>
+                <tr><td>Recall</td><td>از Positiveهای واقعی، چندتا پیدا کردیم؟</td></tr>
+                <tr><td>Specificity</td><td>از Negativeهای واقعی، چندتا درست رد کردیم؟</td></tr>
+                <tr><td>F1</td><td>Precision و Recall با هم چقدر خوب‌اند؟</td></tr>
+                <tr><td>Fβ</td><td>Precision vs Recall با وزن دلخواه چطور؟</td></tr>
+                <tr><td>Macro F1</td><td>هر کلاس به یک اندازه مهم است؟</td></tr>
+                <tr><td>Micro F1</td><td>عملکرد کلی روی همه نمونه‌ها چیست؟</td></tr>
+                <tr><td>Weighted F1</td><td>عملکرد کلی با توجه به اندازه کلاس‌ها چیست؟</td></tr>
+                <tr><td>ROC-AUC</td><td>Ranking کلی Positive vs Negative چقدر خوب است؟</td></tr>
+                <tr><td>PR-AUC</td><td>Ranking کلاس مثبت، مخصوصاً Rare Positive، چقدر خوب است؟</td></tr>
+                <tr><td>Log Loss</td><td>Probabilityهای مدل چقدر خوب‌اند؟</td></tr>
+                <tr><td>MCC</td><td>Association کلی Prediction و Truth، حتی با imbalance</td></tr>
+                <tr><td>Cohen's Kappa</td><td>Agreement بیشتر از chance چقدر است؟</td></tr>
+                <tr><td>Balanced Accuracy</td><td>عملکرد متوسط روی کلاس‌ها چقدر است؟</td></tr>
+                <tr><td>Top-K Accuracy</td><td>آیا جواب درست در K Prediction اول هست؟</td></tr>
+            </tbody>
+        </table>
+
+        <h3>60. Cheat Sheet — Regression</h3>
+        <table>
+            <thead><tr><th>Metric</th><th>وقتی مناسب است</th></tr></thead>
+            <tbody>
+                <tr><td>MAE</td><td>Absolute error و robustness</td></tr>
+                <tr><td>MSE</td><td>Penalize کردن شدید خطاهای بزرگ</td></tr>
+                <tr><td>RMSE</td><td>خطاهای بزرگ مهم + واحد اصلی</td></tr>
+                <tr><td>R²</td><td>مقایسه با Mean baseline</td></tr>
+                <tr><td>Adjusted R²</td><td>مقایسه Regression با تعداد Feature متفاوت</td></tr>
+                <tr><td>MAPE</td><td>Relative percentage error، بدون zero/near-zero مشکل</td></tr>
+                <tr><td>sMAPE</td><td>Relative error با denominator متقارن‌تر</td></tr>
+                <tr><td>MSLE</td><td>Target غیرمنفی و relative/multiplicative behavior</td></tr>
+                <tr><td>RMSLE</td><td>مشابه MSLE ولی در مقیاس RMS</td></tr>
+            </tbody>
+        </table>
+
+        <h3>61. اشتباهات رایج Senior Interview</h3>
+        <ul>
+            <li>❌ «Accuracy همیشه بهترین Metric است.» (غلط.)</li>
+            <li>❌ «F1 همیشه برای Imbalanced Data بهترین است.» (غلط. گاهی PR-AUC, MCC, Balanced Accuracy, Recall, Expected Cost مناسب‌ترند.)</li>
+            <li>❌ «AUC=0.95 یعنی مدل 95٪ درست پیش‌بینی می‌کند.» (غلط. AUC Accuracy نیست.)</li>
+            <li>❌ «R²=0.8 یعنی مدل 80٪ داده را پیش‌بینی کرده.» (غلط. R² یک معیار مبتنی بر Reduction in Squared Error نسبت به Mean Baseline است.)</li>
+            <li>❌ «MAPE همیشه بهترین Metric Forecasting است.» (غلط. Zero/near-zero و بعضی رفتارهای خاص آن مشکل‌سازند.)</li>
+            <li>❌ «Macro F1 برای هر مسئله Multi-Class بهتر است.» (غلط. اگر Classهای بزرگ‌تر Business importance بیشتری دارند، Weighted یا حتی Metricهای Class-specific ممکن است مناسب‌تر باشند.)</li>
+        </ul>
+
+        <h3>62. یک مثال Senior واقعی: Fraud Detection</h3>
+        <p>فرض کن:</p>
+        <div class="inner-box">Fraud = 0.2%</div>
+        <p>اولین Metricی که نباید بدون بررسی انتخاب کنی:</p>
+        <div class="inner-box">Accuracy</div>
+        <p>ممکن است:</p>
+        <div class="inner-box">Accuracy = 99.8%</div>
+        <p>ولی مدل همه را Normal اعلام کند.</p>
+        <p>Metricهایی که ممکن است بررسی کنیم:</p>
+        <div class="box"><div class="chart">PR-AUC
+Recall
+Precision
+F1
+MCC
+Balanced Accuracy
+ROC-AUC
+Log Loss
+Calibration
+Expected Cost</div></div>
+        <p>اما Metric اصلی را باید با Business تعیین کنیم.</p>
+        <p>مثلاً:</p>
+        <div class="inner-box">هدف: حداقل 90% Fraudها را پیدا کن و Precision حداقل 30% باشد.</div>
+        <p>در این حالت شاید معیار عملی:</p>
+        <div class="inner-box">Recall ≥ 90%</div>
+        <p>با:</p>
+        <div class="inner-box">Precision</div>
+        <p>در آن Constraint باشد.</p>
+        <p>این از یک:</p>
+        <div class="inner-box">single F1 score</div>
+        <p>Business-relevantتر است.</p>
+
+        <h3>63. مثال Credit Risk</h3>
+        <p>اگر Probability of Default می‌خواهی:</p>
+        <div class="inner-box">P(Default)</div>
+        <p>آن وقت:</p>
+        <div class="inner-box">Log Loss, Calibration, Brier Score, AUC, Expected Cost</div>
+        <p>همه ممکن است اهمیت داشته باشند.</p>
+        <p>چون Probability باید قابل اعتماد باشد.</p>
+
+        <h3>64. مثال Medical Screening</h3>
+        <p>هدف:</p>
+        <div class="inner-box">بیمار واقعی را از دست نده.</div>
+        <p>ممکن است:</p>
+        <div class="inner-box">Recall ≥ 95%</div>
+        <p>Constraint باشد.</p>
+        <p>بعد:</p>
+        <div class="inner-box">Specificity</div>
+        <p>را تا حد ممکن بالا ببری.</p>
+        <p>این Constraint-based evaluation از انتخاب صرفاً F1 بهتر است.</p>
+
+        <h3>65. مثال Search</h3>
+        <p>فرض کن Search Engine داری.</p>
+        <p>یک Metric مثل Accuracy عملاً بی‌معنی است.</p>
+        <p>هدف:</p>
+        <div class="inner-box">Top results should be relevant</div>
+        <p>پس:</p>
+        <div class="inner-box">NDCG@10, MRR, Recall@10, Precision@10</div>
+        <p>مناسب‌ترند.</p>
+
+        <h3>66. مهم‌ترین Mental Model این فصل</h3>
+        <div class="box">
+            <div class="chart">
+                 BUSINESS OBJECTIVE
+                         │
+                         ▼
+                   COST OF ERRORS
+                    /          \
+                   /            \
+                 FP              FN
+                  │              │
+                  ▼              ▼
+             Precision         Recall
+                  \              /
+                   \            /
+                    ▼          ▼
+                       F1 / Fβ
+                         │
+                         ▼
+                Threshold Selection
+                         │
+                         ▼
+             Final Operational Metric
+            </div>
+        </div>
+        <p>و اگر:</p>
+        <div class="inner-box">Class Imbalance</div>
+        <p>داشتی:</p>
+        <div class="box">
+            <div class="chart">
+Accuracy
+   ↓
+Questionable
+   │
+   ├── PR-AUC
+   ├── MCC
+   ├── Balanced Accuracy
+   ├── F1/Fβ
+   └── Cost-based Metrics
+            </div>
+        </div>
+
+        <h3>67. مهم‌ترین اصل Senior-Level</h3>
+        <p>Metric را از مدل انتخاب نکن؛ از تصمیم Business انتخاب کن.</p>
+        <p>یعنی اول نپرس:</p>
+        <div class="inner-box">«XGBoost دارم، چه Metricی بزنم؟»</div>
+        <p>اول بپرس:</p>
+        <div class="inner-box">«Business موفقیت را چگونه تعریف می‌کند؟»</div>
+        <p>مثلاً:</p>
+        <div class="inner-box">Missed Fraud Cost = $500, False Alarm Cost = $5</div>
+        <p>آن‌وقت Metric و Threshold باید این Asymmetry را منعکس کنند.</p>
+
+        <h3>68. اگر بخواهی جواب مصاحبه‌ای خیلی حرفه‌ای بدهی</h3>
+        <p>اگر بپرسند:</p>
+        <div class="inner-box">How do you choose an evaluation metric for a machine learning model?</div>
+        <p>جواب Senior:</p>
+        <div class="inner-box">I don't choose the metric based only on the model type. I start from the business objective and the cost of different errors. Then I consider the target structure, class imbalance, whether ranking or calibrated probabilities are required, and whether a decision threshold will be applied. For imbalanced classification, I may prioritize PR-AUC, recall, precision, Fβ, MCC, or cost-based metrics rather than accuracy. For regression, I choose between MAE, RMSE, log-based or percentage metrics based on the error distribution, outlier sensitivity, and whether absolute or relative error matters. I also evaluate the metric on a validation or cross-validation setup that reflects the production data distribution.</div>
+
+        <h2>🎯 خلاصه‌ی نهایی</h2>
+        <p>برای Senior ML، این جدول را باید واقعاً مفهومی بلد باشی:</p>
+        <div class="box">
+            <div class="chart">
+Classification
+│
+├── Accuracy
+│
+├── Precision ← FP مهم
+│
+├── Recall ← FN مهم
+│
+├── Specificity ← TN important
+│
+├── F1 ← Precision + Recall
+│
+├── Fβ ← قابل تنظیم
+│
+├── Macro/Micro/Weighted ← Multi-Class
+│
+├── ROC-AUC ← Ranking / TPR-FPR
+│
+├── PR-AUC ← Rare Positive
+│
+├── Log Loss ← Probability Quality
+│
+├── MCC ← Robust association / imbalance
+│
+├── Kappa ← Agreement beyond chance
+│
+├── Balanced Accuracy ← Class-balanced recall
+│
+└── Top-K ← Correct label in top K
+            </div>
+        </div>
+        <div class="box">
+            <div class="chart">
+Regression
+│
+├── MAE ← Robust absolute error
+│
+├── MSE ← Strong penalty for large errors
+│
+├── RMSE ← Same unit + outlier sensitive
+│
+├── R² ← Relative improvement over mean baseline
+│
+├── Adjusted R² ← Penalize unnecessary predictors
+│
+├── MAPE ← Relative percentage error
+│
+├── sMAPE ← Relative error / symmetric denominator
+│
+├── MSLE ← Log-space error
+│
+└── RMSLE ← RMSE in log-space
+            </div>
+        </div>
+        <p>و در نهایت مهم‌ترین زنجیره:</p>
+        <div class="formula">$$Business Objective \rightarrow Error Costs \rightarrow Metric \rightarrow Threshold \rightarrow Model Selection \rightarrow Production Monitoring$$</div>
+        <p>یعنی Metric فقط یک عدد برای گزارش در پایان Training نیست؛ Metric باید نشان دهد مدل چقدر به هدف واقعی سیستم نزدیک شده است.</p>
+    </div>
+</body>
+</html>

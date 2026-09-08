@@ -1,0 +1,2269 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Categorical Features · Senior ML</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js">
+    </script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}]});">
+    </script>
+    <style>
+        body {
+            background-color: #0d1117;
+            color: #e6edf3;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.8;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h1,
+        h2,
+        h3 {
+            color: #e6edf3;
+            text-align: right;
+            border-bottom: 1px solid #444;
+            padding-bottom: 15px;
+            margin-top: 50px;
+        }
+        p,
+        li {
+            text-align: right;
+        }
+
+        .box {
+            background-color: #21262d;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            color: #e6edf3;
+        }
+        .inner-box {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 10px;
+            border-right: 4px solid #58a6ff;
+        }
+        .inner-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .formula {
+            direction: ltr;
+            background-color: #000;
+            border: 1px solid #fff;
+            border-radius: 0;
+            padding: 20px;
+            margin: 20px auto;
+            width: fit-content;
+            max-width: 100%;
+            overflow-x: auto;
+            text-align: center;
+            font-size: 1.2em;
+            font-family: "Times New Roman", Times, serif;
+            color: #fff;
+        }
+
+        .chart {
+            direction: ltr;
+            text-align: left;
+            font-family: 'Courier New', monospace;
+            background-color: #161b22;
+            border-radius: 8px;
+            padding: 16px 20px;
+            overflow-x: auto;
+            white-space: pre;
+            border: 1px solid #30363d;
+            font-size: 0.9rem;
+            line-height: 1.7;
+            color: #c9d1d9;
+            margin: 16px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            direction: rtl;
+            margin-bottom: 20px;
+        }
+        th,
+        td {
+            border: 1px solid #444;
+            padding: 12px;
+            text-align: right;
+        }
+        th {
+            background-color: #21262d;
+        }
+        .code-inline {
+            font-family: monospace;
+            background: #161b22;
+            padding: 1px 8px;
+            border-radius: 4px;
+            border: 1px solid #30363d;
+            font-size: 0.85rem;
+            color: #58a6ff;
+            direction: ltr;
+            display: inline-block;
+        }
+        .table-wrap {
+            overflow-x: auto;
+        }
+        .highlight-warning {
+            border-right-color: #f0883e;
+        }
+        .highlight-success {
+            border-right-color: #3fb950;
+        }
+        .highlight-info {
+            border-right-color: #58a6ff;
+        }
+        .highlight-purple {
+            border-right-color: #d2a8ff;
+        }
+        .strikethrough {
+            text-decoration: line-through;
+            color: #8b949e;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <h1>🏷️ 13. Categorical Features — از پایه تا Senior ML</h1>
+
+        <p style="font-size:1.1rem;">این بخش از نظر Senior ML خیلی مهم است، چون categorical features در پروژه‌های واقعی—خصوصاً fintech، fraud detection، recommendation و customer analytics—می‌توانند هم بسیار قدرتمند باشند و هم یکی از بزرگ‌ترین منابع data leakage، overfitting و training-serving skew شوند.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>1. Categorical Feature چیست؟</h2>
+
+        <p>Categorical Feature متغیری است که مقادیر آن نماینده‌ی دسته‌ها / گروه‌ها / کلاس‌ها هستند.</p>
+
+        <p>مثلاً:</p>
+
+        <div class="box">
+            <p style="font-weight:bold;">country</p>
+            <div class="chart" style="background:#0d1117; border-color:#30363d;">Iran
+                Turkey
+                Azerbaijan
+                Germany</div>
+        </div>
+
+        <p>یا:</p>
+
+        <div class="box">
+            <p style="font-weight:bold;">payment_method</p>
+            <div class="chart" style="background:#0d1117; border-color:#30363d;">card
+                cash
+                crypto
+                bank_transfer</div>
+        </div>
+
+        <p>یا:</p>
+
+        <div class="box">
+            <p style="font-weight:bold;">device_type</p>
+            <div class="chart" style="background:#0d1117; border-color:#30363d;">mobile
+                desktop
+                tablet</div>
+        </div>
+
+        <p>برخلاف featureهای continuous:</p>
+
+        <div class="box" style="background:#0d1117;">
+            age = 35<br>
+            amount = 1520.7<br>
+            temperature = 23.4
+        </div>
+
+        <p>categorical feature معمولاً مجموعه‌ای از categoryها دارد.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>2. دو نوع مهم Categorical Feature</h2>
+
+        <div class="inner-box highlight-info">
+            <div class="inner-title">Nominal</div>
+            <p>ترتیب معنی‌داری ندارد.</p>
+            <p>مثلاً:</p>
+            <div class="chart" style="background:#0d1117; border-color:#30363d;">Iran
+                Turkey
+                Germany
+                France</div>
+            <p>هیچ‌کدام ذاتاً بزرگ‌تر یا کوچک‌تر از دیگری نیستند.</p>
+        </div>
+
+        <div class="inner-box highlight-success">
+            <div class="inner-title">Ordinal</div>
+            <p>ترتیب معنی‌دار است.</p>
+            <p>مثلاً:</p>
+            <div class="chart" style="background:#0d1117; border-color:#30363d;">Low
+                Medium
+                High</div>
+            <p>یا:</p>
+            <div class="chart" style="background:#0d1117; border-color:#30363d;">Bronze
+                Silver
+                Gold
+                Platinum</div>
+            <p>اینجا:</p>
+            <div class="formula">$$Low < Medium < High$$</div>
+            <p>معنی دارد.</p>
+        </div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>3. چرا نمی‌توانیم مستقیماً categorical را به مدل بدهیم؟</h2>
+
+        <p>فرض کن:</p>
+
+        <div class="box">
+            <p><strong>Country:</strong></p>
+            <ul>
+                <li>Iran</li>
+                <li>Turkey</li>
+                <li>Germany</li>
+            </ul>
+        </div>
+
+        <p>بعضی مدل‌ها نمی‌توانند مستقیماً string را پردازش کنند.</p>
+
+        <p>پس ممکن است بگوییم:</p>
+
+        <div class="box" style="background:#0d1117;">
+            Iran &rarr; 0<br>
+            Turkey &rarr; 1<br>
+            Germany &rarr; 2
+        </div>
+
+        <p>اما این کار یک مشکل مهم دارد.</p>
+
+        <p>مدل ممکن است تصور کند:</p>
+
+        <div class="formula">$$Germany > Turkey > Iran$$</div>
+
+        <p>در حالی که چنین ترتیبی وجود ندارد.</p>
+
+        <p>این مشکل پایه‌ای encodingهای ساده است.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>4. One-Hot Encoding</h2>
+
+        <p>یکی از استانداردترین روش‌ها:</p>
+
+        <div class="box">
+            <p><strong>Country</strong></p>
+            <div class="chart" style="background:#0d1117; border-color:#30363d;">Iran
+                Turkey
+                Germany</div>
+        </div>
+
+        <p>تبدیل می‌شود به:</p>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr><th>country_iran</th><th>country_turkey</th><th>country_germany</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>1</td><td>0</td><td>0</td></tr>
+                    <tr><td>0</td><td>1</td><td>0</td></tr>
+                    <tr><td>0</td><td>0</td><td>1</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>5. چرا One-Hot خوب است؟</h2>
+
+        <p>چون ordering مصنوعی ایجاد نمی‌کند.</p>
+
+        <p>مثلاً:</p>
+
+        <div class="box" style="background:#0d1117;">
+            Iran &rarr; [1,0,0]<br>
+            Turkey &rarr; [0,1,0]<br>
+            Germany &rarr; [0,0,1]
+        </div>
+
+        <p>هیچ مفهوم عددی:</p>
+
+        <div class="formula">$$Germany > Turkey$$</div>
+
+        <p>وجود ندارد.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>6. One-Hot و Linear Models</h2>
+
+        <p>برای مدل‌هایی مثل:</p>
+
+        <ul>
+            <li>Logistic Regression</li>
+            <li>Linear Regression</li>
+            <li>Linear SVM</li>
+        </ul>
+
+        <p>One-Hot بسیار رایج است.</p>
+
+        <p>مثلاً:</p>
+
+        <div class="formula">$$logit(p) = \beta_0 + \beta_1 I(Iran) + \beta_2 I(Turkey) + \beta_3 I(Germany)$$</div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>7. Dummy Variable Trap</h2>
+
+        <p>اگر intercept داشته باشیم و تمام categoryها را One-Hot کنیم، ممکن است perfect multicollinearity ایجاد شود.</p>
+
+        <p>مثلاً:</p>
+
+        <ul>
+            <li>Iran</li>
+            <li>Turkey</li>
+            <li>Germany</li>
+        </ul>
+
+        <p>و:</p>
+
+        <div class="formula">$$Iran + Turkey + Germany = 1$$</div>
+
+        <p>همیشه برقرار است.</p>
+
+        <p>پس یکی از dummyها را می‌توان حذف کرد:</p>
+
+        <ul>
+            <li>Iran</li>
+            <li>Turkey</li>
+        </ul>
+
+        <p>و:</p>
+
+        <div class="inner-box" style="background:#0d1117;">Germany به عنوان reference category در نظر گرفته می‌شود.</div>
+
+        <p>البته بسیاری از کتابخانه‌ها این موضوع را با تنظیمات مناسب مدیریت می‌کنند.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>8. One-Hot و Tree Models</h2>
+
+        <p>Tree models هم می‌توانند با One-Hot کار کنند.</p>
+
+        <p>مثلاً:</p>
+
+        <ul>
+            <li>country_iran</li>
+            <li>country_turkey</li>
+            <li>country_germany</li>
+        </ul>
+
+        <p>اما مشکل:</p>
+
+        <div class="inner-box highlight-warning">high cardinality</div>
+
+        <p>است.</p>
+
+        <p>مثلاً:</p>
+
+        <div class="inner-box">merchant_id = 2,000,000 unique values</div>
+
+        <p>One-Hot یعنی میلیون‌ها column.</p>
+
+        <p>این معمولاً بسیار بد است.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>9. مشکل اصلی One-Hot: High Cardinality</h2>
+
+        <p>فرض کن:</p>
+
+        <div class="inner-box">merchant_id</div>
+
+        <p>داریم و:</p>
+
+        <div class="formula">$$N = 1,000,000$$</div>
+
+        <p>merchant مختلف داریم.</p>
+
+        <p>One-Hot:</p>
+
+        <div class="formula">$$1,000,000$$</div>
+
+        <p>feature تولید می‌کند.</p>
+
+        <p>نتیجه:</p>
+
+        <ul>
+            <li>Memory &uarr;</li>
+            <li>Storage &uarr;</li>
+            <li>Training Cost &uarr;</li>
+            <li>Sparsity &uarr;</li>
+            <li>Overfitting Risk &uarr;</li>
+        </ul>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>10. Ordinal Encoding</h2>
+
+        <p>اگر categoryها واقعاً ترتیب داشته باشند:</p>
+
+        <ul>
+            <li>Low</li>
+            <li>Medium</li>
+            <li>High</li>
+        </ul>
+
+        <p>می‌توانیم:</p>
+
+        <div class="box" style="background:#0d1117;">
+            Low &rarr; 0<br>
+            Medium &rarr; 1<br>
+            High &rarr; 2
+        </div>
+
+        <p>استفاده کنیم.</p>
+
+        <p>اینجا ordering معنی‌دار است.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>11. نکته مهم Ordinal Encoding</h2>
+
+        <p>اگر feature:</p>
+
+        <div class="inner-box">Education:</div>
+
+        <ul>
+            <li>High School</li>
+            <li>Bachelor</li>
+            <li>Master</li>
+            <li>PhD</li>
+        </ul>
+
+        <p>باشد، ordinal encoding می‌تواند منطقی باشد.</p>
+
+        <p>اما اگر:</p>
+
+        <div class="inner-box">Browser:</div>
+
+        <ul>
+            <li>Chrome</li>
+            <li>Firefox</li>
+            <li>Safari</li>
+            <li>Edge</li>
+        </ul>
+
+        <p>باشد:</p>
+
+        <div class="box" style="background:#0d1117;">
+            Chrome &rarr; 0<br>
+            Firefox &rarr; 1<br>
+            Safari &rarr; 2<br>
+            Edge &rarr; 3
+        </div>
+
+        <p>اشتباه مفهومی است.</p>
+
+        <p>چون:</p>
+
+        <div class="formula">$$Chrome < Firefox$$</div>
+
+        <p>معنی ندارد.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>12. Label Encoding</h2>
+
+        <p>Label Encoding معمولاً categoryها را به integer تبدیل می‌کند.</p>
+
+        <p>مثلاً:</p>
+
+        <div class="box" style="background:#0d1117;">
+            Cat &rarr; 0<br>
+            Dog &rarr; 1<br>
+            Horse &rarr; 2
+        </div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>13. تفاوت Label Encoding و Ordinal Encoding</h2>
+
+        <p>از نظر ظاهر ممکن است یکسان باشند:</p>
+
+        <div class="box" style="background:#0d1117;">
+            A &rarr; 0<br>
+            B &rarr; 1<br>
+            C &rarr; 2
+        </div>
+
+        <p>ولی semantic متفاوت است.</p>
+
+        <div class="inner-box highlight-info">
+            <div class="inner-title">Ordinal Encoding</div>
+            <p>می‌گوییم: این categoryها واقعاً ordered هستند.</p>
+        </div>
+
+        <div class="inner-box highlight-warning">
+            <div class="inner-title">Label Encoding</div>
+            <p>اغلب صرفاً: category &rarr; integer ID</p>
+        </div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>14. Label Encoding برای Target</h2>
+
+        <p>یک کاربرد بسیار رایج Label Encoding:</p>
+
+        <p>target:</p>
+
+        <ul>
+            <li>fraud</li>
+            <li>legitimate</li>
+        </ul>
+
+        <p>تبدیل:</p>
+
+        <div class="box" style="background:#0d1117;">
+            legitimate &rarr; 0<br>
+            fraud &rarr; 1
+        </div>
+
+        <p>اینجا کاملاً منطقی است.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>15. مشکل Label Encoding برای Input Features</h2>
+
+        <p>اگر:</p>
+
+        <div class="inner-box">city:</div>
+
+        <ul>
+            <li>Tehran</li>
+            <li>Istanbul</li>
+            <li>Baku</li>
+        </ul>
+
+        <p>را:</p>
+
+        <div class="box" style="background:#0d1117;">
+            0<br>
+            1<br>
+            2
+        </div>
+
+        <p>کنیم، مدل‌های مختلف ممکن است این اعداد را به صورت numerical interpretation ببینند.</p>
+
+        <p>در مدل‌های linear:</p>
+
+        <div class="formula">$$2 > 1 > 0$$</div>
+
+        <p>به طور مستقیم وارد مدل می‌شود.</p>
+
+        <p>بنابراین برای nominal feature معمولاً مناسب نیست.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>16. Target Encoding</h2>
+
+        <p>یکی از قدرتمندترین encodingها.</p>
+
+        <p>ایده:</p>
+
+        <div class="inner-box">category را با statistic مربوط به target جایگزین کنیم.</div>
+
+        <p>فرض کن:</p>
+
+        <div class="inner-box">merchant</div>
+
+        <p>داریم و target:</p>
+
+        <div class="inner-box">fraud = 0/1</div>
+
+        <p>مثلاً:</p>
+
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>merchant</th><th>fraud rate</th></tr></thead>
+                <tbody>
+                    <tr><td>A</td><td>0.02</td></tr>
+                    <tr><td>B</td><td>0.15</td></tr>
+                    <tr><td>C</td><td>0.40</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <p>Target Encoding:</p>
+
+        <div class="box" style="background:#0d1117;">
+            A &rarr; 0.02<br>
+            B &rarr; 0.15<br>
+            C &rarr; 0.40
+        </div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>17. چرا Target Encoding قدرتمند است؟</h2>
+
+        <p>چون category را مستقیماً به:</p>
+
+        <div class="inner-box">predictive information</div>
+
+        <p>تبدیل می‌کند.</p>
+
+        <p>به جای اینکه:</p>
+
+        <ul>
+            <li>merchant_A</li>
+            <li>merchant_B</li>
+            <li>merchant_C</li>
+        </ul>
+
+        <p>داشته باشیم، یک feature داریم:</p>
+
+        <div class="inner-box">merchant_fraud_rate</div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>18. Target Encoding برای Regression</h2>
+
+        <p>فرض کن target:</p>
+
+        <div class="inner-box">house_price</div>
+
+        <p>است.</p>
+
+        <p>برای:</p>
+
+        <div class="inner-box">city</div>
+
+        <p>می‌توانیم mean target را محاسبه کنیم:</p>
+
+        <div class="box" style="background:#0d1117;">
+            Tehran &rarr; mean price = 8B<br>
+            Tabriz &rarr; mean price = 4B<br>
+            Shiraz &rarr; mean price = 5B
+        </div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>19. بزرگ‌ترین خطر Target Encoding</h2>
+
+        <div class="inner-box highlight-warning">
+            <div class="inner-title">🚨 Target Leakage</div>
+            <p>فرض کن:</p>
+            <div class="box" style="background:#0d1117;">merchant = A<br>fraud = 1</div>
+            <p>و می‌خواهیم encoding را بسازیم.</p>
+            <p>اگر target همان row را در محاسبه mean استفاده کنیم، target خودش مستقیماً وارد feature شده است.</p>
+            <p>یعنی:</p>
+            <div class="formula">$$X \leftarrow Y$$</div>
+            <p>و این بسیار خطرناک است.</p>
+        </div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>20. مثال Leakage</h2>
+
+        <p>فرض کن merchant فقط 2 transaction دارد:</p>
+
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>merchant</th><th>fraud</th></tr></thead>
+                <tbody>
+                    <tr><td>A</td><td>1</td></tr>
+                    <tr><td>A</td><td>0</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <p>اگر target encoding را روی کل data حساب کنیم:</p>
+
+        <div class="formula">$$mean = \frac{1 + 0}{2} = 0.5$$</div>
+
+        <p>حالا برای row اول:</p>
+
+        <div class="box" style="background:#0d1117;">
+            actual target = 1<br>
+            encoded feature = 0.5
+        </div>
+
+        <p>برای dataset بزرگ‌تر، این self-inclusion می‌تواند مدل را به شدت optimistic کند، خصوصاً برای categoryهای rare.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>21. بدترین حالت Target Encoding</h2>
+
+        <p>فرض کن merchant فقط یک record دارد:</p>
+
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>merchant</th><th>fraud</th></tr></thead>
+                <tbody>
+                    <tr><td>X</td><td>1</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <p>Target encoding:</p>
+
+        <div class="formula">$$X \to 1$$</div>
+
+        <p>پس مدل عملاً می‌بیند:</p>
+
+        <div class="box" style="background:#0d1117;">
+            merchant_X = 1<br>
+            target = 1
+        </div>
+
+        <p>این تقریباً memorization است.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>22. راه‌حل: Smoothing</h2>
+
+        <p>به جای استفاده مستقیم از:</p>
+
+        <div class="formula">$$\frac{\text{sum(target)}}{\text{count}}$$</div>
+
+        <p>از ترکیب:</p>
+
+        <ul>
+            <li>category mean</li>
+            <li>+ global mean</li>
+        </ul>
+
+        <p>استفاده می‌کنیم.</p>
+
+        <p>مثلاً:</p>
+
+        <div class="formula">$$TE(c) = \frac{n_c \mu_c + \alpha \mu}{n_c + \alpha}$$</div>
+
+        <p>که:</p>
+
+        <ul>
+            <li><span class="code-inline">n_c</span>: تعداد samples category</li>
+            <li><span class="code-inline">μ_c</span>: mean target category</li>
+            <li><span class="code-inline">μ</span>: global mean</li>
+            <li><span class="code-inline">α</span>: smoothing strength</li>
+        </ul>
+
+        <p>است.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>23. مثال Smoothing</h2>
+
+        <p>فرض کن:</p>
+
+        <div class="inner-box">Global fraud rate = 0.10</div>
+
+        <p>Merchant A:</p>
+
+        <div class="box" style="background:#0d1117;">
+            n = 100<br>
+            fraud rate = 0.20
+        </div>
+
+        <p>Merchant B:</p>
+
+        <div class="box" style="background:#0d1117;">
+            n = 1<br>
+            fraud rate = 1.00
+        </div>
+
+        <p>بدون smoothing:</p>
+
+        <div class="box" style="background:#0d1117;">
+            A &rarr; 0.20<br>
+            B &rarr; 1.00
+        </div>
+
+        <p>اما B فقط یک مشاهده دارد.</p>
+
+        <p>با smoothing:</p>
+
+        <div class="box" style="background:#0d1117;">
+            A &rarr; نزدیک 0.20<br>
+            B &rarr; نزدیک 0.10
+        </div>
+
+        <p>یعنی:</p>
+
+        <div class="inner-box">categoryهای rare را به global mean shrink می‌کنیم.</div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>24. Target Encoding و Cross-Fitting</h2>
+
+        <p>برای جلوگیری از leakage در training بسیار مهم است.</p>
+
+        <p>ایده:</p>
+
+        <div class="chart">Fold 1
+            Encoder trained on Fold 2+3+4+5
+            Transform Fold 1
+
+            Fold 2
+            Encoder trained on Fold 1+3+4+5
+            Transform Fold 2</div>
+
+        <p>و به همین ترتیب.</p>
+
+        <p>یعنی هر sample:</p>
+
+        <div class="inner-box">با target خودش encode نمی‌شود.</div>
+
+        <p>این را می‌توان به صورت:</p>
+
+        <div class="inner-box">Out-of-Fold Encoding</div>
+
+        <p>دید.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>25. Target Encoding در Validation/Test</h2>
+
+        <p>فرض کن:</p>
+
+        <ul>
+            <li>Train</li>
+            <li>Validation</li>
+            <li>Test</li>
+        </ul>
+
+        <p>داریم.</p>
+
+        <p>Encoder فقط روی Train fit می‌شود:</p>
+
+        <div class="chart">Train
+            ↓
+            fit target encoder
+            ↓
+            Validation → transform
+            Test       → transform</div>
+
+        <p>نباید target validation/test برای encoding استفاده شود.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>26. Target Encoding در Cross-Validation</h2>
+
+        <p>Pipeline صحیح:</p>
+
+        <div class="chart">Fold
+            │
+            ├── Train Fold
+            │      ↓
+            │   Fit Encoder
+            │      ↓
+            │   Transform Train
+            │
+            └── Validation Fold
+            ↓
+            Transform only</div>
+
+        <p>اگر encoder بیرون CV fit شود:</p>
+
+        <div class="inner-box highlight-warning">leakage ممکن است ایجاد شود.</div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>27. Frequency Encoding</h2>
+
+        <p>اینجا category را با frequency آن جایگزین می‌کنیم.</p>
+
+        <p>مثلاً:</p>
+
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Country</th><th>Count</th><th>Frequency</th></tr></thead>
+                <tbody>
+                    <tr><td>Iran</td><td>5000</td><td>0.50</td></tr>
+                    <tr><td>Turkey</td><td>3000</td><td>0.30</td></tr>
+                    <tr><td>Germany</td><td>2000</td><td>0.20</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <p>پس:</p>
+
+        <div class="box" style="background:#0d1117;">
+            Iran &rarr; 0.50<br>
+            Turkey &rarr; 0.30<br>
+            Germany &rarr; 0.20
+        </div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>28. Frequency Encoding چه اطلاعاتی می‌دهد؟</h2>
+
+        <p>در واقع:</p>
+
+        <div class="inner-box">category popularity / prevalence</div>
+
+        <p>را capture می‌کند.</p>
+
+        <p>مثلاً در fraud:</p>
+
+        <div class="inner-box">merchant_frequency</div>
+
+        <p>می‌تواند نشان دهد merchant چقدر common است.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>29. Frequency Encoding Leakage دارد؟</h2>
+
+        <p>معمولاً target leakage مستقیم ندارد، چون از Y استفاده نمی‌کند.</p>
+
+        <p>اما یک نکته مهم:</p>
+
+        <div class="inner-box highlight-warning">اگر frequency را از Train + Test محاسبه کنی، distribution test وارد preprocessing شده است.</div>
+
+        <p>این می‌تواند:</p>
+
+        <div class="inner-box">preprocessing leakage / transductive information</div>
+
+        <p>ایجاد کند.</p>
+
+        <p>روش امن:</p>
+
+        <div class="chart">fit frequency on train
+            transform validation/test</div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>30. Count Encoding</h2>
+
+        <p>Count Encoding مشابه Frequency Encoding است، با این تفاوت که به جای:</p>
+
+        <div class="formula">$$\frac{\text{count(category)}}{N}$$</div>
+
+        <p>از:</p>
+
+        <div class="formula">$$\text{count(category)}$$</div>
+
+        <p>استفاده می‌کنیم.</p>
+
+        <p>مثلاً:</p>
+
+        <div class="box" style="background:#0d1117;">
+            Iran &rarr; 5000<br>
+            Turkey &rarr; 3000<br>
+            Germany &rarr; 2000
+        </div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>31. Frequency vs Count</h2>
+
+        <p>در یک dataset ثابت:</p>
+
+        <div class="formula">$$Frequency = \frac{Count}{N}$$</div>
+
+        <p>پس اطلاعات مشابهی دارند.</p>
+
+        <p>اما scale متفاوت است.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>32. نکته Senior درباره Frequency/Count Encoding</h2>
+
+        <p>فرض کن:</p>
+
+        <div class="inner-box">merchant_id</div>
+
+        <p>داریم.</p>
+
+        <p>ممکن است:</p>
+
+        <div class="inner-box">merchant_frequency</div>
+
+        <p>تقریباً به مدل بگوید:</p>
+
+        <div class="inner-box">این merchant چقدر معروف / پرتکرار است.</div>
+
+        <p>این گاهی signal بسیار خوبی است.</p>
+
+        <p>اما:</p>
+
+        <div class="inner-box highlight-warning">frequency الزاماً quality یا risk را نشان نمی‌دهد.</div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>33. Binary Encoding</h2>
+
+        <p>Binary Encoding برای high-cardinality categorical features طراحی شده است.</p>
+
+        <p>فرض کن:</p>
+
+        <div class="inner-box">Category IDs:</div>
+
+        <div class="box" style="background:#0d1117;">
+            0<br>
+            1<br>
+            2<br>
+            3<br>
+            4
+        </div>
+
+        <p>ابتدا category را به integer تبدیل می‌کنیم، سپس integer را به binary representation تبدیل می‌کنیم.</p>
+
+        <p>مثلاً:</p>
+
+        <div class="box" style="background:#0d1117;">
+            0 &rarr; 000<br>
+            1 &rarr; 001<br>
+            2 &rarr; 010<br>
+            3 &rarr; 011<br>
+            4 &rarr; 100
+        </div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>34. مزیت Binary Encoding</h2>
+
+        <p>اگر:</p>
+
+        <div class="formula">$$K$$</div>
+
+        <p>category داشته باشیم، تعداد binary columns تقریباً:</p>
+
+        <div class="formula">$$O(\log_2 K)$$</div>
+
+        <p>است.</p>
+
+        <p>در حالی که One-Hot:</p>
+
+        <div class="formula">$$O(K)$$</div>
+
+        <p>ستون می‌سازد.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>35. مثال</h2>
+
+        <p>اگر:</p>
+
+        <div class="formula">$$1024 \text{ categories}$$</div>
+
+        <p>داشته باشیم:</p>
+
+        <p>One-Hot:</p>
+
+        <div class="formula">$$1024 \text{ columns}$$</div>
+
+        <p>Binary Encoding تقریباً:</p>
+
+        <div class="formula">$$\log_2(1024) = 10$$</div>
+
+        <p>column ایجاد می‌کند.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>36. مشکل Binary Encoding</h2>
+
+        <p>Binary Encoding یک representation عددی/ساختاری ایجاد می‌کند که ممکن است:</p>
+
+        <div class="inner-box highlight-warning">semantic relationship واقعی بین categoryها نداشته باشد.</div>
+
+        <p>پس این encoding همیشه بهتر از One-Hot نیست.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>37. Hash Encoding</h2>
+
+        <p>در Hash Encoding از یک hash function استفاده می‌کنیم.</p>
+
+        <p>مثلاً:</p>
+
+        <div class="box" style="background:#0d1117;">
+            merchant_A &rarr; hash &rarr; bucket 17<br>
+            merchant_B &rarr; hash &rarr; bucket 4<br>
+            merchant_C &rarr; hash &rarr; bucket 17
+        </div>
+
+        <p>در نتیجه:</p>
+
+        <div class="inner-box">categoryها به تعداد محدودی bucket نگاشت می‌شوند.</div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>38. Hash Encoding برای High Cardinality</h2>
+
+        <p>اگر:</p>
+
+        <div class="formula">$$10,000,000 \text{ categories}$$</div>
+
+        <p>داشته باشیم، می‌توانیم مثلاً:</p>
+
+        <div class="inner-box">1000 buckets</div>
+
+        <p>داشته باشیم.</p>
+
+        <p>پس memory بسیار کمتر می‌شود.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>39. Hash Collision</h2>
+
+        <p>مشکل مهم:</p>
+
+        <div class="box" style="background:#0d1117;">
+            A &rarr; bucket 17<br>
+            C &rarr; bucket 17
+        </div>
+
+        <p>دو category مختلف یک representation مشترک گرفته‌اند.</p>
+
+        <p>به این:</p>
+
+        <div class="inner-box">Hash Collision</div>
+
+        <p>می‌گوییم.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>40. آیا Hash Collision همیشه بد است؟</h2>
+
+        <div class="inner-box highlight-success">نه.</div>
+
+        <p>در بسیاری از سیستم‌های large-scale، trade-off قابل قبول است:</p>
+
+        <ul>
+            <li>Memory &darr;&darr;&darr;</li>
+            <li>Dimensionality &darr;&darr;&darr;</li>
+            <li>Exact category identity &darr;</li>
+        </ul>
+
+        <p>و مدل هنوز performance خوبی دارد.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>41. Hashing Trick</h2>
+
+        <p>Hashing Trick در سیستم‌های sparse و large-scale بسیار معروف است.</p>
+
+        <p>مثلاً:</p>
+
+        <ul>
+            <li>text</li>
+            <li>categorical IDs</li>
+            <li>URLs</li>
+            <li>tokens</li>
+        </ul>
+
+        <p>می‌توانند به فضای fixed-dimensional hash شوند.</p>
+
+        <p>مزیت مهم:</p>
+
+        <div class="inner-box">نیازی به ساخت vocabulary کامل نداریم.</div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>42. Native Categorical Handling</h2>
+
+        <p>بعضی الگوریتم‌ها categorical features را مستقیماً handle می‌کنند.</p>
+
+        <p>معروف‌ترین مثال:</p>
+
+        <div class="inner-box">CatBoost</div>
+
+        <p>که برای categorical features طراحی شده است.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>43. CatBoost</h2>
+
+        <p>CatBoost از روش‌های اختصاصی برای categorical features استفاده می‌کند و به‌خصوص:</p>
+
+        <div class="inner-box">high-cardinality categories</div>
+
+        <p>را بهتر از بسیاری از روش‌های naive مدیریت می‌کند.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>44. ایده اصلی CatBoost برای Categorical</h2>
+
+        <p>CatBoost از نوعی:</p>
+
+        <div class="inner-box">ordered target statistics</div>
+
+        <p>استفاده می‌کند.</p>
+
+        <p>نکته مهم آن:</p>
+
+        <div class="inner-box">ترتیب داده‌ها برای کاهش target leakage استفاده می‌شود.</div>
+
+        <p>یعنی به جای اینکه target statistic را از کل dataset برای یک sample بسازد، از اطلاعات قبلی/مناسب در ترتیب استفاده می‌کند.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>45. چرا CatBoost مهم است؟</h2>
+
+        <p>چون این مشکل را هدف قرار می‌دهد:</p>
+
+        <div class="chart">Categorical Feature
+            ↓
+            Target Statistics
+            ↓
+            Leakage</div>
+
+        <p>و سعی می‌کند encoding را به شکل leakage-aware انجام دهد.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>46. LightGBM و Categorical</h2>
+
+        <p>LightGBM نیز می‌تواند categorical features را به شکل native مدیریت کند، اما روش داخلی آن با CatBoost یکسان نیست.</p>
+
+        <p>در استفاده عملی باید:</p>
+
+        <ul>
+            <li>categorical columns را درست مشخص کنی</li>
+            <li>category representation مناسب باشد</li>
+            <li>training/serving consistency حفظ شود</li>
+        </ul>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>47. XGBoost</h2>
+
+        <p>XGBoost در نسخه‌های جدیدتر پشتیبانی native از categorical features دارد، اما setup و رفتار آن با CatBoost و LightGBM متفاوت است.</p>
+
+        <div class="inner-box highlight-warning">نکته Senior: «همه tree modelها categorical را یکسان handle می‌کنند» غلط است.</div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>48. مقایسه روش‌ها</h2>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr><th>Encoding</th><th>Cardinality</th><th>Leakage Risk</th><th>Dimension</th><th>مناسب برای</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>One-Hot</td><td>Low/Medium</td><td>Low</td><td>High</td><td>Linear models</td></tr>
+                    <tr><td>Ordinal</td><td>Low</td><td>Low</td><td>Low</td><td>Ordered categories</td></tr>
+                    <tr><td>Label</td><td>Low</td><td>Low</td><td>Low</td><td>IDs / target</td></tr>
+                    <tr><td>Target</td><td>High</td><td>High</td><td>Low</td><td>Strong predictive categories</td></tr>
+                    <tr><td>Frequency</td><td>High</td><td>Low*</td><td>Low</td><td>High-cardinality</td></tr>
+                    <tr><td>Count</td><td>High</td><td>Low*</td><td>Low</td><td>High-cardinality</td></tr>
+                    <tr><td>Binary</td><td>High</td><td>Low</td><td>Low</td><td>High-cardinality</td></tr>
+                    <tr><td>Hash</td><td>Very High</td><td>Low</td><td>Fixed</td><td>Large-scale</td></tr>
+                    <tr><td>Native</td><td>High</td><td>Algorithm-dependent</td><td>Efficient</td><td>CatBoost/LightGBM/XGBoost</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <p>* به شرط اینکه statistic با leakage مناسب محاسبه شود.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>49. انتخاب Encoding بر اساس Cardinality</h2>
+
+        <p>یک heuristic خوب:</p>
+
+        <div class="inner-box highlight-info">
+            <div class="inner-title">Low Cardinality</div>
+            <p>مثلاً:</p>
+            <ul>
+                <li>gender</li>
+                <li>device_type</li>
+                <li>payment_type</li>
+            </ul>
+            <p>معمولاً:</p>
+            <div class="inner-box" style="background:#0d1117;">One-Hot</div>
+        </div>
+
+        <div class="inner-box highlight-success">
+            <div class="inner-title">Medium Cardinality</div>
+            <p>مثلاً:</p>
+            <ul>
+                <li>city</li>
+                <li>merchant_category</li>
+            </ul>
+            <p>می‌توان بررسی کرد:</p>
+            <ul>
+                <li>One-Hot</li>
+                <li>Frequency</li>
+                <li>Target Encoding</li>
+                <li>Native categorical</li>
+            </ul>
+        </div>
+
+        <div class="inner-box highlight-warning">
+            <div class="inner-title">High Cardinality</div>
+            <p>مثلاً:</p>
+            <ul>
+                <li>merchant_id</li>
+                <li>customer_id</li>
+                <li>product_id</li>
+            </ul>
+            <p>می‌توان بررسی کرد:</p>
+            <ul>
+                <li>Target Encoding</li>
+                <li>Frequency/Count</li>
+                <li>Hashing</li>
+                <li>Binary Encoding</li>
+                <li>Native categorical handling</li>
+                <li>Entity Embeddings</li>
+            </ul>
+        </div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>50. ولی Cardinality تنها معیار نیست</h2>
+
+        <div class="inner-box highlight-warning">این نکته Senior مهم است.</div>
+
+        <p>دو feature هر دو:</p>
+
+        <div class="inner-box">100 categories</div>
+
+        <p>دارند.</p>
+
+        <p>یکی:</p>
+
+        <div class="inner-box">country</div>
+
+        <p>است.</p>
+
+        <p>دیگری:</p>
+
+        <div class="inner-box">merchant_id</div>
+
+        <p>است.</p>
+
+        <p>رفتار predictive آنها کاملاً متفاوت است.</p>
+
+        <p>پس باید <strong>domain</strong> را هم در نظر بگیری.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>51. Rare Categories</h2>
+
+        <p>فرض کن:</p>
+
+        <div class="inner-box">merchant_id</div>
+
+        <p>داریم و برخی merchantها فقط یک بار دیده شده‌اند.</p>
+
+        <p>اگر One-Hot کنیم:</p>
+
+        <div class="inner-box">merchant_X = 1</div>
+
+        <p>مدل ممکن است آن را memorize کند.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>52. Rare Category Grouping</h2>
+
+        <p>می‌توان categoryهای کم‌تکرار را به:</p>
+
+        <div class="inner-box">OTHER</div>
+
+        <p>تبدیل کرد.</p>
+
+        <p>مثلاً:</p>
+
+        <div class="box" style="background:#0d1117;">
+            A &rarr; A<br>
+            B &rarr; B<br>
+            C &rarr; C<br>
+            D &rarr; OTHER<br>
+            E &rarr; OTHER<br>
+            F &rarr; OTHER
+        </div>
+
+        <p>این می‌تواند:</p>
+
+        <ul>
+            <li>dimensionality را کم کند</li>
+            <li>overfitting را کاهش دهد</li>
+            <li>model robustness را افزایش دهد</li>
+        </ul>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>53. اما Rare ≠ Useless</h2>
+
+        <div class="inner-box highlight-warning">یک category ممکن است count = 10 داشته باشد ولی تمام 10 مورد fraud باشند.</div>
+
+        <p>پس حذف آن صرفاً بر اساس frequency می‌تواند signal ارزشمند را از بین ببرد.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>54. Unknown Categories</h2>
+
+        <p>در production ممکن است category جدیدی ببینی:</p>
+
+        <div class="box" style="background:#0d1117;">
+            Training:<br>
+            A<br>
+            B<br>
+            C
+        </div>
+
+        <div class="box" style="background:#0d1117;">
+            Production:<br>
+            D
+        </div>
+
+        <p>مدل باید برای:</p>
+
+        <div class="inner-box">D</div>
+
+        <p>رفتار مشخص داشته باشد.</p>
+
+        <p>مثلاً:</p>
+
+        <div class="inner-box">D &rarr; UNKNOWN</div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>55. این مسئله در One-Hot بسیار مهم است</h2>
+
+        <div class="inner-box highlight-warning">اگر encoder فقط categoryهای train را بشناسد و production category جدید بیاید، pipeline ممکن است fail کند.</div>
+
+        <p>پس باید strategy داشته باشی:</p>
+
+        <div class="inner-box">handle_unknown = ignore</div>
+
+        <p>یا:</p>
+
+        <div class="inner-box">UNKNOWN bucket</div>
+
+        <p>بسته به implementation.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>56. Training-Serving Skew در Encoding</h2>
+
+        <p>فرض کن training:</p>
+
+        <div class="box" style="background:#0d1117;">
+            Iran &rarr; 0<br>
+            Turkey &rarr; 1<br>
+            Germany &rarr; 2
+        </div>
+
+        <p>ولی production:</p>
+
+        <div class="box" style="background:#0d1117;">
+            Iran &rarr; 2<br>
+            Turkey &rarr; 0<br>
+            Germany &rarr; 1
+        </div>
+
+        <p>اگر mapping ثابت نباشد، مدل کاملاً خراب می‌شود.</p>
+
+        <p>بنابراین:</p>
+
+        <div class="inner-box">Encoder باید fit شده و artifact آن versioned شود.</div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>57. Category Mapping باید Persist شود</h2>
+
+        <p>در production:</p>
+
+        <div class="chart">Training
+            ↓
+            Fit Encoder
+            ↓
+            Save Encoder
+            ↓
+            Model Artifact
+            ↓
+            Production
+            ↓
+            Load same Encoder</div>
+
+        <p>نه اینکه encoder را دوباره از صفر بسازیم.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>58. Target Encoding و Unknown Category</h2>
+
+        <p>فرض کن:</p>
+
+        <div class="box" style="background:#0d1117;">
+            Train:<br>
+            A<br>
+            B<br>
+            C
+        </div>
+
+        <div class="box" style="background:#0d1117;">
+            Production:<br>
+            D
+        </div>
+
+        <p>برای D target statistics نداریم.</p>
+
+        <p>معمولاً باید fallback داشته باشیم، مثلاً:</p>
+
+        <div class="inner-box">D &rarr; global mean</div>
+
+        <p>یا یک smoothing strategy.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>59. Target Encoding برای Multiclass</h2>
+
+        <p>اگر:</p>
+
+        <div class="formula">$$Y \in \{A, B, C\}$$</div>
+
+        <p>باشد، می‌توان برای هر category probability مربوط به هر class را محاسبه کرد:</p>
+
+        <div class="box" style="background:#0d1117;">
+            merchant_X:<br>
+            P(class A) = 0.2<br>
+            P(class B) = 0.7<br>
+            P(class C) = 0.1
+        </div>
+
+        <p>در نتیجه یک category می‌تواند به چند feature تبدیل شود.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>60. Target Encoding برای Regression</h2>
+
+        <p>مثلاً:</p>
+
+        <div class="inner-box">product_category</div>
+
+        <p>و:</p>
+
+        <div class="inner-box">target = sales</div>
+
+        <p>می‌توان:</p>
+
+        <div class="formula">$$TE(category) = E[Y \mid category]$$</div>
+
+        <p>را محاسبه کرد.</p>
+
+        <p>ولی همچنان leakage و rare-category problem داریم.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>61. Target Encoding و Hierarchical Categories</h2>
+
+        <p>گاهی category hierarchy داریم:</p>
+
+        <div class="chart">Country
+            ↓
+            City
+            ↓
+            Merchant</div>
+
+        <p>اگر merchant خیلی rare باشد، می‌توان اطلاعات را از hierarchy قرض گرفت.</p>
+
+        <p>مثلاً:</p>
+
+        <div class="chart">Merchant statistic
+            ↓
+            City statistic
+            ↓
+            Country statistic
+            ↓
+            Global statistic</div>
+
+        <p>این نوع hierarchical smoothing می‌تواند در داده‌های sparse بسیار مفید باشد.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>62. Categorical Feature و Embedding</h2>
+
+        <p>در Deep Learning روش دیگری داریم:</p>
+
+        <div class="chart">category ID
+            ↓
+            Embedding Layer
+            ↓
+            dense vector</div>
+
+        <p>مثلاً:</p>
+
+        <div class="inner-box">merchant_A &rarr; [0.12, -0.83, 0.44, ...]</div>
+
+        <p>اگر:</p>
+
+        <div class="inner-box">embedding_dim = 32</div>
+
+        <p>باشد، هر category یک vector 32بعدی دارد.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>63. Embedding vs One-Hot</h2>
+
+        <div class="box" style="display:flex; flex-wrap:wrap; gap:16px; justify-content:space-around;">
+            <div style="flex:1; min-width:200px; background:#161b22; border-radius:8px; padding:14px; border:1px solid #30363d; text-align:center;">
+                <div style="font-weight:700; color:#58a6ff;">One-Hot</div>
+                <div class="chart" style="font-size:0.8rem; border-color:#30363d;">Merchant A
+                    → [1,0,0,0,0,...]</div>
+            </div>
+            <div style="flex:1; min-width:200px; background:#161b22; border-radius:8px; padding:14px; border:1px solid #30363d; text-align:center;">
+                <div style="font-weight:700; color:#3fb950;">Embedding</div>
+                <div class="chart" style="font-size:0.8rem; border-color:#30363d;">Merchant A
+                    → [0.12,-0.4,0.81,...]</div>
+            </div>
+        </div>
+
+        <p>Embedding می‌تواند representation فشرده و learned ایجاد کند.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>64. Embedding برای High Cardinality</h2>
+
+        <p>برای:</p>
+
+        <ul>
+            <li>customer_id</li>
+            <li>product_id</li>
+            <li>merchant_id</li>
+        </ul>
+
+        <p>در deep learning بسیار رایج است.</p>
+
+        <p>اما نکته مهم:</p>
+
+        <div class="inner-box highlight-warning">ID خودش الزاماً semantic feature نیست.</div>
+
+        <p>اگر customer ID فقط identifier باشد، embedding می‌تواند رفتارهای memorization ایجاد کند.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>65. Categorical Feature و Customer ID</h2>
+
+        <p>فرض کن:</p>
+
+        <div class="inner-box">customer_id</div>
+
+        <p>را وارد مدل کنیم.</p>
+
+        <p>مدل ممکن است یاد بگیرد:</p>
+
+        <div class="inner-box">customer_123 &rarr; high risk</div>
+
+        <p>اما اگر customer جدید بیاید:</p>
+
+        <div class="inner-box">customer_999</div>
+
+        <p>مدل representation مناسبی ندارد.</p>
+
+        <p>پس باید از خودت بپرسی:</p>
+
+        <div class="inner-box highlight-warning">آیا identity این entity واقعاً قابل generalization است؟</div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>66. Temporal Leakage با Category Statistics</h2>
+
+        <p>فرض کن:</p>
+
+        <div class="inner-box">merchant_fraud_rate</div>
+
+        <p>ساخته‌ای.</p>
+
+        <p>اگر prediction در:</p>
+
+        <div class="inner-box">t</div>
+
+        <p>باشد ولی fraud rate را از:</p>
+
+        <div class="inner-box">t+1</div>
+
+        <p>محاسبه کنی، future leakage داری.</p>
+
+        <p>Feature باید:</p>
+
+        <div class="formula">$$TE_t = E[Y_{past} \mid X]$$</div>
+
+        <p>باشد، نه:</p>
+
+        <div class="formula">$$E[Y_{future} \mid X]$$</div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>67. Categorical Features و Cross-Validation</h2>
+
+        <p>فرض کن Target Encoding داریم.</p>
+
+        <p><strong>غلط:</strong></p>
+
+        <div class="chart">Full Dataset
+            ↓
+            Target Encode
+            ↓
+            K-Fold CV</div>
+
+        <p>چون encoder قبل از CV target را دیده است.</p>
+
+        <p><strong>درست:</strong></p>
+
+        <div class="chart">Fold 1
+            Train Fold
+            ↓
+            Fit Encoder
+            ↓
+            Transform Validation Fold
+            ↓
+            Model</div>
+
+        <p>و همین برای تمام folds.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>68. Leakage در Pipeline</h2>
+
+        <p>یک pipeline حرفه‌ای:</p>
+
+        <div class="chart">Raw Data
+            │
+            ▼
+            Train Fold
+            │
+            ├── Missing Handler
+            ├── Rare Category Handler
+            ├── Encoder
+            ├── Feature Selector
+            │
+            ▼
+            Model
+            │
+            ▼
+            Validation Fold</div>
+
+        <p>هر transformation که از data statistics استفاده می‌کند باید:</p>
+
+        <div class="inner-box highlight-warning">داخل fold fit شود.</div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>69. Categorical Features و Imbalanced Target</h2>
+
+        <p>فرض کن:</p>
+
+        <ul>
+            <li>fraud = 1 &rarr; 1%</li>
+            <li>fraud = 0 &rarr; 99%</li>
+        </ul>
+
+        <p>و:</p>
+
+        <div class="inner-box">merchant</div>
+
+        <p>داریم.</p>
+
+        <p>Target Encoding ممکن است برای merchantهای rare مقدارهای بسیار extreme ایجاد کند.</p>
+
+        <p>مثلاً:</p>
+
+        <div class="box" style="background:#0d1117;">
+            merchant_X<br>
+            n = 2<br>
+            fraud = 2<br>
+            TE = 1.0
+        </div>
+
+        <p>در حالی که فقط دو نمونه داشته‌ایم.</p>
+
+        <p>اینجاست که:</p>
+
+        <div class="inner-box">smoothing + minimum support</div>
+
+        <p>خیلی مهم می‌شود.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>70. Minimum Frequency</h2>
+
+        <p>می‌توانیم بگوییم:</p>
+
+        <div class="box" style="background:#0d1117;">
+            if count(category) &lt; threshold:<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;category = OTHER
+        </div>
+
+        <p>یا:</p>
+
+        <div class="box" style="background:#0d1117;">
+            if count(category) &lt; threshold:<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;use smoothed statistic
+        </div>
+
+        <p>این یک trade-off است:</p>
+
+        <div class="inner-box highlight-warning">Rare Signal vs Overfitting</div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>71. Native Categorical vs Manual Encoding</h2>
+
+        <p>گاهی این pipeline:</p>
+
+        <div class="chart">Categorical
+            ↓
+            One-Hot
+            ↓
+            XGBoost</div>
+
+        <p>بهترین گزینه نیست.</p>
+
+        <p>ممکن است:</p>
+
+        <div class="chart">Categorical
+            ↓
+            CatBoost</div>
+
+        <p>بهتر باشد.</p>
+
+        <p>پس:</p>
+
+        <div class="inner-box">Encoding strategy باید با model architecture هماهنگ باشد.</div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>72. تصمیم‌گیری Senior</h2>
+
+        <p>به جای حفظ کردن اینکه:</p>
+
+        <div class="inner-box">«One-Hot همیشه خوب است»</div>
+
+        <p>این decision tree را در ذهن داشته باش:</p>
+
+        <div class="chart">Categorical Feature
+            │
+            ▼
+            Does it have natural order?
+            │
+            ┌───┴───┐
+            YES      NO
+            │        │
+            Ordinal   Cardinality?
+            │
+            ┌────┼──────────┐
+            Low  Medium     High
+            │      │          │
+            One-Hot  Compare   Target/Freq/
+            │        Hash/Binary/
+            │        Native/Embedding
+            ▼
+            Benchmark</div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>73. مهم‌ترین اشتباهات در Categorical Encoding</h2>
+
+        <div class="inner-box highlight-warning">
+            <div class="inner-title">❌ اشتباه 1</div>
+            <p>Nominal category را بدون دلیل به:</p>
+            <div class="box" style="background:#0d1117;">0, 1, 2, 3</div>
+            <p>تبدیل کنیم.</p>
+        </div>
+
+        <div class="inner-box highlight-warning">
+            <div class="inner-title">❌ اشتباه 2</div>
+            <p>Target Encoding روی کل dataset.</p>
+        </div>
+
+        <div class="inner-box highlight-warning">
+            <div class="inner-title">❌ اشتباه 3</div>
+            <p>Target Encoding بدون smoothing.</p>
+        </div>
+
+        <div class="inner-box highlight-warning">
+            <div class="inner-title">❌ اشتباه 4</div>
+            <p>Frequency Encoding با استفاده از test distribution.</p>
+        </div>
+
+        <div class="inner-box highlight-warning">
+            <div class="inner-title">❌ اشتباه 5</div>
+            <p>One-Hot برای میلیون‌ها category.</p>
+        </div>
+
+        <div class="inner-box highlight-warning">
+            <div class="inner-title">❌ اشتباه 6</div>
+            <p>نداشتن strategy برای unknown category.</p>
+        </div>
+
+        <div class="inner-box highlight-warning">
+            <div class="inner-title">❌ اشتباه 7</div>
+            <p>تفاوت mapping در train و production.</p>
+        </div>
+
+        <div class="inner-box highlight-warning">
+            <div class="inner-title">❌ اشتباه 8</div>
+            <p>استفاده از future target در category statistics.</p>
+        </div>
+
+        <div class="inner-box highlight-warning">
+            <div class="inner-title">❌ اشتباه 9</div>
+            <p>استفاده از customer_id بدون بررسی generalization.</p>
+        </div>
+
+        <div class="inner-box highlight-warning">
+            <div class="inner-title">❌ اشتباه 10</div>
+            <p>فقط به encoding نگاه کردن و model را در نظر نگرفتن.</p>
+        </div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>74. یک مثال واقعی Fintech</h2>
+
+        <p>فرض کن این data را داریم:</p>
+
+        <ul>
+            <li>customer_id</li>
+            <li>merchant_id</li>
+            <li>country</li>
+            <li>device_type</li>
+            <li>payment_method</li>
+            <li>merchant_category</li>
+            <li>amount</li>
+            <li>target = fraud</li>
+        </ul>
+
+        <div class="inner-box highlight-info">
+            <div class="inner-title">country</div>
+            <p>Low cardinality:</p>
+            <div class="inner-box" style="background:#0d1117;">One-Hot</div>
+        </div>
+
+        <div class="inner-box highlight-info">
+            <div class="inner-title">device_type</div>
+            <p>Low cardinality:</p>
+            <div class="inner-box" style="background:#0d1117;">One-Hot</div>
+        </div>
+
+        <div class="inner-box highlight-info">
+            <div class="inner-title">payment_method</div>
+            <p>Low/medium:</p>
+            <div class="inner-box" style="background:#0d1117;">One-Hot</div>
+        </div>
+
+        <div class="inner-box highlight-success">
+            <div class="inner-title">merchant_category</div>
+            <p>Medium:</p>
+            <div class="inner-box" style="background:#0d1117;">One-Hot / Target Encoding / Native</div>
+        </div>
+
+        <div class="inner-box highlight-warning">
+            <div class="inner-title">merchant_id</div>
+            <p>High:</p>
+            <ul>
+                <li>Target Encoding</li>
+                <li>Frequency Encoding</li>
+                <li>Hashing</li>
+                <li>Native categorical</li>
+            </ul>
+        </div>
+
+        <div class="inner-box highlight-warning">
+            <div class="inner-title">customer_id</div>
+            <p>باید با احتیاط بسیار زیاد بررسی شود:</p>
+            <ul>
+                <li>Historical aggregates</li>
+                <li>Customer behavior features</li>
+                <li>Embedding</li>
+                <li>Target statistics</li>
+            </ul>
+            <p>نه اینکه صرفاً:</p>
+            <div class="inner-box" style="background:#0d1117;">customer_id &rarr; integer</div>
+            <p>کنیم.</p>
+        </div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>75. مثال حرفه‌ای Target Encoding برای Fraud</h2>
+
+        <p>فرض کن:</p>
+
+        <div class="inner-box">Global fraud rate = 0.02</div>
+
+        <p>Merchant A:</p>
+
+        <div class="box" style="background:#0d1117;">
+            N = 10,000<br>
+            fraud rate = 0.03
+        </div>
+
+        <p>Merchant B:</p>
+
+        <div class="box" style="background:#0d1117;">
+            N = 3<br>
+            fraud rate = 1.00
+        </div>
+
+        <p>بدون smoothing:</p>
+
+        <div class="box" style="background:#0d1117;">
+            A &rarr; 0.03<br>
+            B &rarr; 1.00
+        </div>
+
+        <p>این خطرناک است.</p>
+
+        <p>با smoothing:</p>
+
+        <div class="formula">$$TE = \frac{n \mu_c + \alpha \mu}{n + \alpha}$$</div>
+
+        <p>Merchant B به global rate نزدیک‌تر می‌شود.</p>
+
+        <p>این:</p>
+
+        <div class="inner-box">Shrinkage</div>
+
+        <p>نام دارد.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>76. Target Encoding را به شکل Bayesian هم ببین</h2>
+
+        <p>یک نگاه عمیق‌تر:</p>
+
+        <p>Target Encoding با smoothing را می‌توان به مفهوم:</p>
+
+        <div class="inner-box">Bayesian shrinkage / prior</div>
+
+        <p>مرتبط کرد.</p>
+
+        <p>Global mean نقش prior را دارد و category-specific observations evidence هستند.</p>
+
+        <ul>
+            <li>برای categoryهای کم‌نمونه: <span class="code-inline">Posterior ≈ Prior</span></li>
+            <li>برای categoryهای پرتعداد: <span class="code-inline">Posterior ≈ Category Statistic</span></li>
+        </ul>
+
+        <p>این دیدگاه برای فهم اینکه چرا smoothing منطقی است، بسیار مفید است.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>77. Target Encoding و Out-of-Fold</h2>
+
+        <p>برای training dataset:</p>
+
+        <div class="inner-box">5 folds</div>
+
+        <p>مثلاً:</p>
+
+        <div class="box" style="background:#0d1117;">
+            Fold 1:<br>
+            encoder ← folds 2,3,4,5<br>
+            transform → fold 1
+        </div>
+
+        <div class="box" style="background:#0d1117;">
+            Fold 2:<br>
+            encoder ← folds 1,3,4,5<br>
+            transform → fold 2
+        </div>
+
+        <p>در نهایت:</p>
+
+        <div class="inner-box">OOF Target Encoded Features</div>
+
+        <p>می‌سازی.</p>
+
+        <p>برای validation/test:</p>
+
+        <div class="chart">encoder ← full training data
+            transform validation/test</div>
+
+        <p>این یکی از مهم‌ترین implementation details است.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>78. Categorical Encoding و Pipeline Production</h2>
+
+        <p>Pipeline باید تقریباً:</p>
+
+        <div class="chart">                 TRAINING
+            │
+            ▼
+            Raw Categories
+            │
+            ▼
+            Fit Encoder
+            │
+            ▼
+            Fit Model
+            │
+            ▼
+            Save Artifacts
+            │
+            │
+            ┌─────────┴─────────┐
+            │                   │
+            Encoder             Model
+            │                   │
+            └─────────┬─────────┘
+            │
+            ▼
+            SERVING
+            │
+            ▼
+            Raw Categories
+            │
+            ▼
+            Same Encoder
+            │
+            ▼
+            Model</div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>79. نکته بسیار مهم: Encoding باید Versioned باشد</h2>
+
+        <div class="inner-box highlight-warning">مثلاً: model_v17 و encoder_v17 باید compatible باشند.</div>
+
+        <p>اگر مدل با:</p>
+
+        <div class="inner-box">encoder_v17</div>
+
+        <p>train شده ولی production:</p>
+
+        <div class="inner-box">encoder_v18</div>
+
+        <p>استفاده کند، ممکن است prediction کاملاً خراب شود.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>80. چگونه Encoding را ارزیابی کنیم؟</h2>
+
+        <p>هیچ encodingای را صرفاً به دلیل محبوبیت انتخاب نکن.</p>
+
+        <p>مثلاً:</p>
+
+        <ul>
+            <li>One-Hot</li>
+            <li>Target Encoding</li>
+            <li>Frequency Encoding</li>
+            <li>CatBoost Native</li>
+        </ul>
+
+        <p>را با یک validation strategy مناسب مقایسه کن.</p>
+
+        <p>اما:</p>
+
+        <div class="inner-box highlight-warning">encoding را داخل validation pipeline ارزیابی کن، نه با leakage.</div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>81. Encoding و Metric</h2>
+
+        <p>اگر classification داری، مثلاً:</p>
+
+        <ul>
+            <li>ROC-AUC</li>
+            <li>PR-AUC</li>
+            <li>F1</li>
+            <li>Recall</li>
+            <li>Precision</li>
+            <li>Log Loss</li>
+        </ul>
+
+        <p>را بر اساس business objective بررسی کن.</p>
+
+        <p>مثلاً در fraud:</p>
+
+        <div class="inner-box">PR-AUC ممکن است از Accuracy بسیار informativeتر باشد.</div>
+
+        <p>پس encoding خوب:</p>
+
+        <div class="inner-box highlight-warning">encodingای نیست که صرفاً training accuracy را بالا ببرد.</div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>82. جدول تصمیم‌گیری نهایی</h2>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr><th>وضعیت</th><th>انتخاب‌های مناسب</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Nominal + Low Cardinality</td><td>One-Hot</td></tr>
+                    <tr><td>Ordinal</td><td>Ordinal Encoding</td></tr>
+                    <tr><td>Target Variable</td><td>Label Encoding</td></tr>
+                    <tr><td>High Cardinality + Target Signal</td><td>Target Encoding</td></tr>
+                    <tr><td>High Cardinality + Popularity Signal</td><td>Frequency/Count</td></tr>
+                    <tr><td>Extremely High Cardinality</td><td>Hash/Binary</td></tr>
+                    <tr><td>Deep Learning</td><td>Embedding</td></tr>
+                    <tr><td>CatBoost</td><td>Native Categorical</td></tr>
+                    <tr><td>LightGBM</td><td>Native Categorical</td></tr>
+                    <tr><td>Sparse Large-Scale</td><td>Hashing</td></tr>
+                    <tr><td>Rare Categories</td><td>Grouping/Smoothing</td></tr>
+                    <tr><td>Unknown Categories</td><td>UNKNOWN/Fallback</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>🧠 جمع‌بندی Senior</h2>
+
+        <div class="inner-box highlight-info">
+            <p>اگر در مصاحبه از تو بپرسند:</p>
+            <div class="inner-box" style="background:#0d1117; font-size:1.1rem;">How do you handle categorical variables?</div>
+            <p>جواب Senior نباید این باشد:</p>
+            <div class="inner-box" style="background:#0d1117;">"I use One-Hot Encoding."</div>
+            <p>جواب بهتر:</p>
+            <div style="background:#0d1117; padding:12px; border-radius:8px; border:1px solid #30363d; margin:8px 0;">
+                «اول cardinality، nominal/ordinal بودن، frequency distribution، unknown/rare categories و model family را بررسی می‌کنم. برای low-cardinality nominal features معمولاً One-Hot مناسب است؛ برای ordinal features از ordinal encoding استفاده می‌کنم. برای high-cardinality features می‌توانم target/frequency/count encoding، hashing یا native categorical handling را بررسی کنم. Target Encoding را حتماً با smoothing و leakage-safe cross-fitting/OOF strategy انجام می‌دهم و encoder را فقط روی training data fit می‌کنم. در production نیز mapping، unknown-category handling و training-serving consistency را version می‌کنم.»
+            </div>
+            <p>و اگر بخواهی واقعاً Senior جواب بدهی، یک نکته دیگر اضافه کن:</p>
+            <div class="inner-box" style="background:#0d1117; border-right-color:#f0883e;">
+                <p style="font-size:1.05rem;">The right categorical encoding is not selected independently of the model, validation strategy, cardinality, temporal structure, and serving constraints.</p>
+            </div>
+            <p style="margin-top:8px;">یعنی انتخاب encoding یک تصمیم isolated نیست؛ بخشی از کل ML pipeline design است.</p>
+        </div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>⭐ 10 نکته‌ای که باید برای مصاحبه حفظ باشی</h2>
+
+        <ol>
+            <li><strong>One-Hot</strong> → مناسب nominal + low cardinality.</li>
+            <li><strong>Ordinal</strong> → فقط وقتی ordering واقعی وجود دارد.</li>
+            <li><strong>Label Encoding</strong> → بیشتر برای target یا ID-like representations؛ برای nominal input در بسیاری از مدل‌ها خطرناک است.</li>
+            <li><strong>Target Encoding</strong> → قدرتمند ولی high leakage risk.</li>
+            <li><strong>Target Encoding</strong> → smoothing برای rare categories ضروری/بسیار مفید است.</li>
+            <li><strong>OOF / Cross-Fitting</strong> برای target encoding در training بسیار مهم است.</li>
+            <li><strong>Frequency/Count Encoding</strong> → مناسب high-cardinality و بدون استفاده مستقیم از target.</li>
+            <li><strong>Hash Encoding</strong> → مناسب مقیاس بسیار بزرگ، با trade-off مربوط به collision.</li>
+            <li><strong>Native categorical models</strong> مثل CatBoost می‌توانند encoding دستی را در بسیاری از موارد غیرضروری کنند.</li>
+            <li><strong>هر encoder باید train-only fit شود</strong> و همان artifact در production استفاده شود.</li>
+        </ol>
+
+        <div style="margin-top:30px; background:#161b22; border-radius:12px; border:1px solid #30363d; padding:20px;">
+            <p style="font-size:1.2rem; text-align:center; color:#f0f6fc;">و مهم‌ترین فرمول ذهنی این فصل:</p>
+
+            <div class="formula" style="background:#0d1117; border-color:#30363d; font-size:1.1rem;">Categorical Encoding = Cardinality + Semantics + Target Leakage + Model + CV + Production</div>
+
+            <div class="inner-box" style="border-right-color:#f0883e; margin-top:15px;">
+                <p style="text-align:center;">اگر این شش مورد را همزمان در نظر بگیری، نگاهت به categorical features از سطح Data Preprocessing به سطح Senior ML Engineering می‌رسد. 🎯</p>
+            </div>
+        </div>
+
+        <hr style="border:1px solid #444; margin:50px 0;">
+        <p style="text-align:center; color:#8b949e; font-size:0.85rem; padding:16px 0;">Categorical Features · Senior ML · تمام نکات ریز 🧠</p>
+
+    </div>
+
+</body>
+</html>

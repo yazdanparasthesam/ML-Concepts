@@ -1,0 +1,1330 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loss Functions - Senior ML Level</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}]});"></script>
+    <style>
+        body { background-color: #0d1117; color: #e6edf3; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.8; margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1, h2, h3 { color: #e6edf3; text-align: right; border-bottom: 1px solid #444; padding-bottom: 15px; margin-top: 50px; }
+        p, li { text-align: right; }
+        
+        /* Boxes */
+        .box { background-color: #21262d; border: 1px solid #30363d; border-radius: 8px; padding: 15px; margin: 15px 0; color: #e6edf3; }
+        .inner-box { background-color: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 15px; margin: 10px; }
+        .inner-title { font-weight: bold; margin-bottom: 5px; }
+
+        /* Formula Box */
+        .formula {
+            direction: ltr;
+            background-color: #000;
+            border: 1px solid #fff;
+            border-radius: 0;
+            padding: 20px;
+            margin: 20px auto;
+            width: fit-content;
+            max-width: 100%;
+            overflow-x: auto;
+            text-align: center;
+            font-size: 1.2em;
+            font-family: "Times New Roman", Times, serif;
+            color: #fff;
+        }
+
+        /* Charts / Flowcharts / ASCII Art */
+        .chart { direction: ltr; text-align: left; font-family: monospace; background-color: #21262d; border-radius: 8px; padding: 15px; overflow-x: auto; white-space: pre; border: 1px solid #444; }
+
+        /* Tables */
+        table { width: 100%; border-collapse: collapse; direction: rtl; margin-bottom: 20px; }
+        th, td { border: 1px solid #444; padding: 12px; text-align: right; }
+        th { background-color: #21262d; }
+        
+        .highlight { color: #58a6ff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 4. Loss Functions</h1>
+        <p><strong>Regression:</strong></p>
+        <ul>
+            <li>MSE</li>
+            <li>MAE</li>
+            <li>Huber Loss</li>
+            <li>Log-Cosh</li>
+            <li>Quantile Loss</li>
+        </ul>
+        <p><strong>Classification:</strong></p>
+        <ul>
+            <li>Binary Cross Entropy</li>
+            <li>Categorical Cross Entropy</li>
+            <li>Sparse Categorical Cross Entropy</li>
+            <li>Hinge Loss</li>
+            <li>Focal Loss</li>
+            <li>Label Smoothing</li>
+        </ul>
+        <p><strong>Ranking:</strong></p>
+        <ul>
+            <li>Pairwise Loss</li>
+            <li>Triplet Loss</li>
+            <li>Contrastive Loss</li>
+        </ul>
+        
+        <p>اینا رو کامل برام توضیح بده خیلی کامل باشه میخوام در حد senior ml بهم بگی با تمام نکات ریز </p>
+        <p>حتماً. این بخش Loss Functions از آن مباحثی است که برای سطح Senior ML باید فقط فرمولش را حفظ نکنی؛ باید بدانی:</p>
+        <ul>
+            <li>Loss دقیقاً چه چیزی را اندازه می‌گیرد؟</li>
+            <li>چرا این Loss برای این مسئله انتخاب شده؟</li>
+            <li>Gradient آن چه رفتاری دارد؟</li>
+            <li>به Outlier چه واکنشی دارد؟</li>
+            <li>با Probability و Logit چه ارتباطی دارد؟</li>
+            <li>چه ارتباطی با Maximum Likelihood دارد؟</li>
+            <li>چه زمانی باعث Vanishing/Exploding Gradient می‌شود؟</li>
+            <li>تفاوت Loss Function، Objective Function، Evaluation Metric چیست؟</li>
+            <li>در Imbalanced Learning، Ranking و Representation Learning چه Lossی مناسب است؟</li>
+        </ul>
+
+        <h2>🎯 4. Loss Functions — از پایه تا Senior ML</h2>
+
+        <h3>1. اول: Loss Function چیست؟</h3>
+        <p>فرض کن:</p>
+        <div class="formula">$$y$$</div>
+        <p>Target واقعی است و:</p>
+        <div class="formula">$$\hat{y}$$</div>
+        <p>Prediction مدل است.</p>
+        <p>Loss تابعی است که مشخص می‌کند:</p>
+        <div class="inner-box">Prediction مدل چقدر با Target واقعی فاصله دارد.</div>
+        <p>به‌صورت کلی:</p>
+        <div class="formula">$$L(y, \hat{y})$$</div>
+        <p>مدل تلاش می‌کند:</p>
+        <div class="formula">$$\min_{\theta} \frac{1}{N} \sum_{i=1}^{N} L(y_i, f_{\theta}(x_i))$$</div>
+        <p>را حل کند.</p>
+        <p>یعنی پارامترهای مدل:</p>
+        <div class="formula">$$\theta$$</div>
+        <p>را طوری پیدا کند که Loss کمینه شود.</p>
+
+        <h3>2. Loss Function vs Metric</h3>
+        <p>این تفاوت را در مصاحبه خیلی مهم است.</p>
+        <div class="inner-box"><div class="inner-title">Loss</div></div>
+        <p>برای Training / Optimization استفاده می‌شود.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Cross Entropy
+MSE
+Huber
+Triplet Loss</div></div>
+        
+        <div class="inner-box"><div class="inner-title">Metric</div></div>
+        <p>برای Evaluation استفاده می‌شود.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Accuracy
+F1
+ROC-AUC
+PR-AUC
+MAE
+RMSE
+NDCG
+MAP</div></div>
+        <p>اما گاهی یک Metric می‌تواند Loss هم باشد.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">MSE</div></div>
+        <p>هم می‌تواند Objective باشد و هم Evaluation Metric.</p>
+
+        <h3>3. چرا نمی‌توانیم همیشه همان Metric را Loss کنیم؟</h3>
+        <p>چون Loss باید معمولاً برای Optimization مناسب باشد.</p>
+        <p>مثلاً Accuracy:</p>
+        <div class="formula">$$Accuracy = \frac{Correct}{N}$$</div>
+        <p>تابعی تقریباً discrete و non-differentiable نسبت به پارامترهای مدل است.</p>
+        <p>Gradient-based optimization با آن راحت نیست.</p>
+        <p>بنابراین برای Classification معمولاً از:</p>
+        <div class="inner-box">CrossEntropy</div>
+        <p>استفاده می‌کنیم، نه Accuracy.</p>
+
+        <h2>بخش اول: Regression Losses</h2>
+
+        <h3>4. MSE — Mean Squared Error</h3>
+        <p>فرمول:</p>
+        <div class="formula">$$MSE = \frac{1}{N} \sum_{i=1}^{N} (y_i - \hat{y}_i)^2$$</div>
+        <p>Residual:</p>
+        <div class="formula">$$e_i = y_i - \hat{y}_i$$</div>
+        <p>پس:</p>
+        <div class="formula">$$MSE = \frac{1}{N} \sum e_i^2$$</div>
+
+        <h3>5. چرا Error را Square می‌کنیم؟</h3>
+        <p>دو دلیل مهم:</p>
+        <p>1. خطاهای مثبت و منفی همدیگر را خنثی نکنند</p>
+        <p>اگر:</p>
+        <div class="box"><div class="chart">+10
+-10</div></div>
+        <p>را جمع کنیم:</p>
+        <div class="formula">$$10 + (-10) = 0$$</div>
+        <p>در حالی که مدل خطای زیادی دارد.</p>
+        <p>با Square:</p>
+        <div class="formula">$$10^2 + (-10)^2 = 200$$</div>
+        
+        <p>2. خطاهای بزرگ را شدیداً جریمه کنیم</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Error = 2 → Loss = 4
+Error = 10 → Loss = 100</div></div>
+        <p>پس MSE به Outlier حساس است.</p>
+
+        <h3>6. Gradient MSE</h3>
+        <p>برای یک Sample:</p>
+        <div class="formula">$$L = (y - \hat{y})^2$$</div>
+        <p>نسبت به Prediction:</p>
+        <div class="formula">$$\frac{\partial L}{\partial \hat{y}} = 2(\hat{y} - y)$$</div>
+        <p>یعنی:</p>
+        <div class="formula">$$\nabla_{\hat{y}} L = 2(\hat{y} - y)$$</div>
+        <p>هرچه Error بزرگ‌تر باشد:</p>
+        <div class="inner-box">Gradient بزرگ‌تر است.</div>
+
+        <h3>7. مزیت MSE</h3>
+        <ul>
+            <li>Differentiable</li>
+            <li>Smooth</li>
+            <li>Optimization نسبتاً راحت</li>
+            <li>برای Gaussian noise مناسب</li>
+            <li>در Linear Regression بسیار رایج</li>
+        </ul>
+
+        <h3>8. MSE و Gaussian Assumption</h3>
+        <p>یک نکته Senior بسیار مهم:</p>
+        <p>اگر فرض کنیم:</p>
+        <div class="formula">$$y = f(x) + \epsilon$$</div>
+        <p>و:</p>
+        <div class="formula">$$\epsilon \sim N(0, \sigma^2)$$</div>
+        <p>باشد، Maximum Likelihood Estimation منجر به کمینه‌کردن Sum of Squared Errors می‌شود.</p>
+        <p>یعنی:</p>
+        <div class="formula">$$Gaussian Noise \Rightarrow MSE$$</div>
+        <p>به همین دلیل MSE فقط یک انتخاب تصادفی نیست؛ پشت آن یک مدل احتمالاتی وجود دارد.</p>
+
+        <h3>9. مشکل MSE</h3>
+        <p>Outlier:</p>
+        <div class="box"><div class="chart">Normal errors:
+1
+2
+3
+
+Outlier:
+100</div></div>
+        <p>MSE:</p>
+        <div class="formula">$$100^2 = 10000$$</div>
+        <p>بنابراین یک Outlier می‌تواند Loss را کاملاً تحت تأثیر قرار دهد.</p>
+
+        <h3>10. MAE — Mean Absolute Error</h3>
+        <p>فرمول:</p>
+        <div class="formula">$$MAE = \frac{1}{N} \sum |y_i - \hat{y}_i|$$</div>
+        <p>یا:</p>
+        <div class="formula">$$MAE = \frac{1}{N} \sum |e_i|$$</div>
+
+        <h3>11. رفتار MAE</h3>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Error = 2 → Loss = 2
+Error = 10 → Loss = 10</div></div>
+        <p>برخلاف MSE:</p>
+        <div class="box"><div class="chart">Error = 2 → 4
+Error = 10 → 100</div></div>
+        <p>بنابراین MAE نسبت به Outlier مقاوم‌تر است.</p>
+
+        <h3>12. Gradient MAE</h3>
+        <p>برای:</p>
+        <div class="formula">$$L = |y - \hat{y}|$$</div>
+        <p>داریم:</p>
+        <div class="formula">$$\frac{\partial L}{\partial \hat{y}} = sign(\hat{y} - y)$$</div>
+        <p>یعنی تقریباً:</p>
+        <div class="box"><div class="chart">Error > 0 → +1
+Error < 0 → -1</div></div>
+        <p>Magnitude Gradient تقریباً ثابت است.</p>
+
+        <h3>13. مشکل MAE</h3>
+        <p>MAE در:</p>
+        <div class="formula">$$e = 0$$</div>
+        <p>مشتق کلاسیک ندارد.</p>
+        <p>چون:</p>
+        <div class="inner-box">|e|</div>
+        <p>در صفر یک گوشه دارد.</p>
+        <p>در عمل Optimization با Subgradient انجام می‌شود.</p>
+
+        <h3>14. MSE vs MAE</h3>
+        <table>
+            <thead><tr><th>ویژگی</th><th>MSE</th><th>MAE</th></tr></thead>
+            <tbody>
+                <tr><td>Outlier sensitivity</td><td>زیاد</td><td>کمتر</td></tr>
+                <tr><td>Gradient</td><td>متناسب با Error</td><td>تقریباً ثابت</td></tr>
+                <tr><td>Smooth</td><td>بله</td><td>در صفر نه</td></tr>
+                <tr><td>Optimization</td><td>راحت</td><td>کمی سخت‌تر</td></tr>
+                <tr><td>Noise assumption</td><td>Gaussian</td><td>Laplace</td></tr>
+                <tr><td>Central tendency</td><td>Mean</td><td>Median</td></tr>
+            </tbody>
+        </table>
+
+        <h3>15. MAE و Laplace Distribution</h3>
+        <p>اگر:</p>
+        <div class="formula">$$\epsilon \sim Laplace(0, b)$$</div>
+        <p>باشد، Maximum Likelihood با کمینه‌کردن:</p>
+        <div class="formula">$$\sum |y - \hat{y}|$$</div>
+        <p>مرتبط می‌شود.</p>
+        <p>پس:</p>
+        <div class="box"><div class="chart">Gaussian noise → MSE
+Laplace noise → MAE</div></div>
+        <p>یک نکته بسیار مهم برای مصاحبه Senior.</p>
+
+        <h3>16. Huber Loss</h3>
+        <p>Huber Loss تلاش می‌کند:</p>
+        <div class="inner-box">مزایای MSE + Robustness شبیه MAE</div>
+        <p>را ترکیب کند.</p>
+        <p>فرمول:</p>
+        <div class="formula">$$L_{\delta}(e) = \begin{cases} \frac{1}{2}e^2 & |e| \le \delta \\ \delta(|e| - \frac{1}{2}\delta) & |e| > \delta \end{cases}$$</div>
+        <p>که:</p>
+        <div class="formula">$$e = y - \hat{y}$$</div>
+        <p>است.</p>
+
+        <h3>17. رفتار Huber</h3>
+        <p>اگر Error کوچک باشد:</p>
+        <div class="formula">$$|e| \le \delta$$</div>
+        <p>رفتار شبیه MSE:</p>
+        <div class="formula">$$L = \frac{1}{2}e^2$$</div>
+        <p>اگر Error بزرگ باشد:</p>
+        <div class="formula">$$|e| > \delta$$</div>
+        <p>رفتار شبیه MAE:</p>
+        <div class="formula">$$L \approx |e|$$</div>
+
+        <h3>18. چرا Huber بسیار مهم است؟</h3>
+        <p>چون:</p>
+        <div class="box"><div class="chart">Small Error
+     ↓
+Quadratic
+     ↓
+Stable smooth optimization
+
+Large Error
+     ↓
+Linear
+     ↓
+Less sensitive to outliers</div></div>
+
+        <h3>19. Gradient Huber</h3>
+        <p>برای Error کوچک:</p>
+        <div class="formula">$$\frac{\partial L}{\partial \hat{y}} \propto e$$</div>
+        <p>برای Error بزرگ:</p>
+        <div class="formula">$$\frac{\partial L}{\partial \hat{y}}$$</div>
+        <p>تقریباً محدود می‌شود.</p>
+        <p>یعنی Gradient مثل MSE بدون محدودیت رشد نمی‌کند.</p>
+        <p>این باعث Robustness بیشتر می‌شود.</p>
+
+        <h3>20. پارامتر δ در Huber</h3>
+        <div class="formula">$$\delta$$</div>
+        <p>نقطه‌ای است که Loss از:</p>
+        <div class="box"><div class="chart">Quadratic</div></div>
+        <p>به:</p>
+        <div class="box"><div class="chart">Linear</div></div>
+        <p>تغییر می‌کند.</p>
+        <p>δ کوچک</p>
+        <p>مدل سریع‌تر وارد رفتار MAE می‌شود.</p>
+        <p>δ بزرگ</p>
+        <p>مدل بیشتر شبیه MSE رفتار می‌کند.</p>
+
+        <h3>21. Log-Cosh Loss</h3>
+        <p>فرمول:</p>
+        <div class="formula">$$L(e) = \log(\cosh(e))$$</div>
+        <p>که:</p>
+        <div class="formula">$$e = y - \hat{y}$$</div>
+        <p>است.</p>
+
+        <h3>22. رفتار Log-Cosh</h3>
+        <p>برای Error کوچک:</p>
+        <div class="formula">$$\log(\cosh(e)) \approx \frac{e^2}{2}$$</div>
+        <p>یعنی شبیه MSE.</p>
+        <p>برای Error بزرگ:</p>
+        <div class="formula">$$\log(\cosh(e)) \approx |e| - \log 2$$</div>
+        <p>یعنی شبیه MAE.</p>
+        <p>پس:</p>
+        <div class="formula">$$LogCosh \approx MSE \text{ for small errors}$$</div>
+        <p>و:</p>
+        <div class="formula">$$LogCosh \approx MAE \text{ for large errors}$$</div>
+
+        <h3>23. Gradient Log-Cosh</h3>
+        <p>یک ویژگی بسیار جالب:</p>
+        <div class="formula">$$\frac{d}{de} \log(\cosh(e)) = \tanh(e)$$</div>
+        <p>و:</p>
+        <div class="formula">$$-1 < \tanh(e) < 1$$</div>
+        <p>پس Gradient bounded است.</p>
+        <p>این ویژگی می‌تواند در برابر Outlierها مفید باشد.</p>
+
+        <h3>24. Huber vs Log-Cosh</h3>
+        <p>هر دو:</p>
+        <div class="box"><div class="chart">Small error → quadratic-like
+Large error → linear-like</div></div>
+        <p>اما Huber:</p>
+        <div class="box"><div class="chart">Piecewise است
+δ دارد
+کنترل مستقیم transition دارد</div></div>
+        <p>Log-Cosh:</p>
+        <div class="box"><div class="chart">Smooth است
+مشتق‌پذیری بسیار خوب دارد
+Transition نرم است</div></div>
+
+        <h3>25. Quantile Loss</h3>
+        <p>این Loss بسیار مهم است، مخصوصاً در:</p>
+        <div class="box"><div class="chart">Risk modeling
+Demand forecasting
+Financial forecasting
+Prediction intervals
+Uncertainty estimation</div></div>
+
+        <h3>26. Quantile Regression چیست؟</h3>
+        <p>به جای Predict کردن:</p>
+        <div class="formula">$$E[Y|X]$$</div>
+        <p>می‌توانی Quantile خاصی را Predict کنی.</p>
+        <p>مثلاً:</p>
+        <div class="formula">$$Q_{0.9}(Y|X)$$</div>
+        <p>یعنی مقداری که تقریباً 90٪ مشاهدات زیر آن قرار می‌گیرند.</p>
+
+        <h3>27. Quantile Loss / Pinball Loss</h3>
+        <p>فرمول:</p>
+        <div class="formula">$$L_{\tau}(y, \hat{y}) = \begin{cases} \tau(y - \hat{y}) & y \ge \hat{y} \\ (1-\tau)(\hat{y} - y) & y < \hat{y} \end{cases}$$</div>
+        <p>که:</p>
+        <div class="formula">$$0 < \tau < 1$$</div>
+        <p>است.</p>
+
+        <h3>28. چرا Loss نامتقارن است؟</h3>
+        <p>فرض کن:</p>
+        <div class="formula">$$\tau = 0.9$$</div>
+        <p>اگر مدل Underpredict کند:</p>
+        <div class="formula">$$y > \hat{y}$$</div>
+        <p>جریمه:</p>
+        <div class="formula">$$0.9(y - \hat{y})$$</div>
+        <p>اما اگر Overpredict کند:</p>
+        <div class="formula">$$\hat{y} > y$$</div>
+        <p>جریمه:</p>
+        <div class="formula">$$0.1(\hat{y} - y)$$</div>
+        <p>پس Underprediction شدیدتر جریمه می‌شود.</p>
+
+        <h3>29. کاربرد Quantile Loss</h3>
+        <p>مثلاً Forecasting:</p>
+        <div class="box"><div class="chart">P10
+P50
+P90</div></div>
+        <p>می‌توانی سه مدل داشته باشی:</p>
+        <div class="formula">$$\tau = 0.1$$</div>
+        <div class="formula">$$\tau = 0.5$$</div>
+        <div class="formula">$$\tau = 0.9$$</div>
+        <p>و یک Prediction Interval تقریبی بسازی.</p>
+
+        <h3>30. نکته مهم Quantile Loss</h3>
+        <p>وقتی:</p>
+        <div class="formula">$$\tau = 0.5$$</div>
+        <p>باشد، Quantile Loss با Median مرتبط می‌شود.</p>
+        <p>یعنی:</p>
+        <div class="inner-box">Q_{0.5}</div>
+        <p>تقریباً Median است.</p>
+
+        <h2>بخش دوم: Classification Losses</h2>
+
+        <h3>31. Binary Cross Entropy</h3>
+        <p>برای Binary Classification:</p>
+        <div class="formula">$$y \in \{0, 1\}$$</div>
+        <p>و:</p>
+        <div class="formula">$$p = P(y=1|x)$$</div>
+        <p>فرمول:</p>
+        <div class="formula">$$L = -[y \log p + (1-y) \log(1-p)]$$</div>
+
+        <h3>32. اگر y=1 باشد</h3>
+        <p>Loss می‌شود:</p>
+        <div class="formula">$$L = -\log p$$</div>
+        <p>پس:</p>
+        <div class="box"><div class="chart">p=0.99 → Loss ≈ 0.01
+p=0.5  → Loss ≈ 0.69
+p=0.01 → Loss ≈ 4.61</div></div>
+        <p>یعنی اگر مدل با Confidence بالا اشتباه کند، Loss بسیار بزرگ می‌شود.</p>
+
+        <h3>33. اگر y=0 باشد</h3>
+        <div class="formula">$$L = -\log(1-p)$$</div>
+        <p>اگر:</p>
+        <div class="box"><div class="chart">p=0.01</div></div>
+        <p>Loss کم است.</p>
+        <p>ولی:</p>
+        <div class="box"><div class="chart">p=0.99</div></div>
+        <p>Loss بسیار بزرگ می‌شود.</p>
+
+        <h3>34. چرا Cross Entropy؟</h3>
+        <p>چون با:</p>
+        <div class="inner-box">Maximum Likelihood Estimation</div>
+        <p>مرتبط است.</p>
+        <p>اگر:</p>
+        <div class="formula">$$Y \sim Bernoulli(p)$$</div>
+        <p>باشد، Negative Log-Likelihood همان Binary Cross Entropy می‌شود.</p>
+        <p>پس:</p>
+        <div class="formula">$$BCE = Negative \ Log \ Likelihood$$</div>
+        <p>برای Bernoulli model.</p>
+
+        <h3>35. Logit چیست؟</h3>
+        <p>مدل معمولاً مستقیماً Probability تولید نمی‌کند.</p>
+        <p>ممکن است:</p>
+        <div class="formula">$$z$$</div>
+        <p>را تولید کند.</p>
+        <p>بعد:</p>
+        <div class="formula">$$p = \sigma(z)$$</div>
+        <p>که:</p>
+        <div class="formula">$$\sigma(z) = \frac{1}{1 + e^{-z}}$$</div>
+        <p>است.</p>
+
+        <h3>36. BCE with Logits</h3>
+        <p>در عمل بهتر است از:</p>
+        <div class="inner-box">BCEWithLogitsLoss</div>
+        <p>استفاده شود.</p>
+        <p>چرا؟</p>
+        <p>چون:</p>
+        <div class="box"><div class="chart">Sigmoid
++
+Log</div></div>
+        <p>را به شکل Numerically Stable ترکیب می‌کند.</p>
+        <p>این برای جلوگیری از مشکلات:</p>
+        <div class="box"><div class="chart">log(0)
+overflow
+underflow</div></div>
+        <p>مهم است.</p>
+
+        <h3>37. Binary Cross Entropy و Decision Threshold</h3>
+        <p>Loss با:</p>
+        <div class="inner-box">Probability quality</div>
+        <p>کار می‌کند.</p>
+        <p>اما Classification نهایی ممکن است با:</p>
+        <div class="inner-box">threshold = 0.5</div>
+        <p>انجام شود.</p>
+        <p>این دو را قاطی نکن.</p>
+        <p>مدل می‌تواند:</p>
+        <div class="inner-box">BCE</div>
+        <p>را minimize کند ولی threshold بهینه برای Business Objective الزاماً 0.5 نباشد.</p>
+
+        <h3>38. Categorical Cross Entropy</h3>
+        <p>برای Multi-Class Classification.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Cat
+Dog
+Horse</div></div>
+        <p>مدل:</p>
+        <div class="formula">$$p_1, p_2, p_3$$</div>
+        <p>تولید می‌کند و:</p>
+        <div class="formula">$$\sum p_i = 1$$</div>
+        <p>است.</p>
+
+        <h3>39. فرمول Categorical Cross Entropy</h3>
+        <p>اگر:</p>
+        <div class="formula">$$y_i$$</div>
+        <p>One-Hot Label باشد:</p>
+        <div class="formula">$$L = -\sum_{c=1}^{C} y_c \log p_c$$</div>
+        <p>اگر Class واقعی:</p>
+        <div class="box"><div class="chart">Dog</div></div>
+        <p>باشد:</p>
+        <div class="formula">$$y = [0, 1, 0]$$</div>
+        <p>آنگاه:</p>
+        <div class="formula">$$L = -\log p_{dog}$$</div>
+
+        <h3>40. Sparse Categorical Cross Entropy</h3>
+        <p>از نظر ریاضی هدف تقریباً همان Categorical Cross Entropy است.</p>
+        <p>تفاوت در Representation Label است.</p>
+        <div class="inner-box"><div class="inner-title">Categorical</div></div>
+        <div class="box"><div class="chart">[0, 1, 0]</div></div>
+        <div class="inner-box"><div class="inner-title">Sparse</div></div>
+        <div class="box"><div class="chart">1</div></div>
+        <p>یعنی:</p>
+        <div class="box"><div class="chart">Categorical CE
+→ One-Hot Labels
+
+Sparse Categorical CE
+→ Integer Class IDs</div></div>
+
+        <h3>41. چرا Sparse مهم است؟</h3>
+        <p>فرض کن:</p>
+        <div class="box"><div class="chart">Classes = 100,000
+Samples = 10M</div></div>
+        <p>ساخت One-Hot Matrix می‌تواند حافظه زیادی مصرف کند.</p>
+        <p>Sparse representation بسیار کارآمدتر است.</p>
+
+        <h3>42. Softmax</h3>
+        <p>برای Multi-Class Classification معمولاً:</p>
+        <div class="formula">$$p_i = \frac{e^{z_i}}{\sum_j e^{z_j}}$$</div>
+        <p>است.</p>
+        <p>که:</p>
+        <div class="formula">$$\sum_i p_i = 1$$</div>
+        <p>است.</p>
+
+        <h3>43. Softmax + Cross Entropy</h3>
+        <p>در بسیاری از Frameworkها بهتر است:</p>
+        <div class="inner-box">Softmax + CrossEntropy</div>
+        <p>به‌صورت fused/numerically stable implementation استفاده شود.</p>
+        <p>مثلاً:</p>
+        <div class="inner-box">CrossEntropyLoss</div>
+        <p>معمولاً logits را مستقیماً می‌گیرد.</p>
+
+        <h3>44. Hinge Loss</h3>
+        <p>Loss معروف در:</p>
+        <div class="inner-box">Support Vector Machines</div>
+        <p>فرمول:</p>
+        <div class="formula">$$L = \max(0, 1 - y f(x))$$</div>
+        <p>که:</p>
+        <div class="formula">$$y \in \{-1, +1\}$$</div>
+        <p>است.</p>
+
+        <h3>45. رفتار Hinge</h3>
+        <p>اگر:</p>
+        <div class="formula">$$y f(x) \ge 1$$</div>
+        <p>آنگاه:</p>
+        <div class="formula">$$L = 0$$</div>
+        <p>یعنی مدل نه‌تنها باید درست Classification کند، بلکه باید با Margin مناسب این کار را انجام دهد.</p>
+
+        <h3>46. مثال</h3>
+        <p>اگر:</p>
+        <div class="box"><div class="chart">y = +1
+f(x) = 2</div></div>
+        <p>آنگاه:</p>
+        <div class="formula">$$y f(x) = 2$$</div>
+        <p>و:</p>
+        <div class="formula">$$L = 0$$</div>
+        <p>اما:</p>
+        <div class="box"><div class="chart">f(x) = 0.5</div></div>
+        <p>آنگاه:</p>
+        <div class="formula">$$L = 1 - 0.5 = 0.5$$</div>
+        <p>حتی اگر Prediction درست باشد، هنوز Margin کافی نیست.</p>
+
+        <h3>47. Hinge Loss و Margin</h3>
+        <p>این نکته کلیدی است:</p>
+        <div class="inner-box">Hinge Loss فقط Correctness را تشویق نمی‌کند؛ Margin را هم تشویق می‌کند.</div>
+        <p>این تفاوت مهم آن با Cross Entropy است.</p>
+
+        <h3>48. Focal Loss</h3>
+        <p>برای:</p>
+        <div class="inner-box">Highly Imbalanced Classification</div>
+        <p>خیلی مهم است.</p>
+        <p>خصوصاً:</p>
+        <div class="box"><div class="chart">Object Detection
+Fraud Detection
+Rare-event detection</div></div>
+
+        <h3>49. ایده Focal Loss</h3>
+        <p>فرض کن:</p>
+        <div class="box"><div class="chart">Easy Negative:
+p(correct) = 0.99
+
+Hard Positive:
+p(correct) = 0.20</div></div>
+        <p>در Dataset بسیار Imbalanced، تعداد Easy Negatives می‌تواند بسیار زیاد باشد.</p>
+        <p>پس مدل ممکن است تحت تأثیر Easy Examples قرار بگیرد.</p>
+        <p>Focal Loss می‌گوید:</p>
+        <div class="inner-box">Easy examples را down-weight کن و روی Hard examples تمرکز کن.</div>
+
+        <h3>50. فرمول Focal Loss</h3>
+        <p>برای Binary Classification:</p>
+        <div class="formula">$$FL(p_t) = -\alpha_t (1 - p_t)^\gamma \log(p_t)$$</div>
+        <p>که:</p>
+        <div class="formula">$$p_t = \begin{cases} p & y=1 \\ 1-p & y=0 \end{cases}$$</div>
+        <p>است.</p>
+
+        <h3>51. نقش γ</h3>
+        <p>اگر:</p>
+        <div class="formula">$$\gamma = 0$$</div>
+        <p>باشد:</p>
+        <div class="formula">$$FL = -\alpha_t \log(p_t)$$</div>
+        <p>یعنی تقریباً Weighted Cross Entropy.</p>
+        <p>اگر:</p>
+        <div class="formula">$$\gamma > 0$$</div>
+        <p>باشد:</p>
+        <div class="box"><div class="chart">Easy examples
+↓
+Weight کاهش می‌یابد</div></div>
+
+        <h3>52. مثال Focal</h3>
+        <p>اگر:</p>
+        <div class="formula">$$p_t = 0.99$$</div>
+        <p>و:</p>
+        <div class="formula">$$\gamma = 2$$</div>
+        <p>آنگاه:</p>
+        <div class="formula">$$(1 - p_t)^2 = (0.01)^2 = 0.0001$$</div>
+        <p>پس Easy Example تقریباً Weight بسیار کمی می‌گیرد.</p>
+        <p>اما اگر:</p>
+        <div class="formula">$$p_t = 0.2$$</div>
+        <p>آنگاه:</p>
+        <div class="formula">$$(0.8)^2 = 0.64$$</div>
+        <p>پس Hard Example هنوز Weight زیادی دارد.</p>
+
+        <h3>53. α در Focal Loss</h3>
+        <div class="formula">$$\alpha_t$$</div>
+        <p>برای کنترل Class Imbalance است.</p>
+        <p>بنابراین:</p>
+        <div class="box"><div class="chart">γ → focus on hard examples
+α → class balancing</div></div>
+        <p>این دو را در مصاحبه جدا کن.</p>
+
+        <h3>54. مشکل احتمالی Focal Loss</h3>
+        <p>اگر γ را بیش از حد بزرگ کنی:</p>
+        <div class="box"><div class="chart">Easy examples
+→ almost ignored</div></div>
+        <p>ممکن است:</p>
+        <ul>
+            <li>Training سخت شود</li>
+            <li>Gradient مؤثر کم شود</li>
+            <li>Calibration بدتر شود</li>
+            <li>Model روی Hard Examples بیش از حد تمرکز کند</li>
+        </ul>
+        <p>بنابراین γ باید Tune شود.</p>
+
+        <h3>55. Label Smoothing</h3>
+        <p>Label Smoothing در اصل یک Loss مستقل کلاسیک مثل MSE نیست؛ بیشتر یک Modification/Regularization of Cross-Entropy Targets است.</p>
+        <p>مثلاً Target واقعی:</p>
+        <div class="box"><div class="chart">[0, 1, 0]</div></div>
+        <p>به:</p>
+        <div class="box"><div class="chart">[0.05, 0.90, 0.05]</div></div>
+        <p>تبدیل می‌شود.</p>
+
+        <h3>56. چرا Label Smoothing؟</h3>
+        <p>بدون Label Smoothing مدل ممکن است بیش از حد مطمئن شود:</p>
+        <div class="box"><div class="chart">P(correct) = 0.999999</div></div>
+        <p>Label Smoothing مدل را از:</p>
+        <div class="inner-box">Extreme Confidence</div>
+        <p>دور می‌کند.</p>
+
+        <h3>57. ایده ریاضی</h3>
+        <p>به جای:</p>
+        <div class="formula">$$y = 1$$</div>
+        <p>برای Class درست، Target را مثلاً:</p>
+        <div class="formula">$$y' = 1 - \epsilon$$</div>
+        <p>می‌کنیم.</p>
+        <p>و برای سایر کلاس‌ها مقدار کوچکی می‌دهیم.</p>
+
+        <h3>58. مزایای Label Smoothing</h3>
+        <p>می‌تواند:</p>
+        <ul>
+            <li>Overconfidence را کاهش دهد</li>
+            <li>Generalization را بهتر کند</li>
+            <li>Calibration را بهبود دهد</li>
+            <li>Overfitting را کاهش دهد</li>
+        </ul>
+        <p>اما همیشه تضمینی نیست.</p>
+
+        <h3>59. نکته مهم Label Smoothing</h3>
+        <p>Label Smoothing می‌تواند Probability calibration را تغییر دهد.</p>
+        <p>اگر برای کاربردت:</p>
+        <div class="inner-box">Highly calibrated probabilities</div>
+        <p>مهم باشد، باید اثر آن را جداگانه بررسی کنی.</p>
+
+        <h2>بخش سوم: Ranking / Representation Losses</h2>
+        <p>اینجا باید یک تفاوت مهم را بفهمی:</p>
+        <p>در Classification معمولاً می‌گویی:</p>
+        <div class="inner-box">این Sample متعلق به Class X است.</div>
+        <p>اما در Ranking می‌خواهی:</p>
+        <div class="inner-box">A باید بالاتر از B قرار بگیرد.</div>
+
+        <h3>60. Pairwise Loss</h3>
+        <p>در Ranking یک جفت داریم:</p>
+        <div class="box"><div class="chart">Query
+ ├── Positive item
+ └── Negative item</div></div>
+        <p>می‌خواهیم:</p>
+        <div class="formula">$$score(pos) > score(neg)$$</div>
+        <p>باشد.</p>
+
+        <h3>61. Pairwise Hinge / Margin Loss</h3>
+        <p>مثلاً:</p>
+        <div class="formula">$$L = \max(0, m - s_{pos} + s_{neg})$$</div>
+        <p>که:</p>
+        <div class="formula">$$m > 0$$</div>
+        <p>است.</p>
+        <p>می‌خواهیم:</p>
+        <div class="formula">$$s_{pos} \ge s_{neg} + m$$</div>
+        <p>باشد.</p>
+
+        <h3>62. مثال</h3>
+        <p>فرض کن:</p>
+        <div class="box"><div class="chart">Positive score = 0.9
+Negative score = 0.2
+Margin = 0.5</div></div>
+        <p>داریم:</p>
+        <div class="formula">$$0.9 - 0.2 = 0.7$$</div>
+        <p>چون:</p>
+        <div class="formula">$$0.7 > 0.5$$</div>
+        <p>Loss:</p>
+        <div class="formula">$$0$$</div>
+
+        <h3>63. اگر:</h3>
+        <div class="box"><div class="chart">Positive = 0.6
+Negative = 0.4
+Margin = 0.5</div></div>
+        <p>آنگاه:</p>
+        <div class="formula">$$0.6 - 0.4 = 0.2$$</div>
+        <p>و:</p>
+        <div class="formula">$$L = 0.5 - 0.2 = 0.3$$</div>
+
+        <h3>64. کاربرد Pairwise Loss</h3>
+        <div class="box"><div class="chart">Search Ranking
+Recommendation
+Information Retrieval
+Learning-to-Rank
+Product Ranking</div></div>
+
+        <h3>65. Triplet Loss</h3>
+        <p>بسیار مهم در:</p>
+        <div class="box"><div class="chart">Face Recognition
+Metric Learning
+Image Retrieval
+Person Re-identification
+Similarity Learning</div></div>
+        <p>سه Sample داریم:</p>
+        <div class="box"><div class="chart">Anchor
+Positive
+Negative</div></div>
+
+        <h3>66. هدف Triplet Loss</h3>
+        <p>می‌خواهیم:</p>
+        <div class="formula">$$d(A, P) < d(A, N)$$</div>
+        <p>باشد.</p>
+        <p>یعنی:</p>
+        <div class="box"><div class="chart">Anchor نزدیک Positive
+Anchor دور Negative</div></div>
+
+        <h3>67. فرمول Triplet Loss</h3>
+        <div class="formula">$$L = \max(0, d(A, P) - d(A, N) + m)$$</div>
+        <p>که:</p>
+        <div class="formula">$$m$$</div>
+        <p>Margin است.</p>
+
+        <h3>68. مثال</h3>
+        <p>فرض کن:</p>
+        <div class="box"><div class="chart">d(A,P) = 0.2
+d(A,N) = 0.8
+m = 0.5</div></div>
+        <p>پس:</p>
+        <div class="formula">$$0.2 - 0.8 + 0.5 = -0.1$$</div>
+        <p>بنابراین:</p>
+        <div class="formula">$$L = 0$$</div>
+
+        <h3>69. اگر Negative خیلی نزدیک باشد</h3>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">d(A,P) = 0.3
+d(A,N) = 0.5
+m = 0.5</div></div>
+        <p>آنگاه:</p>
+        <div class="formula">$$L = 0.3 - 0.5 + 0.5 = 0.3$$</div>
+        <p>پس مدل باید Embeddingها را بهتر جدا کند.</p>
+
+        <h3>70. Hard Negative Mining</h3>
+        <p>یک نکته بسیار مهم Senior در Triplet Loss.</p>
+        <p>فرض کن:</p>
+        <div class="box"><div class="chart">Anchor
+Positive
+Negative 1 → خیلی دور
+Negative 2 → خیلی دور
+Negative 3 → خیلی نزدیک</div></div>
+        <p>Negative 3 برای آموزش بسیار informativeتر است.</p>
+        <p>به این می‌گوییم:</p>
+        <div class="inner-box">Hard Negative</div>
+
+        <h3>71. چرا Hard Negative Mining مهم است؟</h3>
+        <p>اگر همیشه Negativeهای خیلی آسان انتخاب شوند:</p>
+        <div class="formula">$$d(A, N) >> d(A, P)$$</div>
+        <p>آنگاه:</p>
+        <div class="formula">$$L = 0$$</div>
+        <p>برای اکثر Tripletها.</p>
+        <p>پس Gradient کمی دریافت می‌کنی.</p>
+
+        <h3>72. اما Hard Negative بیش از حد هم خطرناک است</h3>
+        <p>اگر Negative واقعاً False Negative باشد:</p>
+        <div class="inner-box">A و N در واقع semantic مشابه‌اند</div>
+        <p>مدل را مجبور می‌کنی چیزهایی را که باید نزدیک باشند از هم دور کند.</p>
+        <p>این می‌تواند Training را خراب کند.</p>
+        <p>پس:</p>
+        <div class="inner-box">Hard Negative Mining باید با کیفیت داده و احتمال False Negative هماهنگ باشد.</div>
+
+        <h3>73. Contrastive Loss</h3>
+        <p>Contrastive Learning معمولاً با Pair کار می‌کند.</p>
+        <p>دو Sample داریم:</p>
+        <div class="box"><div class="chart">(x1, x2)</div></div>
+        <p>و Label:</p>
+        <div class="box"><div class="chart">Similar
+Dissimilar</div></div>
+
+        <h3>74. ایده Contrastive Loss</h3>
+        <p>اگر Similar:</p>
+        <div class="formula">$$d(x_1, x_2) \rightarrow 0$$</div>
+        <p>اگر Dissimilar:</p>
+        <div class="formula">$$d(x_1, x_2) \ge m$$</div>
+
+        <h3>75. فرمول کلاسیک Contrastive Loss</h3>
+        <p>یک فرم رایج:</p>
+        <div class="formula">$$L = y d^2 + (1-y) \max(0, m - d)^2$$</div>
+        <p>که مثلاً:</p>
+        <div class="box"><div class="chart">y=1 → Similar
+y=0 → Dissimilar</div></div>
+        <p>است.</p>
+
+        <h3>76. اگر Similar باشند</h3>
+        <div class="formula">$$y = 1$$</div>
+        <p>پس:</p>
+        <div class="formula">$$L = d^2$$</div>
+        <p>مدل تلاش می‌کند:</p>
+        <div class="formula">$$d \rightarrow 0$$</div>
+
+        <h3>77. اگر Dissimilar باشند</h3>
+        <div class="formula">$$y = 0$$</div>
+        <p>پس:</p>
+        <div class="formula">$$L = \max(0, m - d)^2$$</div>
+        <p>اگر:</p>
+        <div class="formula">$$d > m$$</div>
+        <p>Loss صفر است.</p>
+
+        <h3>78. Contrastive vs Triplet</h3>
+        <div class="inner-box"><div class="inner-title">Contrastive</div></div>
+        <p>دو Sample:</p>
+        <div class="box"><div class="chart">Anchor ↔ Other</div></div>
+        <div class="inner-box"><div class="inner-title">Triplet</div></div>
+        <p>سه Sample:</p>
+        <div class="box"><div class="chart">Anchor
+Positive
+Negative</div></div>
+        <p>Contrastive مستقیماً Similarity/Dissimilarity pair را یاد می‌گیرد.</p>
+        <p>Triplet یک relative ordering یاد می‌گیرد:</p>
+        <div class="formula">$$A-P < A-N$$</div>
+
+        <h3>79. Pairwise vs Triplet vs Contrastive</h3>
+        <table>
+            <thead><tr><th>Loss</th><th>ورودی</th><th>هدف</th></tr></thead>
+            <tbody>
+                <tr><td>Pairwise</td><td>Positive + Negative</td><td>Ranking</td></tr>
+                <tr><td>Contrastive</td><td>Pair + Similarity Label</td><td>Similar/Dissimilar</td></tr>
+                <tr><td>Triplet</td><td>Anchor + Positive + Negative</td><td>Relative Distance</td></tr>
+            </tbody>
+        </table>
+        <p>البته در ادبیات ML، اصطلاحات Pairwise/Contrastive گاهی با هم overlap دارند؛ مهم این است که objective دقیق را بررسی کنی، نه فقط اسم Loss را.</p>
+
+        <h3>80. Loss Functions و Gradient</h3>
+        <p>این قسمت برای Senior بسیار مهم است.</p>
+        <p>صرفاً نگو:</p>
+        <div class="inner-box">MSE برای Regression است.</div>
+        <p>باید بدانی Gradient چه می‌کند.</p>
+        <div class="inner-box">MSE</div>
+        <div class="formula">$$gradient \propto error$$</div>
+        <p>پس:</p>
+        <div class="box"><div class="chart">Large Error
+→ Large Gradient</div></div>
+        
+        <div class="inner-box">MAE</div>
+        <div class="box"><div class="chart">gradient ≈ constant magnitude</div></div>
+        <p>پس:</p>
+        <div class="box"><div class="chart">Outlier
+→ Gradient not proportional to huge error</div></div>
+        
+        <div class="inner-box">Huber</div>
+        <div class="box"><div class="chart">Small Error → MSE-like
+Large Error → MAE-like</div></div>
+        
+        <div class="inner-box">Log-Cosh</div>
+        <div class="box"><div class="chart">Gradient = tanh(error)</div></div>
+        <p>پس Gradient bounded است.</p>
+
+        <div class="inner-box">Cross Entropy</div>
+        <p>وقتی با logits استفاده شود، Gradient نسبت به logits ساختار بسیار ساده و مناسب دارد:</p>
+        <div class="formula">$$\frac{\partial L}{\partial z} = p - y$$</div>
+        <p>برای Softmax + Cross Entropy.</p>
+        <p>این یکی از دلایل مهم محبوبیت آن است.</p>
+
+        <h3>81. Loss Function و Probability Distribution</h3>
+        <p>یک Senior باید این ارتباط را بداند:</p>
+        <table>
+            <thead><tr><th>Assumption</th><th>Loss</th></tr></thead>
+            <tbody>
+                <tr><td>Gaussian</td><td>MSE</td></tr>
+                <tr><td>Laplace</td><td>MAE</td></tr>
+                <tr><td>Bernoulli</td><td>Binary Cross Entropy</td></tr>
+                <tr><td>Categorical</td><td>Categorical Cross Entropy</td></tr>
+                <tr><td>Quantile objective</td><td>Quantile / Pinball Loss</td></tr>
+            </tbody>
+        </table>
+        <p>یعنی Loss می‌تواند از یک:</p>
+        <div class="inner-box">Probabilistic Modeling Assumption</div>
+        <p>بیاید.</p>
+
+        <h3>82. Loss Function و Robustness</h3>
+        <p>اگر Outlier زیاد داری:</p>
+        <div class="inner-box">MSE</div>
+        <p>ممکن است انتخاب خوبی نباشد.</p>
+        <p>می‌توانی بررسی کنی:</p>
+        <div class="box"><div class="chart">MAE
+Huber
+Log-Cosh</div></div>
+        <p>اما این به معنای «همیشه Huber بهتر است» نیست.</p>
+        <p>باید ببینی Outlier:</p>
+        <div class="inner-box">Measurement Error است؟</div>
+        <p>یا:</p>
+        <div class="inner-box">یک Event واقعی و مهم است؟</div>
+        <p>اگر Outlier واقعاً Business-important باشد، شاید نباید آن را سرکوب کنی.</p>
+
+        <h3>83. Loss Function و Business Objective</h3>
+        <p>این یکی از مهم‌ترین نکات Senior است.</p>
+        <p>فرض کن در Forecasting:</p>
+        <div class="inner-box">Underprediction</div>
+        <p>هزینه بسیار بیشتری از:</p>
+        <div class="inner-box">Overprediction</div>
+        <p>دارد.</p>
+        <p>MSE الزاماً این asymmetric cost را مستقیماً مدل نمی‌کند.</p>
+        <p>Quantile Loss می‌تواند مناسب‌تر باشد.</p>
+
+        <h3>84. Loss Function و Class Imbalance</h3>
+        <p>اگر:</p>
+        <div class="box"><div class="chart">99.9% Negative
+0.1% Positive</div></div>
+        <p>باشد، BCE ساده ممکن است تحت تأثیر Negativeهای فراوان قرار گیرد.</p>
+        <p>راهکارها:</p>
+        <div class="box"><div class="chart">Weighted BCE
+Focal Loss
+Sampling strategies
+Class-balanced approaches</div></div>
+        <p>اما باید مراقب Calibration و تغییر Distribution باشی.</p>
+
+        <h3>85. Weighted Cross Entropy</h3>
+        <p>مثلاً:</p>
+        <div class="formula">$$L = -w_y \log p_y$$</div>
+        <p>اگر Class مثبت مهم‌تر باشد:</p>
+        <div class="inner-box">Positive weight ↑</div>
+        <p>Loss مربوط به Positive بیشتر می‌شود.</p>
+
+        <h3>86. Weighted Loss vs Focal Loss</h3>
+        <div class="inner-box">Weighted CE</div>
+        <p>به Class وزن می‌دهد:</p>
+        <div class="box"><div class="chart">Class-level weighting</div></div>
+        <div class="inner-box">Focal Loss</div>
+        <p>به علاوه‌ی Class weighting:</p>
+        <div class="box"><div class="chart">Example-level difficulty weighting</div></div>
+        <p>دارد.</p>
+        <p>به‌صورت مفهومی:</p>
+        <div class="box"><div class="chart">α → Which class?
+γ → How difficult is this example?</div></div>
+
+        <h3>87. Loss vs Optimization</h3>
+        <div class="inner-box">Loss</div>
+        <p>می‌گوید:</p>
+        <div class="inner-box">چه چیزی را می‌خواهیم minimize کنیم.</div>
+        <div class="inner-box">Optimizer</div>
+        <p>می‌گوید:</p>
+        <div class="inner-box">چگونه پارامترها را تغییر دهیم.</div>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Loss:
+Cross Entropy
+
+Optimizer:
+Adam</div></div>
+        <p>یا:</p>
+        <div class="box"><div class="chart">Loss:
+MSE
+
+Optimizer:
+SGD</div></div>
+
+        <h3>88. Objective Function</h3>
+        <p>گاهی Objective شامل چند Loss است.</p>
+        <p>مثلاً:</p>
+        <div class="formula">$$L_{total} = L_{task} + \lambda L_{regularization}$$</div>
+        <p>مثلاً:</p>
+        <div class="formula">$$L = CrossEntropy + \lambda ||W||_2^2$$</div>
+        <p>پس:</p>
+        <div class="box"><div class="chart">Task Loss
++
+Regularization
+=
+Training Objective</div></div>
+
+        <h3>89. Multi-Task Learning</h3>
+        <p>فرض کن مدل همزمان:</p>
+        <div class="inner-box">Classification + Regression</div>
+        <p>انجام می‌دهد.</p>
+        <p>می‌توانی داشته باشی:</p>
+        <div class="formula">$$L = \lambda_1 L_{classification} + \lambda_2 L_{regression}$$</div>
+        <p>مثلاً:</p>
+        <div class="formula">$$L = CE + \lambda MSE$$</div>
+
+        <h3>90. مشکل Loss Weighting</h3>
+        <p>اگر:</p>
+        <div class="box"><div class="chart">Classification Loss ≈ 0.5
+Regression Loss ≈ 500</div></div>
+        <p>باشد، Regression ممکن است Objective را dominate کند.</p>
+        <p>پس:</p>
+        <div class="inner-box">λ1, λ2</div>
+        <p>بسیار مهم می‌شوند.</p>
+        <p>این موضوع در Multi-Task Learning یک بحث جدی است.</p>
+
+        <h3>91. Loss Landscape</h3>
+        <p>Loss را می‌توان به‌عنوان سطحی در فضای پارامترها تصور کرد:</p>
+        <div class="box">
+            <div class="chart">
+Loss
+ ↑
+ │       /\ 
+ │      /  \
+ │  ___/    \____
+ │ /
+ └────────────────→ Parameters
+            </div>
+        </div>
+        <p>Optimizer تلاش می‌کند به Minimum برسد.</p>
+        <p>در Deep Learning:</p>
+        <div class="box"><div class="chart">High-dimensional
+Non-convex
+Loss landscape</div></div>
+        <p>داریم.</p>
+
+        <h3>92. Convex vs Non-Convex</h3>
+        <div class="inner-box">MSE + Linear Regression</div>
+        <p>معمولاً Objective نسبت به پارامترها Convex است.</p>
+        <div class="inner-box">Deep Neural Network</div>
+        <p>Loss landscape معمولاً Non-Convex است.</p>
+        <p>پس:</p>
+        <div class="box"><div class="chart">Local minima
+Saddle points
+Plateaus</div></div>
+        <p>می‌توانند مطرح باشند.</p>
+
+        <h3>93. Loss Scaling</h3>
+        <p>گاهی Lossها scaleهای بسیار متفاوتی دارند.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">MSE = 10,000
+CE = 0.5</div></div>
+        <p>در Multi-Task Training باید این را در نظر بگیری.</p>
+        <p>همچنین در Mixed Precision Training، Numerical Stability مهم می‌شود و تکنیک‌هایی مثل Loss Scaling ممکن است استفاده شوند.</p>
+
+        <h3>94. Loss و Calibration</h3>
+        <p>Cross Entropy معمولاً probability quality را هم آموزش می‌دهد.</p>
+        <p>ولی:</p>
+        <div class="inner-box">Low Loss</div>
+        <p>الزاماً:</p>
+        <div class="inner-box">Perfect Calibration</div>
+        <p>را تضمین نمی‌کند.</p>
+        <p>برای Calibration می‌توانی بعداً از:</p>
+        <div class="box"><div class="chart">Platt Scaling
+Isotonic Regression
+Temperature Scaling</div></div>
+        <p>استفاده کنی.</p>
+
+        <h3>95. Loss و Evaluation Metric نباید یکی فرض شوند</h3>
+        <p>مثلاً Fraud Detection:</p>
+        <div class="box"><div class="chart">Training:
+BCE / Focal Loss
+
+Evaluation:
+PR-AUC
+Recall @ fixed precision
+Precision @ fixed recall
+Expected business cost</div></div>
+        <p>ممکن است بسیار بهتر از این باشد که صرفاً:</p>
+        <div class="inner-box">Accuracy</div>
+        <p>را نگاه کنی.</p>
+
+        <h3>96. یک مثال کامل Senior</h3>
+        <p>فرض کن:</p>
+        <p>می‌خواهی تراکنش Fraud را تشخیص دهی.</p>
+        <p>داده:</p>
+        <div class="box"><div class="chart">Fraud = 0.1%
+Normal = 99.9%</div></div>
+        <p>اگر BCE استفاده کنی:</p>
+        <div class="inner-box">Easy negative examples</div>
+        <p>بسیار زیاد هستند.</p>
+        <p>ممکن است بررسی کنی:</p>
+        <div class="inner-box">گزینه 1</div>
+        <p>Weighted BCE</p>
+        <p>اگر Cost مثبت‌ها زیاد است.</p>
+        <div class="inner-box">گزینه 2</div>
+        <p>Focal Loss</p>
+        <p>اگر Easy Negatives بر Training غالب هستند.</p>
+        <p>اما سپس:</p>
+        <div class="inner-box">PR-AUC, Recall, Precision, Calibration, Business Cost</div>
+        <p>را بررسی می‌کنی.</p>
+        <p>نه فقط:</p>
+        <div class="inner-box">Training Loss</div>
+
+        <h3>97. یک مثال کامل Regression</h3>
+        <p>فرض کن:</p>
+        <p>پیش‌بینی قیمت خانه</p>
+        <p>اگر Noise تقریباً Gaussian باشد:</p>
+        <div class="inner-box">MSE</div>
+        <p>می‌تواند انتخاب خوبی باشد.</p>
+        <p>اگر Outlier زیاد داری:</p>
+        <div class="inner-box">Huber</div>
+        <p>را بررسی می‌کنی.</p>
+        <p>اگر می‌خواهی Median Prediction داشته باشی:</p>
+        <div class="inner-box">Quantile Loss τ=0.5</div>
+        <p>اگر می‌خواهی:</p>
+        <div class="box"><div class="chart">P10
+P50
+P90</div></div>
+        <p>را Predict کنی:</p>
+        <div class="inner-box">Quantile Loss</div>
+        <p>بسیار مناسب است.</p>
+
+        <h3>98. یک مثال Ranking</h3>
+        <p>فرض کن Search Engine داری:</p>
+        <div class="box"><div class="chart">Query:
+"best laptop"</div></div>
+        <p>و:</p>
+        <div class="box"><div class="chart">Laptop A → relevant
+Laptop B → irrelevant</div></div>
+        <p>می‌خواهی:</p>
+        <div class="inner-box">score(A) > score(B)</div>
+        <p>در اینجا:</p>
+        <div class="inner-box">Pairwise Loss</div>
+        <p>مناسب است.</p>
+        <p>اگر Embedding Model داری:</p>
+        <div class="box"><div class="chart">Query
+Positive document
+Negative document</div></div>
+        <p>می‌توانی:</p>
+        <div class="inner-box">Triplet Loss</div>
+        <p>یا انواع Contrastive Objectives را بررسی کنی.</p>
+
+        <h3>99. مهم‌ترین تفاوت‌های Regression Loss</h3>
+        <div class="box">
+            <div class="chart">
+MSE
+ ↓
+Strongly penalizes large errors
+
+MAE
+ ↓
+Robust to outliers
+
+Huber
+ ↓
+MSE for small errors
+MAE-like for large errors
+
+Log-Cosh
+ ↓
+Smooth robust alternative
+
+Quantile
+ ↓
+Asymmetric error costs
+and conditional quantile prediction
+            </div>
+        </div>
+
+        <h3>100. مهم‌ترین تفاوت‌های Classification</h3>
+        <div class="box">
+            <div class="chart">
+BCE
+ ↓
+Binary classification
+
+Categorical CE
+ ↓
+Multi-class + one-hot labels
+
+Sparse Categorical CE
+ ↓
+Multi-class + integer labels
+
+Hinge
+ ↓
+Margin-based classification
+
+Focal
+ ↓
+Hard-example focus + imbalance
+
+Label Smoothing
+ ↓
+Regularize confidence / soften targets
+            </div>
+        </div>
+
+        <h3>101. مهم‌ترین تفاوت‌های Ranking / Metric Learning</h3>
+        <div class="box">
+            <div class="chart">
+Pairwise
+ ↓
+A should rank above B
+
+Contrastive
+ ↓
+Similar pairs close
+Dissimilar pairs separated
+
+Triplet
+ ↓
+Positive closer than Negative
+            </div>
+        </div>
+
+        <h3>102. Cheat Sheet نهایی</h3>
+        <table>
+            <thead><tr><th>Loss</th><th>Problem</th><th>ایده اصلی</th><th>حساسیت به Outlier</th></tr></thead>
+            <tbody>
+                <tr><td>MSE</td><td>Regression</td><td>Square Error</td><td>🔴 زیاد</td></tr>
+                <tr><td>MAE</td><td>Regression</td><td>Absolute Error</td><td>🟢 کم</td></tr>
+                <tr><td>Huber</td><td>Regression</td><td>MSE + MAE behavior</td><td>🟢 کم‌تر</td></tr>
+                <tr><td>Log-Cosh</td><td>Regression</td><td>Smooth robust loss</td><td>🟢 کم‌تر</td></tr>
+                <tr><td>Quantile</td><td>Regression</td><td>Asymmetric errors / quantiles</td><td>🟡 وابسته</td></tr>
+                <tr><td>BCE</td><td>Binary</td><td>Bernoulli NLL</td><td>—</td></tr>
+                <tr><td>Categorical CE</td><td>Multi-class</td><td>Categorical NLL</td><td>—</td></tr>
+                <tr><td>Sparse CE</td><td>Multi-class</td><td>Same objective, integer labels</td><td>—</td></tr>
+                <tr><td>Hinge</td><td>Classification</td><td>Margin</td><td>—</td></tr>
+                <tr><td>Focal</td><td>Imbalanced Classification</td><td>Hard examples</td><td>—</td></tr>
+                <tr><td>Label Smoothing</td><td>Classification</td><td>Soft targets / regularization</td><td>—</td></tr>
+                <tr><td>Pairwise</td><td>Ranking</td><td>Relative ordering</td><td>—</td></tr>
+                <tr><td>Contrastive</td><td>Similarity</td><td>Similar close / dissimilar far</td><td>—</td></tr>
+                <tr><td>Triplet</td><td>Metric Learning</td><td>Positive closer than Negative</td><td>—</td></tr>
+            </tbody>
+        </table>
+
+        <h2>🧠 اگر برای Senior ML مصاحبه می‌خواهی، این سؤال‌ها را باید بتوانی جواب بدهی</h2>
+        
+        <h3>1.</h3>
+        <div class="inner-box">Why would you use Huber instead of MSE?</div>
+        <div class="inner-box">→ وقتی Outlier داری ولی همچنان رفتار smooth و quadratic برای خطاهای کوچک می‌خواهی.</div>
+
+        <h3>2.</h3>
+        <div class="inner-box">Why is MAE more robust than MSE?</div>
+        <div class="inner-box">→ چون خطا را خطی جریمه می‌کند، نه quadratic.</div>
+
+        <h3>3.</h3>
+        <div class="inner-box">Why is MSE related to Gaussian noise?</div>
+        <div class="inner-box">→ چون Minimizing Squared Error معادل Maximum Likelihood تحت Gaussian noise است.</div>
+
+        <h3>4.</h3>
+        <div class="inner-box">Why is MAE related to Laplace noise?</div>
+        <div class="inner-box">→ چون Negative Log-Likelihood توزیع Laplace متناسب با Absolute Error است.</div>
+
+        <h3>5.</h3>
+        <div class="inner-box">Why use Focal Loss?</div>
+        <div class="inner-box">→ برای کاهش contribution نمونه‌های بسیار آسان و تمرکز بیشتر روی Hard Examples، مخصوصاً در Class Imbalance.</div>
+
+        <h3>6.</h3>
+        <div class="inner-box">Difference between α and γ in Focal Loss?</div>
+        <div class="inner-box">α → Class weighting, γ → Hard−example focusing</div>
+
+        <h3>7.</h3>
+        <div class="inner-box">BCE vs Categorical CE?</div>
+        <div class="inner-box">BCE → Binary / independent Bernoulli outputs, Categorical CE → mutually exclusive multi-class output</div>
+
+        <h3>8.</h3>
+        <div class="inner-box">Categorical CE vs Sparse Categorical CE?</div>
+        <div class="inner-box">هدف ریاضی مشابه است؛ تفاوت اصلی در نحوه representation label است: One-Hot → Categorical CE, Integer ID → Sparse CE</div>
+
+        <h3>9.</h3>
+        <div class="inner-box">Why isn't Accuracy usually used as a training loss?</div>
+        <div class="inner-box">چون برای Gradient-based Optimization مناسب نیست و نسبت به تغییرات کوچک در prediction رفتار differentiable مناسبی ندارد.</div>
+
+        <h3>10.</h3>
+        <div class="inner-box">Triplet Loss vs Contrastive Loss?</div>
+        <div class="inner-box">Contrastive → pair-based similarity learning, Triplet → relative distance/order among anchor-positive-negative</div>
+
+        <h3>11.</h3>
+        <div class="inner-box">What does Quantile Loss give you?</div>
+        <div class="inner-box">به جای صرفاً Mean Prediction، می‌تواند Conditional Quantile مثل Q_{0.1}, Q_{0.5}, Q_{0.9} را یاد بگیرد.</div>
+
+        <h3>12.</h3>
+        <div class="inner-box">Is the lowest training loss always the best model?</div>
+        <div class="inner-box">خیر. چون هدف اصلی Generalization است، نه صرفاً Training Loss پایین. و به همین دلیل است که تمام مباحث قبلی که با هم خواندیم—Train/Validation/Test، Cross-Validation، Leakage، Bias-Variance و Generalization—مستقیماً به Loss Function وصل می‌شوند.</div>
+    </div>
+</body>
+</html>

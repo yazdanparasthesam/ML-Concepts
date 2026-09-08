@@ -1,0 +1,1305 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Regularization - Senior ML Level</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}]});"></script>
+    <style>
+        body { background-color: #0d1117; color: #e6edf3; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.8; margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1, h2, h3 { color: #e6edf3; text-align: right; border-bottom: 1px solid #444; padding-bottom: 15px; margin-top: 50px; }
+        p, li { text-align: right; }
+        
+        /* Main Boxes */
+        .box { background-color: #21262d; border: 1px solid #30363d; border-radius: 8px; padding: 15px; margin: 15px 0; color: #e6edf3; }
+        .inner-box { background-color: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 15px; margin: 10px; }
+        .inner-title { font-weight: bold; margin-bottom: 5px; }
+
+        /* Formula Box */
+        .formula {
+            direction: ltr;
+            background-color: #000;
+            border: 1px solid #fff;
+            border-radius: 0;
+            padding: 15px;
+            margin: 20px auto;
+            width: fit-content;
+            max-width: 100%;
+            overflow-x: auto;
+            text-align: center;
+            font-size: 1.2em;
+            font-family: "Times New Roman", Times, serif;
+            color: #fff;
+        }
+
+        /* Charts / Flowcharts / ASCII Art */
+        .chart { direction: ltr; text-align: left; font-family: monospace; background-color: #21262d; border-radius: 8px; padding: 15px; overflow-x: auto; white-space: pre; border: 1px solid #444; }
+
+        /* Tables */
+        table { width: 100%; border-collapse: collapse; direction: rtl; }
+        th, td { border: 1px solid #444; padding: 12px; text-align: right; }
+        th { background-color: #21262d; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧮 8. Regularization</h1>
+        <ul>
+            <li>L1 Regularization</li>
+            <li>L2 Regularization</li>
+            <li>Elastic Net</li>
+            <li>Weight Decay</li>
+            <li>Dropout</li>
+            <li>Early Stopping</li>
+            <li>Data Augmentation</li>
+            <li>Noise Injection</li>
+            <li>Label Smoothing</li>
+            <li>Max-Norm Constraint</li>
+        </ul>
+        <p><strong>باید ارتباطش را با این مفاهیم بفهمی</strong>: Bias, Variance, Overfitting, Generalization</p>
+
+        <p>حتماً. این بخش Regularization از آن مباحثی است که در سطح Junior معمولاً با «L1 و L2 برای جلوگیری از Overfitting هستند» تمام می‌شود، اما در سطح Senior ML باید دقیقاً بفهمی:</p>
+        <ul>
+            <li>Regularization چه مشکلی را حل می‌کند؟</li>
+            <li>چگونه Bias و Variance را تغییر می‌دهد؟</li>
+            <li>L1 و L2 دقیقاً چه تفاوتی دارند؟</li>
+            <li>چرا L1 می‌تواند Feature Selection انجام دهد؟</li>
+            <li>Weight Decay چه تفاوتی با L2 دارد؟</li>
+            <li>Dropout چرا Regularization محسوب می‌شود؟</li>
+            <li>Early Stopping از نظر ریاضی چه ارتباطی با Regularization دارد؟</li>
+            <li>Data Augmentation دقیقاً چه چیزی را regularize می‌کند؟</li>
+            <li>Label Smoothing چرا هم Regularization است و هم Calibration را تحت تأثیر قرار می‌دهد؟</li>
+            <li>چه زمانی Regularization زیاد باعث Underfitting می‌شود؟</li>
+        </ul>
+        <p>برویم از پایه تا سطح Senior.</p>
+
+        <h2>🧮 8. Regularization</h2>
+
+        <h3>1. Regularization چیست؟</h3>
+        <p>Regularization مجموعه‌ای از تکنیک‌هاست که باعث می‌شود مدل:</p>
+        <p>بیش از حد روی Training Data فیت نشود و روی داده‌های جدید بهتر Generalize کند.</p>
+        <p>بدون Regularization، مدل ممکن است به جای یادگیری:</p>
+        <div class="inner-box"><div class="inner-title">الگوهای واقعی</div></div>
+        <p>جزئیات خاص Training Set را هم یاد بگیرد.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Training Data
+      │
+      ├── True Pattern
+      │
+      └── Noise / Randomness</div></div>
+        <p>مدل خوب:</p>
+        <div class="box"><div class="chart">True Pattern ──────────────► Learned
+Noise ─────────────────────► Ignored</div></div>
+        <p>مدل Overfit:</p>
+        <div class="box"><div class="chart">True Pattern ──────────────► Learned
+Noise ─────────────────────► Memorized</div></div>
+
+        <h3>2. Regularization چه چیزی را کنترل می‌کند؟</h3>
+        <p>ارتباط اصلی:</p>
+        <div class="formula">Regularization → Complexity → Variance → Generalization</div>
+        <p>به صورت ساده:</p>
+        <div class="box"><div class="chart">Regularization ↑
+      ↓
+Effective Complexity ↓
+      ↓
+Variance ↓
+      ↓
+Overfitting ↓
+      ↓
+Generalization ↑</div></div>
+        <p>اما این رابطه یک نکته بسیار مهم دارد:</p>
+        <div class="inner-box"><div class="inner-title">Regularization بیش از حد هم بد است.</div></div>
+        <p>چون:</p>
+        <div class="box"><div class="chart">Regularization ↑↑↑
+       ↓
+Model too constrained
+       ↓
+Bias ↑
+       ↓
+Underfitting</div></div>
+        <p>بنابراین هدف:</p>
+        <div class="formula">Optimal Regularization</div>
+        <p>است، نه Maximum Regularization.</p>
+
+        <h3>3. ارتباط با Bias–Variance Tradeoff</h3>
+        <p>قبلاً داشتیم:</p>
+        <div class="formula">$$Expected Error \approx Bias^2 + Variance + Irreducible Error$$</div>
+        <p>Regularization معمولاً:</p>
+        <div class="inner-box"><div class="inner-title">Variance ↓</div></div>
+        <p>ولی در عوض ممکن است:</p>
+        <div class="inner-box"><div class="inner-title">Bias ↑</div></div>
+        <p>شود.</p>
+        <p>پس:</p>
+        <div class="box"><div class="chart">No / Weak Regularization
+        │
+        ├── Bias ↓
+        └── Variance ↑
+
+Strong Regularization
+        │
+        ├── Bias ↑
+        └── Variance ↓</div></div>
+        <p>هدف پیدا کردن نقطه‌ای بین این دو است.</p>
+
+        <h3>4. یک مثال بسیار مهم</h3>
+        <p>فرض کن دو مدل داریم.</p>
+        <div class="box"><div class="inner-title">Model A</div><div class="chart">Training Error = 1%
+Validation Error = 20%</div></div>
+        <p>مدل:</p><div class="inner-box"><div class="inner-title">High Variance</div></div>
+        <p>دارد.</p><p>احتمالاً Overfit است.</p>
+        
+        <div class="box"><div class="inner-title">Model B</div><div class="chart">Training Error = 18%
+Validation Error = 19%</div></div>
+        <p>مدل:</p><div class="inner-box"><div class="inner-title">High Bias</div></div>
+        <p>دارد.</p><p>احتمالاً Underfit است.</p>
+
+        <div class="box"><div class="inner-title">Model C</div><div class="chart">Training Error = 5%
+Validation Error = 7%</div></div>
+        <p>ممکن است تعادل خوبی داشته باشد.</p>
+
+        <h3>5. Regularization در Objective Function</h3>
+        <p>یکی از مهم‌ترین ایده‌ها:</p>
+        <p>به جای:</p>
+        <div class="formula">$$\min_{\theta} L(\theta)$$</div>
+        <p>می‌گوییم:</p>
+        <div class="formula">$$\min_{\theta} L(\theta) + \lambda \Omega(\theta)$$</div>
+        <p>که:</p>
+        <ul>
+            <li>L: Loss</li>
+            <li>Ω: Regularization penalty</li>
+            <li>λ: Regularization strength</li>
+        </ul>
+        <p>است.</p>
+
+        <h3>6. λ چیست؟</h3>
+        <div class="formula">$$\lambda$$</div>
+        <p>شدت Regularization را مشخص می‌کند.</p>
+        <div class="inner-box"><div class="inner-title">λ کوچک</div></div>
+        <div class="formula">$$\lambda \rightarrow 0$$</div>
+        <p>یعنی:</p>
+        <div class="inner-box">تقریباً بدون Regularization</div>
+        <div class="inner-box"><div class="inner-title">λ بزرگ</div></div>
+        <div class="formula">$$\lambda \uparrow$$</div>
+        <p>یعنی:</p>
+        <div class="inner-box">محدودیت بیشتر روی مدل</div>
+        <p>اما یک نکته بسیار مهم:</p>
+        <p>اگر λ خیلی بزرگ شود:</p>
+        <div class="formula">$$Bias \uparrow \uparrow$$</div>
+        <p>و ممکن است:</p>
+        <div class="inner-box"><div class="inner-title">Underfitting</div></div>
+        <p>رخ دهد.</p>
+
+        <h3>7. L1 Regularization</h3>
+        <p>در L1:</p>
+        <div class="formula">$$\Omega(w) = ||w||_1 = \sum_{j} |w_j|$$</div>
+        <p>پس Objective:</p>
+        <div class="formula">$$J(w) = L(w) + \lambda \sum_{j} |w_j|$$</div>
+        <p>است.</p>
+
+        <h3>8. اثر L1</h3>
+        <p>L1 تمایل دارد بعضی Weightها را دقیقاً به:</p>
+        <div class="formula">$$0$$</div>
+        <p>برساند.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="inner-title">Before:</div><div class="chart">w1 = 2.3
+w2 = 0.8
+w3 = 1.5
+w4 = 0.02
+w5 = 0.7</div></div>
+        <div class="box"><div class="inner-title">After L1:</div><div class="chart">w1 = 2.1
+w2 = 0
+w3 = 1.2
+w4 = 0
+w5 = 0</div></div>
+        <p>بنابراین:</p>
+        <div class="inner-box">L1 می‌تواند Sparse Model ایجاد کند.</div>
+
+        <h3>9. چرا L1 وزن‌ها را Zero می‌کند؟</h3>
+        <p>از نظر هندسی این نکته بسیار مهم است.</p>
+        <p>L1 constraint:</p>
+        <div class="formula">$$|w_1| + |w_2| \le c$$</div>
+        <p>شکل Diamond دارد:</p>
+        <div class="box"><div class="chart">             /\
+            /  \
+           /    \
+          <      >
+           \    /
+            \  /
+             \/</div></div>
+        <p>گوشه‌های این شکل روی محورهای مختصات قرار دارند.</p>
+        <p>به همین دلیل نقطه بهینه می‌تواند روی محور قرار گیرد:</p>
+        <div class="formula">$$w_j = 0$$</div>
+
+        <h3>10. L1 و Feature Selection</h3>
+        <p>اگر Feature x_j وزن:</p>
+        <div class="formula">$$w_j = 0$$</div>
+        <p>بگیرد، آن Feature در مدل Linear عملاً contribution ندارد.</p>
+        <p>بنابراین L1 می‌تواند:</p>
+        <div class="inner-box"><div class="inner-title">Embedded Feature Selection</div></div>
+        <p>انجام دهد.</p>
+
+        <h3>11. مزایای L1</h3>
+        <p>مناسب است وقتی:</p>
+        <ul>
+            <li>Featureهای زیاد داریم.</li>
+            <li>انتظار داریم فقط subset کوچکی مهم باشد.</li>
+            <li>Sparse solution می‌خواهیم.</li>
+            <li>Feature selection برایمان مهم است.</li>
+            <li>مدل interpretability بیشتری می‌خواهیم.</li>
+        </ul>
+
+        <h3>12. مشکل L1 با Features Correlated</h3>
+        <p>فرض کن:</p>
+        <div class="formula">$$X1 \approx X2 \approx X3$$</div>
+        <p>سه Feature بسیار correlated هستند.</p>
+        <p>L1 ممکن است:</p>
+        <div class="box"><div class="chart">X1 → weight 0
+X2 → weight 0
+X3 → weight 2</div></div>
+        <p>کند.</p>
+        <p>یا بسته به داده:</p>
+        <div class="box"><div class="chart">X1 → 2
+X2 → 0
+X3 → 0</div></div>
+        <p>یعنی ممکن است بین Featureهای correlated به شکل ناپایداری انتخاب کند.</p>
+
+        <h3>13. L2 Regularization</h3>
+        <p>L2:</p>
+        <div class="formula">$$\Omega(w) = ||w||_2^2 = \sum_{j} w_j^2$$</div>
+        <p>و:</p>
+        <div class="formula">$$J(w) = L(w) + \lambda \sum_{j} w_j^2$$</div>
+
+        <h3>14. اثر L2</h3>
+        <p>L2 معمولاً وزن‌ها را:</p>
+        <div class="inner-box"><div class="inner-title">کوچک</div></div>
+        <p>می‌کند.</p>
+        <p>اما برخلاف L1 معمولاً آن‌ها را دقیقاً صفر نمی‌کند.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="inner-title">Before:</div><div class="chart">10
+5
+3
+1</div></div>
+        <div class="box"><div class="inner-title">After L2:</div><div class="chart">3.2
+2.1
+1.4
+0.6</div></div>
+        <p>به جای:</p>
+        <div class="box"><div class="chart">3
+0
+0
+0</div></div>
+
+        <h3>15. چرا L2 وزن‌ها را کوچک می‌کند؟</h3>
+        <p>Gradient جریمه:</p>
+        <div class="formula">$$\frac{\partial}{\partial w_j} \lambda w_j^2 = 2\lambda w_j$$</div>
+        <p>پس هرچه وزن بزرگ‌تر باشد:</p>
+        <div class="inner-box">Penalty بزرگ‌تر می‌شود.</div>
+        <p>مدل ترجیح می‌دهد Weightهای خیلی بزرگ نداشته باشد.</p>
+
+        <h3>16. L2 از نظر هندسی</h3>
+        <p>Constraint:</p>
+        <div class="formula">$$w_1^2 + w_2^2 \le c$$</div>
+        <p>شکل دایره دارد:</p>
+        <div class="box"><div class="chart">       ______
+    .-'      '-.
+   /            \
+  |              |
+   \            /
+    '-.______.-'</div></div>
+        <p>برخلاف L1 که گوشه دارد، L2 سطح smooth دارد.</p>
+
+        <h3>17. L1 vs L2</h3>
+        <table>
+            <thead><tr><th>ویژگی</th><th>L1</th><th>L2</th></tr></thead>
+            <tbody>
+                <tr><td>Penalty</td><td>\(\sum |w|\)</td><td>\(\sum w^2\)</td></tr>
+                <tr><td>Weight → 0</td><td>زیاد</td><td>کمتر</td></tr>
+                <tr><td>Sparse model</td><td>بله</td><td>معمولاً نه</td></tr>
+                <tr><td>Feature selection</td><td>بله</td><td>معمولاً نه</td></tr>
+                <tr><td>Smooth</td><td>نه در صفر</td><td>بله</td></tr>
+                <tr><td>Correlated features</td><td>ممکن است یکی را انتخاب کند</td><td>معمولاً بینشان توزیع می‌کند</td></tr>
+                <tr><td>Common name</td><td>Lasso</td><td>Ridge</td></tr>
+            </tbody>
+        </table>
+
+        <h3>18. Ridge Regression</h3>
+        <p>Linear Regression با L2:</p>
+        <div class="formula">$$\min_{w} \sum_{i} (y_i - w^T x_i)^2 + \lambda ||w||_2^2$$</div>
+        <p>به آن:</p><div class="inner-box"><div class="inner-title">Ridge Regression</div></div>
+        <p>می‌گوییم.</p>
+
+        <h3>19. Lasso Regression</h3>
+        <p>Linear Regression با L1:</p>
+        <div class="formula">$$\min_{w} \sum_{i} (y_i - w^T x_i)^2 + \lambda ||w||_1$$</div>
+        <p>به آن:</p><div class="inner-box"><div class="inner-title">Lasso Regression</div></div>
+        <p>می‌گوییم.</p>
+
+        <h3>20. Elastic Net</h3>
+        <p>Elastic Net ترکیب:</p>
+        <div class="inner-box"><div class="inner-title">L1 + L2</div></div>
+        <p>است.</p>
+        <div class="formula">$$J(w) = L(w) + \lambda (\alpha ||w||_1 + (1-\alpha)||w||_2^2)$$</div>
+
+        <h3>21. α در Elastic Net</h3>
+        <p>اگر:</p><div class="formula">$$\alpha = 1$$</div>
+        <p>تقریباً:</p><div class="inner-box"><div class="inner-title">L1</div></div>
+        <p>اگر:</p><div class="formula">$$\alpha = 0$$</div>
+        <p>تقریباً:</p><div class="inner-box"><div class="inner-title">L2</div></div>
+        <p>و:</p><div class="formula">$$0 < \alpha < 1$$</div>
+        <p>ترکیبی از هر دو.</p>
+
+        <h3>22. چرا Elastic Net مهم است؟</h3>
+        <p>خصوصاً زمانی که:</p>
+        <div class="box"><div class="chart">High-dimensional data
++
+Correlated features</div></div>
+        <p>داریم.</p>
+        <p>مثلاً در:</p>
+        <ul>
+            <li>Genomics</li>
+            <li>NLP</li>
+            <li>High-dimensional tabular data</li>
+        </ul>
+        <p>Elastic Net می‌تواند نسبت به Lasso رفتار پایدارتر داشته باشد.</p>
+
+        <h3>23. L1 vs Elastic Net</h3>
+        <p>اگر Featureهای correlated زیادی داری:</p>
+        <div class="box"><div class="inner-title">Lasso</div><div class="chart">   ↓
+ممکن است یکی را انتخاب کند
+و بقیه را حذف کند</div></div>
+        <div class="box"><div class="inner-title">Elastic Net</div><div class="chart">   ↓
+می‌تواند گروهی از Featureهای مرتبط را حفظ کند</div></div>
+
+        <h3>24. Weight Decay</h3>
+        <p>Weight Decay یعنی در هر Update وزن‌ها کمی به سمت صفر کشیده شوند.</p>
+        <p>به صورت ساده:</p>
+        <div class="formula">$$w_{t+1} = (1 - \eta \lambda)w_t - \eta g_t$$</div>
+        <p>قسمت:</p>
+        <div class="formula">$$(1 - \eta \lambda)w_t$$</div>
+        <p>باعث کاهش وزن می‌شود.</p>
+
+        <h3>25. Weight Decay vs L2</h3>
+        <p>این موضوع برای Senior ML بسیار مهم است.</p>
+        <p>در Vanilla SGD با شرایط استاندارد:</p>
+        <div class="inner-box">L2 regularization و weight decay تقریباً معادل‌اند.</div>
+        <p>چون:</p>
+        <div class="formula">$$L(w) + \frac{\lambda}{2} ||w||^2$$</div>
+        <p>gradient می‌دهد:</p>
+        <div class="formula">$$g + \lambda w$$</div>
+        <p>و:</p>
+        <div class="formula">$$w_{t+1} = w_t - \eta(g + \lambda w_t)$$</div>
+        <p>که می‌شود:</p>
+        <div class="formula">$$w_{t+1} = (1 - \eta \lambda)w_t - \eta g$$</div>
+        <p>اما در:</p>
+        <div class="inner-box">Adam / adaptive optimizers</div>
+        <p>این equivalence به همان شکل برقرار نیست.</p>
+        <p>به همین دلیل:</p>
+        <div class="inner-box"><div class="inner-title">AdamW</div></div>
+        <p>مهم است.</p>
+
+        <h3>26. AdamW</h3>
+        <p>AdamW:</p>
+        <div class="inner-box"><div class="inner-title">Decoupled Weight Decay</div></div>
+        <p>دارد.</p>
+        <p>یعنی:</p>
+        <div class="box"><div class="chart">Adam adaptive gradient update
++
+separate weight decay</div></div>
+        <p>این باعث می‌شود Weight Decay واقعاً مستقل از adaptive scaling اعمال شود.</p>
+
+        <h3>27. آیا Weight Decay روی همه Parameters اعمال شود؟</h3>
+        <p>نکته Senior:</p>
+        <p>در بسیاری از Transformerها و مدل‌های مدرن، معمولاً Weight Decay را روی:</p>
+        <ul>
+            <li>Weightهای Linear</li>
+            <li>بعضی Matrixهای اصلی</li>
+        </ul>
+        <p>اعمال می‌کنند.</p>
+        <p>ولی اغلب روی:</p>
+        <ul>
+            <li>Bias</li>
+            <li>بعضی normalization parameters</li>
+        </ul>
+        <p>اعمال نمی‌کنند.</p>
+        <p>چرا؟</p>
+        <p>چون Regularizing این پارامترها همیشه مفید نیست و می‌تواند رفتار مدل را بدتر کند.</p>
+
+        <h3>28. Dropout</h3>
+        <p>Dropout یکی از معروف‌ترین روش‌های Regularization در Neural Networks است.</p>
+        <p>در Training:</p>
+        <p>تعدادی از Activationها به صورت تصادفی صفر می‌شوند.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="inner-title">Original:</div><div class="chart">● ● ● ● ● ●</div></div>
+        <div class="box"><div class="inner-title">Dropout:</div><div class="chart">● 0 ● 0 0 ●</div></div>
+
+        <h3>29. Dropout Rate</h3>
+        <p>مثلاً:</p>
+        <div class="formula">$$p = 0.2$$</div>
+        <p>یعنی 20٪ واحدها drop شوند.</p>
+
+        <h3>30. Inverted Dropout</h3>
+        <p>در پیاده‌سازی‌های مدرن معمولاً Activationهای باقی‌مانده را scale می‌کنیم.</p>
+        <p>اگر:</p>
+        <div class="formula">$$p = 0.2$$</div>
+        <p>احتمال نگه‌داشتن:</p>
+        <div class="formula">$$q = 1 - p = 0.8$$</div>
+        <p>است.</p>
+        <p>Activation:</p>
+        <div class="formula">$$h$$</div>
+        <p>اگر نگه داشته شود:</p>
+        <div class="formula">$$h' = \frac{h}{q}$$</div>
+        <p>می‌شود.</p>
+        <p>هدف:</p>
+        <div class="inner-box">حفظ Expected Activation</div>
+        <p>است.</p>
+
+        <h3>31. Dropout چه کاری انجام می‌دهد؟</h3>
+        <p>مدل را مجبور می‌کند که:</p>
+        <div class="inner-box">بیش از حد به یک مسیر یا Feature خاص وابسته نشود.</div>
+        <p>یعنی:</p>
+        <div class="box"><div class="chart">Feature A
+    ↓
+Feature B
+    ↓
+Prediction</div></div>
+        <p>را سخت‌تر می‌کند.</p>
+        <p>مدل مجبور می‌شود:</p>
+        <div class="box"><div class="chart">A
+B
+C
+D</div></div>
+        <p>را robustتر استفاده کند.</p>
+
+        <h3>32. Dropout و Ensemble</h3>
+        <p>یک تفسیر معروف:</p>
+        <p>Dropout تقریباً شبیه آموزش تعداد زیادی subnet مختلف است.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Network
+   │
+   ├── subnet 1
+   ├── subnet 2
+   ├── subnet 3
+   ├── subnet 4
+   └── ...</div></div>
+        <p>در inference شبکه کامل استفاده می‌شود.</p>
+        <p>به همین دلیل Dropout ارتباط مفهومی با:</p>
+        <div class="inner-box"><div class="inner-title">Ensemble / Model Averaging</div></div>
+        <p>دارد.</p>
+
+        <h3>33. Dropout در Training و Inference</h3>
+        <div class="box"><div class="inner-title">Training</div><p>Dropout:</p><div class="inner-box"><div class="inner-title">ON</div></div></div>
+        <div class="box"><div class="inner-title">Inference</div><p>Dropout:</p><div class="inner-box"><div class="inner-title">OFF</div></div></div>
+
+        <h3>34. Dropout زیاد</h3>
+        <p>اگر:</p>
+        <div class="formula">$$p$$</div>
+        <p>بیش از حد زیاد باشد:</p>
+        <div class="box"><div class="chart">Too much information removed
+        ↓
+Underfitting
+        ↓
+Bias ↑</div></div>
+        <p>مثلاً در برخی مدل‌ها:</p>
+        <div class="box"><div class="chart">Dropout = 0.8</div></div>
+        <p>ممکن است بسیار شدید باشد.</p>
+
+        <h3>35. Dropout و BatchNorm</h3>
+        <p>ترکیب:</p>
+        <div class="box"><div class="chart">BatchNorm + Dropout</div></div>
+        <p>باید با توجه به architecture و نوع مدل ارزیابی شود.</p>
+        <p>در بسیاری از شبکه‌های مدرن، مخصوصاً برخی معماری‌های vision، استفاده از BatchNorm یا سایر normalizationها باعث شده Dropout به اندازه گذشته ضروری نباشد.</p>
+        <p>در Transformerها هم:</p>
+        <div class="inner-box">Dropout معمولاً هنوز استفاده می‌شود، ولی محل و مقدار آن architecture-dependent است.</div>
+
+        <h3>36. Early Stopping</h3>
+        <p>Early Stopping یک Regularization بسیار مهم است.</p>
+        <p>فرض کن:</p>
+        <div class="box"><div class="chart">Epoch
+       Train Loss     Val Loss
+
+1         ↓              ↓
+5         ↓              ↓
+10        ↓              ↓
+20        ↓              ↓
+30        ↓              →
+40        ↓              ↑
+50        ↓              ↑↑</div></div>
+        <p>در نقطه‌ای Validation شروع به بدتر شدن می‌کند.</p>
+        <p>پس Training را متوقف می‌کنیم.</p>
+
+        <h3>37. چرا Early Stopping Regularization است؟</h3>
+        <p>چون اجازه نمی‌دهد مدل:</p>
+        <div class="inner-box">بیش از حد روی Training Data fit شود.</div>
+        <p>در واقع Training Time را محدود می‌کنیم.</p>
+        <p>پس:</p>
+        <div class="formula">$$Effective Model Complexity \downarrow$$</div>
+
+        <h3>38. Early Stopping و Optimization</h3>
+        <p>نکته ظریف:</p>
+        <p>Early Stopping صرفاً:</p>
+        <div class="inner-box">«Training را زود متوقف می‌کنیم»</div>
+        <p>نیست.</p>
+        <p>بلکه یک نوع محدودیت روی Optimization Path است.</p>
+        <p>مدل ممکن است اگر به Training ادامه دهد:</p>
+        <div class="box"><div class="chart">Training Loss ↓
+Validation Loss ↑</div></div>
+        <p>پس نقطه‌ای را انتخاب می‌کنیم که Generalization بهتر است.</p>
+
+        <h3>39. Early Stopping و L2</h3>
+        <p>در بعضی شرایط ساده، Early Stopping در Gradient Descent می‌تواند رفتاری شبیه یک نوع Regularization ایجاد کند.</p>
+        <p>این به این معنی نیست که:</p>
+        <div class="inner-box">Early stopping همیشه دقیقاً معادل L2 است.</div>
+        <p>بلکه:</p>
+        <div class="inner-box">هر دو می‌توانند solutionهای کم‌پیچیدگی‌تر را ترجیح دهند، اما mechanism آن‌ها متفاوت است.</div>
+
+        <h3>40. Data Augmentation</h3>
+        <p>Data Augmentation یعنی:</p>
+        <div class="inner-box">از داده موجود نمونه‌های جدید و معنادار تولید کنیم.</div>
+        <p>مثلاً تصویر:</p>
+        <div class="box"><div class="inner-title">Original</div><div class="chart">   ↓
+Flip
+Rotate
+Crop
+Color change
+Noise</div></div>
+
+        <h3>41. چرا Data Augmentation Regularization است؟</h3>
+        <p>چون مدل مجبور می‌شود:</p>
+        <div class="inner-box"><div class="inner-title">Invariant properties</div></div>
+        <p>را یاد بگیرد.</p>
+        <p>مثلاً در تشخیص گربه:</p>
+        <div class="box"><div class="chart">Cat</div></div>
+        <p>اگر کمی:</p>
+        <ul>
+            <li>Rotate</li>
+            <li>Shift</li>
+            <li>Crop</li>
+        </ul>
+        <p>شود، هنوز Cat است.</p>
+        <p>پس مدل باید:</p>
+        <div class="inner-box">به ویژگی‌های meaningful</div>
+        <p>وابسته شود، نه به جزئیات تصادفی.</p>
+
+        <h3>42. Data Augmentation و Inductive Bias</h3>
+        <p>این یک نکته بسیار Senior است.</p>
+        <p>وقتی می‌گویی:</p>
+        <div class="inner-box">Rotation برای این مسئله label را تغییر نمی‌دهد.</div>
+        <p>در واقع داری یک:</p>
+        <div class="inner-box"><div class="inner-title">Inductive Bias</div></div>
+        <p>وارد مدل می‌کنی.</p>
+        <p>یعنی به مدل می‌گویی:</p>
+        <div class="formula">$$f(x) \approx f(T(x))$$</div>
+        <p>برای Transformationهای معتبر T.</p>
+
+        <h3>43. مثال</h3>
+        <p>در Object Detection:</p>
+        <div class="box"><div class="chart">Original:
+Car
+
+Rotate:
+Car
+
+Crop:
+Car
+
+Brightness:
+Car</div></div>
+        <p>پس augmentation کمک می‌کند مدل نسبت به این تغییرات invariant باشد.</p>
+
+        <h3>44. اما Data Augmentation می‌تواند خطرناک باشد.</h3>
+        <p>اگر Transformation label را تغییر دهد:</p>
+        <div class="inner-box">Augmentation اشتباه است.</div>
+        <p>مثلاً در Digit Classification:</p>
+        <div class="box"><div class="chart">6</div></div>
+        <p>را 180 درجه rotate کنی ممکن است دیگر:</p>
+        <div class="box"><div class="chart">6</div></div>
+        <p>نباشد.</p>
+        <p>پس:</p>
+        <div class="formula">$$Label(T(x)) = Label(x)$$</div>
+        <p>باید تقریباً معتبر باشد.</p>
+
+        <h3>45. Data Augmentation و Distribution</h3>
+        <p>یک نکته مهم:</p>
+        <p>Augmentation نباید distribution مصنوعی غیرواقعی بسازد.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Real world:
+Brightness ∈ [0,1]
+
+Augmentation:
+Brightness ∈ [0,100]</div></div>
+        <p>ممکن است مدل را به چیزهایی عادت دهد که در Production وجود ندارند.</p>
+
+        <h3>46. Noise Injection</h3>
+        <p>Noise Injection یعنی:</p>
+        <div class="inner-box">به Input، Hidden Representation یا حتی بعضی Training signals نویز اضافه کنیم.</div>
+        <p>مثلاً:</p>
+        <div class="formula">$$x' = x + \epsilon$$</div>
+        <p>که:</p>
+        <div class="formula">$$\epsilon \sim \mathcal{N}(0, \sigma^2)$$</div>
+
+        <h3>47. چرا Noise Injection Regularization است؟</h3>
+        <p>مدل را مجبور می‌کند:</p>
+        <div class="inner-box">نسبت به تغییرات کوچک Robust باشد.</div>
+        <p>بدون Noise:</p>
+        <div class="box"><div class="chart">x → prediction</div></div>
+        <p>با Noise:</p>
+        <div class="box"><div class="chart">x + ε
+x + ε'
+x + ε''
+      ↓
+similar prediction</div></div>
+
+        <h3>48. Noise Injection و Smoothness</h3>
+        <p>Noise Injection می‌تواند مدل را به سمت:</p>
+        <div class="inner-box"><div class="inner-title">Smooth Function</div></div>
+        <p>هل دهد.</p>
+        <p>یعنی تغییر کوچک در Input باعث تغییر شدید Output نشود.</p>
+        <p>این مفهوم برای:</p>
+        <ul>
+            <li>Robustness</li>
+            <li>Generalization</li>
+            <li>Stability</li>
+        </ul>
+        <p>مهم است.</p>
+
+        <h3>49. Noise در Weight</h3>
+        <p>می‌توان حتی:</p>
+        <div class="formula">$$W' = W + \epsilon$$</div>
+        <p>استفاده کرد.</p>
+        <p>این هم نوعی stochastic regularization محسوب می‌شود.</p>
+
+        <h3>50. Label Smoothing</h3>
+        <p>Label Smoothing بیشتر در Classification استفاده می‌شود.</p>
+        <p>فرض کن سه کلاس:</p>
+        <div class="box"><div class="chart">Cat
+Dog
+Horse</div></div>
+        <p>Label معمولی:</p>
+        <div class="box"><div class="chart">[1, 0, 0]</div></div>
+        <p>با Label Smoothing:</p>
+        <div class="box"><div class="chart">[0.9, 0.05, 0.05]</div></div>
+        <p>مثلاً.</p>
+
+        <h3>51. چرا Label Smoothing؟</h3>
+        <p>مدل بدون smoothing ممکن است برای یک نمونه:</p>
+        <div class="formula">$$P(y|x) = 0.999999$$</div>
+        <p>تولید کند.</p>
+        <p>یعنی:</p>
+        <div class="inner-box"><div class="inner-title">Overconfident</div></div>
+        <p>شود.</p>
+        <p>Label Smoothing این فشار را کاهش می‌دهد.</p>
+
+        <h3>52. فرمول Label Smoothing</h3>
+        <p>برای K کلاس و smoothing factor ϵ:</p>
+        <p>یک convention رایج:</p>
+        <div class="formula">$$y_k' = (1 - \epsilon)y_k + \frac{\epsilon}{K}$$</div>
+        <p>در این convention اگر label واقعی:</p>
+        <div class="box"><div class="chart">[1, 0, 0]</div></div>
+        <p>باشد:</p>
+        <div class="formula">$$\epsilon = 0.1$$</div>
+        <p>می‌دهد:</p>
+        <div class="box"><div class="chart">[0.9333, 0.0333, 0.0333]</div></div>
+        <p>توجه کن که پیاده‌سازی‌ها ممکن است smoothing mass را با convention کمی متفاوت توزیع کنند.</p>
+
+        <h3>53. Label Smoothing چه اثری دارد؟</h3>
+        <p>معمولاً:</p>
+        <div class="box"><div class="chart">Confidence ↓
+Overconfidence ↓
+Generalization ↑
+Calibration ممکن است بهتر شود</div></div>
+        <p>اما یک نکته مهم:</p>
+        <div class="inner-box">Label smoothing لزوماً همیشه calibration را بهتر نمی‌کند.</div>
+        <p>باید empirically بررسی شود.</p>
+
+        <h3>54. Label Smoothing و Cross Entropy</h3>
+        <p>بدون smoothing:</p>
+        <div class="formula">$$L = - \sum_{k} y_k \log p_k$$</div>
+        <p>با smoothing:</p>
+        <div class="formula">$$L = - \sum_{k} y_k' \log p_k$$</div>
+        <p>پس target دیگر One-Hot خالص نیست.</p>
+
+        <h3>55. Max-Norm Constraint</h3>
+        <p>در Max-Norm به جای اینکه فقط penalty اضافه کنیم، مستقیماً محدودیت روی Norm وزن قرار می‌دهیم:</p>
+        <div class="formula">$$||w||_2 \le c$$</div>
+        <p>اگر Weight از حد مجاز بزرگ‌تر شود:</p>
+        <div class="inner-box"><div class="inner-title">Projection</div></div>
+        <p>انجام می‌شود.</p>
+
+        <h3>56. Max-Norm</h3>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">||w|| = 8
+c = 5</div></div>
+        <p>پس Weightها scale می‌شوند تا:</p>
+        <div class="formula">$$||w|| = 5$$</div>
+        <p>شود.</p>
+
+        <h3>57. Max-Norm vs L2</h3>
+        <div class="box"><div class="inner-title">L2:</div><div class="chart">Penalty
+↓
+Weight بزرگ هزینه بیشتری دارد</div></div>
+        <div class="box"><div class="inner-title">Max-Norm:</div><div class="chart">Hard constraint
+↓
+Weight نمی‌تواند از حد مشخص عبور کند</div></div>
+        <p>پس:</p>
+        <div class="inner-box">L2: Soft constraint<br>Max-Norm: Hard constraint</div>
+
+        <h3>58. Regularization Techniques — یک نگاه کلی</h3>
+        <div class="box"><div class="chart">Regularization
+│
+├── Explicit Penalty
+│   ├── L1
+│   ├── L2
+│   └── Elastic Net
+│
+├── Optimization-based
+│   ├── Weight Decay
+│   └── Early Stopping
+│
+├── Stochastic
+│   ├── Dropout
+│   └── Noise Injection
+│
+├── Data-based
+│   └── Data Augmentation
+│
+├── Target-based
+│   └── Label Smoothing
+│
+└── Constraint-based
+    └── Max-Norm</div></div>
+
+        <h3>59. مقایسه همه روش‌ها</h3>
+        <table>
+            <thead><tr><th>روش</th><th>مکانیزم اصلی</th><th>اثر معمول</th></tr></thead>
+            <tbody>
+                <tr><td>L1</td><td>\(\sum |w|\) penalty</td><td>Sparsity</td></tr>
+                <tr><td>L2</td><td>\(\sum w^2\) penalty</td><td>Smaller weights</td></tr>
+                <tr><td>Elastic Net</td><td>L1 + L2</td><td>Sparsity + stability</td></tr>
+                <tr><td>Weight Decay</td><td>Shrink weights</td><td>Control complexity</td></tr>
+                <tr><td>Dropout</td><td>Randomly remove activations</td><td>Robust representations</td></tr>
+                <tr><td>Early Stopping</td><td>Stop optimization early</td><td>Prevent overfitting</td></tr>
+                <tr><td>Data Augmentation</td><td>Generate transformed data</td><td>Invariance / robustness</td></tr>
+                <tr><td>Noise Injection</td><td>Add noise</td><td>Smoothness / robustness</td></tr>
+                <tr><td>Label Smoothing</td><td>Soften labels</td><td>Reduce overconfidence</td></tr>
+                <tr><td>Max-Norm</td><td>Bound weight norm</td><td>Hard constraint</td></tr>
+            </tbody>
+        </table>
+
+        <h3>60. مهم‌ترین تفاوت L1 و L2</h3>
+        <p>اگر در مصاحبه بپرسند:</p>
+        <div class="inner-box">چرا L1 sparse می‌کند ولی L2 نه؟</div>
+        <p>جواب سطح Senior:</p>
+        <div class="inner-box">L1 penalty دارای مقدار مطلق است و geometry آن constraint دارای گوشه‌هایی روی coordinate axes دارد؛ بنابراین solution به‌طور طبیعی می‌تواند روی این axes قرار بگیرد و بعضی coefficients دقیقاً صفر شوند. در مقابل L2 دارای penalty smooth و geometry دایره/کره‌ای است و معمولاً coefficients را shrink می‌کند بدون اینکه دقیقاً صفرشان کند.</div>
+
+        <h3>61. Regularization و Bias</h3>
+        <p>مثلاً:</p>
+        <div class="formula">$$\lambda \uparrow$$</div>
+        <p>باعث می‌شود مدل محدودتر شود.</p>
+        <p>معمولاً:</p>
+        <div class="formula">$$Bias \uparrow$$</div>
+
+        <h3>62. Regularization و Variance</h3>
+        <p>مدل محدودتر:</p>
+        <div class="formula">$$Variance \downarrow$$</div>
+        <p>می‌شود.</p>
+        <p>پس:</p>
+        <div class="formula">$$Regularization \Rightarrow Bias \uparrow, Variance \downarrow$$</div>
+        <p>اما نه به صورت مطلق و در تمام شرایط.</p>
+
+        <h3>63. منحنی Bias-Variance</h3>
+        <p>به صورت مفهومی:</p>
+        <div class="box"><div class="chart">Error
+│
+│\                /
+│ \              /
+│  \            /
+│   \__________/
+│
+└──────────────────► Model Complexity
+      ↑
+    sweet spot</div></div>
+        <p>در Complexity پایین:</p>
+        <div class="inner-box">Bias بالا</div>
+        <p>در Complexity بالا:</p>
+        <div class="inner-box">Variance بالا</div>
+
+        <h3>64. Regularization چه می‌کند؟</h3>
+        <p>Regularization عملاً Model Complexity را به سمت پایین هل می‌دهد:</p>
+        <div class="box"><div class="chart">High Complexity
+       │
+       │ Regularization
+       ▼
+Lower Effective Complexity</div></div>
+        <p>اما:</p>
+        <div class="inner-box">Effective Complexity</div>
+        <p>لزومی ندارد با تعداد پارامترها یکی باشد.</p>
+
+        <h3>65. Neural Network با 1 میلیارد پارامتر</h3>
+        <p>ممکن است بگویی:</p>
+        <div class="inner-box">«این مدل خیلی بزرگ است، پس حتماً overfit می‌کند.»</div>
+        <p>لزومی ندارد.</p>
+        <p>مدل‌های بسیار بزرگ می‌توانند با روش‌هایی مثل:</p>
+        <ul>
+            <li>Weight decay</li>
+            <li>Dropout</li>
+            <li>Data augmentation</li>
+            <li>Early stopping</li>
+            <li>Large datasets</li>
+            <li>Optimization dynamics</li>
+            <li>Pretraining</li>
+            <li>Implicit regularization</li>
+        </ul>
+        <p>Generalize خوبی داشته باشند.</p>
+        <p>پس:</p>
+        <div class="formula">$$Parameter Count \neq Effective Complexity$$</div>
+        <p>این یک نکته بسیار مهم مدرن است.</p>
+
+        <h3>66. Explicit vs Implicit Regularization</h3>
+        <p>این یکی از مفاهیم مهم Senior است.</p>
+        <div class="box"><div class="inner-title">Explicit Regularization</div><p>مستقیماً regularization اضافه می‌کنیم:</p><div class="chart">L1
+L2
+Weight Decay
+Dropout</div></div>
+        <div class="box"><div class="inner-title">Implicit Regularization</div><p>خود Training Procedure نوعی preference ایجاد می‌کند.</p><p>مثلاً:</p><div class="chart">SGD dynamics
+Early stopping
+Architecture
+Initialization
+Optimization path</div></div>
+        <p>می‌توانند solution خاصی را ترجیح دهند.</p>
+
+        <h3>67. SGD و Implicit Regularization</h3>
+        <p>دو مدل ممکن است Training Loss مشابهی داشته باشند، اما SGD به دلیل dynamics خود ممکن است solutionهایی را ترجیح دهد که Generalization متفاوتی دارند.</p>
+        <p>بنابراین:</p>
+        <div class="inner-box">Optimizer بخشی از inductive bias سیستم ML است.</div>
+        <p>این نگاه در سطح Senior بسیار مهم است.</p>
+
+        <h3>68. Regularization و Double Descent</h3>
+        <p>یک نکته پیشرفته‌تر.</p>
+        <p>در ML مدرن همیشه منحنی Bias-Variance ساده:</p>
+        <div class="inner-box"><div class="inner-title">U-shape</div></div>
+        <p>نیست.</p>
+        <p>در برخی شرایط پدیده:</p>
+        <div class="inner-box"><div class="inner-title">Double Descent</div></div>
+        <p>دیده می‌شود.</p>
+        <p>به صورت مفهومی:</p>
+        <div class="box"><div class="chart">Test Error
+│
+│ \       /
+│  \_____/ \____
+│
+└────────────────► Model Complexity
+       interpolation</div></div>
+        <p>یعنی با افزایش Complexity ممکن است بعد از یک ناحیه بد، دوباره Generalization بهتر شود.</p>
+        <p>این موضوع مخصوصاً در مدل‌های overparameterized مدرن مهم است.</p>
+
+        <h3>69. Regularization و Data Leakage</h3>
+        <p>یک نکته مهم:</p>
+        <p>Regularization:</p>
+        <div class="inner-box">جایگزین جلوگیری از Data Leakage نیست.</div>
+        <p>اگر Validation/Test information وارد Training شود:</p>
+        <div class="inner-box"><div class="inner-title">Leakage</div></div>
+        <p>ممکن است performance را مصنوعی بالا ببرد.</p>
+        <p>L1/L2/Dropout نمی‌توانند این مشکل را واقعاً حل کنند.</p>
+
+        <h3>70. Regularization و Data Augmentation</h3>
+        <p>فرض کن Training Accuracy:</p>
+        <div class="formula">$$99.9\%$$</div>
+        <p>ولی Test:</p>
+        <div class="formula">$$80\%$$</div>
+        <p>اگر augmentation مناسب اضافه کنی:</p>
+        <div class="box"><div class="chart">Train Accuracy ↓
+Test Accuracy ↑</div></div>
+        <p>این کاملاً ممکن است.</p>
+        <p>چرا؟</p>
+        <p>چون هدف Regularization:</p>
+        <div class="inner-box">پایین آوردن Training Error نیست.</div>
+        <p>هدف:</p>
+        <div class="inner-box">بهتر کردن Generalization</div>
+        <p>است.</p>
+
+        <h3>71. یک اشتباه رایج</h3>
+        <p>بعضی‌ها فکر می‌کنند:</p>
+        <div class="inner-box">Regularization باید Training Accuracy را بالا ببرد.</div>
+        <p>خیر.</p>
+        <p>حتی معمولاً:</p>
+        <div class="formula">$$Train Error \uparrow$$</div>
+        <p>می‌شود.</p>
+        <p>اما:</p>
+        <div class="formula">$$Validation/Test Error \downarrow$$</div>
+        <p>می‌تواند اتفاق بیفتد.</p>
+
+        <h3>72. نمودار مهم</h3>
+        <div class="box"><div class="chart">Error
+│
+│ Train Error
+│    \
+│     \
+│      \
+│       \________
+│
+│ Validation Error
+│       \___
+│           \__
+│              \___
+│                  \__
+│                    /
+│                   /
+└────────────────────────► Training / Complexity
+                         ↑
+                    Overfitting</div></div>
+        <p>Regularization معمولاً باعث می‌شود:</p>
+        <div class="box"><div class="chart">Training Error کمی ↑
+Validation Error ↓</div></div>
+        <p>شود، تا نقطه optimal.</p>
+
+        <h3>73. چه زمانی Regularization اضافه کنیم؟</h3>
+        <p>وقتی:</p>
+        <div class="box"><div class="chart">Training performance خیلی خوب
+Validation performance ضعیف</div></div>
+        <p>یعنی:</p>
+        <div class="inner-box">احتمال High Variance / Overfitting</div>
+        <p>داریم.</p>
+
+        <h3>74. چه زمانی Regularization را کم کنیم؟</h3>
+        <p>وقتی:</p>
+        <div class="box"><div class="chart">Training performance ضعیف
+Validation performance هم ضعیف</div></div>
+        <p>و شواهد Underfitting داریم.</p>
+        <p>ممکن است:</p>
+        <div class="formula">$$Bias$$</div>
+        <p>زیاد باشد.</p>
+        <p>در این حالت اضافه کردن Regularization معمولاً اشتباه است.</p>
+
+        <h3>75. Hyperparameter Tuning</h3>
+        <p>پارامترهایی مثل:</p>
+        <div class="box"><div class="chart">λ
+Dropout rate
+Weight decay
+Early stopping patience
+Augmentation strength
+Label smoothing ε
+Max norm c</div></div>
+        <p>همگی باید روی:</p>
+        <div class="inner-box">Validation Set / Cross-Validation</div>
+        <p>تنظیم شوند.</p>
+        <p>نه روی Test Set.</p>
+
+        <h3>76. Test Set چه نقشی دارد؟</h3>
+        <p>Test Set باید:</p>
+        <div class="inner-box">تقریباً دست‌نخورده</div>
+        <p>باقی بماند.</p>
+        <p>اگر بارها:</p>
+        <div class="box"><div class="chart">Test Result
+   ↓
+Change Regularization
+   ↓
+Test Again</div></div>
+        <p>انجام دهی، عملاً Test تبدیل به Validation شده است.</p>
+        <p>این:</p>
+        <div class="inner-box"><div class="inner-title">Test Set Contamination</div></div>
+        <p>است.</p>
+
+        <h3>77. Regularization در Production</h3>
+        <p>در Production فقط:</p>
+        <div class="inner-box">Validation Accuracy</div>
+        <p>مهم نیست.</p>
+        <p>باید بررسی کنی:</p>
+        <div class="box"><div class="chart">Generalization
+Calibration
+Robustness
+Distribution Shift
+Fairness
+Latency
+Memory
+Cost</div></div>
+        <p>چون Regularization ممکن است یکی را بهتر و دیگری را بدتر کند.</p>
+
+        <!-- Begin Specific Images 78 onwards -->
+        <h3>78. مثال Senior — Fraud Detection</h3>
+        <p>فرض کن:</p>
+        <div class="box"><div class="chart">Fraud samples = 1%
+Normal = 99%</div></div>
+        <p>مدل Training:</p>
+        <div class="box"><div class="chart">Train F1 = 0.99
+Validation F1 = 0.80</div></div>
+        <p>احتمالاً Overfit داریم.</p>
+        <p>می‌توانیم بررسی کنیم:</p>
+        <div class="box"><div class="chart">L2 / Weight Decay
+Data augmentation مناسب
+Class weighting
+Early stopping
+Dropout
+Feature selection</div></div>
+        <p>اما باید مراقب باشیم که:</p>
+        <div class="inner-box">Augmentation مصنوعی باعث تغییر توزیع Fraud نشود.</div>
+
+        <h3>79. مثال Senior — Computer Vision</h3>
+        <p>اگر:</p>
+        <div class="box"><div class="chart">Train Accuracy = 99%
+Validation Accuracy = 85%</div></div>
+        <p>می‌توانیم:</p>
+        <div class="box"><div class="chart">Random Crop
+Flip
+Color Jitter
+Rotation
+Mixup
+CutMix
+Weight Decay
+Dropout
+Early Stopping</div></div>
+        <p>را بررسی کنیم.</p>
+        <p>ولی باید بدانیم:</p>
+        <div class="inner-box">هر augmentation یک فرض درباره Data Generating Process است.</div>
+
+        <h3>80. Mixup — یک نکته پیشرفته</h3>
+        <p>Mixup:</p>
+        <div class="formula">$$\tilde{x} = \lambda x_i + (1-\lambda)x_j$$</div>
+        <p>و:</p>
+        <div class="formula">$$\tilde{y} = \lambda y_i + (1-\lambda)y_j$$</div>
+        <p>است.</p>
+        <p>این هم نوعی Regularization / augmentation است.</p>
+        <p>مدل را مجبور می‌کند decision function نرم‌تری داشته باشد.</p>
+
+        <h3>81. Regularization را نباید کورکورانه ترکیب کرد</h3>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Very strong:
+L2
++
+Dropout 0.7
++
+Heavy Augmentation
++
+Label Smoothing 0.2
++
+Early stopping خیلی زود</div></div>
+        <p>ممکن است:</p>
+        <div class="inner-box">بیش از حد Regularized</div>
+        <p>شویم.</p>
+        <p>نتیجه:</p>
+        <div class="box"><div class="chart">Train Error ↑↑
+Validation Error ↑</div></div>
+        <p>یعنی Underfitting.</p>
+
+        <h3>82. Regularization Strength را چگونه انتخاب کنیم؟</h3>
+        <p>مثلاً برای Weight Decay:</p>
+        <div class="box"><div class="chart">1e-6
+1e-5
+1e-4
+1e-3
+1e-2</div></div>
+        <p>را بررسی می‌کنی.</p>
+        <p>و روی Validation:</p>
+        <div class="box"><div class="chart">Metric
+  │
+  │        ●
+  │      ●   ●
+  │    ●       ●
+  │  ●           ●
+  └────────────────
+       λ</div></div>
+        <p>بهترین مقدار را انتخاب می‌کنی.</p>
+
+        <h3>83. اما یک نکته بسیار مهم</h3>
+        <p>Scale Features روی L1/L2 تأثیر دارد.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Feature A range = 0–1
+Feature B range = 0–1,000,000</div></div>
+        <p>Regularization روی coefficients این دو Feature رفتار متفاوتی ایجاد می‌کند.</p>
+        <p>به همین دلیل در مدل‌های linear معمولاً:</p>
+        <div class="inner-box">Feature Scaling</div>
+        <p>بسیار مهم است.</p>
+
+        <h3>84. چرا؟</h3>
+        <p>اگر:</p>
+        <div class="formula">$$y = w_1 x_1 + w_2 x_2$$</div>
+        <p>باشد و x_2 بسیار بزرگ‌تر باشد، برای تولید contribution مشابه ممکن است:</p>
+        <div class="formula">$$w_2$$</div>
+        <p>بسیار کوچک‌تر شود.</p>
+        <p>L1/L2 روی Weightها اعمال می‌شود، بنابراین بدون scaling، penalty می‌تواند ناعادلانه باشد.</p>
+
+        <h3>85. Regularization و Feature Scaling</h3>
+        <p>پس:</p>
+        <div class="box"><div class="chart">L1/L2
+   +
+Feature Scaling</div></div>
+        <p>اغلب باید با هم دیده شوند.</p>
+        <p>خصوصاً در:</p>
+        <div class="box"><div class="chart">Linear Regression
+Logistic Regression
+SVM
+Neural Networks</div></div>
+
+        <h3>86. Bias Term را Regularize کنیم؟</h3>
+        <p>در بسیاری از پیاده‌سازی‌ها:</p>
+        <div class="inner-box">Bias را مثل Weightهای اصلی Regularize نمی‌کنند.</div>
+        <p>چرا؟</p>
+        <p>Bias صرفاً offset مدل را تعیین می‌کند و regularizing آن معمولاً سود کمی دارد یا حتی می‌تواند undesirable باشد.</p>
+
+        <h3>87. Regularization در Logistic Regression</h3>
+        <p>مثلاً:</p>
+        <div class="formula">$$P(y=1|x) = \sigma(w^T x + b)$$</div>
+        <p>Objective:</p>
+        <div class="formula">$$Loss + \lambda ||w||_2^2$$</div>
+        <p>معمولاً b را جدا از Weightهای feature regularize می‌کنیم یا اصلاً regularize نمی‌کنیم، بسته به implementation.</p>
+
+        <h3>88. Regularization و SVM</h3>
+        <p>در SVM هم مفهوم Regularization بسیار بنیادی است.</p>
+        <p>مثلاً:</p>
+        <div class="formula">$$\frac{1}{2} ||w||^2 + C \sum_{i} \xi_i$$</div>
+        <p>در اینجا:</p>
+        <div class="inner-box">Trade-off بین margin/complexity و training violations</div>
+        <p>وجود دارد.</p>
+        <p>این دقیقاً همان فلسفه:</p>
+        <div class="inner-box">Complexity ↔ Fit</div>
+        <p>است.</p>
+
+        <h3>89. Regularization و Bayesian Interpretation</h3>
+        <p>یک نکته خیلی پیشرفته.</p>
+        <p>L2 Regularization را می‌توان به صورت Bayesian interpretation هم دید.</p>
+        <p>اگر فرض کنیم:</p>
+        <div class="formula">$$w \sim \mathcal{N}(0, \sigma^2 I)$$</div>
+        <p>یعنی Prior Gaussian روی Weightها داریم.</p>
+        <p>Maximum A Posteriori estimation می‌تواند منجر به:</p>
+        <div class="formula">$$L(w) + \lambda ||w||_2^2$$</div>
+        <p>شود.</p>
+
+        <h3>90. L1 و Bayesian Interpretation</h3>
+        <p>L1 با:</p>
+        <div class="inner-box">Laplace Prior</div>
+        <p>ارتباط دارد.</p>
+        <div class="formula">$$p(w) \propto e^{-\lambda |w|}$$</div>
+        <p>پس:</p>
+        <div class="box"><div class="chart">L1 ↔ Laplace prior
+L2 ↔ Gaussian prior</div></div>
+        <p>این یکی از پاسخ‌های خیلی خوب برای مصاحبه Senior/Research است.</p>
+
+        <h3>91. یک نگاه Unified</h3>
+        <p>می‌توانیم Regularization را به شکل زیر ببینیم:</p>
+        <div class="formula">$$Fit Data + Preference for Simpler/Robust Solutions$$</div>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">L1       → Sparse solution
+L2       → Small weights
+Dropout  → Distributed robust representations
+Augmentation → Invariance
+Label Smoothing → Less overconfident predictions
+Early Stopping → Limited optimization complexity
+Max-Norm → Bounded weights</div></div>
+
+        <h3>92. مهم‌ترین سؤال مصاحبه‌ای</h3>
+        <p>سؤال:</p>
+        <div class="inner-box">چرا Regularization می‌تواند Generalization را بهتر کند، در حالی که Training Error را بدتر می‌کند؟</div>
+        <p>جواب Senior:</p>
+        <div class="inner-box">چون هدف Training Error کمینه کردن خطای روی نمونه‌های دیده‌شده است، در حالی که هدف اصلی ML، کاهش Expected Generalization Error است. Regularization فضای solutionهای ممکن را محدود می‌کند و از fitting جزئیات و noise موجود در Training Set جلوگیری می‌کند. در نتیجه ممکن است Training Error کمی افزایش پیدا کند، اما Variance کاهش یابد و Validation/Test Error بهتر شود. اگر Regularization بیش از حد باشد، Bias زیاد شده و Underfitting رخ می‌دهد.</div>
+
+        <h3>93. سؤال دوم</h3>
+        <div class="inner-box">L1 چرا Feature Selection انجام می‌دهد ولی L2 معمولاً نه؟</div>
+        <p>چون L1 دارای penalty با |w| و geometry دارای گوشه است و optimum می‌تواند روی coordinate axes قرار گیرد، بنابراین coefficients دقیقاً صفر می‌شوند. L2 smooth است و بیشتر Weightها را shrink می‌کند ولی معمولاً به صفر دقیق نمی‌رساند.</p>
+
+        <h3>94. سؤال سوم</h3>
+        <div class="inner-box">Weight Decay و L2 همیشه یکی هستند؟</div>
+        <p>جواب:</p>
+        <p>خیر.</p>
+        <p>در Vanilla SGD در شرایط معمول می‌توان آن‌ها را تقریباً معادل دانست، اما در adaptive optimizers مانند Adam این equivalence برقرار نیست. به همین دلیل AdamW از decoupled weight decay استفاده می‌کند.</p>
+
+        <h3>95. سؤال چهارم</h3>
+        <div class="inner-box">آیا Dropout همیشه Generalization را بهتر می‌کند؟</div>
+        <p>خیر.</p>
+        <p>Dropout یک hyperparameter است. اگر بیش از حد استفاده شود:</p>
+        <div class="formula">$$Bias \uparrow$$</div>
+        <p>و:</p>
+        <div class="inner-box">Underfitting</div>
+        <p>رخ می‌دهد.</p>
+        <p>شدت مناسب آن باید با Validation/CV تعیین شود.</p>
+
+        <h3>96. سؤال پنجم</h3>
+        <div class="inner-box">آیا Data Augmentation همیشه خوب است؟</div>
+        <p>خیر.</p>
+        <p>Augmentation باید transformationهایی ایجاد کند که:</p>
+        <div class="formula">$$P(y|T(x))$$</div>
+        <p>با مسئله واقعی سازگار باشند.</p>
+        <p>اگر augmentation label semantics را تغییر دهد یا distribution غیرواقعی ایجاد کند، می‌تواند عملکرد را خراب کند.</p>
+
+        <h3>97. سؤال ششم</h3>
+        <div class="inner-box">آیا Early Stopping واقعاً Regularization است؟</div>
+        <p>بله، معمولاً به عنوان نوعی Regularization در نظر گرفته می‌شود، چون Optimization را قبل از اینکه مدل بیش از حد Training Data را fit کند متوقف می‌کند. همچنین در برخی مسائل ساده می‌تواند رفتار مشابهی با shrinkage داشته باشد، اما دقیقاً معادل L2 در همه شرایط نیست.</p>
+
+        <h3>98. سؤال هفتم</h3>
+        <div class="inner-box">Regularization Bias را زیاد می‌کند یا Variance را؟</div>
+        <p>در چارچوب کلاسیک:</p>
+        <div class="formula">$$Regularization \rightarrow Bias \uparrow, Variance \downarrow$$</div>
+        <p>اما هدف پیدا کردن نقطه‌ای است که مجموع خطای Generalization حداقل شود.</p>
+
+        <h3>99. نقشه ذهنی نهایی</h3>
+        <div class="box"><div class="chart">                    REGULARIZATION
+                          │
+       ┌──────────────────┼──────────────────┐
+       │                  │                  │
+   PENALTY             STOCHASTIC          DATA
+       │                  │                  │
+   ┌───┴────┐         ┌───┴────┐        Augmentation
+   │        │         │        │
+  L1       L2      Dropout   Noise
+   │        │
+   │        └──────┐
+   │               │
+   └──── Elastic Net
+                          │
+                    OTHER METHODS
+                          │
+              ┌───────────┼───────────┐
+              │           │           │
+         Early Stop   Label Smooth   Max-Norm</div></div>
+        <p>و ارتباط اصلی:</p>
+        <div class="box"><div class="chart">                   Regularization
+                         │
+                         ▼
+                 Effective Complexity
+                         │
+               ┌─────────┴─────────┐
+               ▼                   ▼
+             Bias ↑             Variance ↓
+               │                   │
+               └─────────┬─────────┘
+                         ▼
+                Generalization
+                         │
+                  ┌──────┴──────┐
+                  ▼             ▼
+             Underfit        Overfit
+             if too much     if too little</div></div>
+
+        <h2>🎯 جمع‌بندی Senior</h2>
+        <p>اگر بخواهم کل این فصل را در یک جمله خلاصه کنم:</p>
+        <p>Regularization یعنی وارد کردن یک ترجیح یا محدودیت در فرآیند یادگیری تا مدل به‌جای حفظ کردن جزئیات خاص Training Data، solutionهایی را یاد بگیرد که روی داده‌های ندیده بهتر Generalize می‌کنند.</p>
+        <p>و مهم‌تر از حفظ کردن فرمول‌ها، باید بتوانی این زنجیره را توضیح بدهی:</p>
+        <div class="formula">$$Regularization \rightarrow Effective Complexity \rightarrow Bias/Variance \rightarrow Overfitting/Underfitting \rightarrow Generalization$$</div>
+        <p>و در سطح Senior، باید بتوانی با توجه به نوع داده و مشکل مدل انتخاب کنی:</p>
+        <div class="box"><div class="chart">Sparse high-dimensional features
+        → L1 / Elastic Net
+
+Correlated features
+        → L2 / Elastic Net
+
+Deep Neural Network overfitting
+        → Weight Decay / Dropout / Augmentation / Early Stopping
+
+Computer Vision
+        → Augmentation / Weight Decay / Mixup / CutMix
+
+Overconfident classifier
+        → Label Smoothing + Calibration analysis
+
+Exploding weights
+        → Max-Norm / Weight Decay + investigate LR/optimization
+
+Adaptive optimizer
+        → AdamW rather than treating L2 and weight decay as identical</div></div>
+        <p>نکته نهایی و خیلی مهم: Regularization را نباید «هرچه بیشتر بهتر» دید. مسئله واقعی همیشه پیدا کردن نقطه‌ای است که Bias و Variance، Training Fit و Generalization، و Complexity و Robustness بهترین trade-off را داشته باشند.</p>
+
+    </div>
+</body>
+</html>

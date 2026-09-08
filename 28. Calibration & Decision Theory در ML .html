@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calibration & Decision Theory - Senior ML Level</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #0d1117; color: #e6edf3; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.8; margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1, h2, h3 { color: #e6edf3; text-align: right; border-bottom: 1px solid #444; padding-bottom: 15px; margin-top: 50px; }
+        p, li { text-align: right; }
+        
+        /* Boxes */
+        .box { background-color: #21262d; border: 1px solid #30363d; border-radius: 8px; padding: 15px; margin: 15px 0; color: #e6edf3; }
+        .inner-box { background-color: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 15px; margin: 10px; }
+        .inner-title { font-weight: bold; margin-bottom: 5px; }
+
+        /* Formula Box */
+        .formula {
+            direction: ltr;
+            background-color: #000;
+            border: 1px solid #fff;
+            border-radius: 0;
+            padding: 20px;
+            margin: 20px auto;
+            width: fit-content;
+            max-width: 100%;
+            overflow-x: auto;
+            text-align: center;
+            font-size: 1.2em;
+            font-family: "Times New Roman", Times, serif;
+            color: #fff;
+        }
+
+        /* Charts / Flowcharts / ASCII Art */
+        .chart { direction: ltr; text-align: left; font-family: monospace; background-color: #21262d; border-radius: 8px; padding: 15px; overflow-x: auto; white-space: pre; border: 1px solid #444; }
+
+        /* Tables */
+        table { width: 100%; border-collapse: collapse; direction: rtl; margin-bottom: 20px; }
+        th, td { border: 1px solid #444; padding: 12px; text-align: right; }
+        th { background-color: #21262d; }
+        
+        .highlight { color: #58a6ff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧠 28. Calibration & Decision Theory در ML — از پایه تا سطح Senior</h1>
+        
+        <p>این بخش یکی از جاهایی است که تفاوت یک ML Engineer معمولی با یک Senior ML Engineer خیلی مشخص می‌شود.</p>
+        <p>چون یک مدل ممکن است:</p>
+        <div class="formula">Accuracy = 99%</div>
+        <p>داشته باشد، ولی برای تصمیم‌گیری business کاملاً بد باشد.</p>
+        <p>مثلاً در Fraud Detection، سؤال فقط این نیست که:</p>
+        <div class="inner-box">«مدل چقدر خوب Fraud را تشخیص می‌دهد؟»</div>
+        <p>بلکه باید بپرسی:</p>
+        <div class="inner-box">«آیا probabilityهایی که مدل می‌دهد قابل اعتمادند؟ و با توجه به هزینه‌ی اشتباهات، چه تصمیمی باید بگیریم؟»</div>
+        <p>اینجا سه مفهوم به هم وصل می‌شوند:</p>
+        <div class="box"><div class="chart">Prediction
+    ↓
+Probability / Calibration
+    ↓
+Decision
+    ↓
+Business Cost / Utility</div></div>
+
+        <h2>1. اول تفاوت Prediction و Decision را بفهم</h2>
+        <p>این یکی از مهم‌ترین نکات این بخش است.</p>
+        <p>فرض کن مدل می‌گوید:</p>
+        <div class="box"><div class="chart">P(Fraud | X) = 0.82</div></div>
+        <p>این prediction است.</p>
+        <p>اما هنوز تصمیم نگرفته‌ای.</p>
+        <p>ممکن است تصمیم بگیری:</p>
+        <div class="box"><div class="chart">0.82 > 0.50
+      ↓
+Block transaction</div></div>
+        <p>این می‌شود decision.</p>
+        <p>پس:</p>
+        <div class="formula">Prediction &ne; Decision</div>
+
+        <h2>2. سه لایه مهم</h2>
+        <p>یک سیستم ML حرفه‌ای معمولاً این سه لایه را دارد:</p>
+        <div class="box"><div class="chart">                    MODEL
+                      │
+                      ↓
+              P(Y | X)
+              Probability
+                      │
+                      ↓
+                Decision Rule
+                      │
+                      ↓
+               Business Action</div></div>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Model:
+Fraud probability = 0.73
+
+Decision policy:
+if probability >= 0.80:
+    block
+elif probability >= 0.40:
+    review
+else:
+    approve</div></div>
+        <p>پس threshold و business policy بعد از prediction قرار می‌گیرند.</p>
+
+        <h2>3. Calibration چیست؟</h2>
+        <p>فرض کن مدل برای 1000 تراکنش probability:</p>
+        <div class="box"><div class="chart">0.8</div></div>
+        <p>می‌دهد.</p>
+        <p>اگر مدل well-calibrated باشد، تقریباً:</p>
+        <p>80% از این تراکنش‌ها واقعاً Fraud هستند.</p>
+        <p>یعنی:</p>
+        <div class="formula">P(Y=1|&#770;P=0.8) &asymp; 0.8</div>
+        <p>این معنی calibration است.</p>
+
+        <h2>4. مثال ساده</h2>
+        <p>فرض کن مدل این predictions را دارد:</p>
+        <table>
+            <thead><tr><th>Probability</th><th>تعداد</th><th>Fraud واقعی</th></tr></thead>
+            <tbody>
+                <tr><td>0.1</td><td>100</td><td>10</td></tr>
+                <tr><td>0.3</td><td>100</td><td>30</td></tr>
+                <tr><td>0.7</td><td>100</td><td>70</td></tr>
+                <tr><td>0.9</td><td>100</td><td>90</td></tr>
+            </tbody>
+        </table>
+        <p>این مدل تقریباً perfectly calibrated است.</p>
+        <p>چون:</p>
+        <div class="box"><div class="chart">0.1 → 10%
+0.3 → 30%
+0.7 → 70%
+0.9 → 90%</div></div>
+
+        <h2>5. Calibration با Accuracy فرق دارد</h2>
+        <p>این خیلی مهم است.</p>
+        <p>دو مدل ممکن است:</p>
+        <div class="box"><div class="chart">Accuracy = 95%</div></div>
+        <p>داشته باشند.</p>
+        <p>اما یکی calibrated باشد و دیگری نباشد.</p>
+        <div class="inner-box"><div class="inner-title">مدل A:</div></div>
+        <div class="box"><div class="chart">Prediction = 0.9
+Actual frequency = 0.89</div></div>
+        <p>خوب.</p>
+        <div class="inner-box"><div class="inner-title">مدل B:</div></div>
+        <div class="box"><div class="chart">Prediction = 0.9
+Actual frequency = 0.60</div></div>
+        <p>بد-calibrated.</p>
+        <p>ولی ممکن است classification accuracy آنها مشابه باشد.</p>
+
+        <h2>6. Calibration بیشتر درباره Probability است</h2>
+        <p>Metrics مثل:</p>
+        <div class="box"><div class="chart">Accuracy
+Precision
+Recall
+F1</div></div>
+        <p>عموماً می‌پرسند:</p>
+        <div class="inner-box">آیا class prediction درست است؟</div>
+        <p>Calibration می‌پرسد:</p>
+        <div class="inner-box">آیا probability prediction قابل اعتماد است؟</div>
+
+        <h2>7. Calibration برای چه چیزهایی مهم است؟</h2>
+        <p>خیلی مهم است وقتی probability مستقیماً وارد decision می‌شود:</p>
+        <ul>
+            <li>Fraud Detection</li>
+            <li>Credit Risk</li>
+            <li>Medical Diagnosis</li>
+            <li>Insurance</li>
+            <li>Ranking</li>
+            <li>Recommendation</li>
+            <li>Risk Scoring</li>
+            <li>Resource Allocation</li>
+            <li>Autonomous Systems</li>
+        </ul>
+
+        <h2>8. Perfect Calibration</h2>
+        <p>اگر:</p>
+        <div class="formula">&#770;p = P(Y=1|X)</div>
+        <p>باشد، مدل perfectly calibrated است.</p>
+        <p>یعنی:</p>
+        <div class="formula">P(Y=1|&#770;p=p) = p</div>
+        <p>برای هر probability p.</p>
+
+        <h2>9. Reliability Diagram</h2>
+        <p>یکی از مهم‌ترین ابزارهای calibration.</p>
+        <p>ایده:</p>
+        <div class="box"><div class="chart">1. probability predictions را به bin تقسیم کن.
+2. میانگین probability هر bin را حساب کن.
+3. actual positive rate هر bin را حساب کن.
+4. این دو را مقایسه کن.</div></div>
+
+        <h2>10. مثال Reliability Diagram</h2>
+        <p>فرض:</p>
+        <div class="box"><div class="chart">Bin 1:
+Predicted = 0.1
+Actual = 0.12
+
+Bin 2:
+Predicted = 0.3
+Actual = 0.28
+
+Bin 3:
+Predicted = 0.5
+Actual = 0.55
+
+Bin 4:
+Predicted = 0.8
+Actual = 0.82</div></div>
+        <p>تقریباً calibrated است.</p>
+
+        <h2>11. نمودار چگونه خوانده می‌شود؟</h2>
+        <div class="inner-box"><div class="inner-title">محور X:</div></div>
+        <div class="box"><div class="chart">Mean predicted probability</div></div>
+        <div class="inner-box"><div class="inner-title">محور Y:</div></div>
+        <div class="box"><div class="chart">Fraction of positives</div></div>
+        <p>مدل perfect:</p>
+        <div class="formula">y = x</div>
+        <p>است.</p>
+        <p>یعنی خط قطری:</p>
+        <div class="box"><div class="chart">Actual
+  |
+1 |             /
+  |           /
+  |         /
+  |       /
+  |     /
+0 |___/____________
+       Predicted</div></div>
+        <p>هرچه نقاط به diagonal نزدیک‌تر باشند، calibration بهتر است.</p>
+
+        <h2>12. Underconfidence و Overconfidence</h2>
+        <div class="inner-box"><div class="inner-title">Overconfident</div></div>
+        <p>مدل probabilityهای خیلی extreme می‌دهد:</p>
+        <div class="box"><div class="chart">Predicted = 0.9
+Actual = 0.65</div></div>
+        <p>یعنی:</p>
+        <p>مدل بیش از حد به خودش مطمئن است.</p>
+        <p>در نمودار معمولاً نقاط:</p>
+        <div class="formula">Actual &lt; Predicted</div>
+        <p>هستند.</p>
+        <div class="inner-box"><div class="inner-title">Underconfident</div></div>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Predicted = 0.6
+Actual = 0.8</div></div>
+        <p>مدل بیش از حد محتاط است.</p>
+
+        <h2>13. Reliability Diagram یک مشکل دارد</h2>
+        <p>اگر probabilityها را bin کنیم، نتیجه به:</p>
+        <div class="inner-box">binning strategy</div>
+        <p>وابسته می‌شود.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">10 bins</div></div>
+        <p>یا:</p>
+        <div class="box"><div class="chart">20 bins</div></div>
+        <p>می‌تواند تصویر متفاوتی ایجاد کند.</p>
+        <p>همچنین اگر داده کم باشد، بعضی bins بسیار noisy می‌شوند.</p>
+
+        <h2>14. Equal-Width Binning</h2>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">0.0–0.1
+0.1–0.2
+...
+0.9–1.0</div></div>
+        <p>هر bin از نظر probability width یکسان دارد.</p>
+        <p>اما ممکن است تعداد samples در bins بسیار متفاوت باشد.</p>
+
+        <h2>15. Equal-Frequency Binning</h2>
+        <p>در این روش تقریباً تعداد نمونه‌های هر bin مشابه است.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">100 samples per bin</div></div>
+        <p>این روش در داده‌های نامتوازن probability distribution گاهی visualization بهتری می‌دهد.</p>
+
+        <h2>16. Brier Score</h2>
+        <p>یکی از مهم‌ترین metrics برای probability prediction.</p>
+        <p>برای binary classification:</p>
+        <div class="formula">BS = (1/N) &Sigma;<sub>i=1</sub><sup>N</sup> (p<sub>i</sub> - y<sub>i</sub>)<sup>2</sup></div>
+        <p>که:</p>
+        <div class="inner-box">p<sub>i</sub>: predicted probability</div>
+        <div class="inner-box">y<sub>i</sub>: actual label</div>
+        <p>است.</p>
+        <p>هرچه کمتر:</p>
+        <p>بهتر.</p>
+
+        <h2>17. مثال Brier Score</h2>
+        <p>واقعیت:</p>
+        <div class="box"><div class="chart">y = 1</div></div>
+        <p>مدل:</p>
+        <div class="box"><div class="chart">p = 0.9</div></div>
+        <p>خطا:</p>
+        <div class="formula">(0.9 - 1)<sup>2</sup> = 0.01</div>
+        <p>ولی اگر:</p>
+        <div class="box"><div class="chart">p = 0.2</div></div>
+        <p>باشد:</p>
+        <div class="formula">(0.2 - 1)<sup>2</sup> = 0.64</div>
+        <p>پس prediction دوم بسیار بدتر است.</p>
+
+        <h2>18. Brier Score فقط Calibration نیست</h2>
+        <p>این نکته Senior-level است.</p>
+        <p>Brier Score را می‌توان به اجزایی مثل:</p>
+        <div class="inner-box">Reliability</div>
+        <div class="inner-box">Resolution</div>
+        <div class="inner-box">Uncertainty</div>
+        <p>تفکیک کرد.</p>
+        <p>بنابراین Brier Score فقط یک metric ساده برای calibration نیست.</p>
+
+        <h2>19. Resolution چیست؟</h2>
+        <p>مدلی می‌تواند افراد مختلف را از نظر risk از هم جدا کند.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Customer A → 0.01
+Customer B → 0.50
+Customer C → 0.95</div></div>
+        <p>این یعنی model discrimination/resolution خوبی دارد.</p>
+
+        <h2>20. Calibration vs Discrimination</h2>
+        <p>این دو را قاطی نکن.</p>
+        <div class="inner-box"><div class="inner-title">Discrimination</div></div>
+        <p>آیا مدل می‌تواند positive را بالاتر از negative قرار دهد؟</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Fraud → .9
+Normal → .1</div></div>
+        <p>Metrics:</p>
+        <div class="box"><div class="chart">ROC-AUC
+PR-AUC</div></div>
+        <div class="inner-box"><div class="inner-title">Calibration</div></div>
+        <p>آیا probability واقعاً معنی probability دارد؟</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Predicted .8
+→ roughly 80% positive</div></div>
+
+        <h2>21. یک مدل می‌تواند: عالی در discrimination باشد ولی بد-calibrated</h2>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Fraud:
+.99
+
+Normal:
+.01</div></div>
+        <p>ranking عالی است.</p>
+        <p>اما اگر در واقع:</p>
+        <div class="box"><div class="chart">99% predictions = 60% actual</div></div>
+        <p>باشد، probability calibration بد است.</p>
+
+        <h2>22. Expected Calibration Error — ECE</h2>
+        <p>ECE تلاش می‌کند calibration error را به صورت عددی خلاصه کند.</p>
+        <p>به‌صورت رایج:</p>
+        <div class="formula">ECE = &Sigma;<sub>b=1</sub><sup>B</sup> (|S<sub>b</sub>| / N) |acc(S<sub>b</sub>) - conf(S<sub>b</sub>)|</div>
+        <p>که:</p>
+        <div class="inner-box">B: تعداد bins</div>
+        <div class="inner-box">S<sub>b</sub>: samples در bin</div>
+        <div class="inner-box">acc: observed frequency</div>
+        <div class="inner-box">conf: mean predicted probability</div>
+        <p>است.</p>
+        <p>هرچه:</p>
+        <div class="formula">ECE &rarr; 0</div>
+        <p>بهتر.</p>
+
+        <h2>23. مثال ECE</h2>
+        <p>فرض:</p>
+        <table>
+            <thead><tr><th>Bin</th><th>Samples</th><th>Predicted</th><th>Actual</th></tr></thead>
+            <tbody>
+                <tr><td>0–0.2</td><td>200</td><td>0.10</td><td>0.12</td></tr>
+                <tr><td>0.2–0.4</td><td>300</td><td>0.30</td><td>0.25</td></tr>
+                <tr><td>0.4–0.6</td><td>200</td><td>0.50</td><td>0.55</td></tr>
+                <tr><td>0.6–0.8</td><td>200</td><td>0.70</td><td>0.75</td></tr>
+                <tr><td>0.8–1</td><td>100</td><td>0.90</td><td>0.80</td></tr>
+            </tbody>
+        </table>
+        <p>ECE اختلاف weighted این مقادیر است.</p>
+
+        <h2>24. محدودیت ECE</h2>
+        <p>ECE یک metric عالی نیست.</p>
+        <p>به:</p>
+        <div class="inner-box">تعداد bins</div>
+        <div class="inner-box">binning strategy</div>
+        <div class="inner-box">sample size</div>
+        <p>حساس است.</p>
+        <p>حتی ممکن است دو مدل ECE مشابه داشته باشند ولی رفتار calibration متفاوتی داشته باشند.</p>
+        <p>پس:</p>
+        <div class="inner-box">Reliability Diagram + ECE/Brier</div>
+        <p>بهتر از استفاده تنها از ECE است.</p>
+
+        <h2>25. Calibration چگونه خراب می‌شود؟</h2>
+        <p>مدل‌های مختلف رفتار متفاوت دارند.</p>
+        <p>مثلاً:</p>
+        <div class="inner-box"><div class="inner-title">Logistic Regression</div></div>
+        <p>اغلب probabilityهای نسبتاً well-calibrated می‌دهد، مخصوصاً اگر specification مناسب باشد.</p>
+        <div class="inner-box"><div class="inner-title">Deep Neural Networks</div></div>
+        <p>ممکن است:</p>
+        <div class="inner-box">overconfident</div>
+        <p>باشند.</p>
+        <div class="inner-box"><div class="inner-title">Tree Ensembles</div></div>
+        <p>ممکن است probabilityهای خام آنها calibration کاملی نداشته باشد.</p>
+
+        <h2>26. Calibration بعد از Training</h2>
+        <p>اگر مدل خوب rank کند ولی probability بد باشد، می‌توان calibration انجام داد.</p>
+        <p>دو روش مهم:</p>
+        <div class="box"><div class="chart">Platt Scaling
+Isotonic Regression</div></div>
+
+        <h2>27. Platt Scaling</h2>
+        <p>ایده:</p>
+        <p>مدل اصلی score می‌دهد:</p>
+        <div class="formula">z</div>
+        <p>بعد یک logistic model روی score می‌سازیم:</p>
+        <div class="formula">P(y=1|z) = 1 / (1 + e<sup>Az+B</sup>)</div>
+        <p>پارامترهای A, B روی calibration data یاد گرفته می‌شوند.</p>
+
+        <h2>28. چه زمانی Platt Scaling خوب است؟</h2>
+        <p>وقتی:</p>
+        <div class="inner-box">data نسبتاً کم است</div>
+        <div class="inner-box">relationship تقریباً smooth و sigmoid-like است</div>
+        <div class="inner-box">نمی‌خواهی calibration function خیلی flexible باشد.</div>
+
+        <h2>29. Isotonic Regression</h2>
+        <p>در Isotonic Regression یک تابع monotonic یاد می‌گیریم:</p>
+        <div class="formula">f(z)</div>
+        <p>به طوری که:</p>
+        <div class="formula">z<sub>1</sub> &lt; z<sub>2</sub> &rArr; f(z<sub>1</sub>) &le; f(z<sub>2</sub>)</div>
+        <p>مزیت:</p>
+        <p>non-parametric و flexible.</p>
+
+        <h2>30. مشکل Isotonic Regression</h2>
+        <p>اگر calibration dataset کوچک باشد:</p>
+        <p>احتمال overfitting دارد.</p>
+        <p>پس یک rule عملی:</p>
+        <div class="box"><div class="chart">Small calibration dataset
+→ Platt/logistic scaling
+
+Large calibration dataset
+→ Isotonic can be attractive</div></div>
+        <p>البته این قانون مطلق نیست.</p>
+
+        <h2>31. Calibration Set باید جدا باشد</h2>
+        <p>این خیلی مهم است.</p>
+        <p>اشتباه:</p>
+        <div class="box"><div class="chart">Train model
+↓
+Predict same train data
+↓
+Calibrate</div></div>
+        <p>ممکن است calibration overfit شود.</p>
+        <p>بهتر:</p>
+        <div class="box"><div class="chart">Training
+   ↓
+Calibration Set
+   ↓
+Calibrator
+   ↓
+Test</div></div>
+        <p>یا با CV/ensemble روش‌های leakage-safe.</p>
+
+        <h2>32. حالا وارد Decision Theory شویم</h2>
+        <p>Calibration به ما می‌گوید:</p>
+        <p>احتمال چقدر قابل اعتماد است.</p>
+        <p>Decision Theory می‌گوید:</p>
+        <p>با این probability چه کاری انجام دهیم؟</p>
+
+        <h2>33. Decision Threshold</h2>
+        <p>در binary classification معمولاً:</p>
+        <div class="formula">&#770;y = { 1 if p &ge; t, 0 if p &lt; t }</div>
+        <p>که t threshold است.</p>
+        <p>threshold پیش‌فرض خیلی وقت‌ها:</p>
+        <div class="formula">t = 0.5</div>
+        <p>است.</p>
+        <p>ولی:</p>
+        <p>0.5 هیچ قانون مقدسی نیست.</p>
+
+        <h2>34. چرا threshold = 0.5 همیشه درست نیست؟</h2>
+        <p>فرض کن:</p>
+        <div class="box"><div class="chart">Fraud probability = 0.3</div></div>
+        <p>اگر:</p>
+        <div class="box"><div class="chart">FN cost = $1000
+FP cost = $5</div></div>
+        <p>باشد، شاید حتی probability 0.1 هم ارزش investigation داشته باشد.</p>
+
+        <h2>35. Cost Matrix</h2>
+        <p>برای binary classification:</p>
+        <table>
+            <thead><tr><th>Actual / Predicted</th><th>Negative</th><th>Positive</th></tr></thead>
+            <tbody>
+                <tr><td>Negative</td><td>TN</td><td>FP</td></tr>
+                <tr><td>Positive</td><td>FN</td><td>TP</td></tr>
+            </tbody>
+        </table>
+        <p>حالا هزینه تعریف می‌کنیم.</p>
+        <p>مثلاً:</p>
+        <div class="formula">C<sub>FP</sub> = 10</div>
+        <p>و:</p>
+        <div class="formula">C<sub>FN</sub> = 1000</div>
+
+        <h2>36. Cost Matrix کامل</h2>
+        <p>می‌توان نوشت:</p>
+        <div class="formula">C = [ C<sub>TN</sub>  C<sub>FP</sub> ; C<sub>FN</sub>  C<sub>TP</sub> ]</div>
+        <p>مثلاً:</p>
+        <div class="formula">C = [ 0  10 ; 1000  0 ]</div>
+        <p>یعنی:</p>
+        <div class="box"><div class="chart">True Negative → 0
+False Positive → 10
+False Negative → 1000
+True Positive → 0</div></div>
+
+        <h2>37. Expected Cost</h2>
+        <p>برای یک تصمیم مشخص:</p>
+        <div class="formula">EC = &Sigma;<sub>y,a</sub> P(y|x) C(a,y)</div>
+        <p>یعنی:</p>
+        <p>احتمال هر outcome &times; هزینه آن outcome.</p>
+
+        <h2>38. مثال Fraud</h2>
+        <p>فرض:</p>
+        <div class="box"><div class="chart">P(Fraud)=0.1</div></div>
+        <p>دو action داریم:</p>
+        <div class="box"><div class="chart">Approve
+Block</div></div>
+        <p>اگر approve کنیم:</p>
+        <div class="box"><div class="chart">اگر Fraud باشد:
+Loss = $1000</div></div>
+        <p>پس:</p>
+        <div class="formula">EC(Approve) = 0.1 &times; 1000</div>
+        <div class="formula">= 100</div>
+
+        <h2>39. اگر Block کنیم؟</h2>
+        <p>فرض کنیم blocking یک تراکنش سالم:</p>
+        <div class="box"><div class="chart">Cost = $10</div></div>
+        <p>پس:</p>
+        <div class="formula">EC(Block) = 0.9 &times; 10</div>
+        <div class="formula">= 9</div>
+        <p>بنابراین:</p>
+        <div class="box"><div class="chart">Approve → $100 expected cost
+Block   → $9 expected cost</div></div>
+        <p>تصمیم:</p>
+        <div class="box"><div class="chart">Block.</div></div>
+        <p>حتی با probability فقط 10%.</p>
+
+        <h2>40. Threshold Optimal در حالت ساده</h2>
+        <p>فرض کنیم:</p>
+        <div class="box"><div class="chart">Action Positive:
+Cost(FP) = C_FP
+Cost(TP) = 0
+
+Action Negative:
+Cost(FN) = C_FN
+Cost(TN) = 0</div></div>
+        <p>اگر probability positive برابر p باشد:</p>
+        <div class="inner-box"><div class="inner-title">Predict Positive:</div></div>
+        <div class="formula">EC(+) = (1 - p) C<sub>FP</sub></div>
+        <div class="inner-box"><div class="inner-title">Predict Negative:</div></div>
+        <div class="formula">EC(-) = p C<sub>FN</sub></div>
+        <p>Positive را انتخاب می‌کنیم اگر:</p>
+        <div class="formula">(1 - p) C<sub>FP</sub> &lt; p C<sub>FN</sub></div>
+        <p>حل:</p>
+        <div class="formula">C<sub>FP</sub> &lt; p (C<sub>FN</sub> + C<sub>FP</sub>)</div>
+        <p>بنابراین:</p>
+        <div class="formula">p &gt; C<sub>FP</sub> / (C<sub>FP</sub> + C<sub>FN</sub>)</div>
+
+        <h2>41. مثال</h2>
+        <p>اگر:</p>
+        <div class="formula">C<sub>FP</sub> = 10</div>
+        <p>و:</p>
+        <div class="formula">C<sub>FN</sub> = 90</div>
+        <p>آنگاه:</p>
+        <div class="formula">t = 10 / (10 + 90)</div>
+        <div class="formula">t = 0.1</div>
+        <p>یعنی threshold بهینه:</p>
+        <div class="formula">0.10</div>
+        <p>نه 0.5.</p>
+
+        <h2>42. این نتیجه بسیار مهم است</h2>
+        <p>اگر:</p>
+        <div class="box"><div class="chart">FN cost &gt;&gt; FP cost</div></div>
+        <p>آنگاه:</p>
+        <div class="formula">threshold &darr;</div>
+        <p>یعنی positive class را راحت‌تر انتخاب می‌کنیم.</p>
+        <p>اگر:</p>
+        <div class="box"><div class="chart">FP cost &gt;&gt; FN cost</div></div>
+        <p>آنگاه:</p>
+        <div class="formula">threshold &uarr;</div>
+
+        <h2>43. مثال پزشکی</h2>
+        <p>فرض:</p>
+        <div class="box"><div class="chart">False Negative:
+بیماری را تشخیص ندهیم</div></div>
+        <p>هزینه بسیار بالا.</p>
+        <p>بنابراین:</p>
+        <div class="inner-box">threshold پایین</div>
+        <p>می‌تواند منطقی باشد.</p>
+        <p>در مقابل، اگر intervention بسیار پرهزینه یا خطرناک باشد، ممکن است threshold بالاتر شود.</p>
+
+        <h2>44. Fraud Detection</h2>
+        <p>Fraud معمولاً asymmetric cost دارد.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">False Negative:
+Fraud را approve کردیم
+→ financial loss
+
+False Positive:
+Customer سالم را block کردیم
+→ customer friction</div></div>
+        <p>این دو برابر نیستند.</p>
+
+        <h2>45. Expected Utility</h2>
+        <p>گاهی به جای Cost از Utility استفاده می‌کنیم.</p>
+        <p>Utility:</p>
+        <p>ارزش/فایده یک action.</p>
+        <p>مثلاً:</p>
+        <table>
+            <thead><tr><th>Action</th><th>Outcome</th><th>Utility</th></tr></thead>
+            <tbody>
+                <tr><td>Approve</td><td>Legit</td><td>+10</td></tr>
+                <tr><td>Approve</td><td>Fraud</td><td>-100</td></tr>
+                <tr><td>Block</td><td>Legit</td><td>-5</td></tr>
+                <tr><td>Block</td><td>Fraud</td><td>+20</td></tr>
+            </tbody>
+        </table>
+        <p>هدف:</p>
+        <div class="formula">max ExpectedUtility</div>
+
+        <h2>46. Cost و Utility رابطه نزدیک دارند</h2>
+        <p>می‌توان گفت:</p>
+        <div class="formula">Utility = - Cost</div>
+        <p>در ساده‌ترین formulation.</p>
+        <p>ولی utility framework انعطاف بیشتری برای:</p>
+        <div class="inner-box">reward</div>
+        <div class="inner-box">profit</div>
+        <div class="inner-box">business value</div>
+        <div class="inner-box">customer value</div>
+        <p>دارد.</p>
+
+        <h2>47. Expected Utility</h2>
+        <p>برای action a:</p>
+        <div class="formula">EU(a|x) = &Sigma;<sub>y</sub> P(y|x) U(a,y)</div>
+        <p>بهترین action:</p>
+        <div class="formula">a* = arg max<sub>a</sub> EU(a|x)</div>
+
+        <h2>48. این فرمول را حفظ کن</h2>
+        <p>این یکی از مهم‌ترین فرمول‌های Decision Theory برای ML است:</p>
+        <div class="formula">a*(x) = arg max<sub>a</sub> &Sigma;<sub>y</sub> P(y|x) U(a,y)</div>
+        <p>یعنی:</p>
+        <div class="inner-box">Probability + Utility &rarr; Optimal Decision</div>
+
+        <h2>49. Cost-Sensitive Learning</h2>
+        <p>حالا یک مرحله جلوتر.</p>
+        <p>به جای اینکه فقط threshold را تغییر دهیم:</p>
+        <p>خود training را هم cost-sensitive می‌کنیم.</p>
+        <p>مثلاً برای Fraud:</p>
+        <div class="box"><div class="chart">Fraud samples
+→ weight = 10
+
+Normal samples
+→ weight = 1</div></div>
+
+        <h2>50. Cost-Sensitive Loss</h2>
+        <p>مثلاً Binary Cross Entropy:</p>
+        <div class="formula">L = -[ y log(p) + (1 - y) log(1 - p) ]</div>
+        <p>می‌تواند weighted شود:</p>
+        <div class="formula">L = -[ w<sub>1</sub> y log(p) + w<sub>0</sub> (1 - y) log(1 - p) ]</div>
+        <p>که:</p>
+        <div class="box"><div class="chart">w1 = cost/importance of positive
+w0 = cost/importance of negative</div></div>
+
+        <h2>51. Cost-Sensitive Learning vs Threshold Tuning</h2>
+        <p>این دو خیلی مهم‌اند ولی یکسان نیستند.</p>
+        <div class="inner-box"><div class="inner-title">Threshold Tuning</div></div>
+        <p>مدل را train می‌کنی:</p>
+        <div class="box"><div class="chart">Model
+ ↓
+probability
+ ↓
+change threshold</div></div>
+        <p>پارامترهای مدل عوض نمی‌شوند.</p>
+        <div class="inner-box"><div class="inner-title">Cost-Sensitive Learning</div></div>
+        <p>در training:</p>
+        <div class="box"><div class="chart">Cost
+ ↓
+Weighted Loss
+ ↓
+Model parameters</div></div>
+        <p>خود مدل تحت تأثیر هزینه قرار می‌گیرد.</p>
+
+        <h2>52. آیا همیشه Cost-Sensitive Training لازم است؟</h2>
+        <p>نه.</p>
+        <p>گاهی مدل probabilityهای خوبی تولید می‌کند و کافی است:</p>
+        <p>threshold را بر اساس cost انتخاب کنیم.</p>
+        <p>این حتی می‌تواند از تغییر training distribution بهتر باشد.</p>
+
+        <h2>53. یک نکته بسیار Senior</h2>
+        <p>اگر probabilityهای مدل calibrated باشند، threshold را می‌توان مستقیماً از cost matrix و business utility تعیین کرد.</p>
+        <p>اما اگر probabilityها calibrated نباشند:</p>
+        <div class="box"><div class="chart">p = 0.1</div></div>
+        <p>لزومی ندارد واقعاً:</p>
+        <div class="box"><div class="chart">10%</div></div>
+        <p>باشد.</p>
+        <p>پس decision theory به شدت به calibration می‌تواند وابسته باشد.</p>
+
+        <h2>54. Calibration &rarr; Decision</h2>
+        <p>این زنجیره را حفظ کن:</p>
+        <div class="box"><div class="chart">Raw Model Score
+       ↓
+Probability
+       ↓
+Calibration
+       ↓
+Expected Cost / Utility
+       ↓
+Decision Threshold
+       ↓
+Business Action</div></div>
+
+        <h2>55. مثال کامل Fraud Detection</h2>
+        <p>فرض:</p>
+        <div class="box"><div class="chart">100,000 transactions</div></div>
+        <p>مدل:</p>
+        <div class="box"><div class="chart">P(Fraud|X)</div></div>
+        <p>می‌دهد.</p>
+        <p>Business:</p>
+        <div class="box"><div class="chart">False Positive Cost = $5
+False Negative Cost = $500</div></div>
+
+        <div class="inner-box"><div class="inner-title">مرحله 1</div></div>
+        <p>Model probabilities تولید می‌کند.</p>
+        <div class="box"><div class="chart">Transaction A &rarr; .02
+Transaction B &rarr; .11
+Transaction C &rarr; .82</div></div>
+
+        <div class="inner-box"><div class="inner-title">مرحله 2</div></div>
+        <p>Calibration را بررسی می‌کنیم.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Predicted .8
+Actual fraud rate .79</div></div>
+        <p>خوب.</p>
+
+        <div class="inner-box"><div class="inner-title">مرحله 3</div></div>
+        <p>Cost-optimal threshold را محاسبه می‌کنیم.</p>
+        <p>در formulation ساده:</p>
+        <div class="formula">t = 5 / (5 + 500)</div>
+        <div class="formula">t &asymp; 0.0099</div>
+        <p>یعنی تقریباً:</p>
+        <div class="box"><div class="chart">1%</div></div>
+
+        <h2>56. یعنی چه؟</h2>
+        <p>اگر probability واقعاً calibrated باشد:</p>
+        <div class="box"><div class="chart">P(Fraud) &gt; 1%</div></div>
+        <p>ممکن است block/review از approve کردن ارزان‌تر باشد.</p>
+        <p>اما اینجا باید بسیار دقت کنی:</p>
+        <p>threshold محاسبه‌شده از این فرمول فقط تحت assumptions مشخص معتبر است.</p>
+        <p>در سیستم واقعی ممکن است:</p>
+        <div class="inner-box">actionهای مختلف داشته باشیم</div>
+        <div class="inner-box">recovery داشته باشیم</div>
+        <div class="inner-box">transaction value متفاوت باشد</div>
+        <div class="inner-box">customer lifetime value مهم باشد</div>
+        <div class="inner-box">review capacity محدود باشد</div>
+        <div class="inner-box">blocking هزینه‌های متفاوت داشته باشد</div>
+
+        <h2>57. Transaction Value</h2>
+        <p>این خیلی مهم است.</p>
+        <p>فرض:</p>
+        <div class="box"><div class="chart">Transaction A:
+Fraud probability = 2%
+Value = $10
+
+Transaction B:
+Fraud probability = 2%
+Value = $10,000</div></div>
+        <p>Probability یکسان است.</p>
+        <p>ولی expected loss:</p>
+        <p>A:</p>
+        <div class="formula">0.02 &times; 10 = $0.20</div>
+        <p>B:</p>
+        <div class="formula">0.02 &times; 10000 = $200</div>
+        <p>پس decision نباید فقط تابع probability باشد.</p>
+
+        <h2>58. Decision Function می‌تواند چندبعدی باشد</h2>
+        <p>مثلاً:</p>
+        <div class="formula">Decision = f( P(Fraud), TransactionValue, CustomerValue, ReviewCost, Capacity )</div>
+        <p>این دقیقاً جایی است که ML به Decision Science متصل می‌شود.</p>
+
+        <h2>59. Review / Manual Investigation</h2>
+        <p>فرض کن سه action داریم:</p>
+        <div class="box"><div class="chart">Approve
+Review
+Block</div></div>
+        <p>حالا دیگر threshold ساده binary نیست.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">p < 0.02
+&rarr; Approve
+
+0.02 &le; p < 0.30
+&rarr; Review
+
+p &ge; 0.30
+&rarr; Block</div></div>
+        <p>ولی thresholdها باید با expected utility/cost تعیین شوند.</p>
+
+        <h2>60. محدودیت Review Capacity</h2>
+        <p>فرض کن تیم Fraud فقط:</p>
+        <div class="box"><div class="chart">10,000 transactions/day</div></div>
+        <p>را می‌تواند بررسی کند.</p>
+        <p>پس حتی اگر:</p>
+        <div class="box"><div class="chart">100,000</div></div>
+        <p>تراکنش high-risk باشند، نمی‌توانی همه را review کنی.</p>
+        <p>این یک:</p>
+        <div class="inner-box">operational constraint</div>
+        <p>است.</p>
+
+        <h2>61. Constrained Decision Making</h2>
+        <p>مثلاً:</p>
+        <div class="formula">max ExpectedUtility</div>
+        <p>subject to:</p>
+        <div class="formula">ReviewCount &le; 10000</div>
+        <p>این formulation بسیار واقعی‌تر است.</p>
+
+        <h2>62. Cost Matrix در Multi-Class</h2>
+        <p>برای binary ساده نیست.</p>
+        <p>فرض سه class:</p>
+        <div class="box"><div class="chart">Normal
+Suspicious
+Fraud</div></div>
+        <p>Cost matrix می‌تواند:</p>
+        <table>
+            <thead><tr><th>Actual / Pred</th><th>Normal</th><th>Suspicious</th><th>Fraud</th></tr></thead>
+            <tbody>
+                <tr><td>Normal</td><td>0</td><td>5</td><td>20</td></tr>
+                <tr><td>Suspicious</td><td>10</td><td>0</td><td>10</td></tr>
+                <tr><td>Fraud</td><td>500</td><td>100</td><td>0</td></tr>
+            </tbody>
+        </table>
+        <p>در این حالت decision با:</p>
+        <div class="formula">a* = arg min<sub>a</sub> &Sigma;<sub>y</sub> P(y|x) C(a,y)</div>
+        <p>انجام می‌شود.</p>
+
+        <h2>63. Calibration در Multi-Class</h2>
+        <p>برای هر class می‌خواهیم:</p>
+        <div class="formula">P(Y=k|X)</div>
+        <p>قابل اعتماد باشد.</p>
+        <p>مثلاً اگر مدل بگوید:</p>
+        <div class="box"><div class="chart">Class A = 0.7</div></div>
+        <p>در موارد مشابه باید تقریباً:</p>
+        <div class="box"><div class="chart">70%</div></div>
+        <p>از آن class باشند.</p>
+
+        <h2>64. Multiclass Calibration</h2>
+        <p>مسئله سخت‌تر می‌شود چون probabilityها باید:</p>
+        <div class="formula">&Sigma;<sub>k</sub> p<sub>k</sub> = 1</div>
+        <p>باشند.</p>
+        <p>روش‌هایی مثل:</p>
+        <div class="inner-box">temperature scaling</div>
+        <div class="inner-box">vector scaling</div>
+        <div class="inner-box">matrix scaling</div>
+        <p>در این زمینه استفاده می‌شوند.</p>
+
+        <h2>65. Temperature Scaling</h2>
+        <p>خصوصاً در Neural Networks بسیار رایج است.</p>
+        <p>اگر logits:</p>
+        <div class="formula">z</div>
+        <p>باشند:</p>
+        <div class="formula">p<sub>k</sub> = e<sup>z<sub>k</sub>/T</sup> / &Sigma;<sub>j</sub> e<sup>z<sub>j</sub>/T</sup></div>
+        <p>پارامتر:</p>
+        <div class="formula">T</div>
+        <p>روی calibration set یاد گرفته می‌شود.</p>
+
+        <h2>66. Temperature Scaling چه می‌کند؟</h2>
+        <p>اگر:</p>
+        <div class="formula">T &gt; 1</div>
+        <p>باشد، distribution نرم‌تر می‌شود.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Before:
+[0.99, 0.01]
+
+After:
+[0.85, 0.15]</div></div>
+        <p>ممکن است calibration بهتر شود.</p>
+        <p>نکته مهم:</p>
+        <p>ranking کلاس‌ها معمولاً حفظ می‌شود.</p>
+
+        <h2>67. Calibration با Threshold یکی نیست</h2>
+        <p>خیلی مهم:</p>
+        <div class="inner-box">Calibration: probability quality</div>
+        <div class="inner-box">Threshold: decision rule</div>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Calibrated model
++
+threshold = 0.2</div></div>
+
+        <h2>68. اگر Threshold را تغییر دهیم، Calibration خراب می‌شود؟</h2>
+        <p>اگر probability خروجی مدل را تغییر ندهی و فقط:</p>
+        <div class="box"><div class="chart">p >= threshold</div></div>
+        <p>را عوض کنی:</p>
+        <p>calibration probabilityها تغییر نمی‌کند.</p>
+        <p>فقط classification decision تغییر می‌کند.</p>
+
+        <h2>69. Calibration vs Ranking</h2>
+        <p>یک transformation monotonic می‌تواند ranking را حفظ کند ولی probability را تغییر دهد.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Model A:
+0.1
+0.2
+0.9</div></div>
+        <p>تبدیل شود:</p>
+        <div class="box"><div class="chart">0.01
+0.04
+0.81</div></div>
+        <p>ranking همان است.</p>
+        <p>پس ممکن است:</p>
+        <div class="box"><div class="chart">ROC-AUC</div></div>
+        <p>تغییر زیادی نکند، ولی calibration بهتر شود.</p>
+
+        <h2>70. نکته مهم درباره ROC-AUC</h2>
+        <p>ROC-AUC به threshold وابسته نیست.</p>
+        <p>اما:</p>
+        <div class="box"><div class="chart">Calibration
+Expected Cost</div></div>
+        <p>به probability quality وابسته‌اند.</p>
+        <p>بنابراین:</p>
+        <p>یک ROC-AUC عالی تضمین نمی‌کند که تصمیم اقتصادی خوبی خواهی داشت.</p>
+
+        <h2>71. PR-AUC هم calibration نیست</h2>
+        <p>PR-AUC بیشتر درباره ranking/classification performance است.</p>
+        <p>اگر business decision به probability دقیق نیاز دارد:</p>
+        <p>calibration را جداگانه evaluate کن.</p>
+
+        <h2>72. چگونه یک مدل را Senior-level ارزیابی کنیم؟</h2>
+        <p>برای Fraud Detection:</p>
+        <div class="inner-box"><div class="inner-title">Discrimination</div></div>
+        <div class="inner-box">PR-AUC</div>
+        <div class="inner-box">ROC-AUC</div>
+        <div class="inner-box">Recall</div>
+        <div class="inner-box">Precision</div>
+        <div class="inner-box"><div class="inner-title">Calibration</div></div>
+        <div class="inner-box">Reliability Diagram</div>
+        <div class="inner-box">Brier Score</div>
+        <div class="inner-box">ECE</div>
+        <div class="inner-box"><div class="inner-title">Decision Quality</div></div>
+        <div class="inner-box">Expected Cost</div>
+        <div class="inner-box">Expected Utility</div>
+        <div class="inner-box">Profit</div>
+        <div class="inner-box">Loss prevented</div>
+        <div class="inner-box"><div class="inner-title">Operational</div></div>
+        <div class="inner-box">Latency</div>
+        <div class="inner-box">Review volume</div>
+        <div class="inner-box">Block rate</div>
+        <div class="inner-box">Customer friction</div>
+
+        <h2>73. این چهار سؤال را از هم جدا کن</h2>
+        <p>وقتی مدل probability می‌دهد، بپرس:</p>
+        <div class="inner-box"><div class="inner-title">سؤال 1</div></div>
+        <p>آیا ranking خوب است؟</p>
+        <div class="inner-box">ROC-AUC / PR-AUC</div>
+        <div class="inner-box"><div class="inner-title">سؤال 2</div></div>
+        <p>آیا probability معتبر است؟</p>
+        <div class="inner-box">Calibration</div>
+        <div class="inner-box"><div class="inner-title">سؤال 3</div></div>
+        <p>threshold مناسب چیست؟</p>
+        <div class="inner-box">Decision Theory</div>
+        <div class="inner-box"><div class="inner-title">سؤال 4</div></div>
+        <p>آیا decision برای business خوب است؟</p>
+        <div class="inner-box">Expected Cost / Utility</div>
+
+        <h2>74. یک اشتباه رایج</h2>
+        <p>❌</p>
+        <div class="inner-box">F1 بهترین threshold را پیدا کرد
+پس threshold نهایی همین است.</div>
+        <p>لزومی ندارد.</p>
+        <p>F1 فقط یک objective است.</p>
+        <p>Business ممکن است بگوید:</p>
+        <div class="inner-box">False Negative = 100 &times; False Positive</div>
+        <p>پس threshold F1 الزاماً threshold business-optimal نیست.</p>
+
+        <h2>75. اشتباه دوم</h2>
+        <p>❌</p>
+        <div class="inner-box">Accuracy = 99%
+پس مدل عالی است.</div>
+        <p>در Fraud Detection ممکن است:</p>
+        <div class="inner-box">99.9% legitimate
+0.1% fraud</div>
+        <p>باشد.</p>
+        <p>مدلی که همه را legitimate پیش‌بینی کند:</p>
+        <div class="inner-box">Accuracy = 99.9%</div>
+        <p>ولی:</p>
+        <div class="inner-box">Fraud Recall = 0</div>
+        <p>دارد.</p>
+
+        <h2>76. اشتباه سوم</h2>
+        <p>❌</p>
+        <div class="inner-box">Probability = 0.8
+پس 80% احتمال دارد.</div>
+        <p>فقط وقتی این interpretation قابل اعتماد است که model reasonably calibrated باشد.</p>
+
+        <h2>77. اشتباه چهارم</h2>
+        <p>❌ Calibration روی test set و سپس گزارش همان test set.</p>
+        <p>اگر test برای final evaluation است:</p>
+        <div class="box"><div class="chart">Train
+ ↓
+Validation
+ ↓
+Calibration
+ ↓
+Final Test</div></div>
+        <p>و test باید تا آخر دست‌نخورده بماند.</p>
+
+        <h2>78. Calibration Dataset</h2>
+        <p>یک معماری تمیز:</p>
+        <div class="box"><div class="chart">Train
+ ├── Model fitting
+ │
+Calibration
+ ├── Probability calibration
+ │
+Test
+ └── Final evaluation</div></div>
+        <p>در dataset کوچک می‌توان از CV-based calibration استفاده کرد.</p>
+
+        <h2>79. Pipeline حرفه‌ای</h2>
+        <div class="box"><div class="chart">Raw Data
+   ↓
+Train / Calibration / Test
+   ↓
+Feature Pipeline
+   ↓
+Model
+   ↓
+Raw Scores / Probabilities
+   ↓
+Calibration
+   ↓
+Decision Policy
+   ↓
+Business Action</div></div>
+
+        <h2>80. مهم: Cost-sensitive learning و class imbalance یکی نیستند</h2>
+        <p>ممکن است:</p>
+        <div class="inner-box">class imbalance</div>
+        <p>داشته باشی ولی هزینه‌ها برابر باشند.</p>
+        <p>یا:</p>
+        <div class="inner-box">Classes balanced</div>
+        <p>باشند ولی costها کاملاً asymmetric باشند.</p>
+        <p>پس:</p>
+        <div class="formula">Class Imbalance &ne; Cost Asymmetry</div>
+
+        <h2>81. Class Weight چه می‌کند؟</h2>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Python</div><div class="chart">class_weight = {
+    0: 1,
+    1: 10
+}</div></div>
+        <p>یعنی errorهای class 1 وزن بیشتری دارند.</p>
+        <p>این یک نوع cost-sensitive learning است، اما:</p>
+        <p>class weight لزوماً معادل واقعی business cost نیست.</p>
+
+        <h2>82. Threshold Tuning بهتر است یا Class Weight؟</h2>
+        <p>هیچ جواب universal ندارد.</p>
+        <p>اگر مدل:</p>
+        <div class="inner-box">ranking خوب</div>
+        <div class="inner-box">probability خوب</div>
+        <p>دارد، threshold tuning ممکن است کافی باشد.</p>
+        <p>اگر loss/training objective باید هزینه‌ها را منعکس کند:</p>
+        <p>cost-sensitive training ممکن است بهتر باشد.</p>
+        <p>اغلب باید هر دو را آزمایش کرد.</p>
+
+        <h2>83. Calibration بعد از Class Weight</h2>
+        <p>یک نکته مهم:</p>
+        <p>Weighted training می‌تواند probabilityهای خام را تغییر دهد.</p>
+        <p>پس بعد از class weighting ممکن است:</p>
+        <p>calibration دوباره لازم باشد.</p>
+
+        <h2>84. Sampling هم Calibration را تحت تأثیر قرار می‌دهد</h2>
+        <p>فرض کن در training:</p>
+        <div class="inner-box">Fraud = 1%</div>
+        <p>ولی برای training oversample می‌کنی:</p>
+        <div class="inner-box">Fraud = 30%</div>
+        <p>مدل ممکن است probabilityهایی بدهد که با production prior سازگار نیستند.</p>
+        <p>پس:</p>
+        <p>sampling strategy و prior probability را باید در calibration در نظر گرفت.</p>
+
+        <h2>85. Prior Probability Shift</h2>
+        <p>اگر prevalence در production تغییر کند:</p>
+        <div class="inner-box">Training fraud rate = 1%
+Production fraud rate = 3%</div>
+        <p>probabilities ممکن است دیگر calibrated نباشند.</p>
+        <p>این یکی از دلایلی است که:</p>
+        <p>calibration monitoring در production اهمیت دارد.</p>
+
+        <h2>86. Calibration Drift</h2>
+        <p>فرض کن امروز:</p>
+        <div class="inner-box">Predicted .8
+Actual .79</div>
+        <p>ولی شش ماه بعد:</p>
+        <div class="inner-box">Predicted .8
+Actual .62</div>
+        <p>مدل calibration خود را از دست داده است.</p>
+        <p>حتی اگر ranking هنوز نسبتاً خوب باشد.</p>
+
+        <h2>87. Monitoring حرفه‌ای</h2>
+        <p>در production فقط:</p>
+        <p>Accuracy</p>
+        <p>مانیتور نکن.</p>
+        <p>برای probability model:</p>
+        <div class="inner-box">Score Distribution</div>
+        <div class="inner-box">Calibration</div>
+        <div class="inner-box">Brier Score</div>
+        <div class="inner-box">ECE</div>
+        <div class="inner-box">Observed Positive Rate</div>
+        <div class="inner-box">Expected Positive Rate</div>
+        <p>را هم بررسی کن.</p>
+
+        <h2>88. Decision Policy Monitoring</h2>
+        <p>همچنین:</p>
+        <div class="inner-box">Block rate</div>
+        <div class="inner-box">Review rate</div>
+        <div class="inner-box">Approve rate</div>
+        <div class="inner-box">FP rate</div>
+        <div class="inner-box">FN rate</div>
+        <div class="inner-box">Expected cost</div>
+        <div class="inner-box">Actual cost</div>
+        <p>باید بررسی شوند.</p>
+
+        <h2>89. یک مثال کامل Enterprise</h2>
+        <p>فرض:</p>
+        <p>Fraud Detection</p>
+        <p>Pipeline:</p>
+        <div class="box"><div class="chart">Transaction
+     ↓
+Feature Engineering
+     ↓
+Fraud Model
+     ↓
+P(Fraud)
+     ↓
+Calibration
+     ↓
+Risk Engine
+     ↓
+┌───────────┬──────────┬─────────┐
+│ Approve   │ Review   │ Block   │
+└───────────┴──────────┴─────────┘</div></div>
+        <p>Risk Engine دیگر صرفاً:</p>
+        <div class="inner-box">if p > .5</div>
+        <p>نیست.</p>
+        <p>ممکن است:</p>
+        <div class="inner-box">Expected Loss</div>
+        <div class="inner-box">Customer Value</div>
+        <div class="inner-box">Transaction Value</div>
+        <div class="inner-box">Review Capacity</div>
+        <div class="inner-box">Regulatory Constraints</div>
+        <p>را در نظر بگیرد.</p>
+
+        <h2>90. Senior ML Engineer چه چیزی را باید ببیند؟</h2>
+        <p>یک Junior ممکن است بگوید:</p>
+        <div class="inner-box">F1 = 0.92</div>
+        <p>یک ML Engineer می‌گوید:</p>
+        <div class="inner-box">PR-AUC = 0.91 و threshold = 0.37.</div>
+        <p>یک Senior می‌گوید:</p>
+        <div class="inner-box">مدل PR-AUC خوبی دارد، probability calibration را با reliability diagram و Brier/ECE بررسی کرده‌ایم، threshold را بر اساس asymmetric fraud costs انتخاب کرده‌ایم، expected cost را روی out-of-sample data اندازه گرفته‌ایم و محدودیت review capacity و false-positive customer friction را هم وارد decision policy کرده‌ایم.</div>
+        <p>این تفاوت mindset است.</p>
+
+        <h2>🔥 خلاصه فرمول‌های مهم</h2>
+        <p>Calibration</p>
+        <div class="formula">P(Y=1|&#770;p=p) &asymp; p</div>
+        <p>Brier Score</p>
+        <div class="formula">BS = (1/N) &Sigma;<sub>i</sub> (p<sub>i</sub> - y<sub>i</sub>)<sup>2</sup></div>
+        <p>کمتر بهتر.</p>
+        <p>ECE</p>
+        <div class="formula">ECE = &Sigma;<sub>b</sub> (|S<sub>b</sub>| / N) |acc(S<sub>b</sub>) - conf(S<sub>b</sub>)|</div>
+        <p>کمتر بهتر.</p>
+        <p>Expected Cost</p>
+        <div class="formula">EC(a|x) = &Sigma;<sub>y</sub> P(y|x) C(a,y)</div>
+        <p>Expected Utility</p>
+        <div class="formula">EU(a|x) = &Sigma;<sub>y</sub> P(y|x) U(a,y)</div>
+        <p>بیشتر بهتر.</p>
+        <p>Optimal Decision</p>
+        <div class="formula">a* = arg max<sub>a</sub> &Sigma;<sub>y</sub> P(y|x) U(a,y)</div>
+        <p>یا اگر cost داریم:</p>
+        <div class="formula">a* = arg min<sub>a</sub> &Sigma;<sub>y</sub> P(y|x) C(a,y)</div>
+        <p>Binary Cost-Optimal Threshold</p>
+        <p>در حالت ساده با C<sub>TP</sub> = C<sub>TN</sub> = 0:</p>
+        <div class="formula">t* = C<sub>FP</sub> / (C<sub>FP</sub> + C<sub>FN</sub>)</div>
+
+        <h2>🧠 نقشه ذهنی نهایی</h2>
+        <p>این کل Chapter 28 را این‌طور در ذهن نگه دار:</p>
+        <div class="box"><div class="chart">                    ML MODEL
+                       │
+                       ↓
+               Probability P(Y|X)
+                       │
+              ┌────────┴────────┐
+              ↓                 ↓
+       Discrimination        Calibration
+              │                 │
+        ROC-AUC/PR-AUC     Reliability
+                              Brier
+                               ECE
+                                │
+                                ↓
+                       Decision Theory
+                                │
+                   ┌────────────┴────────────┐
+                   ↓                         ↓
+              Cost Matrix              Utility
+                   │                         │
+                   └────────────┬────────────┘
+                                ↓
+                       Expected Cost
+                       Expected Utility
+                                │
+                                ↓
+                       Decision Policy
+                                │
+                         Threshold / Rules
+                                │
+                                ↓
+                         Business Action
+                                │
+                                ↓
+                    Business Outcome / ROI</div></div>
+
+        <h2>🎯 مهم‌ترین Takeaway</h2>
+        <p>سه چیز را هیچ‌وقت با هم قاطی نکن:</p>
+        <div class="inner-box">Discrimination: آیا مدل می‌تواند positive و negative را از هم جدا کند؟</div>
+        <div class="inner-box">Calibration: آیا probability مدل واقعاً قابل اعتماد است؟</div>
+        <div class="inner-box">Decision Theory: با توجه به probability و هزینه/فایده، چه تصمیمی باید بگیریم؟</div>
+        <p>و یک Senior ML Engineer در نهایت فقط نمی‌پرسد:</p>
+        <div class="inner-box">"Is my model accurate?"</div>
+        <p>بلکه می‌پرسد:</p>
+        <div class="inner-box">"Given what the model predicts, what action minimizes expected business loss or maximizes expected utility?"</div>
+        <p>این دقیقاً نقطه اتصال ML &rarr; Probability &rarr; Calibration &rarr; Decision Theory &rarr; Business است.</p>
+
+    </div>
+</body>
+</html>

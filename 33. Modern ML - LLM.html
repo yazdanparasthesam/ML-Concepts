@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern ML / LLM - Senior ML Level</title>
+    <style>
+        body { background-color: #0d1117; color: #e6edf3; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.8; margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1, h2, h3 { color: #e6edf3; text-align: right; border-bottom: 1px solid #444; padding-bottom: 15px; margin-top: 50px; }
+        p, li { text-align: right; }
+        
+        /* Boxes: Force RTL for Persian */
+        .box { background-color: #21262d; border: 1px solid #30363d; border-radius: 8px; padding: 15px; margin: 15px 0; color: #e6edf3; direction: rtl !important; text-align: right !important; }
+        .inner-box { background-color: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 15px; margin: 10px; direction: rtl !important; text-align: right !important; }
+        .inner-title { font-weight: bold; margin-bottom: 5px; text-align: right !important; }
+
+        /* Formula Box: Force LTR, no raw $$ or \[ \] */
+        .formula {
+            direction: ltr !important;
+            background-color: #000;
+            border: 1px solid #fff;
+            border-radius: 0;
+            padding: 20px;
+            margin: 20px auto;
+            width: fit-content;
+            max-width: 100%;
+            overflow-x: auto;
+            text-align: center;
+            font-size: 1.2em;
+            font-family: "Times New Roman", Times, serif;
+            color: #fff;
+        }
+
+        /* Charts / Flowcharts / ASCII Art: Force LTR */
+        .chart { direction: ltr !important; text-align: left !important; font-family: monospace; background-color: #21262d; border-radius: 8px; padding: 15px; overflow-x: auto; white-space: pre; border: 1px solid #444; }
+
+        /* Tables */
+        table { width: 100%; border-collapse: collapse; direction: rtl; margin-bottom: 20px; }
+        th, td { border: 1px solid #444; padding: 12px; text-align: right; }
+        th { background-color: #21262d; }
+        
+        .highlight { color: #58a6ff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 33. Modern ML / LLM — از پایه تا سطح Senior ML Engineer</h1>
+
+        <p>این بخش یکی از مهم‌ترین بخش‌ها برای یک Senior ML Engineer در سال‌های 2025-2026 است، چون بسیاری از سیستم‌های AI Production امروزی دیگر فقط یک مدل Classification یا Regression نیستند؛ بلکه ترکیبی از:</p>
+        <div class="box"><div class="chart">Data
+ |
+Embedding
+ |
+Vector Database
+ |
+Retrieval
+ |
+LLM
+ |
+Evaluation
+ |
+Optimization
+ |
+Production Monitoring</div></div>
+        <p>هستند.</p>
+        <p>یک Senior باید بداند:</p>
+        <div class="inner-box">چرا RAG بهتر از Fine-tuning در بعضی سناریوهاست؟</div>
+        <div class="inner-box">چرا Embedding مهم‌تر از خود LLM در Search است؟</div>
+        <div class="inner-box">چرا Retrieval می‌تواند باعث hallucination شود؟</div>
+        <div class="inner-box">چرا یک LLM بزرگ همیشه بهترین جواب نیست؟</div>
+        <div class="inner-box">چگونه latency یک LLM را کم کنیم؟</div>
+        <div class="inner-box">چگونه کیفیت RAG را اندازه‌گیری کنیم؟</div>
+
+        <h2>1. Embeddings</h2>
+        <div class="inner-box"><div class="inner-title">مفهوم اصلی</div></div>
+        <p>Embedding یعنی:</p>
+        <div class="inner-box">تبدیل یک داده پیچیده (text/image/audio/code) به یک بردار عددی که معنی آن داده را حفظ می‌کند.</div>
+        <p>مثلاً:</p>
+        <p>متن:</p>
+        <div class="box"><div class="chart">I love machine learning</div></div>
+        <p>تبدیل می‌شود به:</p>
+        <div class="box"><div class="chart">[
+  0.123,
+  -0.532,
+   0.823,
+  ...
+]</div></div>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">dimension = 1536</div></div>
+        <p>یعنی یک بردار با 1536 عدد.</p>
+
+        <div class="inner-box"><div class="inner-title">چرا Embedding لازم داریم؟</div></div>
+        <p>کامپیوتر نمی‌فهمد:</p>
+        <div class="box"><div class="chart">cat</div></div>
+        <p>و:</p>
+        <div class="box"><div class="chart">kitten</div></div>
+        <p>معنی نزدیک دارند.</p>
+        <p>ولی embedding می‌تواند:</p>
+        <div class="box"><div class="chart">cat
+[
+  0.21,
+  0.45,
+  0.78
+]</div></div>
+        <p>و:</p>
+        <div class="box"><div class="chart">kitten
+[
+  0.22,
+  0.44,
+  0.75
+]</div></div>
+        <p>بسازد.</p>
+        <p>پس:</p>
+        <div class="inner-box">Distance کم → معنی نزدیک‌تر</div>
+
+        <h2>2. Semantic Representation</h2>
+        <p>Embedding فقط کلمه را ذخیره نمی‌کند.</p>
+        <p>بلکه:</p>
+        <div class="inner-box">Syntax + Meaning + Context</div>
+        <p>مثلاً:</p>
+        <p>جمله 1:</p>
+        <div class="box"><div class="chart">I deposited money into my account</div></div>
+        <p>جمله 2:</p>
+        <div class="box"><div class="chart">I added funds to my bank balance</div></div>
+        <p>کلمات متفاوت هستند.</p>
+        <p>ولی معنی مشابه است.</p>
+        <p>Embedding این similarity را capture می‌کند.</p>
+
+        <h2>3. انواع Embedding</h2>
+        <div class="inner-box"><div class="inner-title">Word Embedding</div></div>
+        <p>قدیمی:</p>
+        <div class="inner-box">Word2Vec</div>
+        <div class="inner-box">GloVe</div>
+        <div class="inner-box">FastText</div>
+        <p>مشکل:</p>
+        <p>یک کلمه فقط یک embedding دارد.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">bank</div></div>
+        <p>بانک مالی یا کنار رودخانه؟</p>
+        <p>مشکل ambiguity.</p>
+
+        <h2>4. Contextual Embedding</h2>
+        <p>مدل‌های جدید:</p>
+        <div class="inner-box">BERT</div>
+        <div class="inner-box">GPT</div>
+        <div class="inner-box">E5</div>
+        <div class="inner-box">BGE</div>
+        <p>Embedding بر اساس context تغییر می‌کند.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">bank account</div></div>
+        <p>و:</p>
+        <div class="box"><div class="chart">river bank</div></div>
+        <p>دو embedding متفاوت دارند.</p>
+
+        <h2>5. Sentence Embedding</h2>
+        <p>برای Search بسیار مهم است.</p>
+        <p>کل جمله تبدیل به vector می‌شود.</p>
+        <p>مثلاً:</p>
+        <p>Query:</p>
+        <div class="box"><div class="chart">How to reset password?</div></div>
+        <p>Document:</p>
+        <div class="box"><div class="chart">Steps for changing user password</div></div>
+        <p>اگر embedding نزدیک باشد:</p>
+        <div class="inner-box">Match.</div>
+
+        <h2>6. Vector Similarity</h2>
+        <p>بعد از embedding باید similarity را حساب کنیم.</p>
+        <p>سه معیار مهم:</p>
+        <div class="inner-box"><div class="inner-title">6.1 Cosine Similarity</div></div>
+        <p>رایج‌ترین.</p>
+        <p>فرمول:</p>
+        <div class="formula">cos(θ) = A.B / (||A|| ||B||)</div>
+        <p>مقدار:</p>
+        <div class="box"><div class="chart">-1 تا 1</div></div>
+        <p>معمولاً:</p>
+        <div class="box"><div class="chart">1  = identical direction
+0  = unrelated
+-1 = opposite</div></div>
+        <p>مثال:</p>
+        <p>Vector A:</p>
+        <div class="box"><div class="chart">[1,2,3]</div></div>
+        <p>Vector B:</p>
+        <div class="box"><div class="chart">[2,4,6]</div></div>
+        <p>Cosine:</p>
+        <div class="box"><div class="chart">1</div></div>
+        <p>چون جهت یکسان دارند.</p>
+
+        <div class="inner-box"><div class="inner-title">6.2 Euclidean Distance</div></div>
+        <p>فاصله:</p>
+        <div class="formula">d = √( Σ(xi - yi)² )</div>
+        <p>کمتر بهتر.</p>
+        
+        <div class="inner-box"><div class="inner-title">6.3 Dot Product</div></div>
+        <div class="formula">A.B</div>
+        <p>در بعضی embedding modelها استفاده می‌شود.</p>
+
+        <h2>7. Semantic Search</h2>
+        <div class="inner-box"><div class="inner-title">Traditional Search:</div></div>
+        <p>بر اساس keyword.</p>
+        <p>مثلاً:</p>
+        <p>Query:</p>
+        <div class="box"><div class="chart">car insurance</div></div>
+        <p>فقط دنبال همین کلمات می‌گردد.</p>
+        <div class="inner-box"><div class="inner-title">Semantic Search:</div></div>
+        <p>معنی را می‌فهمد.</p>
+        <p>Query:</p>
+        <div class="box"><div class="chart">How can I protect my vehicle?</div></div>
+        <p>می‌تواند:</p>
+        <div class="box"><div class="chart">Auto insurance policy</div></div>
+        <p>را پیدا کند.</p>
+
+        <h2>8. Architecture of Semantic Search</h2>
+        <div class="box"><div class="chart">User Query
+
+    |
+    v
+
+Embedding Model
+
+    |
+    v
+
+Query Vector
+
+    |
+    v
+
+Vector Database
+
+    |
+    v
+
+Nearest Documents</div></div>
+
+        <h2>9. ANN (Approximate Nearest Neighbor)</h2>
+        <div class="inner-box"><div class="inner-title">مشکل:</div></div>
+        <p>فرض کنید:</p>
+        <div class="box"><div class="chart">1 billion vectors</div></div>
+        <p>داریم.</p>
+        <p>Search دقیق:</p>
+        <p>هر vector را مقایسه کنیم.</p>
+        <p>Complexity:</p>
+        <div class="formula">O(n)</div>
+        <p>خیلی کند.</p>
+        <p>ANN:</p>
+        <p>تقریب می‌زند.</p>
+        <p>هدف:</p>
+        <div class="box"><div class="chart">90-99% accuracy
+
+با سرعت بسیار بیشتر</div></div>
+
+        <h2>10. Exact NN vs ANN</h2>
+        <table>
+            <thead><tr><th></th><th>Exact</th><th>ANN</th></tr></thead>
+            <tbody>
+                <tr><td>Accuracy</td><td>100%</td><td>تقریبی</td></tr>
+                <tr><td>Speed</td><td>کند</td><td>سریع</td></tr>
+                <tr><td>Large scale</td><td>ضعیف</td><td>عالی</td></tr>
+            </tbody>
+        </table>
+
+        <h2>11. HNSW</h2>
+        <p>Hierarchical Navigable Small World</p>
+        <p>یکی از محبوب‌ترین ANN algorithms.</p>
+        <p>ایده:</p>
+        <p>Graph می‌سازد.</p>
+        <p>هر vector:</p>
+        <p>یک node</p>
+        <p>ارتباط:</p>
+        <p>similar vectors</p>
+        <p>ساختار:</p>
+        <div class="box"><div class="chart">Layer 3
+
+     A ------ B
+
+
+Layer 2
+
+ A---C---B---D
+
+
+Layer 1
+
+A-C-E-F-B-D-G</div></div>
+        <p>Search:</p>
+        <p>از layer بالا شروع می‌کند.</p>
+        <p>بعد پایین می‌آید.</p>
+        <p>مثل skip list.</p>
+
+        <h2>12. HNSW Parameters</h2>
+        <p>مهم‌ترین:</p>
+        <div class="inner-box"><div class="inner-title">M</div></div>
+        <p>تعداد connectionها.</p>
+        <p>بیشتر:</p>
+        <div class="inner-box">accuracy ↑</div>
+        <div class="inner-box">memory ↑</div>
+        
+        <div class="inner-box"><div class="inner-title">efConstruction</div></div>
+        <p>کیفیت ساخت graph.</p>
+        <p>بیشتر:</p>
+        <div class="inner-box">build time ↑</div>
+        
+        <div class="inner-box"><div class="inner-title">efSearch</div></div>
+        <p>تعداد candidate هنگام search.</p>
+        <p>بیشتر:</p>
+        <div class="inner-box">accuracy ↑</div>
+        <div class="inner-box">latency ↑</div>
+
+        <h2>13. RAG</h2>
+        <p>Retrieval Augmented Generation</p>
+        <p>یکی از مهم‌ترین معماری‌های LLM.</p>
+        <p>ایده:</p>
+        <p>به جای اینکه LLM همه چیز را حفظ کند:</p>
+        <p>اطلاعات را قبل از پاسخ retrieve می‌کنیم.</p>
+        <p>Architecture:</p>
+        <div class="box"><div class="chart">User Question
+
+       |
+       v
+
+Embedding
+
+       |
+       v
+
+Vector DB
+
+       |
+       v
+
+Relevant Documents
+
+       |
+       v
+
+LLM
+
+       |
+       v
+
+Answer</div></div>
+
+        <h2>14. چرا RAG؟</h2>
+        <p>مشکل LLM:</p>
+        <div class="inner-box"><div class="inner-title">Knowledge Cutoff</div></div>
+        <p>مدل اطلاعات جدید ندارد.</p>
+        <div class="inner-box"><div class="inner-title">Hallucination</div></div>
+        <p>مدل ممکن است جواب بسازد.</p>
+        <div class="inner-box"><div class="inner-title">Private Data</div></div>
+        <p>LLM به داده داخلی شرکت دسترسی ندارد.</p>
+        <p>RAG حل می‌کند:</p>
+        <div class="box"><div class="chart">External Knowledge
++
+LLM Reasoning</div></div>
+
+        <h2>15. RAG vs Fine-tuning</h2>
+        <div class="inner-box"><div class="inner-title">RAG</div></div>
+        <p>هدف:</p>
+        <p>Knowledge Injection</p>
+        <p>مثال:</p>
+        <div class="box"><div class="chart">Company documents
+Policies
+Manuals</div></div>
+        
+        <div class="inner-box"><div class="inner-title">Fine-tuning</div></div>
+        <p>هدف:</p>
+        <p>Behavior Change</p>
+        <p>مثال:</p>
+        <div class="box"><div class="chart">Tone
+Style
+Format
+Domain adaptation</div></div>
+
+        <h2>16. Chunking</h2>
+        <p>یکی از مهم‌ترین بخش‌های RAG.</p>
+        <p>قبل از embedding باید document را تقسیم کنیم.</p>
+        <p>مثلاً:</p>
+        <p>کتاب:</p>
+        <div class="box"><div class="chart">500 pages</div></div>
+        <p>نمی‌توانیم کل آن را بدهیم.</p>
+        <p>Chunk:</p>
+        <div class="box"><div class="chart">500-1000 tokens</div></div>
+
+        <h2>17. چرا Chunking مهم است؟</h2>
+        <p>Chunk کوچک:</p>
+        <p>مزایا:</p>
+        <div class="inner-box">Retrieval دقیق‌تر</div>
+        <p>معایب:</p>
+        <div class="inner-box">Context کم</div>
+        <p>Chunk بزرگ:</p>
+        <p>مزایا:</p>
+        <div class="inner-box">Context بیشتر</div>
+        <p>معایب:</p>
+        <div class="inner-box">Noise بیشتر</div>
+
+        <h2>18. Chunk Size Trade-off</h2>
+        <p>کوچک:</p>
+        <div class="inner-box">Precision ↑</div>
+        <div class="inner-box">Recall ↓</div>
+        <p>بزرگ:</p>
+        <div class="inner-box">Recall ↑</div>
+        <div class="inner-box">Precision ↓</div>
+
+        <h2>19. Chunk Overlap</h2>
+        <p>مثلاً:</p>
+        <p>Chunk 1:</p>
+        <div class="box"><div class="chart">token 1-500</div></div>
+        <p>Chunk 2:</p>
+        <div class="box"><div class="chart">token 400-900</div></div>
+        <p>Overlap:</p>
+        <div class="box"><div class="chart">100</div></div>
+        <p>هدف:</p>
+        <div class="inner-box">قطع نشدن context.</div>
+
+        <h2>20. Advanced Chunking</h2>
+        <p>روش‌های بهتر:</p>
+        <div class="inner-box"><div class="inner-title">Semantic Chunking</div></div>
+        <p>بر اساس معنی.</p>
+        <div class="inner-box"><div class="inner-title">Recursive Chunking</div></div>
+        <p>بر اساس:</p>
+        <div class="inner-box">paragraph</div>
+        <div class="inner-box">sentence</div>
+        <div class="inner-box">token</div>
+        <div class="inner-box"><div class="inner-title">Document Structure Chunking</div></div>
+        <p>مثلاً:</p>
+        <p>PDF:</p>
+        <div class="box"><div class="chart">Chapter
+Section
+Table</div></div>
+
+        <h2>21. Reranking</h2>
+        <p>مرحله دوم Retrieval.</p>
+        <p>معمولاً:</p>
+        <p>مرحله اول:</p>
+        <p>Fast Retrieval</p>
+        <p>مثلاً:</p>
+        <p>Top 100 documents</p>
+        <p>بعد:</p>
+        <p>Reranker</p>
+        <p>Top 5</p>
+        <p>Architecture:</p>
+        <div class="box"><div class="chart">Query
+
+ |
+Embedding Search
+
+ |
+100 candidates
+
+ |
+Reranker
+
+ |
+Top 5
+
+ |
+LLM</div></div>
+
+        <h2>22. چرا Reranker؟</h2>
+        <p>Embedding فقط similarity عمومی دارد.</p>
+        <p>ولی reranker:</p>
+        <p>query-document interaction</p>
+        <p>را دقیق‌تر بررسی می‌کند.</p>
+        <p>مدل‌های reranker:</p>
+        <div class="inner-box">Cross Encoder</div>
+        <div class="inner-box">BGE Reranker</div>
+        <div class="inner-box">Cohere Rerank</div>
+
+        <h2>23. Bi-Encoder vs Cross-Encoder</h2>
+        <div class="inner-box"><div class="inner-title">Bi Encoder</div></div>
+        <p>Query:</p>
+        <div class="box"><div class="chart">Vector A</div></div>
+        <p>Document:</p>
+        <div class="box"><div class="chart">Vector B</div></div>
+        <p>بعد similarity.</p>
+        <p>سریع.</p>
+        
+        <div class="inner-box"><div class="inner-title">Cross Encoder</div></div>
+        <p>ورودی:</p>
+        <div class="box"><div class="chart">[Query + Document]</div></div>
+        <p>مدل مستقیم score می‌دهد.</p>
+        <p>دقیق‌تر ولی کندتر.</p>
+
+        <h2>24. Query Expansion</h2>
+        <p>بهبود query.</p>
+        <p>مثلاً:</p>
+        <p>User:</p>
+        <div class="box"><div class="chart">car problem</div></div>
+        <p>تبدیل:</p>
+        <div class="box"><div class="chart">vehicle issue
+automobile failure
+engine problem</div></div>
+        <p>روش‌ها:</p>
+        <div class="inner-box">Synonym expansion</div>
+        <div class="inner-box">LLM generated queries</div>
+        <div class="inner-box">Multi-query retrieval</div>
+
+        <h2>25. Hybrid Search</h2>
+        <p>ترکیب:</p>
+        <div class="inner-box"><div class="inner-title">Keyword Search</div></div>
+        <p>مثل:</p>
+        <div class="inner-box">BM25</div>
+        <p>و:</p>
+        <div class="inner-box"><div class="inner-title">Semantic Search</div></div>
+        <p>Embedding</p>
+        <p>Architecture:</p>
+        <div class="box"><div class="chart">              Query
+
+              |
+       ----------------
+       |              |
+      BM25        Vector Search
+
+       |              |
+
+       ----------------
+
+              |
+
+          Fusion
+
+              |
+
+          Results</div></div>
+
+        <h2>26. چرا Hybrid مهم است؟</h2>
+        <p>Semantic Search:</p>
+        <p>معنی را می‌فهمد.</p>
+        <p>اما:</p>
+        <p>کدها، IDها، نام‌ها:</p>
+        <p>keyword بهتر است.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">CVE-2025-1234</div></div>
+
+        <h2>27. Fine-Tuning در LLM</h2>
+        <p>تغییر وزن‌های مدل.</p>
+        <p>انواع:</p>
+        <div class="inner-box">Full Fine-tuning</div>
+        <div class="inner-box">LoRA</div>
+        <div class="inner-box">QLoRA</div>
+
+        <h2>28. Instruction Tuning</h2>
+        <p>یکی از مهم‌ترین مراحل ساخت ChatGPT.</p>
+        <p>هدف:</p>
+        <p>مدل یاد بگیرد:</p>
+        <div class="box"><div class="chart">Follow human instructions</div></div>
+        <p>قبل:</p>
+        <p>مدل فقط:</p>
+        <div class="box"><div class="chart">Next token prediction</div></div>
+        <p>بعد:</p>
+        <div class="box"><div class="chart">User:
+Explain ML
+
+Assistant:
+...</div></div>
+
+        <h2>29. RLHF</h2>
+        <p>Reinforcement Learning from Human Feedback</p>
+        <p>مراحل:</p>
+        <div class="inner-box"><div class="inner-title">Step 1</div></div>
+        <p>Pretrained Model</p>
+        <div class="inner-box"><div class="inner-title">Step 2</div></div>
+        <p>Supervised Fine Tuning</p>
+        <p>داده:</p>
+        <p>Human demonstrations</p>
+        <div class="inner-box"><div class="inner-title">Step 3</div></div>
+        <p>Reward Model</p>
+        <p>انسان جواب‌ها را رتبه‌بندی می‌کند.</p>
+        <p>مثلاً:</p>
+        <div class="inner-box">Answer A > Answer B</div>
+        <div class="inner-box"><div class="inner-title">Step 4</div></div>
+        <p>RL Optimization</p>
+        <p>معمولاً:</p>
+        <div class="inner-box">PPO</div>
+
+        <h2>30. DPO</h2>
+        <p>Direct Preference Optimization</p>
+        <p>جایگزین ساده‌تر RLHF.</p>
+        <p>مشکل RLHF:</p>
+        <p>پیچیده.</p>
+        <p>DPO:</p>
+        <p>مستقیم از preference استفاده می‌کند.</p>
+        <p>داده:</p>
+        <div class="box"><div class="chart">Prompt
+
+Chosen Answer
+
+Rejected Answer</div></div>
+        <p>مزایا:</p>
+        <div class="inner-box">ساده‌تر</div>
+        <div class="inner-box">پایدارتر</div>
+        <div class="inner-box">بدون Reward Model جدا</div>
+
+        <h2>31. Quantization</h2>
+        <p>کاهش precision.</p>
+        <p>مثلاً:</p>
+        <p>FP32:</p>
+        <div class="inner-box">32 bit</div>
+        <p>FP16:</p>
+        <div class="inner-box">16 bit</div>
+        <p>INT8:</p>
+        <div class="inner-box">8 bit</div>
+        <p>INT4:</p>
+        <div class="inner-box">4 bit</div>
+        <p>مزایا:</p>
+        <div class="inner-box">Memory ↓</div>
+        <div class="inner-box">Latency ↓</div>
+
+        <h2>32. Quantization Trade-off</h2>
+        <p>کمتر bit:</p>
+        <p>سرعت بیشتر</p>
+        <p>ولی:</p>
+        <p>Quality ممکن است کم شود.</p>
+
+        <h2>33. KV Cache</h2>
+        <p>یکی از مهم‌ترین تکنیک‌های inference.</p>
+        <p>در Transformer:</p>
+        <p>Attention:</p>
+        <div class="box"><div class="chart">Q K V</div></div>
+        <p>در generation:</p>
+        <p>هر token جدید نیاز دارد گذشته را دوباره حساب کند.</p>
+        <p>KV Cache:</p>
+        <p>Key و Value قبلی را ذخیره می‌کند.</p>
+        <p>بدون cache:</p>
+        <div class="box"><div class="chart">Generate token 1
+
+Compute all
+
+
+Generate token 2
+
+Compute token1 again</div></div>
+        <p>با cache:</p>
+        <div class="box"><div class="chart">Store previous K,V
+
+Only compute new token</div></div>
+        <p>نتیجه:</p>
+        <p>Latency بسیار کمتر.</p>
+
+        <h2>34. Speculative Decoding</h2>
+        <p>هدف:</p>
+        <p>Generation سریع‌تر.</p>
+        <p>ایده:</p>
+        <p>یک مدل کوچک:</p>
+        <p>Draft Model</p>
+        <p>یک مدل بزرگ:</p>
+        <p>Target Model</p>
+        <p>مثال:</p>
+        <div class="box"><div class="chart">Small Model
+
+generate:
+
+10 tokens
+
+
+        |
+
+Large Model
+
+verify</div></div>
+        <p>اگر درست باشد:</p>
+        <p>قبول.</p>
+        <p>اگر غلط:</p>
+        <p>اصلاح.</p>
+        <p>مزیت:</p>
+        <p>Latency کاهش می‌یابد.</p>
+
+        <h2>35. LLM Evaluation</h2>
+        <p>یکی از سخت‌ترین بخش‌ها.</p>
+        <p>چون فقط accuracy نداریم.</p>
+        <p>معیارها:</p>
+        <div class="inner-box"><div class="inner-title">1. Correctness</div></div>
+        <p>آیا جواب درست است؟</p>
+        <div class="inner-box"><div class="inner-title">2. Relevance</div></div>
+        <p>آیا جواب مربوط است؟</p>
+        <div class="inner-box"><div class="inner-title">3. Faithfulness</div></div>
+        <p>آیا بر اساس context است؟</p>
+        <div class="inner-box"><div class="inner-title">4. Fluency</div></div>
+        <p>کیفیت زبان.</p>
+
+        <h2>36. Hallucination</h2>
+        <p>وقتی مدل:</p>
+        <p>اطلاعات غلط تولید می‌کند.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">یک مقاله جعلی با نویسنده جعلی</div></div>
+        <p>دلایل:</p>
+        <div class="inner-box">Missing knowledge</div>
+        <div class="inner-box">Weak retrieval</div>
+        <div class="inner-box">Prompt ambiguity</div>
+        <div class="inner-box">Model limitation</div>
+
+        <h2>37. کاهش Hallucination</h2>
+        <p>روش‌ها:</p>
+        <div class="inner-box"><div class="inner-title">RAG</div></div>
+        <p>دادن context</p>
+        <div class="inner-box"><div class="inner-title">Better prompting</div></div>
+        <div class="inner-box"><div class="inner-title">Fine-tuning</div></div>
+        <div class="inner-box"><div class="inner-title">Retrieval verification</div></div>
+        <div class="inner-box"><div class="inner-title">Citation requirement</div></div>
+
+        <h2>38. Retrieval Evaluation</h2>
+        <p>برای RAG باید Retrieval را جدا بررسی کنیم.</p>
+        <p>Metrics:</p>
+        <div class="inner-box"><div class="inner-title">Recall@K</div></div>
+        <p>آیا document درست داخل top K بود؟</p>
+        <div class="inner-box"><div class="inner-title">Precision@K</div></div>
+        <p>چند درصد retrieved درست بودند؟</p>
+        <div class="inner-box"><div class="inner-title">MRR</div></div>
+        <p>Mean Reciprocal Rank</p>
+        <p>رتبه اولین document درست.</p>
+
+        <h2>39. RAG Evaluation</h2>
+        <p>کل pipeline:</p>
+        <div class="box"><div class="chart">Question
+
+ |
+Retriever
+
+ |
+Context
+
+ |
+LLM
+
+ |
+Answer</div></div>
+        <p>Metricها:</p>
+        <div class="inner-box"><div class="inner-title">Context Precision</div></div>
+        <p>آیا contextهای گرفته شده relevant هستند؟</p>
+        <div class="inner-box"><div class="inner-title">Context Recall</div></div>
+        <p>آیا تمام اطلاعات لازم پیدا شده؟</p>
+        <div class="inner-box"><div class="inner-title">Faithfulness</div></div>
+        <p>آیا answer فقط از context استفاده کرده؟</p>
+        <div class="inner-box"><div class="inner-title">Answer Relevance</div></div>
+        <p>آیا پاسخ به سوال مربوط است؟</p>
+
+        <h2>40. Production RAG Architecture (Senior Level)</h2>
+        <div class="box"><div class="chart">                 User
+
+                  |
+                  v
+
+             Query Rewrite
+
+                  |
+                  v
+
+          Hybrid Retrieval
+
+        /               \
+
+     BM25             Vector DB
+
+        \               /
+
+             Fusion
+
+                  |
+
+              Reranker
+
+                  |
+
+              Context
+
+                  |
+
+              LLM
+
+                  |
+
+              Guardrails
+
+                  |
+
+              Answer
+
+                  |
+
+              Evaluation</div></div>
+
+        <h2>41. نکات Senior Interview</h2>
+        <div class="inner-box"><div class="inner-title">چرا RAG به جای Fine-tuning؟</div></div>
+        <p>چون:</p>
+        <div class="inner-box">knowledge frequently changes</div>
+        <div class="inner-box">cheaper</div>
+        <div class="inner-box">no retraining</div>
+        <div class="inner-box">source citation</div>
+        
+        <div class="inner-box"><div class="inner-title">چرا Hybrid Search؟</div></div>
+        <p>چون:</p>
+        <div class="inner-box">semantic برای meaning</div>
+        <div class="inner-box">BM25 برای exact match</div>
+        
+        <div class="inner-box"><div class="inner-title">چرا Reranker؟</div></div>
+        <p>چون:</p>
+        <p>embedding retrieval سریع ولی approximate است.</p>
+        
+        <div class="inner-box"><div class="inner-title">چرا Chunking مهم است؟</div></div>
+        <p>چون retrieval quality مستقیم به chunk quality وابسته است.</p>
+        
+        <div class="inner-box"><div class="inner-title">چرا KV Cache مهم است؟</div></div>
+        <p>چون generation token-by-token است و محاسبات قبلی را reuse می‌کند.</p>
+        
+        <div class="inner-box"><div class="inner-title">LoRA یا RAG؟</div></div>
+        <p>اگر مشکل:</p>
+        <p>Knowledge:</p>
+        <div class="inner-box">→ RAG</div>
+        <p>اگر مشکل:</p>
+        <p>Behavior:</p>
+        <div class="inner-box">→ Fine-tuning / LoRA</div>
+
+        <h2>42. Mental Model نهایی Senior</h2>
+        <div class="box"><div class="chart">                LLM Application
+
+                      |
+        --------------------------------
+        |              |               |
+      RAG          Fine-tuning     Inference
+        |              |               |
+    Retrieval      LoRA/DPO       KV Cache
+        |              |               |
+ Embedding       Instruction     Quantization
+ Vector DB       RLHF           Speculative
+ HNSW
+ Reranker</div></div>
+
+        <div class="inner-box"><div class="inner-title">خلاصه خیلی کوتاه:</div></div>
+        <table>
+            <thead><tr><th>Concept</th><th>Purpose</th></tr></thead>
+            <tbody>
+                <tr><td>Embedding</td><td>تبدیل معنی به vector</td></tr>
+                <tr><td>Vector Similarity</td><td>اندازه‌گیری شباهت</td></tr>
+                <tr><td>ANN</td><td>Search سریع در میلیارد vector</td></tr>
+                <tr><td>HNSW</td><td>ساختار ANN graph</td></tr>
+                <tr><td>Semantic Search</td><td>جستجوی بر اساس معنی</td></tr>
+                <tr><td>RAG</td><td>ترکیب Retrieval + LLM</td></tr>
+                <tr><td>Chunking</td><td>تقسیم صحیح context</td></tr>
+                <tr><td>Reranking</td><td>بهبود نتایج retrieval</td></tr>
+                <tr><td>Hybrid Search</td><td>ترکیب keyword + semantic</td></tr>
+                <tr><td>Instruction Tuning</td><td>یادگیری دستور انسان</td></tr>
+                <tr><td>RLHF</td><td>Alignment با feedback</td></tr>
+                <tr><td>DPO</td><td>Alignment ساده‌تر</td></tr>
+                <tr><td>Quantization</td><td>کاهش memory</td></tr>
+                <tr><td>KV Cache</td><td>افزایش سرعت generation</td></tr>
+                <tr><td>Speculative Decoding</td><td>generation سریع‌تر</td></tr>
+                <tr><td>Hallucination</td><td>تولید اطلاعات غلط</td></tr>
+                <tr><td>LLM Evaluation</td><td>اندازه‌گیری کیفیت</td></tr>
+                <tr><td>RAG Evaluation</td><td>ارزیابی retrieval + answer</td></tr>
+            </tbody>
+        </table>
+        <p>این بخش دقیقاً همان دانشی است که یک Senior AI Engineer / LLM Engineer باید برای طراحی سیستم‌های Production AI بداند.</p>
+
+    </div>
+</body>
+</html>

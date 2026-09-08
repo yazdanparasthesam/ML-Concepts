@@ -1,0 +1,1547 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bayesian Concepts · Senior ML Level</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}]});"></script>
+    <style>
+        body {
+            background-color: #0d1117;
+            color: #e6edf3;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.8;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h1, h2, h3, h4 {
+            color: #e6edf3;
+            text-align: right;
+            border-bottom: 1px solid #444;
+            padding-bottom: 15px;
+            margin-top: 50px;
+        }
+        p, li {
+            text-align: right;
+        }
+
+        .box {
+            background-color: #21262d;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            color: #e6edf3;
+        }
+        .inner-box {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 10px;
+            border-right: 4px solid #58a6ff;
+        }
+        .inner-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .formula {
+            direction: ltr;
+            background-color: #000;
+            border: 1px solid #fff;
+            border-radius: 0;
+            padding: 20px;
+            margin: 20px auto;
+            width: fit-content;
+            max-width: 100%;
+            overflow-x: auto;
+            text-align: center;
+            font-size: 1.2em;
+            font-family: "Times New Roman", Times, serif;
+            color: #fff;
+        }
+
+        .chart {
+            direction: ltr;
+            text-align: left;
+            font-family: monospace;
+            background-color: #21262d;
+            border-radius: 8px;
+            padding: 15px;
+            overflow-x: auto;
+            white-space: pre;
+            border: 1px solid #444;
+        }
+
+        /* کلاس جدید برای متن‌های فارسی داخل باکس‌های چپ‌چین */
+        .chart.rtl {
+            direction: rtl !important;
+            text-align: right !important;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            direction: rtl;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #444;
+            padding: 12px;
+            text-align: right;
+        }
+        th {
+            background-color: #21262d;
+        }
+
+        .viz-box {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            direction: ltr;
+            text-align: left;
+        }
+        
+        canvas {
+            width: 100%;
+            height: auto;
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            display: block;
+        }
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 10px;
+            justify-content: flex-start;
+        }
+        .slider-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background-color: #21262d;
+            border-radius: 8px;
+            padding: 8px 15px;
+            border: 1px solid #30363d;
+        }
+        .slider-row label {
+            color: #e6edf3;
+            font-family: monospace;
+            min-width: 20px;
+        }
+        .slider-row input[type="range"] {
+            accent-color: #58a6ff;
+        }
+        .slider-row .value {
+            color: #58a6ff;
+            font-family: monospace;
+            min-width: 40px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧬 21. Bayesian Concepts — از پایه تا Senior ML</h1>
+
+        <p style="font-size:1.1rem;">حتماً. این بخش Bayesian Concepts از آن مباحثی است که اگر برای Senior ML بخواهی آماده شوی، نباید فقط تعریف Prior/Posterior را بلد باشی؛ باید بفهمی چطور MLE، MAP و Bayesian Inference به هم وصل می‌شوند، چرا Regularization با MAP ارتباط دارد، چرا Naive Bayes واقعاً Bayesian است ولی BNN چیز کاملاً متفاوتی است، و Bayesian Optimization کجای این داستان قرار می‌گیرد.</p>
+
+        <h2>0. اول تصویر بزرگ را ببین</h2>
+        <p>تمام این مفاهیم را می‌توانی در یک زنجیره ببینی:</p>
+        <div class="chart">                    Bayesian Thinking
+                           │
+             ┌─────────────┴─────────────┐
+             │                           │
+        Before Data                  After Data
+             │                           │
+           Prior                     Posterior
+             │                           │
+             └────── Evidence ───────────┘
+                           │
+                     Likelihood
+                           │
+                           ▼
+                    Bayesian Inference
+                           │
+              ┌────────────┼────────────┐
+              │            │            │
+             MLE          MAP       Full Bayesian
+              │            │            │
+        point estimate  point estimate  distribution
+                           │
+                           │
+              ┌────────────┴─────────────┐
+              │                          │
+         Naive Bayes              Bayesian Neural Net</div>
+        
+        <p>و یک شاخه دیگر:</p>
+        <div class="chart">Bayesian Optimization
+        │
+        ├── expensive objective
+        ├── surrogate model
+        ├── acquisition function
+        └── choose next experiment</div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <p>Bayesian Optimization با Bayesian Inference یکی نیست.</p>
+            <p>این یکی از نکات مهم Senior-level است.</p>
+        </div>
+
+        <h2>1. Probability چیست؟</h2>
+        <p>قبل از Bayesian، باید Probability را بفهمیم.</p>
+        <p>فرض کن:</p>
+        <div class="chart">A = مشتری Fraud است</div>
+        <p>احتمال اینکه مشتری Fraud باشد:</p>
+        <div class="formula">$$ P(A) $$</div>
+        <p>مثلاً:</p>
+        <div class="formula">$$ P(Fraud) = 0.01 $$</div>
+        <p>یعنی 1٪ مشتری‌ها Fraud هستند.</p>
+        <p>این احتمال قبل از مشاهده یک evidence خاص می‌تواند Prior Probability باشد.</p>
+
+        <h2>2. Prior</h2>
+        <div class="inner-box">
+            <div class="inner-title">تعریف</div>
+            <p>Prior یعنی باور یا توزیع احتمال ما درباره یک پارامتر یا فرضیه قبل از مشاهده داده جدید.</p>
+            <p>فرض کن می‌خواهیم احتمال Fraud بودن را تخمین بزنیم.</p>
+            <p>قبل از دیدن transaction فعلی می‌دانیم:</p>
+            <div class="formula">$$ P(Fraud) = 0.01 $$</div>
+            <p>پس:</p>
+            <!-- اصلاح: اضافه کردن کلاس rtl -->
+            <div class="chart rtl">$$ Prior = 0.01 $$</div>
+            <p>اما در ML معمولاً Prior بیشتر روی پارامتر مدل تعریف می‌شود.</p>
+            <p>مثلاً:</p>
+            <div class="formula">$$ w \sim \mathcal{N}(0,\sigma^2) $$</div>
+            <p>یعنی قبل از دیدن داده، فرض می‌کنیم وزن‌های مدل احتمالاً اطراف صفر هستند.</p>
+        </div>
+
+        <h2>3. Prior Distribution</h2>
+        <p>Prior الزاماً یک عدد نیست.</p>
+        <p>می‌تواند یک Distribution باشد.</p>
+        <p>مثلاً:</p>
+        <div class="formula">$$ \theta \sim \mathcal{N}(0,1) $$</div>
+        <p>یعنی:</p>
+        <!-- اصلاح: اضافه کردن کلاس rtl -->
+        <div class="chart rtl">theta
+ │
+ │        ╭───╮
+ │      ╭─╯   ╰─╮
+ │    ╭─╯       ╰─╮
+ └──────────────────
+       0</div>
+        <p>این یعنی قبل از دیدن داده:</p>
+        <!-- اصلاح: اضافه کردن کلاس rtl -->
+        <div class="chart rtl">مقادیر نزدیک صفر برای θ محتمل‌تر هستند.</div>
+
+        <h2>4. انواع Prior</h2>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">Informative Prior</div>
+            <p>اطلاعات قبلی قوی داریم.</p>
+            <p>مثلاً:</p>
+            <div class="formula">$$ \theta \sim \mathcal{N}(10,1) $$</div>
+            <p>یعنی انتظار داریم θ نزدیک 10 باشد.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">Weakly Informative Prior</div>
+            <p>اطلاعات قبلی داریم ولی خیلی قوی نیست:</p>
+            <div class="formula">$$ \theta \sim \mathcal{N}(10,100) $$</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#3fb950;">
+            <div class="inner-title">Non-informative / Diffuse Prior</div>
+            <p>تقریباً اطلاعات قبلی خاصی نداریم.</p>
+            <p>مثلاً یک توزیع بسیار گسترده.</p>
+        </div>
+
+        <h2>5. چرا Prior مهم است؟</h2>
+        <p>فرض کن فقط 3 نمونه داده داری:</p>
+        <div class="chart">x = [10, 11, 10]</div>
+        <p>اگر بخواهی میانگین را تخمین بزنی، uncertainty بالاست.</p>
+        <p>اما اگر از قبل بدانیم مقدار واقعی تقریباً حول 10 است، می‌توانیم از این knowledge استفاده کنیم.</p>
+        <p>پس Bayesian ML می‌گوید:</p>
+        <!-- اصلاح: اضافه کردن کلاس rtl -->
+        <div class="chart rtl">Data تنها منبع اطلاعات نیست؛ prior knowledge هم می‌تواند وارد مدل شود.</div>
+
+        <h2>6. Likelihood</h2>
+        <p>این یکی بسیار مهم است.</p>
+        <p>Likelihood جواب این سؤال است:</p>
+        <!-- اصلاح: اضافه کردن کلاس rtl -->
+        <div class="chart rtl">اگر پارامتر مدل مقدار θ باشد، مشاهده این داده‌ها چقدر محتمل است؟</div>
+        <p>یعنی:</p>
+        <div class="formula">$$ P(D|\theta) $$</div>
+        <p>که در آن:</p>
+        <div class="chart">\(D\): داده
+\(\theta\): پارامتر</div>
+
+        <h3>Probability vs Likelihood</h3>
+        <p>این دو را در مصاحبه اشتباه نکنی.</p>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">Probability</div>
+            <p>پارامتر ثابت است و داده متغیر:</p>
+            <div class="formula">$$ P(D|\theta) $$</div>
+            <p>از دید probability:</p>
+            <!-- اصلاح: اضافه کردن کلاس rtl -->
+            <div class="chart rtl">اگر θ را بدانم، داده چقدر محتمل است؟</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">Likelihood</div>
+            <p>داده را ثابت فرض می‌کنیم و θ را تغییر می‌دهیم:</p>
+            <div class="formula">$$ L(\theta|D) = P(D|\theta) $$</div>
+            <p>از دید likelihood:</p>
+            <!-- اصلاح: اضافه کردن کلاس rtl -->
+            <div class="chart rtl">با توجه به داده مشاهده‌شده، کدام θ بهتر توضیحش می‌دهد؟</div>
+            <p>فرمول ریاضی شبیه است ولی تفسیر متفاوت است.</p>
+        </div>
+
+        <h2>7. مثال Likelihood</h2>
+        <p>فرض کن coin داریم.</p>
+        <p>می‌خواهیم:</p>
+        <div class="formula">$$ \theta=P(Heads) $$</div>
+        <p>را پیدا کنیم.</p>
+        <p>10 بار سکه انداختیم:</p>
+        <div class="chart">H H T H H T H H H T</div>
+        <p>پس:</p>
+        <div class="chart">Heads = 7
+Tails = 3</div>
+        <p>اگر:</p>
+        <div class="formula">$$ \theta=0.7 $$</div>
+        <p>باشد، این داده احتمال نسبتاً بالایی دارد.</p>
+        <p>Likelihood:</p>
+        <div class="formula">$$ L(\theta) = \theta^7(1-\theta)^3 $$</div>
+        <p>حالا θ را از 0 تا 1 تغییر می‌دهیم.</p>
+        <p>مقداری که likelihood را بیشینه می‌کند:</p>
+        <div class="formula">$$ \theta=0.7 $$</div>
+        <p>است.</p>
+        <p>این می‌شود MLE.</p>
+
+        <h2>8. Posterior</h2>
+        <p>Posterior یعنی:</p>
+        <!-- اصلاح: اضافه کردن کلاس rtl -->
+        <div class="chart rtl">بعد از دیدن داده، الان چه باوری درباره پارامتر داریم؟</div>
+        <p>Bayes theorem:</p>
+
+        <!-- Visualization for Part 8 -->
+        <div class="viz-box">
+            <div style="display: flex; flex-wrap: wrap; gap: 20px;">
+                <div style="flex: 1; min-width: 300px;">
+                    <canvas id="bayesCanvas" width="500" height="300"></canvas>
+                    <div style="text-align: right; color: #8b949e; font-size: 0.9em; margin-top: 5px;">بازخورد بدهید</div>
+                </div>
+                
+                <div style="flex: 1; min-width: 300px; background: #21262d; padding: 15px; border-radius: 8px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                    
+                    <div id="bayes-formula" style="font-family: 'Times New Roman', Times, serif; font-size: 1.3em; text-align: center; color: #e6edf3; margin-bottom: 20px; direction: ltr;"></div>
+                    
+                    <div id="bayes-result" style="font-family: 'Times New Roman', Times, serif; font-size: 1.2em; text-align: center; color: #58a6ff; margin-bottom: 25px; direction: ltr;"></div>
+
+                    <div class="slider-row" style="width: 100%; justify-content: flex-start; gap: 15px; direction: ltr; margin-bottom: 10px;">
+                        <label style="margin-right: 5px; width: 55px; text-align: left;">P(A)</label>
+                        <input type="range" id="bayesPA" min="0.01" max="0.99" step="0.01" value="0.70" style="flex: 1;">
+                        <span class="value" id="bayesPAVal" style="width: 40px; text-align: right; margin-left: 5px;">0.70</span>
+                    </div>
+
+                    <div class="slider-row" style="width: 100%; justify-content: flex-start; gap: 15px; direction: ltr; margin-bottom: 10px;">
+                        <label style="margin-right: 5px; width: 55px; text-align: left;">P(B|A)</label>
+                        <input type="range" id="bayesPBA" min="0.01" max="0.99" step="0.01" value="0.60" style="flex: 1;">
+                        <span class="value" id="bayesPBAVal" style="width: 40px; text-align: right; margin-left: 5px;">0.60</span>
+                    </div>
+
+                    <div class="slider-row" style="width: 100%; justify-content: flex-start; gap: 15px; direction: ltr; margin-bottom: 20px;">
+                        <label style="margin-right: 5px; width: 55px; text-align: left;">P(B|¬A)</label>
+                        <input type="range" id="bayesPBNA" min="0.01" max="0.99" step="0.01" value="0.20" style="flex: 1;">
+                        <span class="value" id="bayesPBNAVal" style="width: 40px; text-align: right; margin-left: 5px;">0.20</span>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between; width: 100%; margin-top: 10px; padding: 0 10px; direction: ltr;">
+                        <div style="color: #e6edf3; font-family: 'Times New Roman', Times, serif;">P(A ∩ B)</div>
+                        <div style="color: #e6edf3; font-family: 'Times New Roman', Times, serif;">P(¬A ∩ B)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <p>فرمول:</p>
+        <div class="formula">$$ P(\theta|D) = \frac{ P(D|\theta)P(\theta) }{ P(D) } $$</div>
+        <p>یعنی:</p>
+        <div class="formula">$$ \boxed{ Posterior = \frac{ Likelihood \times Prior }{ Evidence } } $$</div>
+
+        <h2>9. Posterior را عمیق‌تر بفهم</h2>
+        <p>چهار جزء داریم:</p>
+        <div style="overflow-x:auto;">
+            <table>
+                <thead><tr><th>مفهوم</th><th>معنی</th></tr></thead>
+                <tbody>
+                    <tr><td>Prior</td><td>قبل از داده چه باوری داشتیم؟</td></tr>
+                    <tr><td>Likelihood</td><td>داده چقدر با پارامتر سازگار است؟</td></tr>
+                    <tr><td>Evidence</td><td>کل داده چقدر محتمل است؟</td></tr>
+                    <tr><td>Posterior</td><td>بعد از داده چه باوری داریم؟</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <p>به شکل ساده:</p>
+        <!-- اصلاح: اضافه کردن کلاس rtl -->
+        <div class="chart rtl">Prior
+  │
+  │ + Data
+  ▼
+Likelihood
+  │
+  ▼
+Posterior</div>
+        <p>یا:</p>
+        <!-- اصلاح: اضافه کردن کلاس rtl -->
+        <div class="chart rtl">              DATA
+                │
+                ▼
+Prior ───────► Posterior
+                │
+                ▼
+          Updated Belief</div>
+
+        <h2>10. Evidence چیست؟</h2>
+        <p>Evidence یا Marginal Likelihood:</p>
+        <div class="formula">$$ P(D) $$</div>
+        <p>است.</p>
+        <p>در مدل پارامتریک:</p>
+        <div class="formula">$$ P(D) = \int P(D|\theta)P(\theta)d\theta $$</div>
+        <p>برای پارامتر گسسته:</p>
+        <div class="formula">$$ P(D) = \sum_{\theta} P(D|\theta)P(\theta) $$</div>
+
+        <h3>چرا Evidence مهم است؟</h3>
+        <p>چون Posterior باید یک distribution معتبر باشد.</p>
+        <p>Likelihood × Prior فقط یک مقدار unnormalized می‌دهد.</p>
+        <p>Evidence نقش normalization را دارد.</p>
+        <p>یعنی:</p>
+        <div class="formula">$$ Posterior \propto Likelihood \times Prior $$</div>
+        <p>و:</p>
+        <div class="formula">$$ P(D) $$</div>
+        <p>باعث می‌شود distribution نهایی مجموع/انتگرالش 1 شود.</p>
+
+        <h2>11. یک مثال شهودی Bayes</h2>
+        <p>فرض کن:</p>
+        <div class="chart">Fraud rate = 1%</div>
+        <p>پس:</p>
+        <div class="formula">$$ P(Fraud) = 0.01 $$</div>
+        <p>حالا یک سیستم detection داریم.</p>
+        <p>فرض کنیم:</p>
+        <div class="formula">$$ P(Alert|Fraud) = 0.95 $$</div>
+        <p>و:</p>
+        <div class="formula">$$ P(Alert|Normal) = 0.05 $$</div>
+        <p>سؤال:</p>
+        <!-- اصلاح: اضافه کردن کلاس rtl -->
+        <div class="chart rtl">اگر سیستم Alert داد، احتمال Fraud بودن چقدر است؟</div>
+        <p>اشتباه رایج:</p>
+        <div class="chart">95%</div>
+        <p>ولی این درست نیست.</p>
+        <p>باید Bayes استفاده کنیم:</p>
+        <div class="formula">$$ P(Fraud|Alert) = \frac{ P(Alert|Fraud)P(Fraud) }{ P(Alert) } $$</div>
+        <p>و:</p>
+        <div class="formula">$$ P(Alert) = 0.95(0.01) + 0.05(0.99) $$</div>
+        <p>بنابراین:</p>
+        <div class="formula">$$ P(Fraud|Alert) \approx 16.1\% $$</div>
+        <p>یعنی با وجود detector بسیار خوب، اگر base rate پایین باشد، positive بودن الزاماً به معنی احتمال 95٪ Fraud نیست.</p>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <p>این نکته در Fraud Detection بسیار مهم است.</p>
+        </div>
+
+        <h2>12. Maximum Likelihood Estimation — MLE</h2>
+        <p>MLE یکی از مهم‌ترین ارتباط‌های Bayesian و Classical ML است.</p>
+        <p>هدف:</p>
+        <div class="formula">$$ \hat{\theta}_{MLE} = \arg\max_\theta P(D|\theta) $$</div>
+        <p>یا:</p>
+        <div class="formula">$$ \boxed{ \hat{\theta}_{MLE} = \arg\max_\theta L(\theta|D) } $$</div>
+        <p>یعنی:</p>
+        <!-- اصلاح: اضافه کردن کلاس rtl -->
+        <div class="chart rtl">پارامتری را انتخاب کن که داده مشاهده‌شده را بیشترین احتمال بدهد.</div>
+
+        <h2>13. چرا در ML از Log-Likelihood استفاده می‌کنیم؟</h2>
+        <p>فرض کن داده‌ها مستقل باشند:</p>
+        <div class="formula">$$ P(D|\theta) = \prod_{i=1}^{N} P(x_i|\theta) $$</div>
+        <p>محصول N عدد ممکن است خیلی کوچک شود.</p>
+        <p>پس log می‌گیریم:</p>
+        <div class="formula">$$ \log P(D|\theta) = \sum_{i=1}^{N} \log P(x_i|\theta) $$</div>
+        <p>و چون log تابع monotonic است:</p>
+        <div class="formula">$$ \arg\max P(D|\theta) = \arg\max \log P(D|\theta) $$</div>
+        <p>بنابراین:</p>
+        <!-- اصلاح: اضافه کردن کلاس rtl -->
+        <div class="chart rtl">Likelihood
+     ↓ log
+Log-Likelihood
+     ↓
+Sum instead of Product
+     ↓
+Numerically stable + easier optimization</div>
+
+        <h2>14. ارتباط MLE با Loss Function</h2>
+        <p>این نکته Senior-level بسیار مهم است.</p>
+        <p>فرض کن:</p>
+        <div class="formula">$$ y_i \sim \mathcal{N}(f_\theta(x_i),\sigma^2) $$</div>
+        <p>MLE یعنی maximize کردن likelihood.</p>
+        <p>بعد از log گرفتن:</p>
+        <div class="formula">$$ -\log P(D|\theta) $$</div>
+        <p>به چیزی proportional به:</p>
+        <div class="formula">$$ \sum_i (y_i - \hat y_i)^2 $$</div>
+        <p>می‌رسیم.</p>
+        <p>یعنی:</p>
+        <div class="formula">$$ \boxed{ Gaussian MLE \Longleftrightarrow MSE } $$</div>
+        <p>پس MSE فقط یک loss تصادفی نیست.</p>
+        <p>می‌توانی آن را از یک probabilistic assumption استخراج کنی.</p>
+
+        <h2>15. Classification و Cross Entropy</h2>
+        <p>برای Binary Classification:</p>
+        <div class="formula">$$ y_i \sim Bernoulli(p_i) $$</div>
+        <p>Likelihood:</p>
+        <div class="formula">$$ P(y_i|p_i) = p_i^{y_i}(1-p_i)^{1-y_i} $$</div>
+        <p>Negative log-likelihood:</p>
+        <div class="formula">$$ -\log P(D|\theta) $$</div>
+        <p>می‌شود:</p>
+        <div class="formula">$$ -\sum_i [ y_i \log p_i + (1-y_i)\log(1-p_i) ] $$</div>
+        <p>که همان:</p>
+        <div class="formula">$$ \boxed{ Binary\ Cross\ Entropy } $$</div>
+        <p>است.</p>
+        <p>بنابراین:</p>
+        <!-- اصلاح: اضافه کردن کلاس rtl -->
+        <div class="chart rtl">Bernoulli likelihood
+        ↓
+Negative log likelihood
+        ↓
+Binary Cross Entropy</div>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <p>این ارتباط را برای Senior ML باید کاملاً بلد باشی.</p>
+        </div>
+
+        <h2>16. MAP — Maximum A Posteriori</h2>
+        <p>MLE فقط likelihood را نگاه می‌کند.</p>
+        <p>MAP هم likelihood را نگاه می‌کند و هم prior را.</p>
+        <p>هدف:</p>
+        <div class="formula">$$ \hat{\theta}_{MAP} = \arg\max_\theta P(\theta|D) $$</div>
+        <p>طبق Bayes:</p>
+        <div class="formula">$$ P(\theta|D) \propto P(D|\theta)P(\theta) $$</div>
+        <p>بنابراین:</p>
+        <div class="formula">$$ \boxed{ \hat{\theta}_{MAP} = \arg\max_\theta P(D|\theta)P(\theta) } $$</div>
+        <p>یا با log:</p>
+        <div class="formula">$$ \hat{\theta}_{MAP} = \arg\max_\theta [ \log P(D|\theta) + \log P(\theta) ] $$</div>
+
+        <h2>17. MLE vs MAP</h2>
+        <div class="chart">MLE
+Only Data
+   ↓
+Likelihood
+   ↓
+Best parameter
+
+MAP
+Data + Prior
+      ↓
+Likelihood × Prior
+      ↓
+Best parameter</div>
+        <p>پس:</p>
+        <div style="overflow-x:auto;">
+            <table>
+                <thead><tr><th></th><th>MLE</th><th>MAP</th></tr></thead>
+                <tbody>
+                    <tr><td>Data</td><td>✓</td><td>✓</td></tr>
+                    <tr><td>Prior</td><td>✗</td><td>✓</td></tr>
+                    <tr><td>Output</td><td>Point estimate</td><td>Point estimate</td></tr>
+                    <tr><td>Bayesian?</td><td>Classical</td><td>Bayesian-inspired</td></tr>
+                    <tr><td>Uncertainty distribution</td><td>✗</td><td>✗</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <p>نکته آخر مهم است:</p>
+            <p>MAP یک point estimate است، نه full Bayesian inference.</p>
+        </div>
+
+        <h2>18. MAP و Regularization</h2>
+        <p>این یکی از مهم‌ترین connections در ML است.</p>
+        <p>فرض کن:</p>
+        <div class="formula">$$ w \sim \mathcal{N}(0,\sigma^2) $$</div>
+        <p>پس:</p>
+        <div class="formula">$$ P(w) \propto \exp \left( -\frac{w^2}{2\sigma^2} \right) $$</div>
+        <p>در MAP:</p>
+        <div class="formula">$$ \log P(D|w) + \log P(w) $$</div>
+        <p>داریم.</p>
+        <p>قسمت prior:</p>
+        <div class="formula">$$ \log P(w) \propto -\frac{w^2}{2\sigma^2} $$</div>
+        <p>پس objective تبدیل می‌شود به:</p>
+        <div class="formula">$$ -\log P(D|w) + \lambda ||w||_2^2 $$</div>
+        <p>یعنی:</p>
+        <div class="formula">$$ \boxed{ Gaussian\ Prior \Longleftrightarrow L2\ Regularization } $$</div>
+
+        <h2>19. حتی L1 هم Bayesian Interpretation دارد</h2>
+        <p>اگر prior روی وزن‌ها Laplace باشد:</p>
+        <div class="formula">$$ P(w) \propto \exp(-\lambda |w|) $$</div>
+        <p>آنگاه:</p>
+        <div class="formula">$$ -\log P(w) \propto \lambda |w| $$</div>
+        <p>پس:</p>
+        <div class="formula">$$ \boxed{ Laplace\ Prior \Longleftrightarrow L1\ Regularization } $$</div>
+        <p>بنابراین:</p>
+        <div class="chart">L2
+   ↕
+Gaussian Prior
+
+L1
+   ↕
+Laplace Prior</div>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <p>این یکی از سؤال‌های بسیار خوب مصاحبه Senior ML است.</p>
+        </div>
+
+        <h2>20. Bayesian Inference</h2>
+        <p>Bayesian inference یعنی:</p>
+        <!-- اصلاح: اضافه کردن کلاس rtl -->
+        <div class="chart rtl">به جای اینکه فقط یک مقدار برای پارامتر تخمین بزنیم، distribution مربوط به پارامتر را بعد از مشاهده داده پیدا کنیم.</div>
+        <p>یعنی:</p>
+        <div class="formula">$$ P(\theta|D) $$</div>
+        <p>را به دست بیاوریم.</p>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <p>این تفاوت بسیار مهم است.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">Classical ML</div>
+            <p>مثلاً:</p>
+            <div class="formula">$$ \theta = 0.73 $$</div>
+            <p>تمام.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#3fb950;">
+            <div class="inner-title">Bayesian</div>
+            <p>مثلاً:</p>
+            <div class="formula">$$ \theta|D \sim Distribution $$</div>
+            <p>مثلاً:</p>
+            <div class="chart">       posterior
+          /\
+        /    \
+      /        \
+_____/__________\____
+       0.7</div>
+            <p>یعنی می‌گوییم:</p>
+            <!-- اصلاح: اضافه کردن کلاس rtl -->
+            <div class="chart rtl">بهترین belief ما درباره θ این distribution است.</div>
+        </div>
+
+        <h2>21. Point Estimate vs Distribution</h2>
+        <div class="chart">MLE
+$$ \theta=0.73 $$
+
+MAP
+$$ \theta=0.71 $$
+
+Bayesian inference
+$$ P(\theta|D) $$</div>
+        <p>این آخری اطلاعات بیشتری دارد.</p>
+        <!-- اصلاح: اضافه کردن کلاس rtl -->
+        <div class="chart rtl">چون uncertainty را هم نشان می‌دهد.</div>
+
+        <h2>22. چرا Bayesian Inference سخت است؟</h2>
+        <p>مشکل اصلی:</p>
+        <div class="formula">$$ P(\theta|D) = \frac{P(D|\theta)P(\theta)} {P(D)} $$</div>
+        <p>است.</p>
+        <p>و:</p>
+        <div class="formula">$$ P(D) = \int P(D|\theta)P(\theta)d\theta $$</div>
+        <p>در مدل‌های پیچیده این integral ممکن است قابل محاسبه نباشد.</p>
+        <p>خصوصاً در Neural Networks که میلیون‌ها یا میلیاردها پارامتر داریم.</p>
+        <p>بنابراین به روش‌های approximate نیاز داریم.</p>
+
+        <h2>23. روش‌های Bayesian Inference</h2>
+        <p>روش‌های مهم:</p>
+        <div class="chart">Exact Inference
+     │
+     ├── Conjugate Models
+     │
+Approximate Inference
+     │
+     ├── MCMC
+     │   ├── Metropolis-Hastings
+     │   └── HMC
+     │
+     ├── Variational Inference
+     │
+     └── Laplace Approximation</div>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <p>برای Senior ML باید حداقل بدانید این‌ها چه هستند.</p>
+        </div>
+
+        <h2>24. Conjugate Prior</h2>
+        <p>اگر posterior همان family توزیع prior باشد، prior را conjugate می‌گوییم.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Beta Prior
+      +
+Bernoulli/Binomial Likelihood
+      ↓
+Beta Posterior</div>
+        <p>مثلاً:</p>
+        <div class="formula">$$ \theta \sim Beta(\alpha,\beta) $$</div>
+        <p>و:</p>
+        <div class="formula">$$ X \sim Binomial(n,\theta) $$</div>
+        <p>آنگاه:</p>
+        <div class="formula">$$ \theta|D \sim Beta(\alpha+k,\beta+n-k) $$</div>
+        <div class="inner-box" style="border-right-color:#3fb950;">
+            <p>این بسیار مهم است چون posterior را به صورت analytical به دست می‌آوریم.</p>
+        </div>
+
+        <h2>25. MCMC</h2>
+        <p>وقتی posterior را نمی‌توانیم مستقیم محاسبه کنیم، می‌توانیم از آن sample بگیریم.</p>
+        <p>MCMC:</p>
+        <div class="chart">Markov Chain Monte Carlo</div>
+        <p>ایده:</p>
+        <!-- اصلاح: اضافه کردن کلاس rtl -->
+        <div class="chart rtl">Posterior پیچیده
+       ↓
+Sample
+       ↓
+θ₁ θ₂ θ₃ θ₄ ... θₙ
+       ↓
+Approximate Posterior</div>
+        <p>روش‌های معروف:</p>
+        <div class="chart">Metropolis-Hastings
+Gibbs Sampling
+Hamiltonian Monte Carlo
+NUTS</div>
+
+        <h2>26. Variational Inference</h2>
+        <p>به جای sample گرفتن از posterior واقعی، یک distribution ساده‌تر انتخاب می‌کنیم:</p>
+        <div class="formula">$$ q(\theta) $$</div>
+        <p>و تلاش می‌کنیم:</p>
+        <div class="formula">$$ q(\theta) \approx P(\theta|D) $$</div>
+        <p>را پیدا کنیم.</p>
+        <p>معمولاً مسئله تبدیل می‌شود به minimization:</p>
+        <div class="formula">$$ KL(q(\theta) || P(\theta|D)) $$</div>
+        <p>در عمل، ELBO بسیار مهم است:</p>
+        <div class="formula">$$ \boxed{ ELBO = E_q[\log P(D,\theta)] - E_q[\log q(\theta)] } $$</div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <p>Variational inference معمولاً سریع‌تر از MCMC است ولی approximate است و ممکن است uncertainty را درست نشان ندهد.</p>
+        </div>
+
+        <h2>27. Bayesian Optimization</h2>
+        <p>حالا وارد مفهوم کاملاً متفاوتی می‌شویم.</p>
+        <p>Bayesian Optimization زمانی استفاده می‌شود که:</p>
+        <!-- اصلاح: اضافه کردن کلاس rtl -->
+        <div class="chart rtl">ارزیابی objective بسیار expensive باشد.</div>
+        <p>مثلاً می‌خواهی Hyperparameterهای XGBoost را پیدا کنی:</p>
+        <div class="chart">learning_rate
+max_depth
+n_estimators
+subsample
+...</div>
+        <p>هر configuration را تست کنی باید:</p>
+        <div class="chart">Train model
+   ↓
+Validate
+   ↓
+Wait 20 minutes
+   ↓
+Get score</div>
+        <p>اگر 1000 configuration تست کنی، ممکن است بسیار طول بکشد.</p>
+        <p>Bayesian Optimization کمک می‌کند هوشمندانه آزمایش بعدی را انتخاب کنیم.</p>
+
+        <h2>28. ساختار Bayesian Optimization</h2>
+        <div class="chart">           Expensive Function
+                  │
+                  ▼
+        ┌───────────────────┐
+        │   Observations    │
+        │ (x₁,y₁)...(xₙ,yₙ)│
+        └─────────┬─────────┘
+                  │
+                  ▼
+          Surrogate Model
+                  │
+                  ▼
+       Acquisition Function
+                  │
+                  ▼
+         Next Candidate x*
+                  │
+                  ▼
+       Expensive Evaluation
+                  │
+                  └──────► Repeat</div>
+
+        <h2>29. Surrogate Model</h2>
+        <p>ما objective واقعی را نمی‌دانیم یا evaluation آن expensive است.</p>
+        <p>مثلاً:</p>
+        <div class="formula">$$ f(x) $$</div>
+        <p>ولی چند observation داریم.</p>
+        <p>یک مدل تقریبی می‌سازیم:</p>
+        <div class="formula">$$ \hat f(x) $$</div>
+        <p>که به آن:</p>
+        <div class="chart">Surrogate Model</div>
+        <p>می‌گوییم.</p>
+        <p>مدل‌های رایج:</p>
+        <div class="chart">Gaussian Process
+Tree-structured Parzen Estimator
+Random Forest-based surrogate</div>
+
+        <h2>30. Gaussian Process در Bayesian Optimization</h2>
+        <p>یکی از classical ترین روش‌ها:</p>
+        <div class="formula">$$ f(x) \sim GP(m(x),k(x,x')) $$</div>
+        <p>Gaussian Process به ما می‌دهد:</p>
+        <div class="chart">Prediction
++
+Uncertainty</div>
+        <p>مثلاً:</p>
+        <div class="chart">        uncertainty
+          /\
+       __/  \__
+     _/        \_
+----/------------\----
+       predicted</div>
+        <p>پس می‌دانیم:</p>
+        <!-- اصلاح: اضافه کردن کلاس rtl -->
+        <div class="chart rtl">کجا objective احتمالاً خوب است
+کجا uncertainty زیاد است</div>
+
+        <h2>31. Acquisition Function</h2>
+        <p>حالا سؤال:</p>
+        <!-- اصلاح: اضافه کردن کلاس rtl -->
+        <div class="chart rtl">کدام نقطه را بعداً evaluate کنیم؟</div>
+        <p>Acquisition Function این تصمیم را می‌گیرد.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Expected Improvement
+$$ EI(x) $$</div>
+        <p>می‌پرسد:</p>
+        <!-- اصلاح: اضافه کردن کلاس rtl -->
+        <div class="chart rtl">اگر این نقطه را امتحان کنم، expected improvement چقدر است؟</div>
+
+        <h2>32. Exploration vs Exploitation</h2>
+        <p>Bayesian Optimization دائماً بین دو رفتار tradeoff دارد.</p>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">Exploitation</div>
+            <p>جایی را تست کن که فکر می‌کنیم نتیجه خوب است.</p>
+            <!-- اصلاح: اضافه کردن کلاس rtl -->
+            <div class="chart rtl">"این منطقه خوب به نظر می‌رسد."</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">Exploration</div>
+            <p>جایی را تست کن که uncertainty زیاد است.</p>
+            <!-- اصلاح: اضافه کردن کلاس rtl -->
+            <div class="chart rtl">"نمی‌دانیم آنجا چه خبر است."</div>
+        </div>
+        <!-- اصلاح: اضافه کردن کلاس rtl -->
+        <div class="chart rtl">Bayesian Optimization این دو را balance می‌کند.</div>
+
+        <h2>33. Acquisition Functionهای مهم</h2>
+        <p>باید حداقل این‌ها را بشناسی:</p>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">Expected Improvement — EI</div>
+            <p>تعادل خوب بین exploitation و exploration.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">Probability of Improvement — PI</div>
+            <p>احتمال اینکه بهتر از بهترین مقدار فعلی باشیم.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#3fb950;">
+            <div class="inner-title">Upper Confidence Bound — UCB</div>
+            <p>برای maximization:</p>
+            <div class="formula">$$ UCB(x) = \mu(x) + \kappa\sigma(x) $$</div>
+            <p>که:</p>
+            <div class="chart">\(\mu(x)\): prediction
+\(\sigma(x)\): uncertainty
+\(\kappa\): exploration parameter</div>
+        </div>
+        <!-- اصلاح: اضافه کردن کلاس rtl -->
+        <div class="chart rtl">اگر κ بزرگ باشد:
+More Exploration
+
+اگر کوچک باشد:
+More Exploitation</div>
+
+        <h2>34. Bayesian Optimization vs Grid Search</h2>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">Grid Search</div>
+            <div class="chart">A
+B
+C
+D
+E
+F
+...</div>
+            <p>حتی configurationهای بد را هم تست می‌کند.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">Bayesian Optimization</div>
+            <div class="chart">Test
+ ↓
+Learn
+ ↓
+Choose promising next point
+ ↓
+Test
+ ↓
+Learn
+ ↓
+...</div>
+        </div>
+        <!-- اصلاح: اضافه کردن کلاس rtl -->
+        <div class="chart rtl">پس وقتی evaluation expensive است، Bayesian Optimization بسیار مفید است.</div>
+
+        <h2>35. Naive Bayes</h2>
+        <p>حالا می‌رسیم به یک مدل بسیار مهم.</p>
+        <p>Naive Bayes بر اساس Bayes theorem است.</p>
+        <p>برای classification:</p>
+        <div class="formula">$$ P(y|x) \propto P(x|y)P(y) $$</div>
+        <p>اما فرض ساده‌ای می‌کند:</p>
+        <!-- اصلاح: اضافه کردن کلاس rtl -->
+        <div class="chart rtl">Features به شرط class از هم مستقل هستند.</div>
+        <p>یعنی:</p>
+        <div class="formula">$$ P(x_1,x_2,...,x_n|y) = \prod_i P(x_i|y) $$</div>
+        <p>این همان Naive Assumption است.</p>
+
+        <h2>36. مثال Spam Detection</h2>
+        <p>فرض کن:</p>
+        <div class="chart">x1 = "free"
+x2 = "money"
+x3 = "offer"</div>
+        <p>می‌خواهیم:</p>
+        <div class="formula">$$ P(Spam|x_1,x_2,x_3) $$</div>
+        <p>را پیدا کنیم.</p>
+        <p>Naive Bayes می‌گوید:</p>
+        <div class="formula">$$ P(Spam|x) \propto P(Spam) P(free|Spam) P(money|Spam) P(offer|Spam) $$</div>
+
+        <h2>37. انواع Naive Bayes</h2>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">Gaussian Naive Bayes</div>
+            <p>برای continuous features:</p>
+            <div class="formula">$$ x|y \sim Gaussian $$</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">Multinomial Naive Bayes</div>
+            <p>برای countها.</p>
+            <p>بسیار رایج در:</p>
+            <div class="chart">Text Classification
+NLP
+Bag of Words</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#3fb950;">
+            <div class="inner-title">Bernoulli Naive Bayes</div>
+            <p>برای binary features.</p>
+            <p>مثلاً:</p>
+            <div class="chart">contains_free = 0/1
+contains_offer = 0/1</div>
+        </div>
+
+        <h2>38. چرا Naive Bayes با وجود فرض غلط خوب کار می‌کند؟</h2>
+        <p>فرض independence اغلب در واقعیت کاملاً درست نیست.</p>
+        <p>مثلاً:</p>
+        <div class="chart">"machine"
+"learning"</div>
+        <p>به هم وابسته‌اند.</p>
+        <p>ولی Naive Bayes در بعضی مسائل مخصوصاً text classification بسیار خوب عمل می‌کند.</p>
+        <p>دلایل:</p>
+        <!-- اصلاح: اضافه کردن کلاس rtl -->
+        <div class="chart rtl">مدل ساده است
+variance پایین دارد
+با داده کم خوب کار می‌کند
+training بسیار سریع است
+high-dimensional sparse data را خوب مدیریت می‌کند</div>
+
+        <h2>39. Zero Frequency Problem</h2>
+        <p>فرض کن:</p>
+        <div class="chart">P(word="blockchain" | Spam) = 0</div>
+        <p>اگر از product استفاده کنیم:</p>
+        <div class="formula">$$ P(x_1|y)P(x_2|y)...P(x_n|y) $$</div>
+        <p>کل probability ممکن است صفر شود.</p>
+        <p>راه‌حل:</p>
+        <div class="chart">Laplace Smoothing</div>
+        <p>مثلاً:</p>
+        <div class="formula">$$ P(word|class) = \frac{count(word,class) + \alpha} {count(class) + \alpha V} $$</div>
+        <p>معمولاً:</p>
+        <div class="formula">$$ \alpha = 1 $$</div>
+
+        <h2>40. Bayesian Neural Networks — BNN</h2>
+        <p>حالا می‌رسیم به قسمت پیشرفته‌تر.</p>
+        <p>در Neural Network معمولی:</p>
+        <div class="chart">Weights:
+w₁, w₂, ..., wₙ</div>
+        <p>پارامترها معمولاً point estimate هستند.</p>
+        <p>مثلاً:</p>
+        <div class="formula">$$ w = 0.83 $$</div>
+        <p>در Bayesian Neural Network:</p>
+        <div class="formula">$$ \boxed{ w \sim P(w) } $$</div>
+        <p>یعنی وزن‌ها distribution هستند.</p>
+        <p>بعد از مشاهده data:</p>
+        <div class="formula">$$ \boxed{ P(w|D) } $$</div>
+        <p>داریم.</p>
+
+        <h2>41. Neural Network معمولی vs Bayesian Neural Network</h2>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">Standard NN</div>
+            <div class="chart">Input
+  ↓
+Weights
+  ↓
+Prediction</div>
+            <p>Weights:</p>
+            <div class="formula">$$ w = 0.73 $$</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">BNN</div>
+            <div class="chart">Input
+  ↓
+Distribution over weights
+  ↓
+Multiple possible networks
+  ↓
+Predictive distribution</div>
+            <p>مثلاً:</p>
+            <div class="formula">$$ w \sim P(w|D) $$</div>
+        </div>
+
+        <h2>42. چرا BNN مهم است؟</h2>
+        <p>چون uncertainty را مدل می‌کند.</p>
+        <p>فرض کن model می‌گوید:</p>
+        <div class="chart">Fraud probability = 0.91</div>
+        <p>ولی سؤال مهم این است:</p>
+        <!-- اصلاح: اضافه کردن کلاس rtl -->
+        <div class="chart rtl">آیا مدل واقعاً مطمئن است؟</div>
+        <p>ممکن است:</p>
+        <div class="chart">Prediction = 0.91
+Uncertainty = LOW</div>
+        <p>یا:</p>
+        <div class="chart">Prediction = 0.91
+Uncertainty = HIGH</div>
+        <!-- اصلاح: اضافه کردن کلاس rtl -->
+        <div class="chart rtl">یک مدل Bayesian می‌تواند این uncertainty را بهتر مدل کند.</div>
+
+        <h2>43. Predictive Distribution در BNN</h2>
+        <p>برای prediction:</p>
+        <div class="formula">$$ P(y^*|x^*,D) = \int P(y^*|x^*,w) P(w|D) dw $$</div>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <p>این فرمول خیلی مهم است.</p>
+            <p>یعنی prediction را روی uncertainty مربوط به weights integrate می‌کنیم.</p>
+        </div>
+
+        <h2>44. مشکل اصلی BNN</h2>
+        <p>همان مشکل Bayesian inference:</p>
+        <div class="formula">$$ P(w|D) $$</div>
+        <p>برای Neural Network بسیار پیچیده است.</p>
+        <p>چون تعداد پارامترها می‌تواند میلیون‌ها یا میلیاردها باشد.</p>
+        <p>بنابراین معمولاً posterior دقیق را محاسبه نمی‌کنیم.</p>
+        <p>از approximation استفاده می‌کنیم.</p>
+
+        <h2>45. روش‌های Approximate BNN</h2>
+        <p>مهم‌ترین‌ها:</p>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">Variational Inference</div>
+            <p>فرض می‌کنیم:</p>
+            <div class="formula">$$ q(w) \approx P(w|D) $$</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">MCMC</div>
+            <p>از posterior نمونه‌برداری می‌کنیم.</p>
+            <p>ولی برای شبکه‌های بسیار بزرگ expensive است.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#3fb950;">
+            <div class="inner-title">Laplace Approximation</div>
+            <p>Posterior را اطراف mode با Gaussian تقریب می‌زنیم.</p>
+        </div>
+
+        <h2>46. Bayesian Neural Network و Monte Carlo Dropout</h2>
+        <p>یک نکته بسیار مهم:</p>
+        <div class="chart">MC Dropout دقیقاً همان BNN کامل نیست.</div>
+        <p>ولی می‌تواند یک تقریب Bayesian برای uncertainty باشد.</p>
+        <p>در inference معمولی:</p>
+        <div class="chart">Dropout OFF</div>
+        <p>در MC Dropout:</p>
+        <div class="chart">Dropout ON
+       ↓
+Prediction 1
+Prediction 2
+Prediction 3
+...
+Prediction N</div>
+        <p>مثلاً:</p>
+        <div class="chart">0.81
+0.77
+0.85
+0.72
+0.80</div>
+        <!-- اصلاح: اضافه کردن کلاس rtl -->
+        <div class="chart rtl">می‌توانیم mean و variance را تخمین بزنیم.</div>
+
+        <h2>47. Deep Ensembles و Bayesian Interpretation</h2>
+        <p>Deep Ensembles هم BNN نیستند.</p>
+        <p>ولی می‌توانند uncertainty خوبی تولید کنند.</p>
+        <div class="chart">Model 1 → 0.81
+Model 2 → 0.76
+Model 3 → 0.85
+Model 4 → 0.79
+Model 5 → 0.83</div>
+        <p>اگر predictionها نزدیک باشند:</p>
+        <div class="chart">Low epistemic uncertainty</div>
+        <p>اگر خیلی متفاوت باشند:</p>
+        <div class="chart">High epistemic uncertainty</div>
+
+        <h2>48. یک نکته بسیار مهم: Bayesian ≠ Always Better</h2>
+        <p>Bayesian methods مزایای زیادی دارند، ولی رایگان نیستند.</p>
+        <p>هزینه‌ها:</p>
+        <!-- اصلاح: اضافه کردن کلاس rtl -->
+        <div class="chart rtl">محاسبات بیشتر
+inference پیچیده‌تر
+approximation
+انتخاب prior
+tuning
+scalability challenges</div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <p>در مدل‌های بسیار بزرگ، روش‌های approximate یا ensemble ممکن است practical‌تر باشند.</p>
+        </div>
+
+        <h2>49. Prior می‌تواند بد انتخاب شود</h2>
+        <p>اگر prior خیلی قوی و اشتباه باشد، می‌تواند posterior را به سمت اشتباه ببرد.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Prior:
+θ ≈ 100
+
+Actual data:
+θ ≈ 10</div>
+        <p>اگر data کم باشد، prior می‌تواند اثر زیادی داشته باشد.</p>
+        <p>اما اگر داده بسیار زیاد شود، معمولاً likelihood غالب می‌شود.</p>
+
+        <h2>50. Data زیاد چه اثری روی Prior دارد؟</h2>
+        <p>به صورت شهودی:</p>
+        <!-- اصلاح: اضافه کردن کلاس rtl -->
+        <div class="chart rtl">Few Data
+    ↓
+Prior مهم‌تر
+
+More Data
+    ↓
+Likelihood مهم‌تر
+
+Huge Data
+    ↓
+Prior معمولاً اثر نسبی کمتری دارد</div>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <p>البته این یک intuition است و شرایط ریاضی خاص خودش را دارد.</p>
+        </div>
+
+        <h2>51. Bayesian Updating</h2>
+        <p>قدرت اصلی Bayesian approach همین است.</p>
+        <p>فرض کن امروز data داریم:</p>
+        <div class="formula">$$ D_1 $$</div>
+        <p>Posterior:</p>
+        <div class="formula">$$ P(\theta|D_1) $$</div>
+        <p>فردا data جدید:</p>
+        <div class="formula">$$ D_2 $$</div>
+        <p>می‌آید.</p>
+        <p>می‌توانیم:</p>
+        <div class="formula">$$ P(\theta|D_1) $$</div>
+        <p>را به عنوان prior جدید استفاده کنیم.</p>
+        <p>بعد:</p>
+        <div class="formula">$$ P(\theta|D_1,D_2) $$</div>
+        <p>را به دست بیاوریم.</p>
+        <p>یعنی:</p>
+        <!-- اصلاح: اضافه کردن کلاس rtl -->
+        <div class="chart rtl">Prior
+  ↓
+Data 1
+  ↓
+Posterior 1
+  ↓
+Data 2
+  ↓
+Posterior 2
+  ↓
+Data 3
+  ↓
+Posterior 3</div>
+        <div class="inner-box" style="border-right-color:#3fb950;">
+            <p>این در سیستم‌هایی که continuously data دریافت می‌کنند بسیار جذاب است.</p>
+        </div>
+
+        <h2>52. MLE vs MAP vs Bayesian Inference — مهم‌ترین مقایسه</h2>
+        <div style="overflow-x:auto;">
+            <table>
+                <thead><tr><th>ویژگی</th><th>MLE</th><th>MAP</th><th>Bayesian Inference</th></tr></thead>
+                <tbody>
+                    <tr><td>Likelihood</td><td>✓</td><td>✓</td><td>✓</td></tr>
+                    <tr><td>Prior</td><td>✗</td><td>✓</td><td>✓</td></tr>
+                    <tr><td>خروجی</td><td>Point</td><td>Point</td><td>Distribution</td></tr>
+                    <tr><td>Uncertainty</td><td>✗</td><td>محدود</td><td>✓</td></tr>
+                    <tr><td>Computational cost</td><td>کم‌تر</td><td>کم‌تر</td><td>بیشتر</td></tr>
+                    <tr><td>Regularization interpretation</td><td>غیرمستقیم</td><td>✓</td><td>✓</td></tr>
+                    <tr><td>Full posterior</td><td>✗</td><td>✗</td><td>✓</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <p>به شکل خلاصه:</p>
+        <div class="formula">$$ \boxed{ MLE = Likelihood } $$</div>
+        <div class="formula">$$ \boxed{ MAP = Likelihood + Prior } $$</div>
+        <div class="formula">$$ \boxed{ Bayesian\ Inference = Posterior\ Distribution } $$</div>
+
+        <h2>53. رابطه خیلی مهم Loss / MLE / MAP</h2>
+        <p>این را برای مصاحبه حفظ کن:</p>
+        <div class="chart">Probability Model
+       ↓
+Likelihood
+       ↓
+Negative Log Likelihood
+       ↓
+Loss Function</div>
+        <p>و اگر prior اضافه کنیم:</p>
+        <div class="chart">Likelihood
+    +
+Prior
+    ↓
+Negative Log Posterior
+    ↓
+Data Loss + Regularization</div>
+        <p>پس:</p>
+        <div class="formula">$$ \boxed{ MAP \approx Loss + Regularization } $$</div>
+        <p>از دید optimization.</p>
+
+        <h2>54. یک مثال خیلی مهم با Linear Regression</h2>
+        <p>فرض کن:</p>
+        <div class="formula">$$ y = Xw + \epsilon $$</div>
+        <p>و:</p>
+        <div class="formula">$$ \epsilon \sim N(0,\sigma^2) $$</div>
+        <p>Likelihood باعث می‌شود:</p>
+        <div class="formula">$$ -\log P(D|w) \propto ||y - Xw||_2^2 $$</div>
+        <p>حالا prior:</p>
+        <div class="formula">$$ w \sim N(0,\tau^2 I) $$</div>
+        <p>داریم.</p>
+        <p>پس:</p>
+        <div class="formula">$$ -\log P(w) \propto ||w||_2^2 $$</div>
+        <p>در نتیجه MAP:</p>
+        <div class="formula">$$ \boxed{ \min_w ||y - Xw||_2^2 + \lambda ||w||_2^2 } $$</div>
+        <p>که همان Ridge Regression است.</p>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <p>این ارتباط را اگر در مصاحبه بگویی، نشان می‌دهد Bayesian را واقعاً فهمیده‌ای، نه اینکه فقط تعریفش را حفظ کرده‌ای.</p>
+        </div>
+
+        <h2>55. یک نقشه ذهنی کامل</h2>
+        <div class="chart">                         BAYESIAN ML
+                              │
+                ┌─────────────┴──────────────┐
+                │                            │
+             Bayesian                     Bayesian
+             Inference                   Optimization
+                │                            │
+        ┌───────┼────────┐          ┌────────┼────────┐
+        │       │        │          │        │        │
+      Prior Likelihood Evidence   Surrogate Acquisition Search
+        │       │        │          │        │        │
+        └───────┴────────┘          └────────┴────────┘
+                │
+             Posterior
+                │
+        ┌───────┼──────────┐
+        │       │          │
+       MLE     MAP      Full Bayesian
+        │       │          │
+        │       │          ├── MCMC
+        │       │          ├── VI
+        │       │          └── Laplace
+        │       │
+        │       └── Regularization
+        │
+        └── Classical estimation
+
+
+                 BAYESIAN MODELS
+                       │
+             ┌─────────┴─────────┐
+             │                   │
+        Naive Bayes         Bayesian NN
+             │                   │
+       Independence         Distribution
+        assumption           over weights</div>
+
+        <h2>56. نکات Senior ML که باید حتماً بلد باشی</h2>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">نکته 1</div>
+            <p>Likelihood distribution روی parameter نیست.</p>
+            <p>Likelihood تابعی از parameter است که data را ثابت در نظر می‌گیرد.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">نکته 2</div>
+            <p>MLE Bayesian نیست.</p>
+            <p>MLE از likelihood استفاده می‌کند ولی prior ندارد.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#3fb950;">
+            <div class="inner-title">نکته 3</div>
+            <p>MAP از prior استفاده می‌کند اما posterior را به صورت کامل نگه نمی‌دارد.</p>
+            <p>MAP فقط mode posterior را می‌گیرد.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#d2a8ff;">
+            <div class="inner-title">نکته 4</div>
+            <p>Bayesian inference یعنی نگه داشتن uncertainty درباره پارامتر:</p>
+            <div class="formula">$$ P(\theta|D) $$</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">نکته 5</div>
+            <p>L2 regularization را می‌توان از Gaussian prior به دست آورد.</p>
+            <div class="formula">$$ Gaussian\ Prior \leftrightarrow L2 $$</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">نکته 6</div>
+            <p>L1 را می‌توان از Laplace prior به دست آورد.</p>
+            <div class="formula">$$ Laplace\ Prior \leftrightarrow L1 $$</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#3fb950;">
+            <div class="inner-title">نکته 7</div>
+            <p>Cross Entropy در بسیاری از classificationها با Negative Log-Likelihood ارتباط مستقیم دارد.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#d2a8ff;">
+            <div class="inner-title">نکته 8</div>
+            <p>MSE با فرض Gaussian noise از MLE به دست می‌آید.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">نکته 9</div>
+            <p>Naive Bayes فرض conditional independence دارد:</p>
+            <div class="formula">$$ P(x_1,\ldots,x_n|y) = \prod_iP(x_i|y) $$</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">نکته 10</div>
+            <p>Bayesian Optimization برای expensive black-box optimization است، نه صرفاً برای Bayesian inference.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#3fb950;">
+            <div class="inner-title">نکته 11</div>
+            <p>Bayesian Optimization:</p>
+            <div class="chart">Surrogate
++
+Acquisition Function
++
+Sequential Optimization</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#d2a8ff;">
+            <div class="inner-title">نکته 12</div>
+            <p>BNN با NN معمولی تفاوت اساسی دارد:</p>
+            <div class="chart">NN:
+point weights
+
+BNN:
+distribution over weights</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">نکته 13</div>
+            <p>MC Dropout و Deep Ensembles ابزارهای uncertainty estimation هستند، اما معادل BNN کامل نیستند.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">نکته 14</div>
+            <p>Bayesian methods به صورت طبیعی uncertainty را مدل می‌کنند، اما uncertainty estimation می‌تواند approximate باشد.</p>
+        </div>
+
+        <h2>57. اگر در مصاحبه ازت بپرسند:</h2>
+        
+        <h3>«Difference between MLE and MAP?»</h3>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <p>جواب Senior:</p>
+            <div class="highlight-en" style="direction:ltr; text-align:left;">
+                MLE chooses the parameters that maximize the likelihood of the observed data, while MAP maximizes the posterior by combining the likelihood with a prior over the parameters. In log space, MAP can be interpreted as maximum likelihood plus a prior-induced regularization term.
+            </div>
+        </div>
+
+        <h3>«Why does L2 regularization relate to Bayesian inference?»</h3>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <p>جواب:</p>
+            <div class="highlight-en" style="direction:ltr; text-align:left;">
+                If we place a zero-mean Gaussian prior over model weights, maximizing the posterior introduces an L2 penalty on the weights. Therefore Ridge/L2 regularization can be interpreted as a MAP estimator under a Gaussian prior.
+            </div>
+        </div>
+
+        <h3>«Is MAP fully Bayesian?»</h3>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <p>جواب:</p>
+            <div class="highlight-en" style="direction:ltr; text-align:left;">
+                No. MAP is a point estimate corresponding to the mode of the posterior. Full Bayesian inference retains the entire posterior distribution and therefore represents parameter uncertainty.
+            </div>
+        </div>
+
+        <h3>«Why use Bayesian Optimization?»</h3>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <p>جواب:</p>
+            <div class="highlight-en" style="direction:ltr; text-align:left;">
+                Bayesian optimization is useful when evaluating the objective is expensive. It builds a probabilistic surrogate model and uses an acquisition function to decide which point to evaluate next, balancing exploration and exploitation.
+            </div>
+        </div>
+
+        <h3>«Why Naive Bayes can work despite the independence assumption being false?»</h3>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <p>جواب:</p>
+            <div class="highlight-en" style="direction:ltr; text-align:left;">
+                The conditional-independence assumption is often violated, but the model has low variance, requires relatively little data, handles high-dimensional sparse features efficiently, and can still produce useful decision boundaries even when its probability estimates are imperfect.
+            </div>
+        </div>
+
+        <h2>58. در نهایت این 10 مفهوم را باید بتوانی بدون فکر توضیح بدهی</h2>
+        <div class="chart">Prior
+   ↓
+belief before data
+
+Likelihood
+   ↓
+how well parameters explain observed data
+
+Evidence
+   ↓
+overall probability of observed data
+
+Posterior
+   ↓
+belief after observing data
+
+MLE
+   ↓
+maximize likelihood
+
+MAP
+   ↓
+maximize likelihood × prior
+
+Bayesian Inference
+   ↓
+estimate full posterior distribution
+
+Bayesian Optimization
+   ↓
+efficiently search expensive functions
+
+Naive Bayes
+   ↓
+Bayesian classifier + conditional independence
+
+Bayesian Neural Network
+   ↓
+probability distributions over neural-network weights</div>
+
+        <h2>⭐ مهم‌ترین زنجیره‌ای که باید در ذهن داشته باشی:</h2>
+        <div class="formula">$$ \boxed{ Prior \times Likelihood \propto Posterior } $$</div>
+        <p>و از طرف دیگر:</p>
+        <div class="formula">$$ \boxed{ MLE \rightarrow Likelihood } $$</div>
+        <div class="formula">$$ \boxed{ MAP \rightarrow Likelihood + Prior } $$</div>
+        <div class="formula">$$ \boxed{ Bayesian\ Inference \rightarrow Full\ Posterior } $$</div>
+        <p>و ارتباط بسیار مهم با ML:</p>
+        <div class="formula">$$ \boxed{ NLL \rightarrow Loss } $$</div>
+        <div class="formula">$$ \boxed{ Prior \rightarrow Regularization } $$</div>
+        <div class="formula">$$ \boxed{ Gaussian\ Prior \rightarrow L2 } $$</div>
+        <div class="formula">$$ \boxed{ Laplace\ Prior \rightarrow L1 } $$</div>
+
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <p>این connections از خود تعریف‌های Bayesian برای یک Senior ML Engineer / Senior Data Scientist مهم‌ترند.</p>
+        </div>
+
+        <hr style="border:1px solid #444; margin:50px 0;" />
+        <p style="text-align:center; color:#8b949e; font-size:0.85rem; padding:16px 0;">Bayesian Concepts · Senior ML · تمام نکات ریز 🧠</p>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // 8. Posterior (Bayes Theorem) Visualization - اصلاح شده با KaTeX و Joint Probabilities
+            const ctxVars = {};
+            function getCtx(id) {
+                if (!ctxVars[id]) {
+                    const canvas = document.getElementById(id);
+                    if (!canvas) return null;
+                    const ctx = canvas.getContext('2d');
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctxVars[id] = ctx;
+                }
+                return ctxVars[id];
+            }
+
+            function drawBayes() {
+                const ctx = getCtx('bayesCanvas');
+                if (!ctx) return;
+                
+                let PA = parseFloat(document.getElementById('bayesPA').value);
+                let PBA = parseFloat(document.getElementById('bayesPBA').value);
+                let PBNA = parseFloat(document.getElementById('bayesPBNA').value);
+                
+                // به‌روزرسانی مقادیر کنار اسلایدرها
+                document.getElementById('bayesPAVal').textContent = PA.toFixed(2);
+                document.getElementById('bayesPBAVal').textContent = PBA.toFixed(2);
+                document.getElementById('bayesPBNAVal').textContent = PBNA.toFixed(2);
+                
+                // محاسبات
+                const PB = PA * PBA + (1 - PA) * PBNA;
+                const PAB = (PBA * PA) / PB;
+                
+                // رندر فرمول خالص
+                const eqEl = document.getElementById('bayes-formula');
+                katex.render(
+                    `P(A|B) = \\frac{P(B|A)P(A)}{P(B)}`,
+                    eqEl,
+                    {throwOnError: false}
+                );
+
+                // نمایش نتیجه نهایی
+                const resultEl = document.getElementById('bayes-result');
+                if (resultEl) {
+                    resultEl.textContent = `P(A|B) = ${PAB.toFixed(2)}`;
+                }
+                
+                // رسم گراف (مبتنی بر Joint Probabilities)
+                const w = 500, h = 300;
+                ctx.clearRect(0, 0, w, h);
+                
+                // پس‌زمینه
+                ctx.fillStyle = '#21262d';
+                ctx.fillRect(0, 0, w, h);
+                
+                // ابعاد مستطیل
+                const barX = 50, barY = 50, barW = 400, barH = 150;
+                
+                // محاسبه مقادیر Joint
+                const jointA = PA * PBA;          // P(A, B)
+                const jointNotA = (1 - PA) * PBNA; // P(¬A, B)
+                const totalJoint = jointA + jointNotA;
+                
+                // جلوگیری از تقسیم بر صفر (وقتی هر دو likelohood صفر هستند)
+                const ratioA = totalJoint > 0 ? jointA / totalJoint : 0;
+                const ratioNotA = totalJoint > 0 ? jointNotA / totalJoint : 0;
+                
+                // رسم P(A,B) (آبی)
+                ctx.fillStyle = '#58a6ff';
+                ctx.fillRect(barX, barY, barW * ratioA, barH);
+                
+                // رسم P(¬A,B) (سبز)
+                ctx.fillStyle = '#3fb950';
+                ctx.fillRect(barX + barW * ratioA, barY, barW * ratioNotA, barH);
+                
+                // خطوط مرزی
+                ctx.strokeStyle = '#e6edf3';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(barX, barY, barW, barH);
+
+                // --- افزودن برچسب‌های P(A) و P(¬A) زیر نمودار ---
+                ctx.font = '18px sans-serif';
+                
+                // برچسب P(A) با نقطه آبی (سمت چپ)
+                ctx.fillStyle = '#e6edf3';
+                ctx.fillText('P(A)', barX + 10, barY + barH + 30);
+                ctx.fillStyle = '#58a6ff';
+                ctx.beginPath();
+                ctx.arc(barX + 50, barY + barH + 30, 6, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                // برچسب P(¬A) با نقطه سبز (سمت راست)
+                ctx.fillStyle = '#e6edf3';
+                ctx.fillText('P(¬A)', barX + barW - 70, barY + barH + 30);
+                ctx.fillStyle = '#3fb950';
+                ctx.beginPath();
+                ctx.arc(barX + barW - 30, barY + barH + 30, 6, 0, 2 * Math.PI);
+                ctx.fill();
+            }
+            
+            // اتصال رویدادها به هر سه اسلایدر
+            document.getElementById('bayesPA').addEventListener('input', drawBayes);
+            document.getElementById('bayesPBA').addEventListener('input', drawBayes);
+            document.getElementById('bayesPBNA').addEventListener('input', drawBayes);
+            
+            // اجرای اولیه
+            drawBayes();
+        });
+    </script>
+</body>
+</html>

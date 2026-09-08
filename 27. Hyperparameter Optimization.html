@@ -1,0 +1,1451 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hyperparameter Optimization - Senior ML Level</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}]});"></script>
+    <style>
+        body { background-color: #0d1117; color: #e6edf3; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.8; margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1, h2, h3 { color: #e6edf3; text-align: right; border-bottom: 1px solid #444; padding-bottom: 15px; margin-top: 50px; }
+        p, li { text-align: right; }
+        
+        /* Boxes */
+        .box { background-color: #21262d; border: 1px solid #30363d; border-radius: 8px; padding: 15px; margin: 15px 0; color: #e6edf3; }
+        .inner-box { background-color: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 15px; margin: 10px; }
+        .inner-title { font-weight: bold; margin-bottom: 5px; }
+
+        /* Formula Box */
+        .formula {
+            direction: ltr;
+            background-color: #000;
+            border: 1px solid #fff;
+            border-radius: 0;
+            padding: 20px;
+            margin: 20px auto;
+            width: fit-content;
+            max-width: 100%;
+            overflow-x: auto;
+            text-align: center;
+            font-size: 1.2em;
+            font-family: "Times New Roman", Times, serif;
+            color: #fff;
+        }
+
+        /* Charts / Flowcharts / ASCII Art */
+        .chart { direction: ltr; text-align: left; font-family: monospace; background-color: #21262d; border-radius: 8px; padding: 15px; overflow-x: auto; white-space: pre; border: 1px solid #444; }
+
+        /* Tables */
+        table { width: 100%; border-collapse: collapse; direction: rtl; margin-bottom: 20px; }
+        th, td { border: 1px solid #444; padding: 12px; text-align: right; }
+        th { background-color: #21262d; }
+        
+        .highlight { color: #58a6ff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔥 27. Hyperparameter Optimization — از پایه تا Senior ML</h1>
+
+        <p>حتماً. این بخش Hyperparameter Optimization (HPO) را اگر در سطح Senior ML بخواهی، نباید فقط به معنی «چند مقدار مختلف برای learning_rate امتحان کن» ببینی. HPO در واقع یک optimization problem روی یک فضای پرهزینه و noisy است که باید با درنظرگرفتن validation strategy، compute budget، parallelism، early stopping، leakage و production constraints حل شود.</p>
+
+        <h2>0. اول یک تصویر کلی</h2>
+        <p>فرض کن مدل ما:</p>
+        <div class="box"><div class="chart">XGBoost</div></div>
+        <p>دارد و hyperparameterهای زیر را دارد:</p>
+        <div class="box"><div class="chart">learning_rate
+max_depth
+n_estimators
+subsample
+colsample_bytree
+min_child_weight
+reg_lambda
+reg_alpha</div></div>
+        <p>ما می‌خواهیم:</p>
+        <div class="formula">$$ \theta^* = \arg\min_{\theta \in \Theta} f(\theta) $$</div>
+        <p>که در آن:</p>
+        <div class="inner-box"><div class="inner-title">\(\theta\): مجموعه hyperparameters</div></div>
+        <div class="inner-box"><div class="inner-title">\(\Theta\): search space</div></div>
+        <div class="inner-box"><div class="inner-title">\(f(\theta)\): validation/CV loss</div></div>
+        <div class="inner-box"><div class="inner-title">\(\theta^*\): بهترین configuration</div></div>
+
+        <p>اما یک مشکل داریم:</p>
+        <p>هر بار که \(f(\theta)\) را محاسبه می‌کنیم، باید مدل را train کنیم.</p>
+        <p>پس:</p>
+        <div class="formula">$$ f(\theta) $$</div>
+        <p>معمولاً expensive black-box function است.</p>
+
+        <h2>1. Parameter vs Hyperparameter</h2>
+        <p>اول این دو را کاملاً جدا کن.</p>
+        <p>فرض کن:</p>
+        <div class="formula">$$ \hat y = Xw+b $$</div>
+        <p>در Linear Regression:</p>
+        <div class="box"><div class="chart">w
+b</div></div>
+        <p>پارامتر هستند.</p>
+        <p>مدل آنها را از داده یاد می‌گیرد.</p>
+        <p>اما:</p>
+        <div class="box"><div class="chart">learning_rate
+regularization_strength
+batch_size</div></div>
+        <p>hyperparameter هستند.</p>
+        <p>ما آنها را قبل یا در طول training process تعیین می‌کنیم.</p>
+
+        <h2>2. Hyperparameter Optimization چیست؟</h2>
+        <p>یعنی:</p>
+        <p>پیدا کردن configurationای از hyperparameters که performance مدل را روی داده unseen بهینه کند.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">XGBoost
+
+learning_rate = 0.05
+max_depth = 7
+n_estimators = 800
+subsample = 0.8</div></div>
+        <p>این configuration را با configurationهای دیگر مقایسه می‌کنیم.</p>
+
+        <h2>3. HPO با Training فرق دارد</h2>
+        <p>این distinction خیلی مهم است.</p>
+        <div class="inner-box"><div class="inner-title">Training</div></div>
+        <p>مدل parameters را یاد می‌گیرد:</p>
+        <div class="formula">$$ w^*=\arg\min_w L(w) $$</div>
+        <div class="inner-box"><div class="inner-title">HPO</div></div>
+        <p>ما hyperparameters را پیدا می‌کنیم:</p>
+        <div class="formula">$$ \theta^*=\arg\min_\theta CVLoss(\theta) $$</div>
+        <p>پس دو optimization داریم:</p>
+        <div class="box"><div class="chart">                 HPO
+                  │
+        ┌─────────┴─────────┐
+        ↓                   ↓
+Hyperparameters          Training
+        ↓                   ↓
+ learning rate             weights
+ max_depth                 bias
+ dropout                   parameters</div></div>
+
+        <h2>4. چرا HPO سخت است؟</h2>
+        <p>چند مشکل همزمان داریم:</p>
+        <div class="inner-box"><div class="inner-title">1. Expensive</div></div>
+        <p>هر trial ممکن است چند دقیقه یا چند ساعت طول بکشد.</p>
+        <div class="inner-box"><div class="inner-title">2. Noisy</div></div>
+        <p>Performance یک configuration ممکن است به خاطر:</p>
+        <div class="box"><div class="chart">random seed
+sampling
+mini-batches
+stochastic training</div></div>
+        <p>متغیر باشد.</p>
+        <div class="inner-box"><div class="inner-title">3. High-dimensional</div></div>
+        <p>ممکن است ده‌ها hyperparameter داشته باشیم.</p>
+        <div class="inner-box"><div class="inner-title">4. Conditional</div></div>
+        <p>برخی hyperparameterها فقط در شرایط خاص فعال‌اند.</p>
+        <div class="inner-box"><div class="inner-title">5. Mixed Search Space</div></div>
+        <p>ممکن است همزمان داشته باشیم:</p>
+        <div class="box"><div class="chart">integer
+float
+categorical
+log-scale
+conditional</div></div>
+
+        <h2>5. Trial چیست؟</h2>
+        <p>هر configuration یک Trial است.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Trial 1:
+learning_rate = 0.1
+max_depth = 5</div></div>
+        <p>Trial 2:</p>
+        <div class="box"><div class="chart">learning_rate = 0.03
+max_depth = 8</div></div>
+        <p>و غیره.</p>
+
+        <h2>6. Search Space چیست؟</h2>
+        <p>محدوده‌ای که اجازه می‌دهیم optimizer جستجو کند.</p>
+        <p>مثلاً:</p>
+        <div class="formula">$$ learning\_rate \in [10^{-5},0.3] $$</div>
+        <p>و:</p>
+        <div class="formula">$$ max\_depth \in [3,12] $$</div>
+
+        <h2>7. Search Space خوب بسیار مهم است</h2>
+        <p>یک optimizer عالی با search space بد می‌تواند نتیجه بدی بدهد.</p>
+        <p>مثلاً برای learning rate:</p>
+        <div class="box"><div class="chart">0.00001
+0.0001
+0.001
+0.01
+0.1</div></div>
+        <p>scale لگاریتمی منطقی‌تر از:</p>
+        <div class="box"><div class="chart">0.01
+0.02
+0.03
+...
+0.1</div></div>
+        <p>است.</p>
+        <p>چرا؟</p>
+        <p>چون اثر learning rate معمولاً multiplicative است.</p>
+
+        <h2>8. Log-Uniform Search</h2>
+        <p>برای پارامترهایی مثل:</p>
+        <div class="box"><div class="chart">learning_rate
+weight_decay
+regularization</div></div>
+        <p>اغلب بهتر است:</p>
+        <div class="formula">$$ \log_{10}(\theta) $$</div>
+        <p>را sample کنیم.</p>
+        <p>مثلاً:</p>
+        <div class="formula">$$ 10^{-5} \rightarrow 10^{-4} $$</div>
+        <p>به اندازه:</p>
+        <div class="formula">$$ 10^{-3}\rightarrow10^{-2} $$</div>
+        <p>یک order-of-magnitude تغییر است.</p>
+
+        <h2>9. Grid Search</h2>
+        <p>ساده‌ترین روش.</p>
+        <p>فرض:</p>
+        <div class="box"><div class="chart">learning_rate:
+0.01, 0.1
+
+max_depth:
+3, 5, 7</div></div>
+        <p>تعداد trial:</p>
+        <div class="formula">$$ 2\times3=6 $$</div>
+        <p>Grid Search:</p>
+        <div class="box"><div class="chart">       depth
+       3   5   7
+LR .01 ✓   ✓   ✓
+   .1  ✓   ✓   ✓</div></div>
+        <p>همه ترکیبات امتحان می‌شوند.</p>
+
+        <h2>10. مزیت Grid Search</h2>
+        <div class="inner-box">ساده</div>
+        <div class="inner-box">deterministic</div>
+        <div class="inner-box">قابل فهم</div>
+        <div class="inner-box">reproducible</div>
+        <div class="inner-box">مناسب برای search space کوچک</div>
+
+        <h2>11. مشکل Grid Search</h2>
+        <p>فرض کن:</p>
+        <div class="box"><div class="chart">10 parameters</div></div>
+        <p>و هرکدام:</p>
+        <div class="box"><div class="chart">10 values</div></div>
+        <p>داشته باشند:</p>
+        <div class="formula">$$ 10^{10} $$</div>
+        <p>یعنی:</p>
+        <p>10 میلیارد configuration.</p>
+        <p>عملاً غیرممکن.</p>
+
+        <h2>12. مشکل مهم‌تر Grid Search</h2>
+        <p>فرض کن فقط دو hyperparameter واقعاً مهم باشند:</p>
+        <div class="box"><div class="chart">learning_rate
+max_depth</div></div>
+        <p>و بقیه کم‌اهمیت باشند.</p>
+        <p>Grid Search منابع زیادی روی dimensionهای کم‌اهمیت تلف می‌کند.</p>
+
+        <h2>13. Random Search</h2>
+        <p>به جای تمام grid:</p>
+        <p>configurationها را random sample می‌کنیم.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Trial 1:
+lr=.003
+depth=8
+
+Trial 2:
+lr=.07
+depth=4
+
+Trial 3:
+lr=.015
+depth=10</div></div>
+
+        <h2>14. چرا Random Search مهم است؟</h2>
+        <p>فرض کن:</p>
+        <div class="box"><div class="chart">2 hyperparameters</div></div>
+        <p>مهم‌اند و:</p>
+        <div class="box"><div class="chart">8 hyperparameters</div></div>
+        <p>تقریباً بی‌اثرند.</p>
+        <p>Random Search می‌تواند سریع‌تر در dimensionهای مهم coverage ایجاد کند.</p>
+        <p>به همین دلیل در بسیاری از search spaceها از Grid Search کارآمدتر است.</p>
+
+        <h2>15. Random Search هنوز Blind است</h2>
+        <p>مشکل:</p>
+        <p>Trial 1 خوب بود:</p>
+        <div class="box"><div class="chart">lr=.03
+depth=7</div></div>
+        <p>اما Trial بعدی هیچ اطلاعی از Trial قبلی ندارد.</p>
+        <p>یعنی:</p>
+        <div class="box"><div class="chart">Trial 1
+   ↓
+Trial 2</div></div>
+        <p>وابستگی هوشمندی ندارد.</p>
+        <p>اینجا Bayesian Optimization وارد می‌شود.</p>
+
+        <h2>16. Bayesian Optimization</h2>
+        <p>ایده اصلی:</p>
+        <p>از نتایج trialهای قبلی یاد بگیر و تصمیم بگیر trial بعدی کجا باشد.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Trial 1 → .72
+Trial 2 → .81
+Trial 3 → .86
+Trial 4 → .89</div></div>
+        <p>optimizer متوجه می‌شود چه قسمت‌هایی promising هستند.</p>
+
+        <h2>17. HPO به شکل Black-Box Optimization</h2>
+        <p>فرض کن:</p>
+        <div class="formula">$$ y=f(x) $$</div>
+        <p>که:</p>
+        <div class="box"><div class="chart">x = hyperparameters
+y = validation score</div></div>
+        <p>ما خود تابع را نمی‌دانیم.</p>
+        <p>فقط می‌توانیم:</p>
+        <div class="box"><div class="chart">x → train → evaluate → y</div></div>
+        <p>کنیم.</p>
+
+        <h2>18. Surrogate Model</h2>
+        <p>Bayesian Optimization معمولاً یک مدل جایگزین می‌سازد:</p>
+        <div class="formula">$$ \hat f(\theta) $$</div>
+        <p>این مدل performance را تخمین می‌زند.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Hyperparameter
+      ↓
+Surrogate
+      ↓
+Predicted performance
++
+Uncertainty</div></div>
+
+        <h2>19. Acquisition Function</h2>
+        <p>بعد سؤال:</p>
+        <p>trial بعدی کجا باشد؟</p>
+        <p>را acquisition function جواب می‌دهد.</p>
+        <p>مثال‌ها:</p>
+        <div class="inner-box">Expected Improvement</div>
+        <div class="inner-box">Probability of Improvement</div>
+        <div class="inner-box">Upper Confidence Bound</div>
+
+        <h2>20. Exploration vs Exploitation</h2>
+        <p>این یکی از مفاهیم کلیدی HPO است.</p>
+        <div class="inner-box"><div class="inner-title">Exploitation</div></div>
+        <p>جایی را امتحان کن که احتمال می‌دهیم خوب باشد.</p>
+        <div class="inner-box"><div class="inner-title">Exploration</div></div>
+        <p>قسمت‌های ناشناخته را امتحان کن.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Known good region
+████████
+
+Unknown region
+░░░░░░░░</div></div>
+        <p>Optimizer باید بین این دو تعادل ایجاد کند.</p>
+
+        <h2>21. Expected Improvement</h2>
+        <p>فرض کن بهترین score فعلی:</p>
+        <div class="formula">$$ y^*=0.90 $$</div>
+        <p>برای configuration جدید:</p>
+        <div class="formula">$$ \mu=0.91 $$</div>
+        <p>ولی uncertainty:</p>
+        <div class="formula">$$ \sigma=0.10 $$</div>
+        <p>است.</p>
+        <p>ممکن است ارزش exploration داشته باشد.</p>
+
+        <h2>22. Bayesian Optimization برای چه زمانی عالی است؟</h2>
+        <p>وقتی:</p>
+        <div class="box"><div class="chart">Trial cost = high</div></div>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">1 trial = 1 hour</div></div>
+        <p>Random Search:</p>
+        <div class="box"><div class="chart">100 trials = 100 hours</div></div>
+        <p>اما Bayesian Optimization ممکن است با trialهای بسیار کمتر به region خوب برسد.</p>
+
+        <h2>23. Gaussian Process</h2>
+        <p>یکی از surrogateهای کلاسیک:</p>
+        <div class="formula">$$ f(\theta)\sim GP $$</div>
+        <p>Gaussian Process:</p>
+        <div class="inner-box">mean prediction</div>
+        <div class="inner-box">uncertainty</div>
+        <p>ارائه می‌کند.</p>
+
+        <h2>24. مشکل Gaussian Process</h2>
+        <p>برای search spaceهای خیلی بزرگ یا تعداد observationهای خیلی زیاد، GP می‌تواند از نظر computational cost مناسب نباشد.</p>
+        <p>به همین دلیل روش‌های دیگری استفاده می‌شوند.</p>
+
+        <h2>25. TPE چیست؟</h2>
+        <p>Tree-structured Parzen Estimator</p>
+        <p>یکی از روش‌های محبوب Bayesian-style optimization است.</p>
+        <p>به جای مدل کردن مستقیم:</p>
+        <div class="formula">$$ p(y|\theta) $$</div>
+        <p>به شکل خاصی روی:</p>
+        <div class="formula">$$ p(\theta|y) $$</div>
+        <p>کار می‌کند.</p>
+
+        <h2>26. ایده TPE</h2>
+        <p>configurationها را بر اساس performance به دو گروه تقسیم می‌کند:</p>
+        <div class="box"><div class="chart">Good trials
+Bad trials</div></div>
+        <p>سپس distribution آنها را مدل می‌کند.</p>
+        <p>به‌صورت مفهومی:</p>
+        <div class="formula">$$ l(\theta)=p(\theta|y&lt;y^*) $$</div>
+        <p>و:</p>
+        <div class="formula">$$ g(\theta)=p(\theta|y\ge y^*) $$</div>
+        <p>سپس دنبال configurationهایی می‌گردد که:</p>
+        <div class="formula">$$ \frac{l(\theta)}{g(\theta)} $$</div>
+        <p>زیاد باشد.</p>
+        <p>یعنی:</p>
+        <p>configuration شبیه good trials و متفاوت از bad trials.</p>
+
+        <h2>27. Optuna چیست؟</h2>
+        <p>Optuna یک framework برای HPO است.</p>
+        <p>خود Optuna یک optimizer واحد نیست.</p>
+        <p>می‌تواند از روش‌های مختلف استفاده کند.</p>
+        <p>یکی از معروف‌ترین آنها:</p>
+        <div class="box"><div class="chart">TPE</div></div>
+        <p>است.</p>
+
+        <h2>28. معماری مفهومی Optuna</h2>
+        <div class="box"><div class="chart">             Optuna
+                │
+        ┌───────┴────────┐
+        │                │
+     Study             Trial
+        │                │
+        ├── Trial 1      │
+        ├── Trial 2      │
+        ├── Trial 3      │
+        └── Trial N      │</div></div>
+        <div class="inner-box"><div class="inner-title">Study:</div></div>
+        <p>کل optimization experiment</p>
+        <div class="inner-box"><div class="inner-title">Trial:</div></div>
+        <p>یک configuration مشخص</p>
+
+        <h2>29. Objective Function در Optuna</h2>
+        <p>به صورت مفهومی:</p>
+        <div class="box"><div class="chart">Python</div><div class="chart">def objective(trial):
+
+    learning_rate = trial.suggest_float(
+        "learning_rate",
+        1e-5,
+        1e-1,
+        log=True
+    )
+
+    max_depth = trial.suggest_int(
+        "max_depth",
+        3,
+        12
+    )
+
+    model = XGBClassifier(
+        learning_rate=learning_rate,
+        max_depth=max_depth
+    )
+
+    score = cross_val_score(
+        model,
+        X,
+        y,
+        cv=5,
+        scoring="roc_auc"
+    ).mean()
+
+    return score</div></div>
+        <p>بعد optimizer:</p>
+        <div class="box"><div class="chart">Trial
+ ↓
+Objective
+ ↓
+CV score
+ ↓
+Optimizer
+ ↓
+Next Trial</div></div>
+
+        <h2>30. نکته مهم درباره Objective</h2>
+        <p>Objective نباید فقط:</p>
+        <div class="box"><div class="chart">accuracy</div></div>
+        <p>باشد اگر business objective چیز دیگری است.</p>
+        <p>مثلاً fraud:</p>
+        <div class="box"><div class="chart">PR-AUC</div></div>
+        <p>یا:</p>
+        <div class="box"><div class="chart">Expected Cost</div></div>
+        <p>ممکن است مناسب‌تر باشد.</p>
+
+        <h2>31. Multi-Objective Optimization</h2>
+        <p>گاهی یک metric کافی نیست.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">maximize F1
+minimize latency
+minimize memory</div></div>
+        <p>یعنی:</p>
+        <div class="formula">$$ \max F1 $$</div>
+        <p>همزمان:</p>
+        <div class="formula">$$ \min Latency $$</div>
+        <p>و:</p>
+        <div class="formula">$$ \min Cost $$</div>
+
+        <h2>32. Pareto Frontier</h2>
+        <p>ممکن است مدل A:</p>
+        <div class="box"><div class="chart">F1=.95
+Latency=200ms</div></div>
+        <p>و مدل B:</p>
+        <div class="box"><div class="chart">F1=.93
+Latency=20ms</div></div>
+        <p>باشد.</p>
+        <p>هیچ‌کدام به‌طور مطلق بهترین نیستند.</p>
+        <p>این‌ها ممکن است روی:</p>
+        <div class="box"><div class="chart">Pareto frontier</div></div>
+        <p>قرار بگیرند.</p>
+
+        <h2>33. Conditional Search Space</h2>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">optimizer = Adam</div></div>
+        <p>پس:</p>
+        <div class="box"><div class="chart">beta1
+beta2</div></div>
+        <p>فعال هستند.</p>
+        <p>ولی اگر:</p>
+        <div class="box"><div class="chart">optimizer = SGD</div></div>
+        <p>باشد:</p>
+        <div class="box"><div class="chart">momentum</div></div>
+        <p>مهم می‌شود.</p>
+        <p>پس search space می‌تواند:</p>
+        <div class="box"><div class="chart">conditional</div></div>
+        <p>باشد.</p>
+
+        <h2>34. مثال</h2>
+        <div class="box"><div class="chart">if optimizer == "adam":
+    tune beta1
+    tune beta2
+
+if optimizer == "sgd":
+    tune momentum</div></div>
+        <p>این یکی از مزیت‌های frameworkهای مدرن HPO است.</p>
+
+        <h2>35. Hyperband</h2>
+        <p>حالا به بخش مهم دیگر برسیم.</p>
+        <p>فرض کن:</p>
+        <div class="box"><div class="chart">100 trials</div></div>
+        <p>داری.</p>
+        <p>لازم نیست همه را تا آخر train کنی.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">100 models
+   ↓
+10 epochs
+   ↓
+keep 25
+   ↓
+30 epochs
+   ↓
+keep 6
+   ↓
+100 epochs</div></div>
+        <p>این ایده:</p>
+        <div class="box"><div class="chart">Successive Halving</div></div>
+        <p>است.</p>
+
+        <h2>36. Successive Halving</h2>
+        <p>به زبان ساده:</p>
+        <div class="box"><div class="chart">Many cheap trials
+        ↓
+Eliminate bad ones
+        ↓
+Few expensive trials
+        ↓
+Best model</div></div>
+        <p>Resource می‌تواند:</p>
+        <div class="box"><div class="chart">epochs
+training iterations
+number of samples
+time
+computational budget</div></div>
+        <p>باشد.</p>
+
+        <h2>37. چرا این روش قدرتمند است؟</h2>
+        <p>فرض کن:</p>
+        <div class="box"><div class="chart">Trial A</div></div>
+        <p>بعد از 5 epoch:</p>
+        <div class="box"><div class="chart">val_loss = 10</div></div>
+        <p>و:</p>
+        <div class="box"><div class="chart">Trial B</div></div>
+        <p>بعد از 5 epoch:</p>
+        <div class="box"><div class="chart">val_loss = 0.5</div></div>
+        <p>احتمالاً ارزش ندارد A را تا epoch 100 ادامه دهیم.</p>
+
+        <h2>38. Hyperband</h2>
+        <p>Hyperband ایده Successive Halving را توسعه می‌دهد.</p>
+        <p>به جای یک budget allocation:</p>
+        <p>چند bracket با budgetهای مختلف ایجاد می‌کند.</p>
+        <p>به شکل مفهومی:</p>
+        <div class="box"><div class="chart">Bracket A
+many trials → tiny budget
+
+Bracket B
+fewer trials → larger budget
+
+Bracket C
+very few trials → very large budget</div></div>
+
+        <h2>39. Hyperband برای Deep Learning</h2>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">100 configurations</div></div>
+        <p>با:</p>
+        <div class="box"><div class="chart">max_epochs = 100</div></div>
+        <p>به جای:</p>
+        <div class="box"><div class="chart">100 × 100 epochs</div></div>
+        <p>می‌توانیم:</p>
+        <div class="box"><div class="chart">100 × 10
+↓
+25 × 30
+↓
+6 × 100</div></div>
+        <p>کار کنیم.</p>
+
+        <h2>40. Early Stopping vs Hyperband</h2>
+        <p>این دو را یکی ندان.</p>
+        <div class="inner-box"><div class="inner-title">Early Stopping</div></div>
+        <p>می‌گوید:</p>
+        <p>این trial دیگر خوب پیش نمی‌رود؛ stop.</p>
+        <div class="inner-box"><div class="inner-title">Successive Halving</div></div>
+        <p>می‌گوید:</p>
+        <p>بین trialها منابع را redistribute کن.</p>
+        <div class="inner-box"><div class="inner-title">Hyperband</div></div>
+        <p>می‌گوید:</p>
+        <p>این ایده را در bracketهای مختلف budget اجرا کن.</p>
+
+        <h2>41. Population-Based Methods</h2>
+        <p>حالا روش‌های population-based.</p>
+        <p>به جای اینکه:</p>
+        <div class="box"><div class="chart">یک configuration</div></div>
+        <p>را در هر لحظه دنبال کنیم:</p>
+        <p>یک population از مدل‌ها را همزمان نگه می‌داریم.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Model A
+Model B
+Model C
+Model D
+Model E</div></div>
+
+        <h2>42. Population-Based Training — PBT</h2>
+        <p>یکی از روش‌های معروف:</p>
+        <div class="box"><div class="chart">Population Based Training</div></div>
+        <p>است.</p>
+        <p>ایده:</p>
+        <div class="box"><div class="chart">Train population
+       ↓
+Evaluate
+       ↓
+Weak models
+       ↓
+Copy from strong models
+       ↓
+Mutate hyperparameters
+       ↓
+Continue training</div></div>
+
+        <h2>43. PBT چرا جالب است؟</h2>
+        <p>در HPO معمولی:</p>
+        <div class="box"><div class="chart">Choose hyperparameters
+       ↓
+Train
+       ↓
+Finish</div></div>
+        <p>ولی PBT می‌تواند hyperparameters را در طول training تغییر دهد.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Epoch 1–20:
+lr = 0.01
+
+Epoch 20–40:
+lr = 0.003
+
+Epoch 40–60:
+lr = 0.001</div></div>
+
+        <h2>44. Exploit + Explore در PBT</h2>
+        <div class="inner-box"><div class="inner-title">Exploit</div></div>
+        <p>مدل ضعیف:</p>
+        <div class="box"><div class="chart">Model D</div></div>
+        <p>از یک مدل قوی:</p>
+        <div class="box"><div class="chart">Model A</div></div>
+        <p>parameters/hyperparameters می‌گیرد.</p>
+        <div class="inner-box"><div class="inner-title">Explore</div></div>
+        <p>بعد hyperparameters را کمی تغییر می‌دهد:</p>
+        <div class="box"><div class="chart">lr × 0.8</div></div>
+        <p>یا:</p>
+        <div class="box"><div class="chart">lr × 1.2</div></div>
+
+        <h2>45. Population-Based Methods شبیه Evolution هستند</h2>
+        <p>ایده کلی:</p>
+        <div class="box"><div class="chart">Population
+    ↓
+Selection
+    ↓
+Mutation
+    ↓
+New Population
+    ↓
+Selection
+    ↓
+...</div></div>
+        <p>به همین دلیل به روش‌های evolutionary نزدیک‌اند.</p>
+
+        <h2>46. Evolutionary Optimization</h2>
+        <p>در روش‌های evolutionary:</p>
+        <div class="box"><div class="chart">Population
+    ↓
+Evaluate fitness
+    ↓
+Select
+    ↓
+Crossover
+    ↓
+Mutation
+    ↓
+New generation</div></div>
+        <p>fitness:</p>
+        <p>performance مدل</p>
+        <p>است.</p>
+
+        <h2>47. Genetic Algorithm</h2>
+        <p>مثلاً configuration:</p>
+        <div class="box"><div class="chart">[lr=.01, depth=6, dropout=.2]</div></div>
+        <p>را می‌توان chromosome در نظر گرفت.</p>
+        <p>چند configuration:</p>
+        <div class="box"><div class="chart">A = [0.01, 6, .2]
+B = [0.03, 8, .4]</div></div>
+        <p>می‌توانند crossover شوند.</p>
+
+        <h2>48. Mutation</h2>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">depth = 6</div></div>
+        <p>تبدیل شود به:</p>
+        <div class="box"><div class="chart">depth = 7</div></div>
+        <p>یا:</p>
+        <div class="box"><div class="chart">lr = .01</div></div>
+        <p>تبدیل شود به:</p>
+        <div class="box"><div class="chart">lr = .007</div></div>
+
+        <h2>49. Population-Based Methods چه زمانی مفیدند؟</h2>
+        <p>وقتی:</p>
+        <div class="inner-box">training iterative است</div>
+        <div class="inner-box">می‌توان training را checkpoint کرد</div>
+        <div class="inner-box">hyperparameters در طول training می‌توانند تغییر کنند</div>
+        <div class="inner-box">compute parallel داریم</div>
+        <p>مخصوصاً در deep learning می‌توانند جالب باشند.</p>
+
+        <h2>50. مقایسه روش‌ها</h2>
+        <table>
+            <thead><tr><th>روش</th><th>ایده</th><th>Cost Efficiency</th><th>Parallelism</th><th>پیچیدگی</th></tr></thead>
+            <tbody>
+                <tr><td>Grid</td><td>همه ترکیبات</td><td>پایین</td><td>عالی</td><td>کم</td></tr>
+                <tr><td>Random</td><td>random sampling</td><td>متوسط</td><td>عالی</td><td>کم</td></tr>
+                <tr><td>Bayesian/TPE</td><td>یادگیری از trials</td><td>بالا</td><td>متوسط</td><td>متوسط</td></tr>
+                <tr><td>Hyperband</td><td>حذف زودهنگام</td><td>بسیار بالا</td><td>بالا</td><td>متوسط</td></tr>
+                <tr><td>PBT</td><td>population + mutation</td><td>بالا</td><td>بالا</td><td>بالا</td></tr>
+                <tr><td>Evolutionary</td><td>evolution</td><td>وابسته</td><td>بالا</td><td>بالا</td></tr>
+            </tbody>
+        </table>
+
+        <h2>51. چه زمانی Grid Search؟</h2>
+        <p>مناسب وقتی:</p>
+        <div class="box"><div class="chart">Few hyperparameters
+Small search space
+Cheap training</div></div>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">C = [0.1, 1, 10]
+penalty = [l1, l2]</div></div>
+
+        <h2>52. چه زمانی Random Search؟</h2>
+        <p>وقتی:</p>
+        <div class="box"><div class="chart">Search space بزرگ</div></div>
+        <p>و:</p>
+        <div class="box"><div class="chart">Training نسبتاً cheap</div></div>
+        <p>است.</p>
+        <p>یک baseline بسیار خوب برای HPO است.</p>
+
+        <h2>53. چه زمانی Bayesian/TPE؟</h2>
+        <p>وقتی:</p>
+        <div class="box"><div class="chart">Trial expensive</div></div>
+        <p>و:</p>
+        <div class="box"><div class="chart">Number of trials محدود</div></div>
+        <p>است.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">1 trial = 30 min</div></div>
+
+        <h2>54. چه زمانی Hyperband؟</h2>
+        <p>وقتی:</p>
+        <div class="box"><div class="chart">performance early training</div></div>
+        <p>اطلاعات خوبی درباره final performance می‌دهد.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Neural Networks
+XGBoost with iterations
+LightGBM</div></div>
+
+        <h2>55. چه زمانی PBT؟</h2>
+        <p>وقتی:</p>
+        <div class="box"><div class="chart">Training iterative
++
+checkpointing
++
+parallel compute</div></div>
+        <p>داری و می‌خواهی hyperparameters در طول training evolve شوند.</p>
+
+        <h2>56. HPO و Cross-Validation</h2>
+        <p>یکی از مهم‌ترین نکات:</p>
+        <p>HPO نباید روی یک validation split ساده و بدون فکر انجام شود.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Trial 1 → CV
+Trial 2 → CV
+Trial 3 → CV</div></div>
+        <p>و objective:</p>
+        <div class="formula">$$ CVScore(\theta) $$</div>
+        <p>باشد.</p>
+
+        <h2>57. اما CV خودش هزینه دارد</h2>
+        <p>فرض:</p>
+        <div class="box"><div class="chart">100 trials
+5-fold CV</div></div>
+        <p>تعداد training:</p>
+        <div class="formula">$$ 100\times5=500 $$</div>
+        <p>است.</p>
+        <p>اگر:</p>
+        <div class="box"><div class="chart">1 training = 10 min</div></div>
+        <p>آنگاه:</p>
+        <div class="formula">$$ 5000\ minutes $$</div>
+        <p>یعنی حدود:</p>
+        <div class="formula">$$ 83.3\ hours $$</div>
+        <p>روی یک worker.</p>
+        <p>پس:</p>
+        <p>HPO بدون budget planning خطرناک است.</p>
+
+        <h2>58. HPO + Early Stopping</h2>
+        <p>اگر هر trial:</p>
+        <div class="box"><div class="chart">1000 iterations</div></div>
+        <p>داشته باشد، ولی اکثر trialها بد باشند:</p>
+        <div class="box"><div class="chart">Early stopping</div></div>
+        <p>می‌تواند compute را به‌شدت کاهش دهد.</p>
+
+        <h2>59. HPO + Leakage</h2>
+        <p>این یکی از مهم‌ترین نکات Senior است.</p>
+        <p>اشتباه:</p>
+        <div class="box"><div class="chart">Entire dataset
+ ↓
+Feature engineering
+ ↓
+Target encoding
+ ↓
+CV</div></div>
+        <p>ممکن است leakage ایجاد کند.</p>
+        <p>درست:</p>
+        <div class="box"><div class="chart">CV Fold
+ ↓
+Fit preprocessing on train
+ ↓
+Transform validation
+ ↓
+Train model
+ ↓
+Evaluate</div></div>
+
+        <h2>60. Pipeline</h2>
+        <p>به همین دلیل preprocessing و model را در pipeline قرار می‌دهیم.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Pipeline:
+
+Imputer
+   ↓
+Scaler
+   ↓
+Feature Selection
+   ↓
+Model</div></div>
+        <p>و HPO روی pipeline انجام می‌شود.</p>
+
+        <h2>61. Target Encoding + HPO</h2>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">category
+    ↓
+target mean encoding</div></div>
+        <p>اگر encoding قبل از CV انجام شود:</p>
+        <div class="box"><div class="chart">❌ validation target وارد preprocessing شده.</div></div>
+        <p>باید:</p>
+        <div class="box"><div class="chart">Fold
+ ├── Train encoder
+ ├── Transform train
+ └── Transform validation</div></div>
+        <p>انجام شود.</p>
+
+        <h2>62. Hyperparameter Overfitting</h2>
+        <p>یکی از مهم‌ترین مفاهیم.</p>
+        <p>فرض کن:</p>
+        <div class="box"><div class="chart">10 trials</div></div>
+        <p>انجام می‌دهی.</p>
+        <p>بعد:</p>
+        <div class="box"><div class="chart">100,000 trials</div></div>
+        <p>انجام می‌دهی.</p>
+        <p>هرچه بیشتر search کنی:</p>
+        <p>احتمال overfit کردن به validation noise بیشتر می‌شود.</p>
+        <p>پس:</p>
+        <div class="box"><div class="chart">Best Validation Score</div></div>
+        <p>لزومأ:</p>
+        <div class="box"><div class="chart">Best True Generalization</div></div>
+        <p>نیست.</p>
+
+        <h2>63. Winner's Curse در HPO</h2>
+        <p>فرض کن true performance configurationها:</p>
+        <div class="box"><div class="chart">.90
+.91
+.92
+.90</div></div>
+        <p>ولی validation noise داریم.</p>
+        <p>ممکن است ببینیم:</p>
+        <div class="box"><div class="chart">.91
+.93
+.94
+.90</div></div>
+        <p>و configuration با:</p>
+        <div class="box"><div class="chart">.94</div></div>
+        <p>را انتخاب کنیم.</p>
+        <p>ولی true performance آن شاید:</p>
+        <div class="box"><div class="chart">.92</div></div>
+        <p>باشد.</p>
+
+        <h2>64. راه‌حل</h2>
+        <p>استفاده از:</p>
+        <div class="box"><div class="chart">Nested CV</div></div>
+        <p>ساختار:</p>
+        <div class="box"><div class="chart">Outer CV
+│
+├── Inner CV
+│     └── HPO
+│
+└── unbiased evaluation</div></div>
+
+        <h2>65. HPO در Nested CV</h2>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Outer Fold 1
+    ↓
+Inner CV
+    ↓
+Optuna
+    ↓
+Best hyperparameters
+    ↓
+Train
+    ↓
+Outer validation</div></div>
+        <p>بعد:</p>
+        <div class="box"><div class="chart">Outer Fold 2
+...</div></div>
+
+        <h2>66. HPO و Statistical Noise</h2>
+        <p>فرض کن:</p>
+        <div class="box"><div class="chart">Trial A = .901
+Trial B = .903</div></div>
+        <p>آیا B واقعاً بهتر است؟</p>
+        <p>لزومی ندارد.</p>
+        <p>ممکن است noise باشد.</p>
+        <p>به همین دلیل Senior به:</p>
+        <div class="box"><div class="chart">mean
+std
+confidence interval</div></div>
+        <p>و robustness نگاه می‌کند.</p>
+
+        <h2>67. Seed Sensitivity</h2>
+        <p>بعضی مدل‌ها نسبت به seed حساس‌اند.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Seed 1 → .91
+Seed 2 → .87
+Seed 3 → .90</div></div>
+        <p>configuration را فقط با seed=1 انتخاب نکن.</p>
+        <p>در شرایط حساس:</p>
+        <div class="box"><div class="chart">multiple seeds</div></div>
+        <p>را بررسی کن.</p>
+
+        <h2>68. Repeated Evaluation</h2>
+        <p>می‌توان:</p>
+        <div class="box"><div class="chart">CV × multiple seeds</div></div>
+        <p>انجام داد.</p>
+        <p>مثلاً:</p>
+        <div class="formula">$$ 5-fold\times3-seeds=15 $$</div>
+        <p>evaluation.</p>
+        <p>گران‌تر است ولی uncertainty بهتر تخمین زده می‌شود.</p>
+
+        <h2>69. HPO و Noisy Objective</h2>
+        <p>تابع:</p>
+        <div class="formula">$$ f(\theta) $$</div>
+        <p>ممکن است deterministic نباشد.</p>
+        <p>یعنی:</p>
+        <div class="formula">$$ f(\theta, seed) $$</div>
+        <p>باشد.</p>
+        <p>پس:</p>
+        <div class="box"><div class="chart">same hyperparameters</div></div>
+        <p>ممکن است scores متفاوت بدهند.</p>
+
+        <h2>70. HPO و Resource Constraints</h2>
+        <p>در production:</p>
+        <div class="box"><div class="chart">GPU Memory < 16GB
+Latency < 50ms</div></div>
+        <p>ممکن است بخواهی این‌ها را constraint کنی.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">if latency > 50ms:
+    reject trial</div></div>
+
+        <h2>71. Constrained Optimization</h2>
+        <p>به شکل ریاضی:</p>
+        <div class="formula">$$ \min_\theta L(\theta) $$</div>
+        <p>subject to:</p>
+        <div class="formula">$$ Latency(\theta)\le50ms $$</div>
+        <p>و:</p>
+        <div class="formula">$$ Memory(\theta)\le2GB $$</div>
+        <p>این بسیار واقعی‌تر از فقط minimize loss است.</p>
+
+        <h2>72. Multi-Fidelity HPO</h2>
+        <p>Resource را می‌توان به عنوان fidelity در نظر گرفت.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">low fidelity:
+10 epochs
+
+medium:
+50 epochs
+
+high:
+200 epochs</div></div>
+        <p>Optimizer ابتدا cheap evaluation انجام می‌دهد.</p>
+        <p>بعد promising trials را به fidelity بالاتر می‌برد.</p>
+
+        <h2>73. Hyperband یک Multi-Fidelity روش است</h2>
+        <p>دقیقاً به همین دلیل Hyperband قدرتمند است.</p>
+        <p>به جای:</p>
+        <div class="box"><div class="chart">Every trial → full budget</div></div>
+        <p>می‌گوید:</p>
+        <div class="box"><div class="chart">Cheap evaluation
+        ↓
+Selection
+        ↓
+More budget
+        ↓
+Selection</div></div>
+
+        <h2>74. Successive Halving vs Random Search</h2>
+        <p>این دو حتی می‌توانند ترکیب شوند.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Random Search
+      ↓
+100 configurations
+      ↓
+Successive Halving
+      ↓
+Top configurations</div></div>
+        <p>در واقع بسیاری از سیستم‌های مدرن همین نوع ترکیب را انجام می‌دهند.</p>
+
+        <h2>75. Bayesian Optimization vs Hyperband</h2>
+        <p>تفاوت بنیادی:</p>
+        <div class="inner-box"><div class="inner-title">Bayesian Optimization</div></div>
+        <p>تمرکز:</p>
+        <p>کجا configuration بعدی را امتحان کنم؟</p>
+        <div class="inner-box"><div class="inner-title">Hyperband</div></div>
+        <p>تمرکز:</p>
+        <p>به کدام configuration چقدر resource بدهم؟</p>
+        <p>بنابراین حتی می‌توانند مکمل هم باشند.</p>
+
+        <h2>76. BOHB</h2>
+        <p>یک ایده جالب:</p>
+        <div class="box"><div class="chart">Bayesian Optimization + Hyperband</div></div>
+        <p>یعنی:</p>
+        <div class="box"><div class="chart">Bayesian model
+      +
+Hyperband resource allocation</div></div>
+        <p>این دقیقاً نشان می‌دهد که HPO methods الزاماً mutually exclusive نیستند.</p>
+
+        <h2>77. Optuna و Pruning</h2>
+        <p>یکی از قابلیت‌های مهم Optuna:</p>
+        <div class="box"><div class="chart">Pruning</div></div>
+        <p>یعنی اگر trial ضعیف است، زود متوقف شود.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Epoch 10
+   ↓
+Intermediate score
+   ↓
+Optuna
+   ↓
+Poor trial
+   ↓
+Prune</div></div>
+
+        <h2>78. Pruning چیست؟</h2>
+        <p>فرقش با early stopping:</p>
+        <p>Early stopping ممکن است براساس:</p>
+        <div class="box"><div class="chart">no improvement</div></div>
+        <p>باشد.</p>
+        <p>Pruner ممکن است trial را با توجه به:</p>
+        <p>performance نسبی آن نسبت به trialهای دیگر</p>
+        <p>متوقف کند.</p>
+
+        <h2>79. Search Space باید Domain Knowledge داشته باشد</h2>
+        <p>Senior ML Engineer کورکورانه:</p>
+        <div class="box"><div class="chart">lr = 1e-10 ... 100</div></div>
+        <p>نمی‌گذارد.</p>
+        <p>از knowledge مدل استفاده می‌کند.</p>
+        <p>مثلاً برای tree:</p>
+        <div class="box"><div class="chart">max_depth = 3-12</div></div>
+        <p>و:</p>
+        <div class="box"><div class="chart">min_child_weight</div></div>
+        <p>را منطقی تعریف می‌کند.</p>
+
+        <h2>80. HPO و Curse of Dimensionality</h2>
+        <p>اگر تعداد hyperparameterها زیاد شود:</p>
+        <div class="box"><div class="chart">θ1
+θ2
+θ3
+...
+θ50</div></div>
+        <p>search بسیار سخت می‌شود.</p>
+        <p>فضای search exponential رشد می‌کند.</p>
+        <p>پس:</p>
+        <p>همه hyperparameters را tune نکن.</p>
+
+        <h2>81. Tune کردن همه چیز اشتباه است</h2>
+        <p>مثلاً XGBoost 30 parameter دارد.</p>
+        <p>لازم نیست هر 30 را optimize کنی.</p>
+        <p>اول مهم‌ترین‌ها:</p>
+        <div class="box"><div class="chart">learning_rate
+max_depth
+min_child_weight
+subsample
+colsample_bytree
+reg_lambda</div></div>
+        <p>را tune کن.</p>
+
+        <h2>82. Hyperparameter Importance</h2>
+        <p>بعد از HPO بررسی کن:</p>
+        <p>کدام hyperparameters واقعاً روی performance اثر داشتند؟</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">learning_rate → high importance
+max_depth → high
+subsample → medium
+reg_alpha → low</div></div>
+        <p>این insight برای iteration بعدی بسیار ارزشمند است.</p>
+
+        <h2>83. HPO باید Iterative باشد</h2>
+        <p>یک workflow حرفه‌ای:</p>
+        <div class="box"><div class="chart">Baseline
+   ↓
+Coarse Search
+   ↓
+Identify Important HParams
+   ↓
+Narrow Search Space
+   ↓
+Fine Search
+   ↓
+Error Analysis
+   ↓
+Refine Features / Objective
+   ↓
+Re-run HPO</div></div>
+        <p>نه اینکه:</p>
+        <div class="box"><div class="chart">Run 10000 trials</div></div>
+        <p>و تمام.</p>
+
+        <h2>84. Coarse-to-Fine Search</h2>
+        <p>مثلاً ابتدا:</p>
+        <div class="box"><div class="chart">lr = 1e-5 → .3</div></div>
+        <p>بعد می‌بینی بهترین:</p>
+        <div class="box"><div class="chart">.01 → .05</div></div>
+        <p>است.</p>
+        <p>پس search بعدی:</p>
+        <div class="box"><div class="chart">.005 → .08</div></div>
+        <p>می‌شود.</p>
+
+        <h2>85. HPO و Feature Engineering</h2>
+        <p>گاهی:</p>
+        <div class="box"><div class="chart">HPO improvement = +0.3%</div></div>
+        <p>ولی:</p>
+        <div class="box"><div class="chart">Better feature = +5%</div></div>
+        <p>بنابراین Senior ML نباید فکر کند:</p>
+        <p>همه مشکلات مدل با tuning حل می‌شوند.</p>
+        <p>گاهی:</p>
+        <div class="formula">$$ Feature\ Engineering > Hyperparameter\ Tuning $$</div>
+
+        <h2>86. HPO و Error Analysis</h2>
+        <p>مثلاً مدل روی:</p>
+        <div class="box"><div class="chart">new users</div></div>
+        <p>ضعیف است.</p>
+        <p>قبل از tuning بیشتر شاید بهتر باشد:</p>
+        <p>feature جدید برای new users بسازی.</p>
+        <p>این decision از tuning کورکورانه بهتر است.</p>
+
+        <h2>87. HPO و Distribution Shift</h2>
+        <p>اگر production distribution با training متفاوت باشد:</p>
+        <div class="box"><div class="chart">CV score = .95</div></div>
+        <p>ممکن است misleading باشد.</p>
+        <p>باید validation strategy با deployment reality هماهنگ باشد.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Temporal validation</div></div>
+        <p>به جای random CV.</p>
+
+        <h2>88. HPO برای Time Series</h2>
+        <p>Random CV:</p>
+        <div class="box"><div class="chart">❌</div></div>
+        <p>بهتر:</p>
+        <div class="box"><div class="chart">Train Jan-Mar
+Validate Apr
+
+Train Jan-Apr
+Validate May
+
+Train Jan-May
+Validate Jun</div></div>
+        <p>و objective:</p>
+        <div class="formula">$$ Mean(TimeSeriesValidationScore) $$</div>
+
+        <h2>89. HPO برای Grouped Data</h2>
+        <p>اگر:</p>
+        <div class="box"><div class="chart">user_id</div></div>
+        <p>داری:</p>
+        <p>Random K-Fold ممکن است leakage ایجاد کند.</p>
+        <p>بهتر:</p>
+        <div class="box"><div class="chart">GroupKFold</div></div>
+        <p>و objective:</p>
+        <div class="formula">$$ CVScore_{Group} $$</div>
+
+        <h2>90. HPO برای Imbalanced Classification</h2>
+        <p>مثلاً fraud:</p>
+        <div class="box"><div class="chart">99.9% negative
+0.1% positive</div></div>
+        <p>نباید objective:</p>
+        <div class="box"><div class="chart">accuracy</div></div>
+        <p>باشد.</p>
+        <p>ممکن است:</p>
+        <div class="box"><div class="chart">PR-AUC
+Recall
+Fβ
+Expected Cost</div></div>
+        <p>بهتر باشند.</p>
+
+        <h2>91. Threshold Tuning بخشی از HPO است؟</h2>
+        <p>می‌تواند باشد، اما باید conceptually جدا شود.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Model hyperparameters
++
+Decision threshold</div></div>
+        <p>هر دو روی validation انتخاب می‌شوند.</p>
+        <p>اما threshold:</p>
+        <p>hyperparameter مدل به معنای کلاسیک نیست.</p>
+        <p>بلکه:</p>
+        <div class="box"><div class="chart">decision policy parameter</div></div>
+        <p>است.</p>
+
+        <h2>92. Calibration در HPO</h2>
+        <p>اگر probability quality مهم است:</p>
+        <div class="box"><div class="chart">PR-AUC
++
+Calibration</div></div>
+        <p>را objective/constraint قرار بده.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Brier Score
+Expected Calibration Error</div></div>
+
+        <h2>93. HPO و Cost-Sensitive Learning</h2>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">FN cost = $1000
+FP cost = $10</div></div>
+        <p>در این حالت objective می‌تواند:</p>
+        <div class="formula">$$ ExpectedCost $$</div>
+        <p>باشد:</p>
+        <div class="formula">$$ Cost = C_{FN}FN + C_{FP}FP $$</div>
+        <p>در نتیجه بهترین hyperparameters ممکن است با بهترین F1 متفاوت باشند.</p>
+
+        <h2>94. Distributed HPO</h2>
+        <p>در production-scale:</p>
+        <div class="box"><div class="chart">HPO Server
+      │
+ ┌────┼────┬────┐
+ ↓    ↓    ↓    ↓
+GPU1 GPU2 GPU3 GPU4</div></div>
+        <p>هر worker trial اجرا می‌کند.</p>
+        <p>این باعث می‌شود:</p>
+        <div class="box"><div class="chart">100 trials</div></div>
+        <p>به جای sequential:</p>
+        <div class="box"><div class="chart">100 × training_time</div></div>
+        <p>با parallel workers بسیار سریع‌تر انجام شود.</p>
+
+        <h2>95. اما Parallelism یک Trade-off دارد</h2>
+        <p>Bayesian optimization ذاتاً از نتایج قبلی استفاده می‌کند.</p>
+        <p>اگر:</p>
+        <div class="box"><div class="chart">50 trials</div></div>
+        <p>را همزمان شروع کنیم:</p>
+        <p>optimizer هنوز نتیجه 49 تای قبلی را ندارد.</p>
+        <p>پس pure Bayesian sequential advantage کاهش می‌یابد.</p>
+        <p>این مسئله:</p>
+        <div class="box"><div class="chart">parallel / asynchronous HPO</div></div>
+        <p>را مهم می‌کند.</p>
+
+        <h2>96. HPO و Experiment Tracking</h2>
+        <p>هر trial باید ذخیره شود:</p>
+        <div class="box"><div class="chart">trial_id
+hyperparameters
+dataset_version
+code_version
+seed
+CV_scores
+mean_score
+std_score
+training_time
+memory
+model_artifact</div></div>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Trial 127
+
+lr = 0.013
+depth = 7
+PR-AUC = 0.842
+std = 0.011
+training_time = 43s</div></div>
+
+        <h2>97. Reproducibility</h2>
+        <p>بهترین trial باید reproducible باشد.</p>
+        <p>ذخیره:</p>
+        <div class="box"><div class="chart">Random seed
+Code commit
+Dataset version
+Environment
+Dependencies
+Hyperparameters</div></div>
+
+        <h2>98. HPO و MLOps</h2>
+        <p>در production workflow:</p>
+        <div class="box"><div class="chart">Data
+ ↓
+Feature Pipeline
+ ↓
+HPO
+ ↓
+Model Evaluation
+ ↓
+Model Registry
+ ↓
+Staging
+ ↓
+Shadow
+ ↓
+Production</div></div>
+        <p>HPO فقط یک notebook experiment نیست.</p>
+
+        <h2>99. Champion / Challenger</h2>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Champion:
+PR-AUC = .82
+
+Challenger:
+PR-AUC = .84</div></div>
+        <p>اما challenger:</p>
+        <div class="box"><div class="chart">Latency = 200ms</div></div>
+        <p>و champion:</p>
+        <div class="box"><div class="chart">Latency = 30ms</div></div>
+        <p>اگر SLO:</p>
+        <div class="box"><div class="chart"><50ms</div></div>
+        <p>باشد:</p>
+        <p>Challenger رد می‌شود.</p>
+
+        <h2>100. یک Workflow واقعی Senior ML</h2>
+        <p>به نظرم این workflow را حفظ کن:</p>
+        <div class="box"><div class="chart">                 DATA
+                   │
+                   ↓
+             Correct Split
+                   │
+                   ↓
+              Baseline
+                   │
+                   ↓
+          Define Business Metric
+                   │
+                   ↓
+             Define Search Space
+                   │
+                   ↓
+          ┌────────┴────────┐
+          │                 │
+       Random            Bayesian
+       Search              /TPE
+          │                 │
+          └────────┬────────┘
+                   ↓
+              Early Stop
+                   ↓
+                Pruning
+                   ↓
+             Best Candidates
+                   ↓
+              Error Analysis
+                   ↓
+            Robustness Tests
+                   ↓
+          Statistical Comparison
+                   ↓
+        Production Constraints
+                   ↓
+             Final Candidate
+                   ↓
+           Untouched Test
+                   ↓
+               Deploy</div></div>
+
+        <h2>🧠 مقایسه نهایی همه روش‌ها</h2>
+        <table>
+            <thead><tr><th>روش</th><th>چگونه تصمیم می‌گیرد؟</th><th>از نتایج قبلی یاد می‌گیرد؟</th><th>Early Resource Allocation؟</th><th>مناسب برای</th></tr></thead>
+            <tbody>
+                <tr><td>Grid</td><td>همه ترکیبات</td><td>❌</td><td>❌</td><td>Search کوچک</td></tr>
+                <tr><td>Random</td><td>تصادفی</td><td>❌</td><td>❌</td><td>Baseline قوی</td></tr>
+                <tr><td>Bayesian</td><td>surrogate</td><td>✅</td><td>معمولاً نه به‌تنهایی</td><td>Trials گران</td></tr>
+                <tr><td>TPE</td><td>good/bad distributions</td><td>✅</td><td>معمولاً نه به‌تنهایی</td><td>Search space پیچیده</td></tr>
+                <tr><td>Hyperband</td><td>budget allocation</td><td>به شکل متفاوت</td><td>✅</td><td>Iterative models</td></tr>
+                <tr><td>Successive Halving</td><td>elimination</td><td>محدود</td><td>✅</td><td>Multi-fidelity</td></tr>
+                <tr><td>PBT</td><td>population evolution</td><td>✅</td><td>✅</td><td>Deep Learning</td></tr>
+                <tr><td>Genetic Algorithm</td><td>evolution</td><td>از population</td><td>وابسته</td><td>Complex spaces</td></tr>
+            </tbody>
+        </table>
+
+        <h2>🔥 تفاوتی که باید در مصاحبه Senior بتوانی در ۳۰ ثانیه بگویی</h2>
+        <p>اگر ازت پرسیدند:</p>
+        <p>Grid Search vs Random Search vs Bayesian Optimization vs Hyperband?</p>
+        <p>جواب حرفه‌ای:</p>
+        <div class="inner-box">Grid Search تمام ترکیبات مشخص‌شده را بررسی می‌کند و برای search space کوچک مناسب است، اما با افزایش ابعاد بسیار expensive می‌شود. Random Search configurationها را random sample می‌کند و معمولاً در search spaceهای بزرگ از Grid کارآمدتر است، ولی از نتایج trialهای قبلی استفاده نمی‌کند. Bayesian Optimization با استفاده از یک surrogate model و acquisition strategy، از trialهای قبلی برای انتخاب configurationهای promising استفاده می‌کند و برای evaluationهای expensive مناسب است. Hyperband بیشتر روی allocation منابع تمرکز دارد و با successive halving، trialهای ضعیف را زود متوقف می‌کند و resource را به trialهای promising اختصاص می‌دهد. در عمل این روش‌ها می‌توانند ترکیب شوند، مثلاً TPE + pruning یا Bayesian-style search + multi-fidelity optimization.</div>
+
+        <h2>🔥 و اگر بپرسند Optuna چیست؟</h2>
+        <p>جواب:</p>
+        <div class="inner-box">Optuna یک framework برای Hyperparameter Optimization است، نه یک optimizer واحد. مفهوم اصلی آن Study و Trial است و می‌تواند search algorithms مختلف مثل TPE را همراه با قابلیت‌هایی مثل pruning، conditional search spaces و parallel/distributed execution استفاده کند.</div>
+
+        <h2>🔥 و مهم‌ترین نکته Senior</h2>
+        <p>HPO نباید این باشد:</p>
+        <div class="box"><div class="chart">"Let's run Optuna with 10,000 trials."</div></div>
+        <p>بلکه باید این باشد:</p>
+        <div class="box"><div class="chart">Business Objective
+       ↓
+Correct Validation Strategy
+       ↓
+Leakage-Free Pipeline
+       ↓
+Baseline
+       ↓
+Reasonable Search Space
+       ↓
+HPO Algorithm
+       ↓
+Budget / Early Stopping / Pruning
+       ↓
+Error Analysis
+       ↓
+Robustness
+       ↓
+Statistical + Practical Significance
+       ↓
+Production Constraints
+       ↓
+Final Model</div></div>
+        <p>و در نهایت این اصل را حفظ کن:</p>
+        <div class="formula">$$ \boxed{ HPO\ optimizes\ the\ validation\ procedure, not\ the\ real\ world } $$</div>
+        <p>بنابراین اگر validation procedure اشتباه باشد، حتی بهترین Bayesian Optimization، Optuna، Hyperband یا PBT هم می‌تواند بهترین مدلِ اشتباه را پیدا کند.</p>
+        <p>برای همین مباحثی که تا الان خواندی—CV، leakage، bias/variance، learning curves، error analysis، distribution shift و uncertainty—مستقیماً بخشی از HPO حرفه‌ای هستند، نه مباحث جدا از آن</p>
+
+    </div>
+</body>
+</html>

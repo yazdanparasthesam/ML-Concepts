@@ -1,0 +1,1474 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model Selection · Senior ML Level</title>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}]});"></script>
+
+    <style>
+        body {
+            background-color: #0d1117;
+            color: #e6edf3;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.8;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h1, h2, h3, h4 {
+            color: #e6edf3;
+            text-align: right;
+            border-bottom: 2px solid #30363d;
+            padding-bottom: 12px;
+            margin-top: 50px;
+        }
+        h1 {
+            border-bottom: 4px double #58a6ff;
+            text-align: center;
+        }
+        p, li {
+            text-align: right;
+        }
+
+        .box {
+            background-color: #21262d;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            color: #e6edf3;
+        }
+        .inner-box {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 10px;
+            border-right: 4px solid #58a6ff;
+        }
+        .inner-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .formula {
+            direction: ltr;
+            background-color: #000;
+            border: 1px solid #fff;
+            border-radius: 0;
+            padding: 20px;
+            margin: 20px auto;
+            width: fit-content;
+            max-width: 100%;
+            overflow-x: auto;
+            text-align: center;
+            font-size: 1.2em;
+            font-family: "Times New Roman", Times, serif;
+            color: #fff;
+        }
+
+        .chart {
+            direction: ltr;
+            text-align: left;
+            font-family: 'Consolas', 'Courier New', monospace;
+            background-color: #21262d;
+            border-radius: 8px;
+            padding: 15px;
+            overflow-x: auto;
+            white-space: pre;
+            border: 1px solid #30363d;
+            color: #a5d6ff;
+            font-size: 0.95rem;
+        }
+
+        .highlight-box {
+            background-color: #2d333b;
+            border-right: 4px solid #58a6ff;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            direction: rtl;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #30363d;
+            padding: 12px;
+            text-align: right;
+        }
+        th {
+            background-color: #21262d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 26. Model Selection — از پایه تا Senior ML</h1>
+
+        <p style="font-size:1.1rem;">حتماً. این بخش Model Selection از مهم‌ترین مباحث ML در سطح Senior است، چون در پروژه واقعی فقط «بهترین مدل» را پیدا نمی‌کنیم؛ باید بفهمیم بهترین مدل نسبت به چه objective، چه داده‌ای، چه هزینه‌ای، چه محدودیت production و چه میزان uncertainty است.</p>
+
+        <h2>1. Model Selection چیست؟</h2>
+        <p>فرض کن چند مدل داریم:</p>
+        <div class="chart">Logistic Regression
+Random Forest
+XGBoost
+LightGBM
+Neural Network</div>
+        <p>سؤال:</p>
+        <p>کدام را انتخاب کنیم؟</p>
+        <p>در نگاه ساده:</p>
+        <div class="chart">Train models
+    ↓
+Evaluate
+    ↓
+Pick highest score</div>
+        <p>اما در سطح Senior این کافی نیست.</p>
+        <p>باید همزمان این‌ها را در نظر بگیری:</p>
+        <div class="chart">                    Model Selection
+                         │
+       ┌─────────────────┼──────────────────┐
+       │                 │                  │
+   Predictive        Generalization      Business
+   Performance          Quality           Objective
+       │                 │                  │
+       └─────────────────┼──────────────────┘
+                         │
+                  Production Constraints
+                         │
+              ┌──────────┼──────────┐
+              │          │          │
+           Latency     Memory      Cost</div>
+
+        <h2>2. Model Selection vs Hyperparameter Tuning</h2>
+        <p>این دو را خیلی‌ها اشتباه می‌گیرند.</p>
+        <div class="inner-box">
+            <div class="inner-title">Model Selection</div>
+            <p>انتخاب نوع/خانواده مدل:</p>
+            <div class="chart">Logistic Regression
+vs
+Random Forest
+vs
+XGBoost</div>
+        </div>
+        <div class="inner-box">
+            <div class="inner-title">Hyperparameter Tuning</div>
+            <p>انتخاب تنظیمات یک مدل:</p>
+            <div class="chart">XGBoost:
+
+max_depth = ?
+learning_rate = ?
+n_estimators = ?
+subsample = ?</div>
+        </div>
+        <p>بنابراین:</p>
+        <div class="formula">$$ \boxed{ Model\ Selection \neq Hyperparameter\ Tuning } $$</div>
+        <p>اما در practice معمولاً با هم انجام می‌شوند.</p>
+
+        <h2>3. Model Complexity</h2>
+        <p>یکی از مهم‌ترین مفاهیم.</p>
+        <p>Model complexity یعنی:</p>
+        <p>مدل چقدر ظرفیت دارد که الگوهای پیچیده از داده یاد بگیرد؟</p>
+        <p>مثلاً:</p>
+        <div class="chart">Linear Regression
+        ↓
+Decision Tree depth=2
+        ↓
+Decision Tree depth=10
+        ↓
+Deep Neural Network</div>
+        <p>به‌طور کلی complexity افزایش پیدا می‌کند.</p>
+
+        <h2>4. Complexity فقط تعداد پارامتر نیست</h2>
+        <p>این نکته Senior-level است.</p>
+        <p>Complexity می‌تواند به موارد مختلفی مربوط باشد:</p>
+        <div class="chart">تعداد پارامترها
+depth درخت
+number of leaves
+architecture
+effective capacity
+regularization
+feature space
+training dynamics</div>
+        <p>مثلاً یک neural network با پارامترهای زیاد ولی regularization شدید الزاماً از یک مدل کوچک‌تر «پیچیده‌تر» از نظر effective capacity نیست.</p>
+
+        <h2>5. رابطه Complexity با Bias و Variance</h2>
+        <p>به شکل کلاسیک:</p>
+        <div class="chart">Low Complexity
+     ↓
+High Bias
+Low Variance</div>
+        <p>و:</p>
+        <div class="chart">High Complexity
+     ↓
+Low Bias
+High Variance</div>
+        <p>البته این یک تصویر کلاسیک است و در مدل‌های مدرن، مخصوصاً deep learning، رفتار همیشه به این شکل ساده نیست.</p>
+
+        <h2>6. Underfitting</h2>
+        <p>مدل بیش از حد ساده است.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Training error = 20%
+Validation error = 22%</div>
+        <p>هر دو بد هستند.</p>
+        <p>نشانه:</p>
+        <div class="formula">$$ High\ Bias $$</div>
+        <p>راه‌حل‌های احتمالی:</p>
+        <div class="chart">مدل پیچیده‌تر
+feature بهتر
+کاهش regularization
+training بیشتر
+interaction features</div>
+
+        <h2>7. Overfitting</h2>
+        <p>مثلاً:</p>
+        <div class="chart">Training error = 1%
+Validation error = 18%</div>
+        <p>مدل training data را خیلی خوب یاد گرفته ولی generalize نمی‌کند.</p>
+        <p>نشانه:</p>
+        <div class="formula">$$ High\ Variance $$</div>
+        <p>راه‌حل:</p>
+        <div class="chart">regularization
+مدل ساده‌تر
+data بیشتر
+augmentation
+early stopping
+feature reduction
+noise injection</div>
+
+        <h2>8. نکته مهم: Complexity و Generalization</h2>
+        <p>هدف:</p>
+        <div class="formula">$$ \boxed{ Minimize\ Generalization\ Error } $$</div>
+        <p>نه:</p>
+        <div class="formula">$$ Training\ Error $$</div>
+        <p>مدلی که training accuracy آن 99.9% است الزاماً بهتر از مدلی با 97% نیست.</p>
+
+        <h2>9. Cross-Validation</h2>
+        <p>Cross-validation یکی از مهم‌ترین ابزارهای Model Selection است.</p>
+        <p>در K-Fold:</p>
+        <div class="chart">Dataset
+ ├── Fold 1
+ ├── Fold 2
+ ├── Fold 3
+ ├── Fold 4
+ └── Fold 5</div>
+        <p>مدل 5 بار train می‌شود.</p>
+        <p>هر بار یک fold validation است.</p>
+
+        <h2>10. مثال K-Fold</h2>
+        <div class="chart">Fold 1 → Validation
+Fold 2 → Train
+Fold 3 → Train
+Fold 4 → Train
+Fold 5 → Train</div>
+        <p>سپس:</p>
+        <div class="chart">Fold 2 → Validation
+Fold 1 → Train
+Fold 3 → Train
+...</div>
+        <p>در نهایت:</p>
+        <div class="formula">$$ CVScore = \frac{1}{K} \sum_{k=1}^{K} Score_k $$</div>
+
+        <h2>11. چرا Cross-Validation؟</h2>
+        <p>چون یک split ممکن است تصادفی خوش‌شانس یا بدشانس باشد.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Split A → F1 = 0.91
+Split B → F1 = 0.84</div>
+        <p>CV به ما می‌گوید:</p>
+        <p>performance چقدر stable است؟</p>
+        <p>مثلاً:</p>
+        <div class="formula">$$ F1=0.88\pm0.03 $$</div>
+        <p>خیلی اطلاعات بیشتری از:</p>
+        <div class="formula">$$ F1=0.88 $$</div>
+        <p>دارد.</p>
+
+        <h2>12. CV فقط Mean نیست</h2>
+        <p>یک Senior به این نگاه می‌کند:</p>
+        <div class="formula">$$ Mean $$</div>
+        <p>و:</p>
+        <div class="formula">$$ Std $$</div>
+        <p>مثلاً:</p>
+        <div class="chart">Model A:
+F1 = 0.90 ± 0.01
+
+Model B:
+F1 = 0.91 ± 0.08</div>
+        <p>Model B average بالاتری دارد ولی unstable است.</p>
+
+        <h2>13. انواع Cross-Validation</h2>
+        <p>بسته به data:</p>
+        <div class="chart">Classification
+Stratified K-Fold
+
+Grouped Data
+Group K-Fold
+
+Time Series
+Time Series Split
+
+Multiple constraints
+Stratified Group K-Fold</div>
+        <p>انتخاب CV strategy خودش بخشی از Model Selection است.</p>
+
+        <h2>14. Hyperparameter چیست؟</h2>
+        <p>پارامتری که مدل از data یاد نمی‌گیرد.</p>
+        <p>مثلاً در XGBoost:</p>
+        <div class="chart">learning_rate
+max_depth
+subsample
+n_estimators</div>
+        <p>در neural network:</p>
+        <div class="chart">learning_rate
+batch_size
+dropout
+number_of_layers
+hidden_units</div>
+
+        <h2>15. Parameter vs Hyperparameter</h2>
+        <p>مثلاً Linear Regression:</p>
+        <div class="formula">$$ \hat y = Xw+b $$</div>
+        <p>w و b:</p>
+        <div class="chart">Parameters</div>
+        <p>اما:</p>
+        <div class="chart">learning_rate
+regularization_strength</div>
+        <p>:</p>
+        <div class="chart">Hyperparameters</div>
+
+        <h2>16. Hyperparameter Tuning چیست؟</h2>
+        <p>هدف:</p>
+        <div class="formula">$$ \theta^* = \arg\min_{\theta} CVLoss(\theta) $$</div>
+        <p>که در آن:</p>
+        <div class="formula">$$ \theta $$</div>
+        <p>مجموعه hyperparameters است.</p>
+        <p>مثلاً:</p>
+        <div class="chart">learning_rate = 0.01
+max_depth = 7
+subsample = 0.8</div>
+
+        <h2>17. Grid Search</h2>
+        <p>یکی از ساده‌ترین روش‌ها.</p>
+        <p>فرض کن:</p>
+        <div class="chart">learning_rate:
+0.01, 0.1
+
+max_depth:
+3, 5, 7</div>
+        <p>Grid:</p>
+        <div class="formula">$$ 2\times3=6 $$</div>
+        <p>configuration داریم.</p>
+        <p>همه را امتحان می‌کنیم.</p>
+
+        <h2>18. مثال Grid Search</h2>
+        <div class="chart">LR    Depth
+------------
+0.01    3
+0.01    5
+0.01    7
+0.1     3
+0.1     5
+0.1     7</div>
+        <p>هر configuration با CV ارزیابی می‌شود.</p>
+
+        <h2>19. مشکل Grid Search</h2>
+        <p>اگر:</p>
+        <div class="chart">10 hyperparameters</div>
+        <p>داشته باشی و هرکدام:</p>
+        <div class="chart">10 values</div>
+        <p>داشته باشند:</p>
+        <div class="formula">$$ 10^{10} $$</div>
+        <p>configuration!</p>
+        <p>غیرعملی است.</p>
+
+        <h2>20. مشکل مهم‌تر Grid Search</h2>
+        <p>همه hyperparameters به یک اندازه مهم نیستند.</p>
+        <p>مثلاً:</p>
+        <div class="chart">learning_rate</div>
+        <p>ممکن است بسیار مهم باشد.</p>
+        <p>ولی:</p>
+        <div class="chart">some_parameter</div>
+        <p>تأثیر بسیار کمی داشته باشد.</p>
+        <p>Grid Search منابع را روی dimensionهای کم‌اهمیت هم مصرف می‌کند.</p>
+
+        <h2>21. Random Search</h2>
+        <p>به جای grid:</p>
+        <p>configurationها را تصادفی sample می‌کنیم.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Trial 1 → lr=.003, depth=8
+Trial 2 → lr=.02, depth=5
+Trial 3 → lr=.001, depth=12
+...</div>
+
+        <h2>22. چرا Random Search معمولاً بهتر از Grid Search است؟</h2>
+        <p>فرض کن فقط دو hyperparameter مهم هستند:</p>
+        <div class="chart">learning_rate
+max_depth</div>
+        <p>و 8 hyperparameter دیگر تقریباً بی‌اهمیت‌اند.</p>
+        <p>Grid تعداد زیادی trial را روی ترکیب‌های redundant تلف می‌کند.</p>
+        <p>Random Search فضای مهم را بهتر sample می‌کند.</p>
+        <p>این نتیجه در hyperparameter optimization بسیار معروف است.</p>
+
+        <h2>23. نکته مهم در Random Search</h2>
+        <p>Distribution انتخاب‌شده مهم است.</p>
+        <p>مثلاً learning rate:</p>
+        <p>بد:</p>
+        <div class="chart">Uniform(0.0001, 1)</div>
+        <p>بهتر در بسیاری موارد:</p>
+        <div class="chart">LogUniform(1e-5, 1e-1)</div>
+        <p>چون learning rate معمولاً در scaleهای چند مرتبه بزرگی تغییر می‌کند.</p>
+
+        <h2>24. Bayesian Optimization</h2>
+        <p>اینجا وارد روش‌های هوشمندتر می‌شویم.</p>
+        <p>به جای اینکه configuration بعدی را کاملاً تصادفی انتخاب کنیم:</p>
+        <p>از نتایج قبلی یاد می‌گیریم.</p>
+        <p>فرض کن:</p>
+        <div class="chart">Trial 1 → Score .80
+Trial 2 → Score .85
+Trial 3 → Score .91</div>
+        <p>Optimizer یاد می‌گیرد کدام قسمت فضای hyperparameter promising است.</p>
+
+        <h2>25. ایده Bayesian Optimization</h2>
+        <p>یک surrogate model می‌سازیم:</p>
+        <div class="formula">$$ f(\theta) $$</div>
+        <p>که تخمین می‌زند:</p>
+        <div class="formula">$$ Performance(\theta) $$</div>
+        <p>چقدر است.</p>
+        <p>سپس با یک Acquisition Function تصمیم می‌گیریم trial بعدی کجا باشد.</p>
+
+        <h2>26. Exploration vs Exploitation</h2>
+        <p>Bayesian Optimization باید بین دو کار balance ایجاد کند.</p>
+        <div class="inner-box">
+            <div class="inner-title">Exploitation</div>
+            <p>جایی را امتحان کن که فکر می‌کنیم خوب است.</p>
+        </div>
+        <div class="inner-box">
+            <div class="inner-title">Exploration</div>
+            <p>جایی را امتحان کن که uncertainty بالایی دارد.</p>
+        </div>
+        <div class="chart">Exploration
+     ↕
+Exploitation</div>
+
+        <h2>27. Acquisition Function</h2>
+        <p>نمونه‌ها:</p>
+        <div class="chart">Expected Improvement
+Probability of Improvement
+Upper Confidence Bound</div>
+        <p>مثلاً Expected Improvement می‌پرسد:</p>
+        <p>این configuration چقدر احتمال دارد بهترین نتیجه فعلی را بهبود دهد؟</p>
+
+        <h2>28. Gaussian Process</h2>
+        <p>یکی از روش‌های کلاسیک Bayesian Optimization:</p>
+        <div class="formula">$$ f(\theta)\sim GP $$</div>
+        <p>Gaussian Process برای هر point علاوه بر mean، uncertainty هم می‌دهد.</p>
+        <p>مثلاً:</p>
+        <div class="chart">θ₁ → predicted score .88 ± .02
+θ₂ → predicted score .91 ± .10</div>
+        <p>θ₂ uncertainty زیادی دارد.</p>
+        <p>ممکن است ارزش exploration داشته باشد.</p>
+
+        <h2>29. Bayesian Optimization فقط Gaussian Process نیست</h2>
+        <p>روش‌های دیگری هم هستند:</p>
+        <div class="chart">Tree-structured Parzen Estimator (TPE)
+Random Forest-based surrogate
+Bayesian neural networks</div>
+        <p>در ابزارهایی مثل Optuna روش‌های مختلفی وجود دارد.</p>
+
+        <h2>30. چه زمانی Bayesian Optimization مناسب است؟</h2>
+        <p>وقتی:</p>
+        <div class="chart">training expensive است
+هر trial زمان زیادی می‌برد
+evaluation expensive است
+تعداد hyperparameters متوسط است</div>
+        <p>مثلاً:</p>
+        <div class="chart">1 trial = 2 hours</div>
+        <p>حتی کاهش 20 trial اهمیت زیادی دارد.</p>
+
+        <h2>31. Hyperband</h2>
+        <p>Hyperband برای شرایطی طراحی شده که می‌توانیم:</p>
+        <p>trialهای ضعیف را زود متوقف کنیم.</p>
+        <p>مثلاً Neural Network:</p>
+        <div class="chart">Trial A → promising
+Trial B → bad
+Trial C → promising
+Trial D → bad</div>
+        <p>لازم نیست Trial B را تا epoch 100 ادامه دهیم.</p>
+
+        <h2>32. Successive Halving</h2>
+        <p>ایده:</p>
+        <div class="chart">100 configurations
+       ↓
+train a little
+       ↓
+keep best 25
+       ↓
+train more
+       ↓
+keep best 6
+       ↓
+train more
+       ↓
+best 1</div>
+        <p>یعنی:</p>
+        <div class="formula">$$ Many\ cheap\ trials \rightarrow Few\ expensive\ trials $$</div>
+
+        <h2>33. مثال Successive Halving</h2>
+        <p>فرض کن:</p>
+        <div class="chart">Resource = epochs</div>
+        <p>مرحله اول:</p>
+        <div class="chart">100 models × 5 epochs</div>
+        <p>بعد:</p>
+        <div class="chart">25 models × 20 epochs</div>
+        <p>بعد:</p>
+        <div class="chart">6 models × 80 epochs</div>
+        <p>و در نهایت بهترین.</p>
+
+        <h2>34. Hyperband vs Successive Halving</h2>
+        <div class="inner-box">
+            <div class="inner-title">Successive Halving</div>
+            <p>یک budget allocation strategy مشخص دارد.</p>
+        </div>
+        <div class="inner-box">
+            <div class="inner-title">Hyperband</div>
+            <p>چندین Successive Halving bracket با budgetهای متفاوت اجرا می‌کند.</p>
+        </div>
+        <p>به زبان ساده:</p>
+        <div class="chart">Successive Halving
+      ↓
+یک مسیر elimination
+
+Hyperband
+      ↓
+چند مسیر با budgetهای متفاوت</div>
+
+        <h2>35. Early Stopping</h2>
+        <p>Early stopping خودش یک regularization technique است، ولی در HPO نیز بسیار مهم است.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Epoch 1 → val_loss .60
+Epoch 10 → .30
+Epoch 20 → .22
+Epoch 30 → .23
+Epoch 40 → .27</div>
+        <p>می‌گوییم:</p>
+        <p>بهترین checkpoint حدود epoch 20 بوده.</p>
+
+        <h2>36. Early Stopping در Hyperparameter Optimization</h2>
+        <p>مثلاً 100 configuration داریم.</p>
+        <p>به جای اینکه همه را کامل train کنیم:</p>
+        <div class="chart">Trial 1 → clearly bad → stop
+Trial 2 → promising
+Trial 3 → clearly bad → stop</div>
+        <p>این باعث کاهش شدید compute می‌شود.</p>
+
+        <h2>37. Early Stopping و Leakage</h2>
+        <p>نکته مهم:</p>
+        <p>اگر early stopping را با:</p>
+        <div class="chart">Test set</div>
+        <p>انجام دهی:</p>
+        <div class="chart">❌ اشتباه است.</div>
+        <p>باید از validation data استفاده شود.</p>
+        <p>Test باید برای final evaluation نگه داشته شود.</p>
+
+        <h2>38. Model Comparison</h2>
+        <p>فرض کن:</p>
+        <div class="chart">Logistic Regression → F1=.88
+Random Forest       → F1=.90
+XGBoost             → F1=.92</div>
+        <p>آیا XGBoost قطعاً بهتر است؟</p>
+        <p>نه.</p>
+
+        <h2>39. چرا؟</h2>
+        <p>ممکن است:</p>
+        <div class="chart">XGBoost:
+F1 = .92 ± .04
+
+RF:
+F1 = .90 ± .01</div>
+        <p>اختلاف:</p>
+        <div class="formula">$$ 0.02 $$</div>
+        <p>ممکن است statistically meaningful نباشد.</p>
+
+        <h2>40. Variance در Model Comparison</h2>
+        <p>اگر CV scores:</p>
+        <div class="chart">Model A:
+.90 .91 .89 .90 .90
+
+Model B:
+.92 .86 .94 .89 .91</div>
+        <p>می‌بینی B variance بیشتری دارد.</p>
+        <p>باید stability را هم در نظر بگیری.</p>
+
+        <h2>41. Statistical Significance of Model Differences</h2>
+        <p>این بخش خیلی مهم است.</p>
+        <p>فرض کن:</p>
+        <div class="formula">$$ Model_A $$</div>
+        <p>و:</p>
+        <div class="formula">$$ Model_B $$</div>
+        <p>داریم.</p>
+        <p>می‌خواهیم بفهمیم:</p>
+        <div class="formula">$$ \Delta = Score_B - Score_A $$</div>
+        <p>واقعاً meaningful است یا ممکن است ناشی از sampling noise باشد.</p>
+
+        <h2>42. اشتباه رایج</h2>
+        <p>این اشتباه است:</p>
+        <div class="chart">Model A → 90%
+Model B → 91%
+
+Therefore B is better.</div>
+        <p>یک درصد اختلاف الزاماً meaningful نیست.</p>
+
+        <h2>43. Paired Comparison</h2>
+        <p>در CV معمولاً predictionها روی foldهای مشترک انجام شده‌اند.</p>
+        <p>پس scores مستقل کامل نیستند.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Fold 1:
+A=.90
+B=.92
+
+Fold 2:
+A=.88
+B=.89
+
+Fold 3:
+A=.91
+B=.91</div>
+        <p>اختلاف هر fold را بساز:</p>
+        <div class="formula">$$ d_i = Score_{B,i} - Score_{A,i} $$</div>
+
+        <h2>44. Paired Statistical Test</h2>
+        <p>مثلاً:</p>
+        <div class="formula">$$ d = [.02, .01, 0, ...] $$</div>
+        <p>بعد می‌توانی بررسی کنی آیا:</p>
+        <div class="formula">$$ E[d] > 0 $$</div>
+        <p>هست یا نه.</p>
+        <p>روش‌های احتمالی:</p>
+        <div class="chart">Paired t-test
+Wilcoxon signed-rank test
+permutation test</div>
+        <p>اما باید assumptions را در نظر بگیری.</p>
+
+        <h2>45. چرا Paired بهتر از Independent Test است؟</h2>
+        <p>چون:</p>
+        <div class="chart">Model A</div>
+        <p>و:</p>
+        <div class="chart">Model B</div>
+        <p>روی همان foldها / همان samples تست شده‌اند.</p>
+        <p>بنابراین comparison paired است.</p>
+
+        <h2>46. ولی K-Fold scores کاملاً مستقل نیستند</h2>
+        <p>این نکته بسیار Senior است.</p>
+        <p>در K-Fold:</p>
+        <div class="chart">Fold 1 train</div>
+        <p>و:</p>
+        <div class="chart">Fold 2 train</div>
+        <p>overlap زیادی در training data دارند.</p>
+        <p>پس فرض استقلال ساده ممکن است نقض شود.</p>
+        <p>بنابراین:</p>
+        <p>استفاده کورکورانه از t-test روی CV folds می‌تواند inference نادرستی ایجاد کند.</p>
+        <p>برای مقایسه جدی مدل‌ها می‌توان از روش‌های مناسب‌تر مثل:</p>
+        <div class="chart">repeated CV
+paired bootstrap
+permutation-based comparison
+corrected resampled tests</div>
+        <p>استفاده کرد.</p>
+
+        <h2>47. Bootstrap Comparison</h2>
+        <p>می‌توانیم از predictionهای دو مدل روی test/validation samples استفاده کنیم و bootstrap sampling انجام دهیم.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Original dataset
+      ↓
+Bootstrap sample 1
+Bootstrap sample 2
+...
+Bootstrap sample 1000</div>
+        <p>در هر بار:</p>
+        <div class="formula">$$ \Delta_i = Metric_B - Metric_A $$</div>
+        <p>را حساب می‌کنیم.</p>
+        <p>بعد distribution اختلاف را می‌سازیم.</p>
+
+        <h2>48. Confidence Interval برای Difference</h2>
+        <p>مثلاً:</p>
+        <div class="formula">$$ \Delta F1 = 0.012 $$</div>
+        <p>و:</p>
+        <div class="formula">$$ 95\% CI = [0.004, 0.020] $$</div>
+        <p>این evidence خوبی است که B احتمالاً بهتر است.</p>
+        <p>ولی اگر:</p>
+        <div class="formula">$$ 95\% CI = [-0.01, 0.03] $$</div>
+        <p>باشد:</p>
+        <p>evidence کافی برای superiority قطعی نداریم.</p>
+
+        <h2>49. Statistical Significance ≠ Practical Significance</h2>
+        <p>این یکی از مهم‌ترین نکات Senior است.</p>
+        <p>ممکن است:</p>
+        <div class="formula">$$ p < 0.001 $$</div>
+        <p>باشد ولی improvement:</p>
+        <div class="formula">$$ 0.0005 $$</div>
+        <p>باشد.</p>
+        <p>از نظر آماری significant است.</p>
+        <p>ولی business:</p>
+        <p>هیچ اهمیتی نداشته باشد.</p>
+
+        <h2>50. Practical Significance</h2>
+        <p>مثلاً:</p>
+        <div class="chart">F1:
+.900 → .902</div>
+        <p>ممکن است از نظر statistical significance معنی‌دار باشد.</p>
+        <p>اما:</p>
+        <div class="chart">Inference latency:
+10 ms → 500 ms</div>
+        <p>شاید اصلاً ارزش نداشته باشد.</p>
+
+        <h2>51. Model Selection باید Multi-Objective باشد</h2>
+        <p>در production:</p>
+        <div class="formula">$$ Performance $$</div>
+        <p>تنها objective نیست.</p>
+        <p>مثلاً:</p>
+        <div class="formula">$$ Utility = Performance - \lambda Latency - \alpha Cost $$</div>
+        <p>یا constraints:</p>
+        <div class="chart">F1 > 0.90
+Latency < 50ms
+Memory < 2GB
+Cost < $1000/month</div>
+
+        <h2>52. مثال واقعی</h2>
+        <p>فرض کن:</p>
+        <div class="chart">Model	F1	Latency	Memory
+LR	.88	2ms	50MB
+RF	.91	20ms	500MB
+XGB	.93	30ms	300MB
+NN	.94	200ms	2GB</div>
+        <p>اگر latency باید کمتر از 50ms باشد:</p>
+        <div class="chart">NN حذف می‌شود.</div>
+        <p>حتی اگر F1 بالاتری داشته باشد.</p>
+
+        <h2>53. Pareto Frontier</h2>
+        <p>اگر چند objective داشته باشی:</p>
+        <div class="chart">Accuracy
+Latency
+Cost
+Memory</div>
+        <p>ممکن است یک مدل در همه موارد بهترین نباشد.</p>
+        <p>مدل‌های non-dominated:</p>
+        <div class="chart">Pareto-optimal models</div>
+        <p>هستند.</p>
+
+        <h2>54. Model Selection و Constraints</h2>
+        <p>مثلاً:</p>
+        <div class="chart">Recall >= 95%
+Latency <= 100ms
+Memory <= 1GB</div>
+        <p>حالا از مدل‌هایی که constraints را satisfy می‌کنند:</p>
+        <p>بهترین cost/performance را انتخاب کن.</p>
+        <p>این بسیار واقعی‌تر از:</p>
+        <div class="chart">maximize accuracy</div>
+        <p>است.</p>
+
+        <h2>55. Nested Cross-Validation</h2>
+        <p>برای زمانی که می‌خواهی model selection و performance estimation را بدون bias جدی انجام دهی.</p>
+        <p>دو حلقه:</p>
+        <div class="chart">Outer CV
+│
+├── Inner CV
+│      └── Hyperparameter tuning
+│
+└── Final evaluation</div>
+
+        <h2>56. چرا Nested CV؟</h2>
+        <p>فرض کن:</p>
+        <div class="chart">CV</div>
+        <p>را برای tuning انجام می‌دهی.</p>
+        <p>اگر همان CV را برای گزارش final performance استفاده کنی:</p>
+        <p>performance estimate می‌تواند optimistic باشد.</p>
+        <p>چون مدل بر اساس همان validation performance انتخاب شده.</p>
+
+        <h2>57. Nested CV ساختار</h2>
+        <p>مثلاً Outer 5-fold:</p>
+        <div class="chart">Outer Fold 1
+    ↓
+Inner CV → tune hyperparameters
+    ↓
+Train best model
+    ↓
+Evaluate on outer validation</div>
+        <p>و همین برای 5 outer folds.</p>
+        <p>در نهایت:</p>
+        <div class="formula">$$ Performance = mean(OuterScores) $$</div>
+
+        <h2>58. Hyperparameter Overfitting</h2>
+        <p>این مفهوم بسیار مهم است.</p>
+        <p>همان‌طور که model روی training data overfit می‌کند:</p>
+        <p>Hyperparameter search هم می‌تواند روی validation set overfit کند.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Try 10,000 configurations</div>
+        <p>بالاخره یکی ممکن است صرفاً به دلیل noise بهترین validation score را بگیرد.</p>
+        <p>پس:</p>
+        <div class="formula">$$ Validation\ Set $$</div>
+        <p>خودش می‌تواند overfit شود.</p>
+
+        <h2>59. این همان دلیل اهمیت Test Set است</h2>
+        <p>Test باید:</p>
+        <div class="chart">untouched</div>
+        <p>باشد.</p>
+        <p>تا زمانی که:</p>
+        <div class="chart">Model
++
+Hyperparameters
++
+Threshold
++
+Feature choices</div>
+        <p>نهایی نشده‌اند.</p>
+        <p>بعد:</p>
+        <div class="chart">Final Model
+     ↓
+Test Set
+     ↓
+Final Estimate</div>
+
+        <h2>60. Data Leakage در Model Selection</h2>
+        <p>یکی از رایج‌ترین اشتباه‌ها:</p>
+        <div class="chart">Scale entire dataset
+        ↓
+Cross-validation</div>
+        <p>اگر scaling را قبل از CV انجام دهی، اطلاعات validation وارد preprocessing می‌شود.</p>
+        <p>بهتر:</p>
+        <div class="chart">Fold
+ ↓
+Fit scaler on train
+ ↓
+Transform train
+ ↓
+Transform validation</div>
+        <p>با pipeline.</p>
+
+        <h2>61. Target Encoding در Model Selection</h2>
+        <p>مثلاً target encoding:</p>
+        <div class="chart">category → mean(target)</div>
+        <p>اگر روی کل dataset انجام شود:</p>
+        <div class="chart">❌ Leakage.</div>
+        <p>باید داخل هر fold:</p>
+        <div class="chart">Train fold
+   ↓
+Fit target encoder
+   ↓
+Transform validation fold</div>
+        <p>انجام شود.</p>
+
+        <h2>62. Feature Selection هم می‌تواند Leakage ایجاد کند</h2>
+        <p>اشتباه:</p>
+        <div class="chart">Entire dataset
+ ↓
+Select top 100 features
+ ↓
+CV</div>
+        <p>چون validation data در feature selection دخالت داشته.</p>
+        <p>درست:</p>
+        <div class="chart">CV Fold
+ ↓
+Feature selection on train
+ ↓
+Transform validation</div>
+
+        <h2>63. Model Comparison فقط Metric نیست</h2>
+        <p>Senior باید بپرسد:</p>
+        <div class="chart">Performance
+F1؟
+Recall؟
+PR-AUC؟
+RMSE؟
+
+Stability
+variance؟
+sensitivity؟
+
+Complexity
+parameters؟
+maintenance？
+
+Production
+latency？
+memory？
+throughput？
+
+Data
+missing values؟
+categorical handling？
+
+Explainability
+SHAP？
+interpretability？
+
+Operational
+deployment？
+retraining？
+monitoring？</div>
+
+        <h2>64. Model Selection Matrix</h2>
+        <p>یک روش بسیار حرفه‌ای:</p>
+        <div class="chart">Criterion	Weight
+Recall	40%
+Precision	20%
+Latency	15%
+Cost	10%
+Interpretability	10%
+Memory	5%</div>
+        <p>بعد score کلی:</p>
+        <div class="formula">$$ Score = \sum_i w_i metric_i $$</div>
+        <p>البته بهتر است وقتی امکان دارد constraints را جدا از weighted sum تعریف کنیم.</p>
+
+        <h2>65. یک نکته بسیار مهم درباره Metric</h2>
+        <p>Metric باید با business objective انتخاب شود.</p>
+        <p>مثلاً fraud:</p>
+        <p>اگر FN بسیار پرهزینه است:</p>
+        <div class="formula">$$ Recall $$</div>
+        <p>ممکن است اهمیت زیادی داشته باشد.</p>
+        <p>اما اگر false alarms هزینه زیادی دارند:</p>
+        <div class="formula">$$ Precision $$</div>
+        <p>هم مهم است.</p>
+
+        <h2>66. Model Selection برای Imbalanced Data</h2>
+        <p>اگر:</p>
+        <div class="chart">99.9% Normal
+0.1% Fraud</div>
+        <p>داری:</p>
+        <div class="chart">❌ Accuracy معیار مناسبی نیست.</div>
+        <p>بهتر ممکن است:</p>
+        <div class="chart">PR-AUC
+Recall
+Precision
+Fβ
+expected cost</div>
+        <p>باشد.</p>
+
+        <h2>67. Model Selection و Calibration</h2>
+        <p>اگر خروجی مدل probability است و downstream system بر اساس probability تصمیم می‌گیرد:</p>
+        <div class="chart">Model A</div>
+        <p>و:</p>
+        <div class="chart">Model B</div>
+        <p>را فقط با F1 مقایسه نکن.</p>
+        <p>Calibration را هم بررسی کن.</p>
+        <p>مثلاً:</p>
+        <div class="formula">$$ P(Fraud)=0.8 $$</div>
+        <p>باید واقعاً تقریباً 80% likelihood داشته باشد.</p>
+
+        <h2>68. Model Selection و Error Analysis</h2>
+        <p>این دو باید به هم متصل باشند.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Model A:
+Global F1 = .91
+
+Model B:
+Global F1 = .92</div>
+        <p>ولی Error Analysis:</p>
+        <div class="chart">Product C:
+
+A → Recall .85
+B → Recall .60</div>
+        <p>اگر Product C critical باشد:</p>
+        <p>A ممکن است انتخاب بهتری باشد.</p>
+
+        <h2>69. Model Selection و Robustness</h2>
+        <p>مدل را فقط روی IID validation ارزیابی نکن.</p>
+        <p>بررسی کن:</p>
+        <div class="chart">Noise
+Missing values
+Distribution shift
+Outliers
+Adversarial cases
+Rare cases
+Temporal shift</div>
+        <p>مثلاً:</p>
+        <div class="chart">Model A:
+IID = .94
+Shifted = .70
+
+Model B:
+IID = .92
+Shifted = .87</div>
+        <p>برای production شاید B بهتر باشد.</p>
+
+        <h2>70. Model Selection و Temporal Validation</h2>
+        <p>اگر production آینده است:</p>
+        <div class="chart">Past → Train
+Future → Validation</div>
+        <p>اغلب بهتر از random split است.</p>
+        <p>مثلاً:</p>
+        <div class="chart">2023 → Train
+2024 Jan → Validation
+2024 Feb → Test</div>
+        <p>این realistic‌تر است.</p>
+
+        <h2>71. Model Selection در Time Series</h2>
+        <p>Random K-Fold ممکن است:</p>
+        <div class="chart">❌ آینده را وارد training کند.</div>
+        <p>مثلاً:</p>
+        <div class="chart">Train:
+Jan Feb Mar Apr
+
+Validation:
+Feb</div>
+        <p>این leakage زمانی است.</p>
+        <p>از:</p>
+        <div class="chart">TimeSeriesSplit</div>
+        <p>یا rolling/expanding windows استفاده کن.</p>
+
+        <h2>72. Model Selection در Group Data</h2>
+        <p>فرض کن medical dataset داری:</p>
+        <div class="chart">Patient A:
+10 records</div>
+        <p>اگر بعضی records در train و بعضی در validation باشند:</p>
+        <div class="chart">❌ leakage.</div>
+        <p>باید:</p>
+        <div class="chart">Patient A → Train
+Patient B → Validation</div>
+        <p>و از:</p>
+        <div class="formula">$$ GroupKFold $$</div>
+        <p>استفاده شود.</p>
+
+        <h2>73. Search Space Design</h2>
+        <p>یکی از مهارت‌های Senior در HPO:</p>
+        <p>Search space خوب تعریف کردن.</p>
+        <p>بد:</p>
+        <div class="chart">learning_rate ∈ [0, 10]</div>
+        <p>خوب:</p>
+        <div class="chart">learning_rate ∈ [1e-5, 0.3]
+log-scale</div>
+        <p>برای:</p>
+        <div class="chart">max_depth</div>
+        <p>مثلاً:</p>
+        <div class="chart">2–12</div>
+        <p>منطقی‌تر است.</p>
+
+        <h2>74. Hyperparameter Importance</h2>
+        <p>بعد از tuning می‌توانی بفهمی کدام hyperparameter مهم‌تر بوده.</p>
+        <p>مثلاً:</p>
+        <div class="chart">learning_rate → 45%
+max_depth     → 30%
+subsample     → 15%
+reg_lambda    → 5%
+others        → 5%</div>
+        <p>پس search space آینده را بهتر می‌کنی.</p>
+
+        <h2>75. Conditional Hyperparameters</h2>
+        <p>در مدل‌های پیچیده:</p>
+        <p>مثلاً:</p>
+        <div class="chart">optimizer = Adam</div>
+        <p>پارامترهای خاص خودش را دارد.</p>
+        <p>اما:</p>
+        <div class="chart">optimizer = SGD</div>
+        <p>پارامترهای دیگری.</p>
+        <p>پس search space ممکن است conditional باشد.</p>
+
+        <h2>76. Computational Budget</h2>
+        <p>HPO را بدون budget انجام نده.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Budget:
+100 trials
+4 GPUs
+6 hours</div>
+        <p>بعد optimizer باید با این محدودیت کار کند.</p>
+        <p>Senior ML باید همیشه بپرسد:</p>
+        <p>ارزش improvement چقدر است و compute cost چقدر؟</p>
+
+        <h2>77. Parallelism</h2>
+        <p>Grid و Random Search به‌راحتی parallel می‌شوند:</p>
+        <div class="chart">CPU1 → Trial 1
+CPU2 → Trial 2
+CPU3 → Trial 3
+CPU4 → Trial 4</div>
+        <p>Bayesian Optimization به دلیل sequential dependency ممکن است parallelization پیچیده‌تری داشته باشد.</p>
+
+        <h2>78. Asynchronous HPO</h2>
+        <p>در distributed environments:</p>
+        <div class="chart">Worker 1 → Trial
+Worker 2 → Trial
+Worker 3 → Trial</div>
+        <p>وقتی یک trial تمام شد:</p>
+        <p>trial بعدی اختصاص پیدا می‌کند.</p>
+        <p>این برای clusterها مهم است.</p>
+
+        <h2>79. Multi-Fidelity Optimization</h2>
+        <p>به جای اینکه هر configuration را با full budget تست کنیم:</p>
+        <div class="chart">Budget
+= epochs
+= training samples
+= dataset size
+= iterations</div>
+        <p>استفاده می‌کنیم.</p>
+        <p>ایده:</p>
+        <div class="formula">$$ Cheap\ evaluation \rightarrow filter \rightarrow expensive\ evaluation $$</div>
+        <p>Hyperband نمونه مهمی از این ایده است.</p>
+
+        <h2>80. Early Stopping vs Hyperband</h2>
+        <p>این دو یکی نیستند.</p>
+        <div class="inner-box">
+            <div class="inner-title">Early Stopping</div>
+            <p>یک trial را متوقف می‌کند وقتی:</p>
+            <p>ادامه دادن احتمالاً فایده‌ای ندارد.</p>
+        </div>
+        <div class="inner-box">
+            <div class="inner-title">Hyperband</div>
+            <p>تعداد زیادی trial را با budgetهای مختلف مدیریت و allocate می‌کند.</p>
+            <p>ممکن است Hyperband از early stopping برای elimination استفاده کند.</p>
+        </div>
+
+        <h2>81. Model Selection و Reproducibility</h2>
+        <p>اگر امروز:</p>
+        <div class="chart">Best model = XGBoost</div>
+        <p>شد، باید بتوانی دوباره آن را تولید کنی.</p>
+        <p>ذخیره کن:</p>
+        <div class="chart">random seed
+dataset version
+feature version
+code version
+hyperparameters
+CV strategy
+metric
+model version
+environment</div>
+
+        <h2>82. Model Selection و Experiment Tracking</h2>
+        <p>هر trial باید چیزی شبیه:</p>
+        <div class="chart">Experiment
+├── Dataset version
+├── Code commit
+├── Model
+├── Hyperparameters
+├── Metrics
+├── CV scores
+├── Training time
+├── Memory
+└── Artifacts</div>
+        <p>داشته باشد.</p>
+        <p>این در production بسیار مهم است.</p>
+
+        <h2>83. Champion vs Challenger</h2>
+        <p>در production:</p>
+        <div class="chart">Current Model
+    ↓
+Champion</div>
+        <p>و:</p>
+        <div class="chart">New Model
+    ↓
+Challenger</div>
+        <p>Challenger را با Champion مقایسه می‌کنیم.</p>
+        <p>نه فقط:</p>
+        <div class="chart">Accuracy</div>
+        <p>بلکه:</p>
+        <div class="chart">Business KPI
+Latency
+Drift robustness
+Slices
+Cost</div>
+
+        <h2>84. Statistical Testing برای Champion/Challenger</h2>
+        <p>مثلاً:</p>
+        <div class="chart">Champion:
+Recall = .91
+
+Challenger:
+Recall = .915</div>
+        <p>اگر اختلاف کوچک است، قبل از replace کردن باید بدانیم:</p>
+        <p>آیا improvement واقعی است؟</p>
+        <p>و مهم‌تر:</p>
+        <p>آیا business-relevant است؟</p>
+
+        <h2>85. انتخاب مدل نهایی</h2>
+        <p>یک workflow حرفه‌ای:</p>
+        <div class="chart">Raw Data
+   ↓
+Correct Split
+   ↓
+Baseline
+   ↓
+Candidate Models
+   ↓
+Cross Validation
+   ↓
+Hyperparameter Search
+   ↓
+Error Analysis
+   ↓
+Robustness Analysis
+   ↓
+Business Evaluation
+   ↓
+Final Model
+   ↓
+Train on Train+Validation
+   ↓
+One-time Test
+   ↓
+Deploy</div>
+
+        <h2>86. نکته مهم درباره Final Training</h2>
+        <p>بعد از اینکه hyperparameters را انتخاب کردی:</p>
+        <div class="chart">Train + Validation</div>
+        <p>را می‌توانی برای آموزش مدل نهایی استفاده کنی.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Original:
+
+Train = 70%
+Validation = 15%
+Test = 15%
+
+بعد از انتخاب مدل:
+
+Final Training:
+Train + Validation = 85%
+
+Final Test:
+15%
+
+Test همچنان untouched باقی می‌ماند.</div>
+
+        <h2>87. چرا Test را دوباره برای Training استفاده نمی‌کنیم؟</h2>
+        <p>چون دیگر test نیست.</p>
+        <p>اگر:</p>
+        <div class="chart">Test → Training</div>
+        <p>کنی:</p>
+        <p>final unbiased evaluation را از دست داده‌ای.</p>
+
+        <h2>88. Model Selection و Data Size</h2>
+        <p>اگر dataset کوچک باشد:</p>
+        <div class="chart">CV</div>
+        <p>ارزش بیشتری دارد.</p>
+        <p>اگر dataset بسیار بزرگ باشد:</p>
+        <p>شاید یک holdout validation کافی باشد و CV هزینه اضافی زیادی داشته باشد.</p>
+        <p>پس:</p>
+        <div class="formula">$$ CV\ isn't\ always\ mandatory $$</div>
+        <p>این یک نکته مهم Senior است.</p>
+
+        <h2>89. Model Selection و Large-Scale ML</h2>
+        <p>در datasetهای میلیاردی:</p>
+        <div class="chart">5-fold CV
+×
+100 trials</div>
+        <p>ممکن است بسیار گران باشد.</p>
+        <p>راهکار:</p>
+        <div class="chart">holdout
+subsampling
+multi-fidelity
+early stopping
+distributed training
+progressive validation</div>
+
+        <h2>90. Selection Bias در Model Selection</h2>
+        <p>اگر بارها مدل‌ها را روی یک test set امتحان کنی:</p>
+        <div class="chart">Model 1 → Test
+Model 2 → Test
+Model 3 → Test
+...
+Model 1000 → Test</div>
+        <p>عملاً test set تبدیل می‌شود به بخشی از tuning process.</p>
+        <p>پس:</p>
+        <p>Test set باید sacred باشد.</p>
+
+        <h2>91. Multiple Comparisons</h2>
+        <p>اگر هزار مدل امتحان کنی:</p>
+        <div class="chart">Model 1
+Model 2
+...
+Model 1000</div>
+        <p>احتمال اینکه یکی صرفاً به‌صورت تصادفی عالی ظاهر شود افزایش می‌یابد.</p>
+        <p>این یکی از دلایل:</p>
+        <div class="chart">optimism / selection bias</div>
+        <p>است.</p>
+
+        <h2>92. Best Score ≠ True Best Model</h2>
+        <p>فرض کن:</p>
+        <div class="chart">True performance ≈ 0.90</div>
+        <p>اما به خاطر noise:</p>
+        <div class="chart">Trial 1 → .89
+Trial 2 → .91
+Trial 3 → .90
+Trial 4 → .94  ← lucky</div>
+        <p>ممکن است Trial 4 را انتخاب کنی.</p>
+        <p>اما performance واقعی:</p>
+        <div class="chart">.90</div>
+        <p>باشد.</p>
+        <p>این phenomenon بسیار مهم است.</p>
+
+        <h2>93. Winner's Curse</h2>
+        <p>وقتی از بین تعداد زیادی candidate:</p>
+        <p>بهترین مشاهده‌شده را انتخاب می‌کنی،</p>
+        <p>بهترین score معمولاً کمی optimistic است.</p>
+        <p>هرچه:</p>
+        <div class="formula">$$ Number\ of\ trials $$</div>
+        <p>بیشتر شود، این مشکل مهم‌تر می‌شود.</p>
+
+        <h2>94. Senior-Level Model Selection</h2>
+        <p>Senior نمی‌گوید:</p>
+        <div class="chart">XGBoost چون F1 بیشتری دارد.</div>
+        <p>بلکه:</p>
+        <div class="highlight-box">
+            <p>XGBoost بیشترین mean PR-AUC را در repeated stratified CV دارد، variance آن قابل قبول است، روی critical slices regression ندارد، calibration مناسبی دارد و latency آن زیر SLO است. Improvement نسبت به baseline با confidence interval بررسی شده و از نظر business cost نیز meaningful است. بنابراین آن را به عنوان candidate champion انتخاب می‌کنم و روی یک untouched test set و سپس shadow/A-B deployment ارزیابی می‌کنم.</p>
+        </div>
+        <p>این Model Selection واقعی در سطح Senior است.</p>
+
+        <h2>95. یک مثال کامل</h2>
+        <p>فرض کن Fraud Detection داریم.</p>
+        <p>Candidateها:</p>
+        <div class="chart">Logistic Regression
+Random Forest
+XGBoost
+LightGBM</div>
+        <p>Step 1</p>
+        <p>Baseline:</p>
+        <div class="chart">Logistic Regression</div>
+        <p>Step 2</p>
+        <p>CV:</p>
+        <div class="chart">LR:
+PR-AUC = .71 ± .02
+
+RF:
+PR-AUC = .78 ± .03
+
+XGB:
+PR-AUC = .82 ± .01
+
+LGBM:
+PR-AUC = .83 ± .02</div>
+        <p>Step 3</p>
+        <p>Hyperparameter tuning:</p>
+        <div class="chart">LGBM</div>
+        <p>با Bayesian Optimization.</p>
+        <p>Step 4</p>
+        <p>Error Analysis:</p>
+        <p>می‌بینیم:</p>
+        <div class="chart">New Users:
+Recall = .62</div>
+        <p>Step 5</p>
+        <p>Feature Engineering:</p>
+        <p>اضافه کردن:</p>
+        <div class="chart">velocity
+device_age
+transaction_frequency</div>
+        <p>Step 6</p>
+        <p>دوباره evaluation:</p>
+        <div class="chart">Global Recall:
+.91 → .93
+
+New User Recall:
+.62 → .81</div>
+        <p>Step 7</p>
+        <p>Robustness:</p>
+        <div class="chart">Temporal test:
+Recall = .89</div>
+        <p>Step 8</p>
+        <p>Production constraints:</p>
+        <div class="chart">Latency = 25ms
+Memory = 400MB</div>
+        <p>و SLO:</p>
+        <div class="chart">Latency < 50ms</div>
+        <p>پس قبول.</p>
+        <p>Step 9</p>
+        <p>Statistical comparison:</p>
+        <p>فرض کنیم:</p>
+        <div class="formula">$$ \Delta Recall = 0.02 $$</div>
+        <p>و:</p>
+        <div class="formula">$$ 95\% CI = [0.012, 0.028] $$</div>
+        <p>پس evidence خوبی برای improvement داریم.</p>
+        <p>Step 10</p>
+        <p>Final Test:</p>
+        <p>فقط یک بار.</p>
+        <p>مثلاً:</p>
+        <div class="chart">PR-AUC = .84
+Recall = .934
+Precision = .71</div>
+
+        <h2>🧠 خلاصه کل فصل</h2>
+        <p>این hierarchy را خیلی خوب یاد بگیر:</p>
+        <div class="chart">                 MODEL SELECTION
+                       │
+          ┌────────────┴────────────┐
+          │                         │
+     Model Family             Hyperparameters
+          │                         │
+    LR / RF / XGB             Grid / Random
+    NN / SVM                  Bayesian / Hyperband
+          │                         │
+          └────────────┬────────────┘
+                       ↓
+                Cross Validation
+                       ↓
+                  Error Analysis
+                       ↓
+             Statistical Comparison
+                       ↓
+             Robustness Evaluation
+                       ↓
+              Business Constraints
+                       ↓
+                  Final Model
+                       ↓
+                 Untouched Test
+                       ↓
+                    Deploy</div>
+
+        <h2>🔥 15 نکته‌ای که باید در سطح Senior بلد باشی</h2>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">1. Model Selection ≠ Hyperparameter Tuning</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">2. هدف اصلی generalization است، نه training performance.</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#3fb950;">
+            <div class="inner-title">3. Complexity روی bias/variance و capacity تأثیر دارد.</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#d2a8ff;">
+            <div class="inner-title">4. Cross-validation برای تخمین robustتر performance بسیار مفید است.</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">5. Grid Search ساده ولی در ابعاد زیاد بسیار inefficient است.</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">6. Random Search معمولاً فضای hyperparameter را بهتر explore می‌کند.</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#3fb950;">
+            <div class="inner-title">7. Bayesian Optimization از نتایج trialهای قبلی برای انتخاب trial بعدی استفاده می‌کند.</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#d2a8ff;">
+            <div class="inner-title">8. Hyperband و Successive Halving از early elimination / multi-fidelity استفاده می‌کنند.</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">9. Early stopping هم regularization است و هم ابزار کاهش compute.</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">10. Hyperparameter search خودش می‌تواند overfit شود.</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#3fb950;">
+            <div class="inner-title">11. برای ارزیابی unbiased مدل انتخاب‌شده، Nested CV بسیار مهم است.</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#d2a8ff;">
+            <div class="inner-title">12. Modelها را فقط بر اساس mean metric مقایسه نکن؛ variance/stability را هم ببین.</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">13. Statistical significance با practical/business significance یکی نیست.</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">14. در production باید latency, memory, cost, explainability, robustness را هم وارد تصمیم کنی.</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#3fb950;">
+            <div class="inner-title">15. بهترین مدل لزوماً مدلی نیست که بالاترین metric را دارد؛ بهترین مدل، مدلی است که objective واقعی سیستم را با محدودیت‌های واقعی production بهتر satisfy کند.</div>
+        </div>
+
+        <p>مهم‌ترین فرمول ذهنی این فصل:</p>
+        <div class="formula">$$ \boxed{ Best\ Model \neq Highest\ Validation\ Score } $$</div>
+        <p>بلکه:</p>
+        <div class="formula">$$ \boxed{ Best\ Model = Best\ Generalization + Business\ Value + Robustness + Production\ Feasibility } $$</div>
+
+        <p>و یک نکته خیلی مهم برای مسیر Senior ML که داری طی می‌کنی: Model Selection را باید به مباحث قبلی‌ات وصل کنی؛ یعنی Cross-Validation → Leakage → Bias/Variance → Learning Curves → Error Analysis → Distribution Shift → Uncertainty → Statistical Testing → Model Selection. این‌ها در عمل یک زنجیره واحد هستند، نه ۱۰ موضوع جداگانه.</p>
+    </div>
+</body>
+</html>

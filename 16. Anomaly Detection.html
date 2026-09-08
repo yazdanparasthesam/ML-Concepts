@@ -1,0 +1,1999 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anomaly Detection - Senior ML Level</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js">
+    </script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}]});">
+    </script>
+    <style>
+        body {
+            background-color: #0d1117;
+            color: #e6edf3;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.8;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h1,
+        h2,
+        h3 {
+            color: #e6edf3;
+            text-align: right;
+            border-bottom: 1px solid #444;
+            padding-bottom: 15px;
+            margin-top: 50px;
+        }
+        p,
+        li {
+            text-align: right;
+        }
+
+        /* Boxes */
+        .box {
+            background-color: #21262d;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            color: #e6edf3;
+        }
+        .inner-box {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 10px;
+            border-right: 4px solid #58a6ff;
+        }
+        .inner-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        /* Formula Box */
+        .formula {
+            direction: ltr;
+            background-color: #000;
+            border: 1px solid #fff;
+            border-radius: 0;
+            padding: 20px;
+            margin: 20px auto;
+            width: fit-content;
+            max-width: 100%;
+            overflow-x: auto;
+            text-align: center;
+            font-size: 1.2em;
+            font-family: "Times New Roman", Times, serif;
+            color: #fff;
+        }
+
+        /* Charts / Flowcharts / ASCII Art */
+        .chart {
+            direction: ltr;
+            text-align: left;
+            font-family: monospace;
+            background-color: #21262d;
+            border-radius: 8px;
+            padding: 15px;
+            overflow-x: auto;
+            white-space: pre;
+            border: 1px solid #444;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            direction: rtl;
+            margin-bottom: 20px;
+        }
+        th,
+        td {
+            border: 1px solid #444;
+            padding: 12px;
+            text-align: right;
+        }
+        th {
+            background-color: #21262d;
+        }
+
+        /* ===== Interactive Z-Score Styles (Dark Theme) ===== */
+        .viz-box {
+            background-color: #1c2128;
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .viz-box h3 {
+            margin-top: 0;
+            color: #e6edf3;
+            border-bottom: 1px solid #30363d;
+            padding-bottom: 12px;
+            font-size: 1.2rem;
+        }
+
+        /* Slider groups */
+        .viz-slider-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #161b22;
+            padding: 6px 14px 6px 18px;
+            border-radius: 40px;
+            border: 1px solid #30363d;
+            flex-wrap: wrap;
+        }
+
+        .viz-slider-group label {
+            font-weight: 500;
+            color: #c9d1d9;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.9rem;
+            min-width: 80px;
+        }
+
+        .viz-slider-group label .sym {
+            font-weight: 700;
+            color: #58a6ff;
+            background: #0d1f3c;
+            padding: 0 8px;
+            border-radius: 16px;
+            font-size: 1rem;
+        }
+
+        .viz-slider-group input[type="range"] {
+            flex: 1;
+            min-width: 80px;
+            height: 5px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: #30363d;
+            border-radius: 6px;
+            outline: none;
+            transition: background 0.2s;
+        }
+
+        .viz-slider-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #58a6ff;
+            cursor: pointer;
+            border: 2px solid #0d1117;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+            transition: 0.08s;
+        }
+
+        .viz-slider-group input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.12);
+            background: #79c0ff;
+        }
+
+        .viz-slider-group input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #58a6ff;
+            cursor: pointer;
+            border: 2px solid #0d1117;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+        }
+
+        .viz-slider-group input[type="number"] {
+            width: 68px;
+            border: none;
+            background: #0d1117;
+            font-size: 0.9rem;
+            font-weight: 500;
+            padding: 4px 6px;
+            color: #e6edf3;
+            outline: none;
+            text-align: center;
+            font-family: 'Segoe UI', monospace;
+            border-radius: 30px;
+            border: 1px solid #30363d;
+        }
+
+        .viz-slider-group input[type="number"]:focus {
+            border-color: #58a6ff;
+            box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.15);
+        }
+
+        /* Checkboxes row */
+        .viz-toggle-row {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.8rem 1.8rem;
+            background: #161b22;
+            border-radius: 40px;
+            border: 1px solid #30363d;
+            padding: 8px 20px;
+        }
+
+        .viz-toggle-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.82rem;
+            color: #c9d1d9;
+            cursor: pointer;
+        }
+
+        .viz-toggle-item input[type="checkbox"] {
+            width: 17px;
+            height: 17px;
+            accent-color: #58a6ff;
+            cursor: pointer;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 4px;
+        }
+
+        /* Canvas */
+        .viz-canvas-wrap {
+            background: #0d1117;
+            border-radius: 10px;
+            border: 1px solid #30363d;
+            overflow: hidden;
+            padding: 4px;
+        }
+
+        #zScoreChart {
+            display: block;
+            width: 100%;
+            height: auto;
+            background: #0d1117;
+            border-radius: 8px;
+            aspect-ratio: 600 / 300;
+        }
+
+        /* Results formula */
+        .viz-results {
+            direction: ltr;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 10px;
+            padding: 14px 20px;
+            text-align: center;
+            font-size: 1.15rem;
+            font-family: "Times New Roman", Times, serif;
+            color: #e6edf3;
+            line-height: 2;
+        }
+
+        .viz-results .highlight {
+            color: #58a6ff;
+            font-weight: 600;
+        }
+
+        .viz-feedback {
+            text-align: center;
+            color: #8b949e;
+            font-size: 0.85rem;
+            padding: 4px 0 2px 0;
+            cursor: default;
+        }
+
+        .viz-feedback:hover {
+            color: #c9d1d9;
+        }
+
+        /* responsive tweaks */
+        @media (max-width: 480px) {
+            .viz-slider-group {
+                padding: 6px 10px;
+                border-radius: 30px;
+                flex-wrap: wrap;
+            }
+            .viz-slider-group label {
+                min-width: 55px;
+                font-size: 0.8rem;
+            }
+            .viz-slider-group input[type="number"] {
+                width: 55px;
+                font-size: 0.8rem;
+            }
+            .viz-toggle-row {
+                gap: 0.3rem 1rem;
+                padding: 6px 12px;
+            }
+            .viz-toggle-item {
+                font-size: 0.7rem;
+            }
+            .viz-results {
+                font-size: 0.95rem;
+                padding: 10px 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚨 16. Anomaly Detection</h1>
+
+        <p>حتماً. این بخش Anomaly Detection از مباحث بسیار مهم Senior ML است، مخصوصاً در حوزه‌هایی مثل Fraud Detection، Payment، Cybersecurity، Monitoring، Predictive Maintenance و Log Analysis.</p>
+        <p>نکته مهم این است که در سطح Senior فقط نباید بدانیم «Isolation Forest چیست». باید بدانیم:</p>
+        <ul>
+            <li>anomaly دقیقاً چیست؟</li>
+            <li>چه تفاوتی با outlier دارد؟</li>
+            <li>چه زمانی statistical method کافی است؟</li>
+            <li>Z-score چه فرضی دارد؟</li>
+            <li>IQR چه مزیتی دارد؟</li>
+            <li>Isolation Forest دقیقاً چرا anomaly را جدا می‌کند؟</li>
+            <li>LOF چه چیزی را اندازه می‌گیرد که Isolation Forest نمی‌گیرد؟</li>
+            <li>One-Class SVM چه boundaryای می‌سازد؟</li>
+            <li>Autoencoder چرا می‌تواند anomaly را تشخیص دهد؟</li>
+            <li>Reconstruction Error چیست؟</li>
+            <li>threshold را چطور انتخاب کنیم؟</li>
+            <li>چطور بدون label مدل را ارزیابی کنیم؟</li>
+            <li>چه زمانی anomaly detector را نباید مستقیماً به عنوان fraud detector استفاده کنیم؟</li>
+        </ul>
+
+        <h2>1. Anomaly Detection چیست؟</h2>
+        <p>هدف Anomaly Detection پیدا کردن observationهایی است که با رفتار معمول داده متفاوت هستند.</p>
+        <p>فرض کنیم داده‌های normal داریم:</p>
+        <div class="formula">$$X_{normal}$$</div>
+        <p>و می‌خواهیم نقاط غیرعادی را پیدا کنیم:</p>
+        <div class="formula">$$X_{anomaly}$$</div>
+        <p>به صورت مفهومی:</p>
+        <div class="chart">Normal Data
+            ████████████████████████████
+
+                         X
+                         ↑
+                      Anomaly</div>
+        <p>اما یک نکته بسیار مهم:</p>
+        <div class="inner-box">«غیرعادی بودن» الزاماً به معنی «بد بودن» نیست.</div>
+        <p>مثلاً یک خرید 100 میلیون تومانی ممکن است anomaly باشد، ولی fraud نباشد.</p>
+
+        <h2>2. Outlier vs Anomaly</h2>
+        <p>این دو اصطلاح خیلی نزدیک‌اند ولی دقیقاً یکی نیستند.</p>
+        <div class="inner-box"><div class="inner-title">Outlier</div></div>
+        <p>Outlier معمولاً به observationای گفته می‌شود که از نظر آماری یا هندسی نسبت به بقیه داده متفاوت است.</p>
+        <p>مثلاً:</p>
+        <div class="chart">10
+            11
+            10
+            12
+            11
+            10
+            500</div>
+        <p>عدد:</p>
+        <div class="formula">500</div>
+        <p>یک outlier واضح است.</p>
+
+        <div class="inner-box"><div class="inner-title">Anomaly</div></div>
+        <p>Anomaly مفهوم وسیع‌تری دارد.</p>
+        <p>یعنی observationای که با expected behavior ناسازگار است.</p>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">
+                Customer normally:
+                08:00 → Tehran
+                12:00 → Tehran
+                18:00 → Tehran
+            </div>
+        </div>
+        <p>اما:</p>
+        <div class="box"><div class="chart">03:00 → another country</div></div>
+        <p>ممکن است anomaly باشد.</p>
+        <p>حتی اگر مقدار transaction از نظر آماری outlier نباشد.</p>
+
+        <h2>3. Outlier همیشه Anomaly نیست</h2>
+        <p>فرض کن در Black Friday:</p>
+        <div class="box">
+            <div class="chart">
+                normal day:
+                transaction volume = 10K
+
+                Black Friday:
+                transaction volume = 500K
+            </div>
+        </div>
+        <p>از دید historical distribution:</p>
+        <p>این مقدار abnormal است.</p>
+        <p>اما از دید business:</p>
+        <p>کاملاً expected است.</p>
+        <p>پس:</p>
+        <div class="inner-box">Statistical Outlier ≠ Business Anomaly</div>
+
+        <h2>4. Anomaly Detection vs Classification</h2>
+        <p>این تفاوت بسیار مهم است.</p>
+        <div class="inner-box"><div class="inner-title">Classification:</div></div>
+        <div class="formula">$$X \rightarrow Fraud / Legit$$</div>
+        <p>و معمولاً label داریم:</p>
+        <div class="formula">$$Y$$</div>
+        <p>اما anomaly detection:</p>
+        <div class="formula">$$X \rightarrow Normal / Suspicious$$</div>
+        <p>و اغلب label نداریم.</p>
+        <p>بنابراین anomaly detection معمولاً:</p>
+        <div class="inner-box">Unsupervised</div>
+        <p>یا:</p>
+        <div class="inner-box">Semi − Supervised</div>
+        <p>است.</p>
+
+        <h2>5. سه نوع مهم Anomaly</h2>
+        <div class="inner-box"><div class="inner-title">Point Anomaly</div></div>
+        <p>یک observation به تنهایی abnormal است.</p>
+        <p>مثلاً:</p>
+        <div class="formula">Transaction = $10,000,000</div>
+        <p>در حالی که بیشتر تراکنش‌ها:</p>
+        <div class="formula">$10 - $500</div>
+        <p>هستند.</p>
+
+        <div class="inner-box"><div class="inner-title">Contextual Anomaly</div></div>
+        <p>مقدار به تنهایی abnormal نیست؛ context آن را abnormal می‌کند.</p>
+        <p>مثلاً:</p>
+        <div class="formula">Temperature = 30°C</div>
+        <p>در تابستان:</p>
+        <div class="inner-box">Normal</div>
+        <p>ولی در یک سیستم خاص که انتظار:</p>
+        <div class="formula">-10°C</div>
+        <p>داریم:</p>
+        <div class="inner-box">Anomaly</div>
+        <p>یا در payment:</p>
+        <div class="formula">$500</div>
+        <p>ممکن است عادی باشد، ولی:</p>
+        <div class="box"><div class="chart">$500 at 4:00 AM
+                from a new country
+                on a new device</div></div>
+        <p>مشکوک شود.</p>
+
+        <div class="inner-box"><div class="inner-title">Collective Anomaly</div></div>
+        <p>هر observation به تنهایی ممکن است normal باشد، ولی ترکیب آنها abnormal است.</p>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">
+                Request 1 → normal
+                Request 2 → normal
+                Request 3 → normal
+                ...
+                Request 10,000 → suspicious
+            </div>
+        </div>
+        <p>اگر همه در:</p>
+        <div class="formula">10 seconds</div>
+        <p>اتفاق بیفتند، collective anomaly داریم.</p>
+
+        <h2>6. Statistical Anomaly Detection</h2>
+        <p>ساده‌ترین خانواده anomaly detection:</p>
+        <p>فرض کن distribution داده را می‌دانی یا می‌توانی تخمین بزنی، سپس نقاطی را که احتمال کمی دارند anomaly بدان.</p>
+        <p>مثلاً:</p>
+        <div class="formula">$$X \sim N(\mu, \sigma^2)$$</div>
+        <p>و اگر:</p>
+        <div class="formula">$$P(X = x)$$</div>
+        <p>خیلی کم باشد، observation suspicious است.</p>
+
+        <h2>7. مزیت Statistical Methods</h2>
+        <p>بزرگ‌ترین مزیت:</p>
+        <div class="inner-box">Simple + Interpretable + Fast</div>
+        <p>مثلاً اگر به business بگویی:</p>
+        <p>این transaction چون 5.2 standard deviation بالاتر از میانگین است flag شده.</p>
+        <p>خیلی قابل توضیح است.</p>
+
+        <h2>8. مشکل Statistical Anomaly Detection</h2>
+        <p>فرض‌های آماری ممکن است اشتباه باشند.</p>
+        <p>مثلاً فرض کنیم:</p>
+        <div class="formula">$$X \sim Normal$$</div>
+        <p>ولی واقعیت:</p>
+        <div class="inner-box">Heavy-tailed distribution</div>
+        <p>باشد.</p>
+        <p>در این حالت Z-score می‌تواند misleading شود.</p>
+
+        <h2>9. Z-Score</h2>
+        <p>یکی از مهم‌ترین روش‌های ساده anomaly detection.</p>
+        <p>فرمول:</p>
+        <div class="formula">$$z = \frac{x - \mu}{\sigma}$$</div>
+        <p>که:</p>
+        <ul>
+            <li>x: observation</li>
+            <li>μ: mean</li>
+            <li>σ: standard deviation</li>
+        </ul>
+
+        <!-- ============================================================ -->
+        <!-- INTERACTIVE Z-SCORE VISUALIZATION (PART 9)                    -->
+        <!-- ============================================================ -->
+        <div class="viz-box">
+            <h3>🔵 Interactive Z-Score Calculator · part 9 visualization</h3>
+
+            <!-- Sliders -->
+            <div class="viz-slider-group">
+                <label><span class="sym">μ</span> میانگین</label>
+                <input type="range" id="meanSlider" min="-5" max="5" step="0.1" value="0" />
+                <input type="number" id="meanInput" value="0" step="0.1" />
+            </div>
+
+            <div class="viz-slider-group">
+                <label><span class="sym">σ</span> انحراف</label>
+                <input type="range" id="stdSlider" min="0.1" max="4" step="0.1" value="1" />
+                <input type="number" id="stdInput" value="1" step="0.1" min="0.1" />
+            </div>
+
+            <div class="viz-slider-group">
+                <label><span class="sym">x</span> مشاهده</label>
+                <input type="range" id="obsSlider" min="-5" max="5" step="0.1" value="1.2" />
+                <input type="number" id="obsInput" value="1.2" step="0.1" />
+            </div>
+
+            <!-- Checkboxes -->
+            <div class="viz-toggle-row">
+                <label class="viz-toggle-item">
+                    <input type="checkbox" id="showShade" checked />
+                    سایه (Φ(z))
+                </label>
+                <label class="viz-toggle-item">
+                    <input type="checkbox" id="showMeanLine" checked />
+                    خط μ
+                </label>
+                <label class="viz-toggle-item">
+                    <input type="checkbox" id="showObsLine" checked />
+                    خط x
+                </label>
+                <label class="viz-toggle-item">
+                    <input type="checkbox" id="showLabels" checked />
+                    برچسب‌ها
+                </label>
+            </div>
+
+            <!-- Canvas -->
+            <div class="viz-canvas-wrap">
+                <canvas id="zScoreChart" width="600" height="300"></canvas>
+            </div>
+
+            <!-- Results -->
+            <div class="viz-results" id="vizResults">
+                \( z = \frac{(1.2)-(0)}{1} = 1.20 \)
+                <br />
+                \( \Phi(z) \approx 88.5\% \)
+            </div>
+
+            <div class="viz-feedback">بازخورد بدهید</div>
+        </div>
+        <!-- ============================================================ -->
+        <!-- END INTERACTIVE Z-SCORE                                       -->
+        <!-- ============================================================ -->
+
+        <h2>10. تفسیر Z-Score</h2>
+        <p>اگر:</p>
+        <div class="formula">$$z = 0$$</div>
+        <p>یعنی observation روی mean قرار دارد.</p>
+        <p>اگر:</p>
+        <div class="formula">$$z = 1$$</div>
+        <p>یعنی یک standard deviation بالاتر از mean.</p>
+        <p>اگر:</p>
+        <div class="formula">$$z = -2$$</div>
+        <p>یعنی دو standard deviation پایین‌تر از mean.</p>
+
+        <h2>11. مثال</h2>
+        <p>فرض کن:</p>
+        <div class="formula">$$\mu = 100$$</div>
+        <p>و:</p>
+        <div class="formula">$$\sigma = 10$$</div>
+        <p>و:</p>
+        <div class="formula">$$x = 140$$</div>
+        <p>پس:</p>
+        <div class="formula">$$z = \frac{140 - 100}{10} = 4$$</div>
+        <p>یعنی:</p>
+        <div class="inner-box">4 standard deviations بالاتر از mean.</div>
+        <p>این observation می‌تواند candidate anomaly باشد.</p>
+
+        <h2>12. Threshold برای Z-Score</h2>
+        <p>Thresholdهای رایج:</p>
+        <div class="formula">$$|z| > 2$$</div>
+        <p>یا:</p>
+        <div class="formula">$$|z| > 3$$</div>
+        <p>اما این‌ها قانون جهانی نیستند.</p>
+        <p>باید با:</p>
+        <ul>
+            <li>distribution</li>
+            <li>business cost</li>
+            <li>false positive tolerance</li>
+            <li>false negative cost</li>
+        </ul>
+        <p>انتخاب شوند.</p>
+
+        <h2>13. چرا Z > 3 معروف است؟</h2>
+        <p>اگر داده واقعاً Gaussian باشد، نقاط بسیار دور از mean احتمال کمی دارند.</p>
+        <p>اما Senior ML Engineer باید دقت کند:</p>
+        <p>این نتیجه به فرض distribution وابسته است.</p>
+
+        <h2>14. مشکل مهم Z-Score: Mean و Std به Outlier حساس‌اند</h2>
+        <p>فرض کن:</p>
+        <div class="chart">10
+            11
+            10
+            12
+            11
+            10
+            500</div>
+        <p>وجود 500:</p>
+        <ul>
+            <li>mean را بالا می‌برد</li>
+            <li>standard deviation را زیاد می‌کند</li>
+        </ul>
+        <p>در نتیجه ممکن است خودش detection را خراب کند.</p>
+        <p>این یک:</p>
+        <div class="inner-box">Masking Effect</div>
+        <p>ایجاد می‌کند.</p>
+
+        <h2>15. Robust Z-Score</h2>
+        <p>یکی از راه‌های بهتر استفاده از median و MAD است.</p>
+        <p>Median:</p>
+        <div class="formula">$$m = Median(X)$$</div>
+        <p>و:</p>
+        <div class="formula">$$MAD = Median(|x_i - m|)$$</div>
+        <p>سپس یک robust score می‌سازیم:</p>
+        <div class="formula">$$z_{robust} \approx \frac{x - m}{1.4826 \times MAD}$$</div>
+        <p>عدد:</p>
+        <div class="formula">1.4826</div>
+        <p>برای scale کردن MAD نسبت به standard deviation در Gaussian distribution استفاده می‌شود.</p>
+        <p>مزیت:</p>
+        <p>Median و MAD نسبت به outlier مقاوم‌ترند.</p>
+
+        <h2>16. IQR</h2>
+        <p>روش بسیار مهم دیگری برای outlier detection:</p>
+        <div class="formula">$$IQR = Q_3 - Q_1$$</div>
+        <p>که:</p>
+        <ul>
+            <li>Q1: 25th percentile</li>
+            <li>Q3: 75th percentile</li>
+        </ul>
+        <p>است.</p>
+
+        <h2>17. IQR Rule</h2>
+        <p>Lower Bound:</p>
+        <div class="formula">$$Q_1 - 1.5 IQR$$</div>
+        <p>Upper Bound:</p>
+        <div class="formula">$$Q_3 + 1.5 IQR$$</div>
+        <p>هر point خارج از این range:</p>
+        <div class="inner-box">candidate outlier</div>
+        <p>است.</p>
+
+        <h2>18. مثال IQR</h2>
+        <p>فرض کن:</p>
+        <div class="formula">$$Q_1 = 10$$</div>
+        <p>و:</p>
+        <div class="formula">$$Q_3 = 20$$</div>
+        <p>پس:</p>
+        <div class="formula">$$IQR = 10$$</div>
+        <p>بنابراین:</p>
+        <div class="formula">$$Lower = 10 - 1.5(10) = -5$$</div>
+        <p>و:</p>
+        <div class="formula">$$Upper = 20 + 1.5(10) = 35$$</div>
+        <p>پس:</p>
+        <div class="formula">$$x > 35$$</div>
+        <p>یا:</p>
+        <div class="formula">$$x < -5$$</div>
+        <p>candidate outlier است.</p>
+
+        <h2>19. IQR vs Z-Score</h2>
+        <table>
+            <thead><tr><th>ویژگی</th><th>Z-Score</th><th>IQR</th></tr></thead>
+            <tbody>
+                <tr><td>Mean</td><td>استفاده می‌کند</td><td>❌</td></tr>
+                <tr><td>Std</td><td>استفاده می‌کند</td><td>❌</td></tr>
+                <tr><td>Median/Quartile</td><td>❌</td><td>✅</td></tr>
+                <tr><td>حساس به outlier</td><td>زیاد</td><td>کمتر</td></tr>
+                <tr><td>فرض Normal</td><td>معمولاً مفیدتر</td><td>نیاز ندارد</td></tr>
+                <tr><td>Interpretability</td><td>عالی</td><td>عالی</td></tr>
+            </tbody>
+        </table>
+
+        <h2>20. چه زمانی IQR بهتر است؟</h2>
+        <p>وقتی distribution:</p>
+        <ul>
+            <li>skewed</li>
+            <li>non-normal</li>
+            <li>دارای outlier</li>
+            <li>heavy-tailed</li>
+        </ul>
+        <p>است، IQR معمولاً baseline robustتری است.</p>
+
+        <h2>21. اما IQR هم محدودیت دارد</h2>
+        <p>IQR به صورت univariate است.</p>
+        <p>یعنی هر feature را جداگانه بررسی می‌کند.</p>
+        <p>فرض کن:</p>
+        <div class="formula">Age = 30</div>
+        <div class="formula">Income = 100K</div>
+        <p>هر دو به تنهایی normal هستند.</p>
+        <p>ولی ترکیب:</p>
+        <div class="formula">Age = 30</div>
+        <div class="formula">Income = 100M</div>
+        <p>ممکن است anomaly باشد.</p>
+        <p>IQR به تنهایی این نوع:</p>
+        <div class="inner-box">Multivariate Anomaly</div>
+        <p>را خوب نمی‌بیند.</p>
+
+        <h2>22. Multivariate Anomaly</h2>
+        <p>این مفهوم بسیار مهم است.</p>
+        <p>گاهی:</p>
+        <div class="formula">$$x_1$$</div>
+        <p>عادی است و:</p>
+        <div class="formula">$$x_2$$</div>
+        <p>هم عادی است.</p>
+        <p>ولی:</p>
+        <div class="formula">$$(x_1, x_2)$$</div>
+        <p>غیرعادی است.</p>
+        <p>مثلاً:</p>
+        <div class="formula">Age = 25</div>
+        <div class="formula">Income = $500K</div>
+        <p>ممکن است joint distribution آن unusual باشد.</p>
+
+        <h2>23. Mahalanobis Distance</h2>
+        <p>یک روش کلاسیک برای multivariate anomaly:</p>
+        <div class="formula">$$D_M(x) = \sqrt{(x - \mu)^T \Sigma^{-1} (x - \mu)}$$</div>
+        <p>تفاوت مهم با Euclidean distance:</p>
+        <p>covariance بین featureها را در نظر می‌گیرد.</p>
+
+        <h2>24. چرا Covariance مهم است؟</h2>
+        <p>فرض کن:</p>
+        <div class="box"><div class="chart">Income ↑
+                Spending ↑</div></div>
+        <p>این دو feature correlated هستند.</p>
+        <p>یک point ممکن است از نظر Euclidean distance دور باشد ولی در امتداد طبیعی distribution قرار داشته باشد.</p>
+        <p>Mahalanobis این ساختار را در نظر می‌گیرد.</p>
+
+        <h2>25. Isolation Forest</h2>
+        <p>حالا می‌رسیم به یکی از مهم‌ترین الگوریتم‌های anomaly detection.</p>
+        <p>ایده:</p>
+        <div class="inner-box">Anomalies are easier to isolate than normal observations.</div>
+
+        <h2>26. Intuition</h2>
+        <p>فرض کن:</p>
+        <div class="box"><div class="chart">● ● ● ● ● ● ● ● ●
+
+                         X</div></div>
+        <p>برای جدا کردن X:</p>
+        <p>چند random split کافی است.</p>
+        <p>ولی برای جدا کردن یک point وسط cluster:</p>
+        <p>splitهای بیشتری لازم است.</p>
+
+        <h2>27. Isolation Tree</h2>
+        <p>درخت‌هایی با splitهای تصادفی ساخته می‌شوند.</p>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">
+                x1 < 50?
+                    /     \
+                    yes      no
+                    |
+                    x2 < 20?
+            </div>
+        </div>
+        <p>هدف اصلی:</p>
+        <p>classification نیست.</p>
+        <p>بلکه:</p>
+        <div class="inner-box">isolate کردن observationهاست.</div>
+
+        <h2>28. Path Length</h2>
+        <p>تعداد splitهایی که برای isolate کردن یک point لازم است:</p>
+        <div class="formula">$$h(x)$$</div>
+        <p>نام دارد.</p>
+        <p>اگر:</p>
+        <div class="formula">$$h(x)$$</div>
+        <p>کوچک باشد:</p>
+        <p>point راحت isolate شده.</p>
+        <p>پس احتمال anomaly بودن بیشتر است.</p>
+
+        <h2>29. Isolation Forest</h2>
+        <p>یک tree کافی نیست.</p>
+        <p>چندین tree می‌سازیم:</p>
+        <div class="box"><div class="chart">Tree 1
+                Tree 2
+                Tree 3
+                ...
+                Tree T</div></div>
+        <p>و path lengthها را aggregate می‌کنیم.</p>
+
+        <h2>30. چرا Forest؟</h2>
+        <p>یک random tree ممکن است به صورت تصادفی نتیجه بدی بدهد.</p>
+        <p>با چندین tree:</p>
+        <div class="inner-box">variance کاهش پیدا می‌کند.</div>
+        <p>این همان ایده ensemble learning است.</p>
+
+        <h2>31. Anomaly Score در Isolation Forest</h2>
+        <p>در نسخه کلاسیک Isolation Forest، score به شکل تابعی از متوسط path length تعریف می‌شود.</p>
+        <p>به صورت مفهومی:</p>
+        <div class="formula">$$s(x) \propto 2^{-\frac{E[h(x)]}{c(n)}}$$</div>
+        <p>که:</p>
+        <ul>
+            <li>E[h(x)]: average path length</li>
+            <li>c(n): normalization factor</li>
+        </ul>
+        <p>هرچه path کوتاه‌تر:</p>
+        <div class="formula">$$s(x) \uparrow$$</div>
+        <p>و anomaly محتمل‌تر.</p>
+
+        <h2>32. مزایای Isolation Forest</h2>
+        <ul>
+            <li>نسبتاً سریع</li>
+            <li>مناسب datasetهای بزرگ</li>
+            <li>نیاز نداشتن به distribution مشخص</li>
+            <li>مناسب high-dimensional data نسبت به بعضی روش‌های distance-based</li>
+            <li>می‌تواند nonlinear structure را capture کند</li>
+        </ul>
+
+        <h2>33. محدودیت Isolation Forest</h2>
+        <p>Isolation Forest الزاماً نمی‌فهمد:</p>
+        <div class="inner-box">context</div>
+        <p>چیست.</p>
+        <p>مثلاً یک رفتار جدید که در business کاملاً legitimate است ممکن است anomaly شود.</p>
+
+        <h2>34. One-Class SVM</h2>
+        <p>One-Class SVM یک boundary برای normal data یاد می‌گیرد.</p>
+        <p>ایده:</p>
+        <div class="box">
+            <div class="chart">
+                Normal
+                ● ● ● ● ●
+                ● ● ● ● ● ● ●
+                ● ● ● ● ●
+
+                X
+                ↑
+                outside
+            </div>
+        </div>
+
+        <h2>35. برخلاف SVM معمولی</h2>
+        <p>SVM:</p>
+        <div class="formula">Class A vs Class B</div>
+        <p>اما One-Class SVM:</p>
+        <div class="formula">Normal vs Not Normal</div>
+        <p>است.</p>
+
+        <h2>36. Kernel</h2>
+        <p>One-Class SVM می‌تواند از kernel استفاده کند.</p>
+        <p>مثلاً RBF:</p>
+        <div class="formula">$$K(x, x') = \exp(-\gamma \|x - x'\|^2)$$</div>
+        <p>در نتیجه boundary می‌تواند غیرخطی باشد.</p>
+
+        <h2>37. پارامتر nu</h2>
+        <p>یکی از مهم‌ترین hyperparameterها:</p>
+        <div class="formula">$$\nu$$</div>
+        <p>است.</p>
+        <p>به صورت مفهومی کنترل می‌کند که:</p>
+        <ul>
+            <li>چه مقدار از training points ممکن است outlier باشند</li>
+            <li>چه تعداد support vector داشته باشیم</li>
+        </ul>
+
+        <h2>38. Gamma</h2>
+        <p>در RBF:</p>
+        <div class="formula">$$\gamma$$</div>
+        <p>کنترل می‌کند kernel چقدر local باشد.</p>
+        <div class="inner-box"><div class="inner-title">Gamma زیاد</div></div>
+        <p>Boundary:</p>
+        <p>پیچیده‌تر</p>
+        <p>و احتمال overfitting:</p>
+        <p>بیشتر</p>
+        <div class="inner-box"><div class="inner-title">Gamma کم</div></div>
+        <p>Boundary:</p>
+        <p>smoothتر</p>
+
+        <h2>39. One-Class SVM و Scaling</h2>
+        <p>بسیار مهم:</p>
+        <p>One-Class SVM به scale حساس است.</p>
+        <p>پس:</p>
+        <div class="box">
+            <div class="chart">
+                Raw Data
+                ↓
+                StandardScaler
+                ↓
+                One-Class SVM
+            </div>
+        </div>
+        <p>معمولاً pipeline مناسب‌تری است.</p>
+
+        <h2>40. مشکل One-Class SVM</h2>
+        <p>برای datasetهای خیلی بزرگ:</p>
+        <p>kernel computation می‌تواند expensive شود.</p>
+        <p>پس در scaleهای بزرگ Isolation Forest معمولاً عملی‌تر است.</p>
+
+        <h2>41. Local Outlier Factor — LOF</h2>
+        <p>یکی از مفاهیم بسیار مهم anomaly detection.</p>
+        <p>Isolation Forest می‌پرسد:</p>
+        <div class="inner-box">آیا این point راحت isolate می‌شود؟</div>
+        <p>LOF می‌پرسد:</p>
+        <div class="inner-box">آیا density اطراف این point نسبت به density همسایه‌هایش کمتر است؟</div>
+
+        <h2>42. ایده اصلی LOF</h2>
+        <p>فرض کن:</p>
+        <div class="box">
+            <div class="chart">
+                Cluster A:
+                ● ● ● ● ● ●
+                ● ● ● ● ●
+
+                X
+
+                Cluster B:
+                ▲ ▲ ▲ ▲
+                ▲ ▲ ▲
+            </div>
+        </div>
+        <p>ممکن است X در یک region نسبتاً کم‌density قرار گرفته باشد.</p>
+        <p>LOF این را بررسی می‌کند.</p>
+
+        <h2>43. Local Density</h2>
+        <p>LOF بر اساس:</p>
+        <div class="inner-box">local density</div>
+        <p>کار می‌کند.</p>
+        <p>این تفاوت مهم است.</p>
+        <p>ممکن است global distribution پیچیده باشد ولی point در neighborhood خودش unusual باشد.</p>
+
+        <h2>44. چرا LOF مفید است؟</h2>
+        <p>فرض کن دو cluster داریم:</p>
+        <div class="box"><div class="chart">Cluster A → high density
+                Cluster B → low density</div></div>
+        <p>یک روش global ممکن است نقاط cluster B را anomaly فرض کند.</p>
+        <p>ولی LOF می‌گوید:</p>
+        <p>درون cluster B، آیا point نسبت به همسایه‌های خودش abnormal است؟</p>
+        <p>این بسیار قدرتمند است.</p>
+
+        <h2>45. مراحل مفهومی LOF</h2>
+        <p>برای هر point:</p>
+        <div class="inner-box"><div class="inner-title">Step 1</div></div>
+        <p>k-nearest neighbors را پیدا می‌کنیم.</p>
+        <div class="inner-box"><div class="inner-title">Step 2</div></div>
+        <p>local reachability density را محاسبه می‌کنیم.</p>
+        <div class="inner-box"><div class="inner-title">Step 3</div></div>
+        <p>density point را با density همسایه‌ها مقایسه می‌کنیم.</p>
+
+        <h2>46. Local Reachability Density</h2>
+        <p>به صورت مفهومی:</p>
+        <div class="formula">$$LRD(p) = \frac{1}{\text{average reachability distance}}$$</div>
+        <p>اگر:</p>
+        <div class="formula">$$LRD(p)$$</div>
+        <p>کم باشد:</p>
+        <p>point در region کم‌density قرار دارد.</p>
+
+        <h2>47. LOF Score</h2>
+        <p>به صورت مفهومی:</p>
+        <div class="formula">$$LOF(p) = \frac{\text{average LRD(neighbors)}}{LRD(p)}$$</div>
+
+        <h2>48. تفسیر LOF</h2>
+        <p>اگر:</p>
+        <div class="formula">$$LOF \approx 1$$</div>
+        <p>point شبیه neighborhood است.</p>
+        <p>اگر:</p>
+        <div class="formula">$$LOF > 1$$</div>
+        <p>point نسبت به همسایه‌ها sparseتر است.</p>
+        <p>اگر خیلی بزرگ باشد:</p>
+        <div class="inner-box">strong local outlier candidate</div>
+
+        <h2>49. مزیت LOF</h2>
+        <p>برای:</p>
+        <div class="inner-box">Local Anomalies</div>
+        <p>بسیار خوب است.</p>
+
+        <h2>50. محدودیت LOF</h2>
+        <p>LOF به:</p>
+        <ul>
+            <li>distance metric</li>
+            <li>scaling</li>
+            <li>انتخاب k</li>
+            <li>dimensionality</li>
+        </ul>
+        <p>حساس است.</p>
+        <p>در high-dimensional data ممکن است distanceها meaningful نباشند.</p>
+
+        <h2>51. Autoencoder-based Anomaly Detection</h2>
+        <p>حالا می‌رسیم به روش Deep Learning.</p>
+        <p>Autoencoder یک neural network است که هدفش:</p>
+        <div class="inner-box">بازسازی input</div>
+        <p>است.</p>
+
+        <h2>52. ساختار Autoencoder</h2>
+        <div class="box">
+            <div class="chart">
+                Input
+                │
+                ▼
+                Encoder
+                │
+                ▼
+                Latent Representation
+                │
+                ▼
+                Decoder
+                │
+                ▼
+                Reconstructed Input
+            </div>
+        </div>
+        <p>یعنی:</p>
+        <div class="formula">$$x \rightarrow z \rightarrow \hat{x}$$</div>
+
+        <h2>53. Encoder</h2>
+        <p>Encoder:</p>
+        <div class="formula">$$z = f_{\theta}(x)$$</div>
+        <p>داده را به representation فشرده‌تر تبدیل می‌کند.</p>
+
+        <h2>54. Decoder</h2>
+        <p>Decoder:</p>
+        <div class="formula">$$\hat{x} = g_{\phi}(z)$$</div>
+        <p>از latent representation تلاش می‌کند input را reconstruct کند.</p>
+
+        <h2>55. Objective</h2>
+        <p>Autoencoder معمولاً reconstruction loss را minimize می‌کند:</p>
+        <div class="formula">$$L(x, \hat{x})$$</div>
+        <p>مثلاً MSE:</p>
+        <div class="formula">$$MSE = \frac{1}{d} \sum_{j=1}^{d} (x_j - \hat{x}_j)^2$$</div>
+
+        <h2>56. ایده Anomaly Detection با Autoencoder</h2>
+        <p>فرض کن Autoencoder را عمدتاً با normal data آموزش دهیم.</p>
+        <p>پس:</p>
+        <div class="box"><div class="chart">Normal pattern
+                ↓
+                Autoencoder
+                ↓
+                Good reconstruction</div></div>
+        <p>اما:</p>
+        <div class="box"><div class="chart">Anomalous pattern
+                ↓
+                Autoencoder
+                ↓
+                Poor reconstruction</div></div>
+        <p>پس:</p>
+        <div class="inner-box">Reconstruction Error → Anomaly Score</div>
+
+        <h2>57. Reconstruction Error</h2>
+        <p>ساده‌ترین تعریف:</p>
+        <div class="formula">$$E(x) = \|x - \hat{x}\|^2$$</div>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">x       = [10, 20, 30]
+                x_hat   = [10, 21, 29]</div></div>
+        <p>error کوچک است.</p>
+        <p>اما:</p>
+        <div class="box"><div class="chart">x       = [10, 20, 30]
+                x_hat   = [100, 5, 200]</div></div>
+        <p>error بزرگ است.</p>
+
+        <h2>58. Threshold</h2>
+        <p>بعد از محاسبه:</p>
+        <div class="formula">$$E(x)$$</div>
+        <p>باید threshold تعیین کنیم:</p>
+        <div class="formula">$$E(x) > T \Rightarrow Anomaly$$</div>
+
+        <h2>59. انتخاب Threshold در Autoencoder</h2>
+        <p>این یکی از مهم‌ترین مسائل production است.</p>
+        <p>روش‌های مختلف:</p>
+        <div class="inner-box"><div class="inner-title">Percentile</div></div>
+        <p>مثلاً:</p>
+        <div class="formula">$$T = P_{99}(E)$$</div>
+        <p>یعنی بالاترین 1% reconstruction errors را anomaly فرض کنیم.</p>
+        <div class="inner-box"><div class="inner-title">Validation-based</div></div>
+        <p>اگر validation anomalies یا labels داشته باشیم:</p>
+        <div class="formula">$$T$$</div>
+        <p>را با توجه به:</p>
+        <ul>
+            <li>Precision</li>
+            <li>Recall</li>
+            <li>F1</li>
+            <li>Cost</li>
+        </ul>
+        <p>انتخاب می‌کنیم.</p>
+        <div class="inner-box"><div class="inner-title">Statistical</div></div>
+        <p>روی reconstruction errors distribution مدل می‌کنیم.</p>
+        <p>مثلاً:</p>
+        <div class="formula">$$\mu_E, \sigma_E$$</div>
+        <p>و threshold تعیین می‌کنیم.</p>
+
+        <h2>60. نکته بسیار مهم Autoencoder</h2>
+        <p>Autoencoder همیشه anomaly را خوب تشخیص نمی‌دهد.</p>
+        <p>چرا؟</p>
+        <p>اگر مدل:</p>
+        <div class="inner-box">بیش از حد قدرتمند</div>
+        <p>باشد، ممکن است anomaly را هم خوب reconstruct کند.</p>
+        <p>یعنی:</p>
+        <div class="inner-box">Anomaly → Low Reconstruction Error</div>
+        <p>و detection خراب شود.</p>
+
+        <h2>61. Bottleneck</h2>
+        <p>یکی از راه‌های جلوگیری از این مشکل:</p>
+        <div class="inner-box">bottleneck</div>
+        <p>است.</p>
+        <p>یعنی latent representation ظرفیت محدودی داشته باشد.</p>
+        <div class="box"><div class="chart">Input: 100 dimensions
+                ↓
+                Latent: 5 dimensions
+                ↓
+                Output: 100 dimensions</div></div>
+        <p>مدل مجبور می‌شود:</p>
+        <div class="inner-box">structure اصلی داده را یاد بگیرد.</div>
+
+        <h2>62. اما Bottleneck بیش از حد کوچک</h2>
+        <p>اگر latent dimension خیلی کوچک باشد:</p>
+        <p>حتی normal data هم بد reconstruct می‌شود.</p>
+        <p>در نتیجه:</p>
+        <div class="formula">$$FP \uparrow$$</div>
+
+        <h2>63. Latent Dimension خیلی بزرگ</h2>
+        <p>اگر:</p>
+        <div class="inner-box">latent dimension</div>
+        <p>خیلی بزرگ باشد، model ممکن است identity mapping یاد بگیرد:</p>
+        <div class="formula">$$x \approx \hat{x}$$</div>
+        <p>حتی برای anomaly.</p>
+        <p>در نتیجه:</p>
+        <div class="formula">$$TP \downarrow$$</div>
+
+        <h2>64. Denoising Autoencoder</h2>
+        <p>یک روش جالب:</p>
+        <p>input خراب‌شده را به input اصلی reconstruct کن.</p>
+        <div class="box"><div class="chart">Clean x
+                ↓
+                Add Noise
+                ↓
+                Corrupted x
+                ↓
+                Encoder
+                ↓
+                Decoder
+                ↓
+                Clean x</div></div>
+        <p>این می‌تواند representation robustتری ایجاد کند.</p>
+
+        <h2>65. Variational Autoencoder</h2>
+        <p>VAE به جای یک latent deterministic ساده:</p>
+        <div class="formula">$$z = f(x)$$</div>
+        <p>یک distribution برای latent می‌سازد.</p>
+        <p>مثلاً:</p>
+        <div class="formula">$$q(z|x)$$</div>
+        <p>و یک prior مانند:</p>
+        <div class="formula">$$p(z) = N(0, I)$$</div>
+        <p>فرض می‌کند.</p>
+        <p>VAE بیشتر یک:</p>
+        <div class="inner-box">generative probabilistic model</div>
+        <p>است و می‌تواند برای anomaly detection هم استفاده شود.</p>
+
+        <h2>66. Reconstruction Error همیشه کافی نیست</h2>
+        <p>این نکته Senior بسیار مهم است.</p>
+        <p>فرض کن:</p>
+        <div class="box"><div class="chart">Feature A → reconstruction error = 0.1
+                Feature B → reconstruction error = 1000</div></div>
+        <p>اگر scale نکرده باشی، Feature B تقریباً تمام score را کنترل می‌کند.</p>
+        <p>بنابراین قبل از reconstruction-based anomaly detection باید:</p>
+        <div class="inner-box">feature scaling / normalization</div>
+        <p>را بررسی کنی.</p>
+
+        <h2>67. Feature-wise Reconstruction Error</h2>
+        <p>گاهی بهتر است:</p>
+        <div class="formula">$$E_j = (x_j - \hat{x}_j)^2$$</div>
+        <p>را برای هر feature جداگانه بررسی کنیم.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">amount      → 0.1
+                velocity    → 0.2
+                location    → 8.7
+                device      → 0.3</div></div>
+        <p>این می‌تواند:</p>
+        <div class="inner-box">explainability</div>
+        <p>را بهتر کند.</p>
+
+        <h2>68. Sequence Anomaly Detection</h2>
+        <p>برای داده‌های sequence:</p>
+        <div class="box"><div class="chart">transactions over time
+                logs
+                sensor data
+                user behavior</div></div>
+        <p>می‌توان از:</p>
+        <ul>
+            <li>LSTM Autoencoder</li>
+            <li>GRU Autoencoder</li>
+            <li>Transformer Autoencoder</li>
+        </ul>
+        <p>استفاده کرد.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Sequence
+                ↓
+                Encoder
+                ↓
+                Latent
+                ↓
+                Decoder
+                ↓
+                Reconstructed Sequence
+                ↓
+                Reconstruction Error</div></div>
+
+        <h2>69. Temporal Context</h2>
+        <p>در anomaly detection زمانی:</p>
+        <div class="formula">Value = 100</div>
+        <p>به تنهایی کافی نیست.</p>
+        <p>ممکن است:</p>
+        <div class="inner-box">100 after 99</div>
+        <p>normal باشد ولی:</p>
+        <div class="inner-box">100 after 5</div>
+        <p>abnormal باشد.</p>
+        <p>بنابراین باید context را وارد مدل کرد.</p>
+
+        <h2>70. مقایسه روش‌ها</h2>
+        <table>
+            <thead><tr><th>Method</th><th>ایده اصلی</th><th>Multivariate</th><th>Nonlinear</th><th>Local anomaly</th></tr></thead>
+            <tbody>
+                <tr><td>Z-Score</td><td>فاصله از mean</td><td>محدود</td><td>❌</td><td>❌</td></tr>
+                <tr><td>IQR</td><td>فاصله از quartile</td><td>محدود</td><td>❌</td><td>❌</td></tr>
+                <tr><td>Isolation Forest</td><td>isolation</td><td>✅</td><td>✅</td><td>متوسط</td></tr>
+                <tr><td>One-Class SVM</td><td>boundary</td><td>✅</td><td>✅</td><td>متوسط</td></tr>
+                <tr><td>LOF</td><td>local density</td><td>✅</td><td>implicit</td><td>✅</td></tr>
+                <tr><td>Autoencoder</td><td>reconstruction</td><td>✅</td><td>✅</td><td>بستگی دارد</td></tr>
+            </tbody>
+        </table>
+
+        <h2>71. Z-Score vs IQR</h2>
+        <p>اگر:</p>
+        <div class="inner-box">Distribution ≈ Gaussian</div>
+        <p>و داده تمیز باشد:</p>
+        <div class="inner-box">Z-Score</div>
+        <p>می‌تواند baseline بسیار خوبی باشد.</p>
+        <p>اگر:</p>
+        <div class="inner-box">Skewed / Heavy-tailed</div>
+        <p>باشد:</p>
+        <div class="inner-box">IQR</div>
+        <p>یا robust statistics بهتر است.</p>
+
+        <h2>72. Isolation Forest vs LOF</h2>
+        <p>این یکی از سؤالات خوب مصاحبه است.</p>
+        <div class="inner-box"><div class="inner-title">Isolation Forest</div></div>
+        <p>تمرکز:</p>
+        <div class="inner-box">global isolation</div>
+        <div class="inner-box"><div class="inner-title">LOF</div></div>
+        <p>تمرکز:</p>
+        <div class="inner-box">local density</div>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Dense cluster
+                ●●●●●●●●
+
+                Sparse cluster
+                ▲  ▲ ▲   ▲</div></div>
+        <p>Isolation Forest ممکن است sparse cluster را suspiciousتر ببیند.</p>
+        <p>LOF بررسی می‌کند:</p>
+        <p>هر point نسبت به همسایه‌های خودش چقدر unusual است.</p>
+
+        <h2>73. Isolation Forest vs Autoencoder</h2>
+        <div class="inner-box"><div class="inner-title">Isolation Forest</div></div>
+        <p>مزایا:</p>
+        <ul>
+            <li>سریع</li>
+            <li>ساده</li>
+            <li>نیاز به neural network ندارد</li>
+            <li>برای tabular data بسیار خوب</li>
+        </ul>
+        <div class="inner-box"><div class="inner-title">Autoencoder</div></div>
+        <p>مزایا:</p>
+        <ul>
+            <li>nonlinear representation</li>
+            <li>مناسب complex/high-dimensional data</li>
+            <li>مناسب image/sequence/text embeddings</li>
+        </ul>
+        <p>اما:</p>
+        <ul>
+            <li>training پیچیده‌تر</li>
+            <li>tuning سخت‌تر</li>
+            <li>thresholding سخت‌تر</li>
+            <li>explainability کمتر</li>
+        </ul>
+
+        <h2>74. LOF vs One-Class SVM</h2>
+        <div class="inner-box"><div class="inner-title">LOF</div></div>
+        <p>local density:</p>
+        <div class="inner-box">local structure</div>
+        <div class="inner-box"><div class="inner-title">One-Class SVM</div></div>
+        <p>global/nonlinear boundary:</p>
+        <div class="inner-box">decision boundary</div>
+        <p>بنابراین اگر anomaly وابسته به local neighborhood باشد:</p>
+        <div class="inner-box">LOF</div>
+        <p>اغلب مفهوم مناسب‌تری دارد.</p>
+
+        <h2>75. Ensemble Anomaly Detection</h2>
+        <p>در production گاهی فقط یک detector استفاده نمی‌کنیم.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Z-Score
+                │
+                IQR ├──→ Ensemble Score
+                │
+                Isolation Forest
+                │
+                LOF</div></div>
+        <p>یا:</p>
+        <div class="box"><div class="chart">IF score
+                LOF score
+                AE reconstruction error
+                ↓
+                Combined anomaly score</div></div>
+
+        <h2>76. چرا Ensemble؟</h2>
+        <p>چون هر مدل یک مفهوم متفاوت از anomaly دارد:</p>
+        <div class="box"><div class="chart">Z-score
+                → statistical unusualness
+
+                LOF
+                → local unusualness
+
+                Isolation Forest
+                → isolation
+
+                Autoencoder
+                → reconstruction difficulty</div></div>
+        <p>اگر چند روش روی یک point agreement داشته باشند، confidence بیشتر می‌شود.</p>
+
+        <h2>77. اما Ensemble همیشه بهتر نیست</h2>
+        <p>اگر همه مدل‌ها روی یک assumption مشابه باشند، diversity واقعی نداریم.</p>
+        <p>مثلاً چند مدل distance-based ممکن است همه از یک مشکل dimensionality رنج ببرند.</p>
+        <p>پس:</p>
+        <div class="inner-box">Diversity of inductive biases</div>
+        <p>مهم است.</p>
+
+        <h2>78. Anomaly Score vs Probability</h2>
+        <p>خیلی مهم:</p>
+        <p>اگر مدل anomaly score بدهد:</p>
+        <div class="formula">0.91</div>
+        <p>نباید لزوماً بگویی:</p>
+        <div class="inner-box">probability of anomaly 91%.</div>
+        <p>مگر اینکه score واقعاً calibrated probability باشد.</p>
+        <p>مثلاً Isolation Forest score معمولاً:</p>
+        <div class="inner-box">probability calibrated</div>
+        <p>نیست.</p>
+
+        <h2>79. Calibration</h2>
+        <p>اگر می‌خواهی:</p>
+        <div class="formula">$$P(anomaly|x)$$</div>
+        <p>داشته باشی، باید calibration انجام دهی و معمولاً label یا assumptions مناسب نیاز داری.</p>
+
+        <h2>80. Evaluation بدون Label</h2>
+        <p>یکی از سخت‌ترین مسائل anomaly detection:</p>
+        <p>anomaly label نداریم.</p>
+        <p>در این حالت:</p>
+        <div class="inner-box"><div class="inner-title">روش اول</div></div>
+        <p>Synthetic anomalies بساز.</p>
+        <div class="box"><div class="chart">normal data
+                ↓
+                inject anomalies
+                ↓
+                evaluate detector</div></div>
+        <p>اما:</p>
+        <p>synthetic anomaly لزوماً شبیه real anomaly نیست.</p>
+
+        <h2>81. روش دوم: Human Review</h2>
+        <p>Top anomalies را به domain experts بده.</p>
+        <div class="box"><div class="chart">Top 100 anomalies
+                ↓
+                Fraud Analyst
+                ↓
+                True suspicious
+                False positive</div></div>
+        <p>این بسیار کاربردی است.</p>
+
+        <h2>82. روش سوم: Business Outcome</h2>
+        <p>مثلاً anomaly detector برای fraud است.</p>
+        <p>ببین:</p>
+        <div class="box"><div class="chart">Flagged transactions
+                ↓
+                Manual investigation
+                ↓
+                Confirmed fraud</div></div>
+        <p>و metricهای business را بررسی کن.</p>
+
+        <h2>83. Precision@K</h2>
+        <p>در anomaly detection خیلی مفید است.</p>
+        <p>فرض کن فقط:</p>
+        <div class="formula">100</div>
+        <p>investigation capacity داری.</p>
+        <p>به جای threshold arbitrary:</p>
+        <div class="inner-box">Top 100 anomalies</div>
+        <p>را بررسی می‌کنی.</p>
+        <p>بعد:</p>
+        <div class="formula">Precision@100</div>
+        <p>را اندازه می‌گیری.</p>
+
+        <h2>84. Cost-based Evaluation</h2>
+        <p>فرض کن:</p>
+        <div class="formula">Cost(FP) = 1</div>
+        <p>و:</p>
+        <div class="formula">Cost(FN) = 100</div>
+        <p>پس threshold باید طوری انتخاب شود که expected business cost را minimize کند.</p>
+        <p>یعنی:</p>
+        <div class="formula">$$Expected Cost = C_{FP} FP + C_{FN} FN$$</div>
+
+        <h2>85. مهم: Anomaly Detection معمولاً Ranking Problem هم هست</h2>
+        <p>اغلب لازم نیست بگویی:</p>
+        <div class="inner-box">anomaly / normal</div>
+        <p>بلکه:</p>
+        <div class="box"><div class="chart">1. transaction A → 0.99
+                2. transaction B → 0.95
+                3. transaction C → 0.91
+                ...</div></div>
+        <p>می‌خواهی بهترین candidateها را اول قرار دهی.</p>
+        <p>پس:</p>
+        <div class="inner-box">Anomaly Detection ≈ Scoring + Ranking + Thresholding</div>
+
+        <h2>86. Contamination</h2>
+        <p>در بسیاری از الگوریتم‌ها باید بدانیم چه درصدی از داده anomaly است.</p>
+        <p>مثلاً:</p>
+        <div class="formula">contamination = 0.01</div>
+        <p>یعنی انتظار داریم حدود:</p>
+        <div class="formula">1%</div>
+        <p>anomaly داشته باشیم.</p>
+        <p>اما این مقدار:</p>
+        <div class="inner-box">hyperparameter / assumption</div>
+        <p>است، نه حقیقت مطلق.</p>
+
+        <h2>87. Threshold Drift</h2>
+        <p>یکی از مشکلات production:</p>
+        <p>امروز:</p>
+        <div class="formula">P99(score)</div>
+        <p>ممکن است threshold مناسبی باشد.</p>
+        <p>اما شش ماه بعد distribution تغییر کند.</p>
+        <p>پس:</p>
+        <div class="box"><div class="chart">Data Drift
+                ↓
+                Score Distribution Drift
+                ↓
+                Threshold becomes stale
+                ↓
+                FP/FN changes</div></div>
+        <p>بنابراین threshold هم باید monitor شود.</p>
+
+        <h2>88. Data Drift</h2>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">2025:
+                Average transaction = $100
+
+                2026:
+                Average transaction = $500</div></div>
+        <p>مدل قدیمی ممکن است مقدار زیادی anomaly تولید کند.</p>
+
+        <h2>89. Concept Drift</h2>
+        <p>حتی بدتر:</p>
+        <p>رابطه بین features و anomaly تغییر کند.</p>
+        <p>مثلاً fraudsters behavior خودشان را تغییر دهند.</p>
+        <p>پس:</p>
+        <div class="formula">$$P(Y | X)$$</div>
+        <p>تغییر می‌کند.</p>
+
+        <h2>90. Training فقط روی Normal Data</h2>
+        <p>برای One-Class SVM و Autoencoder یک نکته بسیار مهم:</p>
+        <p>اگر training data:</p>
+        <div class="box"><div class="chart">90% normal
+                10% anomaly</div></div>
+        <p>باشد ولی تو فرض کنی:</p>
+        <div class="inner-box">100% normal</div>
+        <p>مدل ممکن است anomaly pattern را هم یاد بگیرد.</p>
+        <p>پس:</p>
+        <div class="inner-box">Training contamination</div>
+        <p>بسیار مهم است.</p>
+
+        <h2>91. Contaminated Training Data</h2>
+        <p>مثلاً Autoencoder:</p>
+        <div class="box"><div class="chart">Training
+                ├── 95% normal
+                └── 5% anomalies</div></div>
+        <p>اگر anomalyها زیاد و diverse باشند، model ممکن است آنها را هم reconstruct کند.</p>
+        <p>در نتیجه:</p>
+        <div class="inner-box">Reconstruction Error anomaly کاهش پیدا می‌کند.</div>
+
+        <h2>92. Feature Leakage در Anomaly Detection</h2>
+        <p>فرض کن می‌خواهی fraud را detect کنی.</p>
+        <p>ولی feature داری:</p>
+        <div class="inner-box">chargeback_status</div>
+        <p>که بعداً مشخص می‌شود.</p>
+        <p>اگر این feature وارد anomaly detector شود:</p>
+        <div class="inner-box">leakage</div>
+        <p>رخ داده است.</p>
+
+        <h2>93. Temporal Leakage</h2>
+        <p>مثلاً:</p>
+        <div class="formula">Transaction at 10:00</div>
+        <p>ولی feature را از:</p>
+        <div class="formula">10:00 → 18:00</div>
+        <p>ساخته‌ای.</p>
+        <p>مدل اطلاعات آینده را دیده است.</p>
+        <p>در real-time anomaly detection این یک خطای بسیار جدی است.</p>
+
+        <h2>94. Online vs Offline Anomaly Detection</h2>
+        <div class="inner-box"><div class="inner-title">Offline</div></div>
+        <p>کل dataset را داری:</p>
+        <div class="box"><div class="chart">Day's data
+                ↓
+                Model
+                ↓
+                Anomalies</div></div>
+        <div class="inner-box"><div class="inner-title">Online</div></div>
+        <p>هر event هنگام ورود باید score شود:</p>
+        <div class="box"><div class="chart">Event
+                ↓
+                Feature generation
+                ↓
+                Anomaly model
+                ↓
+                Score
+                ↓
+                Decision</div></div>
+        <p>در این حالت:</p>
+        <div class="inner-box">latency + feature freshness + state management</div>
+        <p>بسیار مهم می‌شوند.</p>
+
+        <h2>95. Stateful Anomaly Detection</h2>
+        <p>مثلاً برای fraud:</p>
+        <div class="box"><div class="chart">Current transaction
+                +
+                Last 10 transactions
+                +
+                Last 24h velocity
+                +
+                Current device
+                +
+                Current location</div></div>
+        <p>این یعنی anomaly detector فقط روی یک row کار نمی‌کند.</p>
+
+        <h2>96. Feature Engineering برای Anomaly Detection</h2>
+        <p>گاهی feature engineering از خود algorithm مهم‌تر است.</p>
+        <p>مثلاً:</p>
+        <div class="inner-box">raw_amount</div>
+        <p>به تنهایی شاید کافی نباشد.</p>
+        <p>ولی:</p>
+        <div class="inner-box">amount / customer_median</div>
+        <p>یا:</p>
+        <div class="inner-box">current_velocity</div>
+        <p>یا:</p>
+        <div class="inner-box">distance_from_usual location</div>
+        <p>می‌تواند anomaly signal بسیار قوی ایجاد کند.</p>
+
+        <h2>97. Contextual Anomaly Feature</h2>
+        <p>مثلاً:</p>
+        <div class="formula">$$z_{customer} = \frac{current amount - customer mean}{customer std}$$</div>
+        <p>این بسیار بهتر از:</p>
+        <div class="formula">$$z_{global}$$</div>
+        <p>است اگر behavior بین customers بسیار متفاوت باشد.</p>
+
+        <h2>98. Global vs Local Baseline</h2>
+        <p>Global:</p>
+        <div class="box"><div class="chart">all customers
+                ↓
+                mean = $200</div></div>
+        <p>Local:</p>
+        <div class="box"><div class="chart">Customer A
+                ↓
+                mean = $20
+
+                Customer B
+                ↓
+                mean = $10,000</div></div>
+        <p>برای anomaly detection معمولاً baseline محلی می‌تواند بسیار informativeتر باشد.</p>
+
+        <h2>99. Robustness</h2>
+        <p>یک Senior ML Engineer باید بپرسد:</p>
+        <p>اگر یک feature خراب شود چه اتفاقی می‌افتد؟</p>
+        <p>مثلاً:</p>
+        <div class="inner-box">device_id = null</div>
+        <p>آیا همه کاربران anomaly می‌شوند؟</p>
+        <p>یا:</p>
+        <div class="inner-box">amount = 0</div>
+        <p>آیا detector خراب می‌شود؟</p>
+
+        <h2>100. Explainability</h2>
+        <p>برای production anomaly detection باید بتوانی بگویی:</p>
+        <p>چرا این observation anomaly شد؟</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Anomaly Score = 0.97
+
+                Reasons:
+                - transaction amount unusually high
+                - new device
+                - unusual location
+                - abnormal velocity</div></div>
+        <p>این برای analyst بسیار مهم است.</p>
+
+        <h2>101. مقایسه نهایی الگوریتم‌ها</h2>
+        <table>
+            <thead><tr><th>روش</th><th>ایده</th><th>مزیت اصلی</th><th>مشکل اصلی</th></tr></thead>
+            <tbody>
+                <tr><td>Z-Score</td><td>فاصله از mean</td><td>ساده</td><td>فرض distribution</td></tr>
+                <tr><td>IQR</td><td>quartile distance</td><td>robust</td><td>univariate</td></tr>
+                <tr><td>Isolation Forest</td><td>isolation</td><td>scalable</td><td>context محدود</td></tr>
+                <tr><td>One-Class SVM</td><td>boundary</td><td>nonlinear</td><td>expensive</td></tr>
+                <tr><td>LOF</td><td>local density</td><td>local anomaly</td><td>حساس به distance</td></tr>
+                <tr><td>Autoencoder</td><td>reconstruction</td><td>nonlinear/complex</td><td>threshold/training</td></tr>
+            </tbody>
+        </table>
+
+        <h2>🧠 102. سؤال‌های Senior Interview</h2>
+        <div class="inner-box">اگر در مصاحبه از تو بپرسند: «Z-score چه زمانی بد است؟»</div>
+        <p>جواب:</p>
+        <p>وقتی distribution strongly non-Gaussian، skewed یا heavy-tailed باشد یا mean/std به‌شدت تحت تأثیر outlierها قرار بگیرند.</p>
+        <br>
+        <div class="inner-box">«Isolation Forest چرا anomaly را پیدا می‌کند؟»</div>
+        <p>چون observationهای isolated و sparse معمولاً با random partitionهای کمتری جدا می‌شوند و در نتیجه average path length کوتاه‌تری دارند.</p>
+        <br>
+        <div class="inner-box">«LOF چه مزیتی نسبت به Isolation Forest دارد؟»</div>
+        <p>LOF local density را با neighborhood مقایسه می‌کند، بنابراین برای local anomalies و داده‌هایی با مناطق density متفاوت می‌تواند مناسب‌تر باشد.</p>
+        <br>
+        <div class="inner-box">«چرا Autoencoder anomaly را پیدا می‌کند؟»</div>
+        <p>اگر عمدتاً روی normal patterns آموزش دیده باشد، representation و reconstruction آن برای الگوهای normal بهتر است و anomalyهای خارج از learned manifold معمولاً reconstruction error بیشتری ایجاد می‌کنند.</p>
+        <p>اما:</p>
+        <div class="inner-box">این تضمین‌شده نیست؛ Autoencoder قدرتمند می‌تواند anomaly را نیز reconstruct کند.</div>
+
+        <h2>🔥 103. مهم‌ترین مفهوم Senior-Level</h2>
+        <p>Anomaly Detection را نباید به شکل:</p>
+        <div class="chart">Algorithm
+            ↓
+            Anomaly</div>
+        <p>ببینی.</p>
+        <p>Pipeline واقعی بیشتر شبیه این است:</p>
+        <div class="box">
+            <div class="chart">
+                Raw Events
+                │
+                ▼
+                Feature Engineering
+                │
+                ▼
+                Data Quality Checks
+                │
+                ▼
+                ┌────────────┴────────────┐
+                │                         │
+                Statistical                ML Detector
+                Z-score / IQR       IF / LOF / OCSVM / AE
+                │                         │
+                └────────────┬────────────┘
+                ▼
+                Anomaly Score
+                │
+                ▼
+                Threshold / Rank
+                │
+                ▼
+                Alert / Review
+                │
+                ▼
+                Human / Business
+                │
+                ▼
+                Feedback
+                │
+                ▼
+                Retraining
+            </div>
+        </div>
+        <p>و در production باید این موارد را هم کنار آن داشته باشی:</p>
+        <ul>
+            <li>Data Drift</li>
+            <li>Concept Drift</li>
+            <li>Threshold Drift</li>
+            <li>False Positive Rate</li>
+            <li>False Negative Cost</li>
+            <li>Latency</li>
+            <li>Feature Freshness</li>
+            <li>Model Version</li>
+            <li>Explainability</li>
+            <li>Monitoring</li>
+        </ul>
+
+        <h2>🎯 جمع‌بندی خیلی مهم</h2>
+        <p>اگر بخواهم کل فصل را در چند جمله برای مصاحبه Senior خلاصه کنم:</p>
+        <div class="inner-box">Statistical</div>
+        <p>Z-Score → Distance from global mean</p>
+        <p>IQR → Robust univariate outlier detection</p>
+        <div class="inner-box">Isolation Forest</div>
+        <p>Anomaly → Shorter isolation path</p>
+        <div class="inner-box">One-Class SVM</div>
+        <p>Learn a boundary around normal data</p>
+        <div class="inner-box">LOF</div>
+        <p>Anomaly → Lower local density than neighbors</p>
+        <div class="inner-box">Autoencoder</div>
+        <p>Anomaly → High reconstruction error</p>
+
+        <p>و مهم‌تر از همه:</p>
+        <div class="inner-box">Anomaly ≠ Fraud</div>
+        <p>و:</p>
+        <div class="inner-box">Outlier ≠ Anomaly</div>
+        <p>و:</p>
+        <div class="inner-box">Anomaly Score ≠ Probability</div>
+        <p>و در نهایت:</p>
+        <div class="inner-box">Best Anomaly Detector = Algorithm + Feature Engineering + Threshold + Business Cost + Monitoring</div>
+        <p>این آخری دقیقاً جایی است که تفاوت یک Junior که الگوریتم‌ها را می‌شناسد با یک Senior ML Engineer که سیستم anomaly detection واقعی طراحی می‌کند مشخص می‌شود.</p>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- INTERACTIVE SCRIPT (Z-Score Visualization)                    -->
+    <!-- ============================================================ -->
+    <script>
+        (function() {
+            // ---- DOM refs ----
+            const canvas = document.getElementById('zScoreChart');
+            const ctx = canvas.getContext('2d');
+
+            const meanSlider = document.getElementById('meanSlider');
+            const stdSlider = document.getElementById('stdSlider');
+            const obsSlider = document.getElementById('obsSlider');
+            const meanInput = document.getElementById('meanInput');
+            const stdInput = document.getElementById('stdInput');
+            const obsInput = document.getElementById('obsInput');
+
+            const showShadeChk = document.getElementById('showShade');
+            const showMeanLineChk = document.getElementById('showMeanLine');
+            const showObsLineChk = document.getElementById('showObsLine');
+            const showLabelsChk = document.getElementById('showLabels');
+
+            const resultsDiv = document.getElementById('vizResults');
+
+            // ---- sync slider + number input ----
+            function syncSliderAndInput(slider, input) {
+                slider.addEventListener('input', function() {
+                    input.value = this.value;
+                    updateAll();
+                });
+                input.addEventListener('input', function() {
+                    let val = parseFloat(this.value);
+                    if (!isNaN(val)) {
+                        const min = parseFloat(slider.min);
+                        const max = parseFloat(slider.max);
+                        if (val < min) val = min;
+                        if (val > max) val = max;
+                        slider.value = val;
+                        this.value = val;
+                        updateAll();
+                    }
+                });
+                input.addEventListener('change', function() {
+                    let val = parseFloat(this.value);
+                    if (!isNaN(val)) {
+                        const min = parseFloat(slider.min);
+                        const max = parseFloat(slider.max);
+                        if (val < min) val = min;
+                        if (val > max) val = max;
+                        slider.value = val;
+                        this.value = val;
+                        updateAll();
+                    }
+                });
+            }
+
+            syncSliderAndInput(meanSlider, meanInput);
+            syncSliderAndInput(stdSlider, stdInput);
+            syncSliderAndInput(obsSlider, obsInput);
+
+            // ---- checkbox events ----
+            [showShadeChk, showMeanLineChk, showObsLineChk, showLabelsChk].forEach(chk => {
+                chk.addEventListener('change', updateAll);
+            });
+
+            // ---- math functions ----
+            function erf(x) {
+                const a1 = 0.254829592;
+                const a2 = -0.284496736;
+                const a3 = 1.421413741;
+                const a4 = -1.453152027;
+                const a5 = 1.061405429;
+                const p = 0.3275911;
+                const sign = x < 0 ? -1 : 1;
+                x = Math.abs(x);
+                const t = 1 / (1 + p * x);
+                const y = 1 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+                return sign * y;
+            }
+
+            function normalCDF(z) {
+                return 0.5 * (1 + erf(z / Math.sqrt(2)));
+            }
+
+            function normalPDF(x, mu, sigma) {
+                if (sigma <= 0) return 0;
+                const z = (x - mu) / sigma;
+                return (1 / (sigma * Math.sqrt(2 * Math.PI))) * Math.exp(-0.5 * z * z);
+            }
+
+            // ---- draw chart ----
+            function drawChart() {
+                const mu = parseFloat(meanInput.value) || 0;
+                let sigma = parseFloat(stdInput.value) || 1;
+                const xObs = parseFloat(obsInput.value) || 0;
+
+                if (sigma <= 0) {
+                    sigma = 0.1;
+                    stdInput.value = 0.1;
+                    stdSlider.value = 0.1;
+                }
+
+                const z = (xObs - mu) / sigma;
+                const phi = normalCDF(z);
+                const phiPercent = (phi * 100).toFixed(1);
+
+                // ---- update results div with KaTeX-friendly markup ----
+                const xStr = xObs.toFixed(2);
+                const muStr = mu.toFixed(2);
+                const sigmaStr = sigma.toFixed(2);
+                const zStr = z.toFixed(2);
+
+                resultsDiv.innerHTML =
+                    `\\( z = \\frac{(${xStr}) - (${muStr})}{${sigmaStr}} = ${zStr} \\)<br />\\( \\Phi(z) \\approx ${phiPercent}\\% \\)`;
+
+                // re-render KaTeX
+                if (typeof renderMathInElement !== 'undefined') {
+                    renderMathInElement(resultsDiv, {
+                        delimiters: [
+                            { left: '\\(', right: '\\)', display: false }
+                        ]
+                    });
+                }
+
+                // ---- canvas ----
+                const w = canvas.width;
+                const h = canvas.height;
+                ctx.clearRect(0, 0, w, h);
+
+                // dark background
+                ctx.fillStyle = '#0d1117';
+                ctx.fillRect(0, 0, w, h);
+
+                const pad = { top: 20, bottom: 35, left: 30, right: 20 };
+                const plotW = w - pad.left - pad.right;
+                const plotH = h - pad.top - pad.bottom;
+
+                let minX = mu - 4 * sigma;
+                let maxX = mu + 4 * sigma;
+                if (maxX - minX < 4) {
+                    const mid = (minX + maxX) / 2;
+                    minX = mid - 3;
+                    maxX = mid + 3;
+                }
+                if (xObs < minX) minX = xObs - 0.5;
+                if (xObs > maxX) maxX = xObs + 0.5;
+                const range = maxX - minX;
+                minX -= 0.05 * range;
+                maxX += 0.05 * range;
+
+                let maxPDF = 0;
+                const steps = 200;
+                const dx = (maxX - minX) / steps;
+                for (let i = 0; i <= steps; i++) {
+                    const xVal = minX + i * dx;
+                    const yVal = normalPDF(xVal, mu, sigma);
+                    if (yVal > maxPDF) maxPDF = yVal;
+                }
+                if (maxPDF === 0) maxPDF = 1;
+                const yMax = maxPDF * 1.15;
+
+                const mapX = (xVal) => pad.left + ((xVal - minX) / (maxX - minX)) * plotW;
+                const mapY = (yVal) => pad.top + plotH - (yVal / yMax) * plotH;
+
+                const xObsClipped = Math.min(Math.max(xObs, minX), maxX);
+
+                // ---- shaded area ----
+                if (showShadeChk.checked) {
+                    ctx.beginPath();
+                    let xStart = minX;
+                    let yStart = normalPDF(xStart, mu, sigma);
+                    ctx.moveTo(mapX(xStart), mapY(yStart));
+
+                    const subSteps = 100;
+                    const subDx = (xObsClipped - minX) / subSteps;
+                    for (let i = 1; i <= subSteps; i++) {
+                        const xVal = minX + i * subDx;
+                        const yVal = normalPDF(xVal, mu, sigma);
+                        ctx.lineTo(mapX(xVal), mapY(yVal));
+                    }
+                    ctx.lineTo(mapX(xObsClipped), mapY(0));
+                    ctx.lineTo(mapX(minX), mapY(0));
+                    ctx.closePath();
+                    ctx.fillStyle = 'rgba(88, 166, 255, 0.25)';
+                    ctx.fill();
+                    ctx.strokeStyle = 'rgba(88, 166, 255, 0.4)';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                }
+
+                // ---- bell curve ----
+                ctx.beginPath();
+                const totalSteps = 200;
+                const totalDx = (maxX - minX) / totalSteps;
+                for (let i = 0; i <= totalSteps; i++) {
+                    const xVal = minX + i * totalDx;
+                    const yVal = normalPDF(xVal, mu, sigma);
+                    if (i === 0) ctx.moveTo(mapX(xVal), mapY(yVal));
+                    else ctx.lineTo(mapX(xVal), mapY(yVal));
+                }
+                ctx.strokeStyle = '#58a6ff';
+                ctx.lineWidth = 2.5;
+                ctx.stroke();
+
+                // ---- mean line ----
+                if (showMeanLineChk.checked) {
+                    const muPos = mapX(mu);
+                    ctx.beginPath();
+                    ctx.moveTo(muPos, pad.top);
+                    ctx.lineTo(muPos, pad.top + plotH);
+                    ctx.strokeStyle = '#3fb950';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([3, 5]);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+
+                // ---- observation line ----
+                if (showObsLineChk.checked) {
+                    const xPos = mapX(xObsClipped);
+                    ctx.beginPath();
+                    ctx.moveTo(xPos, pad.top);
+                    ctx.lineTo(xPos, pad.top + plotH);
+                    ctx.strokeStyle = '#f0883e';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([5, 4]);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+
+                // ---- labels ----
+                if (showLabelsChk.checked) {
+                    ctx.font = '13px Segoe UI, monospace';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'top';
+
+                    const xPos = mapX(xObsClipped);
+                    ctx.fillStyle = '#f0883e';
+                    ctx.fillText('x = ' + xObs.toFixed(2), xPos, pad.top + plotH + 6);
+
+                    const muPos = mapX(mu);
+                    ctx.fillStyle = '#3fb950';
+                    ctx.fillText('μ = ' + mu.toFixed(2), muPos, pad.top + plotH + 6);
+
+                    if (showShadeChk.checked) {
+                        const shadeX = (mapX(minX) + mapX(xObsClipped)) / 2;
+                        ctx.fillStyle = '#58a6ff';
+                        ctx.textBaseline = 'bottom';
+                        ctx.font = 'bold 13px Segoe UI, monospace';
+                        ctx.fillText('Φ(z) = ' + phiPercent + '%', shadeX, pad.top + plotH * 0.5);
+                    }
+                }
+
+                // ---- x-axis ----
+                ctx.beginPath();
+                ctx.moveTo(pad.left, pad.top + plotH);
+                ctx.lineTo(pad.left + plotW, pad.top + plotH);
+                ctx.strokeStyle = '#30363d';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+            }
+
+            // ---- update ----
+            function updateAll() {
+                drawChart();
+            }
+
+            // ---- initial draw ----
+            updateAll();
+
+            // ---- feedback button ----
+            document.querySelector('.viz-feedback').addEventListener('click', function() {
+                this.style.transform = 'scale(0.95)';
+                setTimeout(() => { this.style.transform = ''; }, 150);
+                console.log('بازخورد ثبت شد (demo)');
+            });
+
+        })();
+    </script>
+
+</body>
+</html>

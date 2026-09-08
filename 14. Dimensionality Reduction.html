@@ -1,0 +1,2017 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dimensionality Reduction · Senior ML Level</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js">
+    </script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}]});">
+    </script>
+    <style>
+        body {
+            background-color: #0d1117;
+            color: #e6edf3;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.8;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h1,
+        h2,
+        h3 {
+            color: #e6edf3;
+            text-align: right;
+            border-bottom: 1px solid #444;
+            padding-bottom: 15px;
+            margin-top: 50px;
+        }
+        p,
+        li {
+            text-align: right;
+        }
+
+        .box {
+            background-color: #21262d;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            color: #e6edf3;
+        }
+        .inner-box {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 10px;
+            border-right: 4px solid #58a6ff;
+        }
+        .inner-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .formula {
+            direction: ltr;
+            background-color: #000;
+            border: 1px solid #fff;
+            border-radius: 0;
+            padding: 20px;
+            margin: 20px auto;
+            width: fit-content;
+            max-width: 100%;
+            overflow-x: auto;
+            text-align: center;
+            font-size: 1.2em;
+            font-family: "Times New Roman", Times, serif;
+            color: #fff;
+        }
+
+        .chart {
+            direction: ltr;
+            text-align: left;
+            font-family: monospace;
+            background-color: #21262d;
+            border-radius: 8px;
+            padding: 15px;
+            overflow-x: auto;
+            white-space: pre;
+            border: 1px solid #444;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            direction: rtl;
+            margin-bottom: 20px;
+        }
+        th,
+        td {
+            border: 1px solid #444;
+            padding: 12px;
+            text-align: right;
+        }
+        th {
+            background-color: #21262d;
+        }
+        .code-inline {
+            font-family: monospace;
+            background: #161b22;
+            padding: 1px 8px;
+            border-radius: 4px;
+            border: 1px solid #30363d;
+            font-size: 0.85rem;
+            color: #58a6ff;
+            direction: ltr;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <h1>📐 14. Dimensionality Reduction</h1>
+
+        <p style="font-size:1.1rem;">حتماً. این بخش Dimensionality Reduction از مباحثی است که برای سطح Senior باید فقط تعریف الگوریتم‌ها را بلد نباشی؛ باید بفهمی چه چیزی را حفظ می‌کنند، چه چیزی را از بین می‌برند، چه زمانی باعث leakage می‌شوند، چه زمانی برای visualization مناسب‌اند، و چه تفاوتی با feature selection دارند.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>📐 14. Dimensionality Reduction</h2>
+
+        <p>فرض کن dataset ما این شکلی است:</p>
+        <div class="formula">$$X \in \mathbb{R}^{n \times d}$$</div>
+        <p>که:</p>
+        <ul>
+            <li><span class="code-inline">n</span> = تعداد samples</li>
+            <li><span class="code-inline">d</span> = تعداد features</li>
+        </ul>
+
+        <p>مثلاً:</p>
+        <div class="inner-box">
+            100,000 samples<br>
+            10,000 features
+        </div>
+
+        <p>یعنی:</p>
+        <div class="formula">$$X \in \mathbb{R}^{100000 \times 10000}$$</div>
+
+        <p>مشکلات:</p>
+        <ul>
+            <li>memory زیاد</li>
+            <li>training کند</li>
+            <li>noise زیاد</li>
+            <li>overfitting</li>
+            <li>visualization سخت</li>
+            <li>فاصله‌ها در فضای high-dimensional عجیب می‌شوند</li>
+            <li>بعضی مدل‌ها با تعداد feature زیاد بدتر می‌شوند</li>
+        </ul>
+
+        <p>اینجاست که:</p>
+        <div class="inner-box">Dimensionality Reduction</div>
+        <p>مطرح می‌شود.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>1. Dimensionality Reduction چیست؟</h2>
+
+        <p>هدف این است که:</p>
+        <div class="formula">$$X \in \mathbb{R}^d$$</div>
+        <p>را به:</p>
+        <div class="formula">$$Z \in \mathbb{R}^k$$</div>
+        <p>تبدیل کنیم که:</p>
+        <div class="formula">$$k \ll d$$</div>
+
+        <p>مثلاً:</p>
+        <div class="chart">10,000 features
+            ↓
+            PCA
+            ↓
+            100 components</div>
+
+        <p>پس:</p>
+        <div class="formula">$$10,000 \to 100$$</div>
+
+        <p>اما نکته مهم:</p>
+        <div class="inner-box">ما الزاماً featureهای اصلی را حذف نمی‌کنیم؛ ممکن است featureهای جدیدی بسازیم. این تفاوت بسیار مهم است.</div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>2. سه مفهوم را از هم جدا کن</h2>
+
+        <p>سه مفهوم مهم داریم:</p>
+
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">Feature Selection</div>
+            <p>از featureهای موجود، تعدادی را انتخاب می‌کنیم.</p>
+        </div>
+
+        <div class="inner-box" style="border-right-color:#3fb950;">
+            <div class="inner-title">Feature Extraction</div>
+            <p>از featureهای موجود، featureهای جدید می‌سازیم.</p>
+        </div>
+
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">Dimensionality Reduction</div>
+            <p>تعداد dimensions را کاهش می‌دهیم.</p>
+        </div>
+
+        <p>بنابراین:</p>
+        <div class="formula">$$\text{Feature Selection} \neq \text{Feature Extraction}$$</div>
+
+        <p>و:</p>
+        <div class="inner-box">Dimensionality Reduction می‌تواند با <strong>Feature Extraction</strong> انجام شود.</div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>3. Feature Selection</h2>
+
+        <p>فرض کن:</p>
+        <div class="inner-box" style="background:#0d1117;">
+            x = [<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;age,<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;income,<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;height,<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;weight,<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;country,<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;device,<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;transaction_amount,<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;...<br>
+            ]
+        </div>
+
+        <p>اگر 100 feature داشته باشیم و فقط 20 تای آن را نگه داریم:</p>
+        <div class="chart">100
+            ↓
+            20 original features</div>
+
+        <p>هیچ feature جدیدی ایجاد نکرده‌ایم.</p>
+
+        <p>مثلاً:</p>
+        <ul>
+            <li>age</li>
+            <li>income</li>
+            <li>transaction_amount</li>
+        </ul>
+        <p>همان featureهای اصلی هستند.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>4. Feature Extraction</h2>
+
+        <p>اینجا feature جدید می‌سازیم.</p>
+
+        <p>مثلاً:</p>
+        <ul>
+            <li>age</li>
+            <li>income</li>
+            <li>debt</li>
+        </ul>
+
+        <p>را ترکیب کنیم:</p>
+        <div class="formula">$$z_1 = 0.3 \cdot \text{age} + 0.5 \cdot \text{income} - 0.2 \cdot \text{debt}$$</div>
+
+        <p>حالا:</p>
+        <div class="inner-box"><span class="code-inline">z₁</span> یک feature جدید است.</div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>5. PCA دقیقاً چه کار می‌کند؟</h2>
+
+        <p>PCA:</p>
+        <div class="inner-box">Principal Component Analysis</div>
+
+        <p>یکی از مهم‌ترین روش‌های <strong>linear</strong> dimensionality reduction است.</p>
+
+        <p>ایده اصلی:</p>
+        <div class="inner-box">جهت‌هایی را پیدا می‌کند که بیشترین variance داده را توضیح می‌دهند.</div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>6. Intuition مربوط به PCA</h2>
+
+        <p>فرض کن داده‌ها تقریباً این شکلی باشند:</p>
+
+        <div class="chart">        •
+            •
+            •
+            •
+            •</div>
+
+        <p>در فضای دوبعدی، اطلاعات اصلی تقریباً روی یک خط قرار دارد.</p>
+
+        <p>پس به جای:</p>
+        <ul>
+            <li><span class="code-inline">X₁</span></li>
+            <li><span class="code-inline">X₂</span></li>
+        </ul>
+
+        <p>می‌توانیم یک محور جدید بسازیم:</p>
+        <div class="inner-box"><span class="code-inline">PC₁</span></div>
+
+        <p>و بیشتر اطلاعات را حفظ کنیم.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>7. Principal Component چیست؟</h2>
+
+        <p>Component جدید به صورت linear combination ساخته می‌شود:</p>
+        <div class="formula">$$PC_1 = w_1 X_1 + w_2 X_2 + \cdots + w_d X_d$$</div>
+
+        <p>یا:</p>
+        <div class="formula">$$z_1 = X w_1$$</div>
+
+        <p>که:</p>
+        <div class="inner-box"><span class="code-inline">w₁</span> جهتی است که بیشترین variance را capture می‌کند.</div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>8. PCA Componentها</h2>
+
+        <p>PCA چند محور جدید پیدا می‌کند:</p>
+        <div class="formula">$$PC_1, PC_2, \dots, PC_d$$</div>
+
+        <p>که:</p>
+        <div class="formula">$$Var(PC_1) > Var(PC_2) > \dots > Var(PC_d)$$</div>
+
+        <p>و componentها <strong>orthogonal</strong> هستند.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>9. چرا PCها orthogonal هستند؟</h2>
+
+        <p>در PCA componentها عمود بر هم هستند.</p>
+
+        <p>یعنی:</p>
+        <div class="formula">$$w_i^T w_j = 0 \quad \text{برای} \quad i \neq j$$</div>
+
+        <p>این باعث می‌شود componentها اطلاعات خطی تکراری را تا حد ممکن جدا کنند.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>10. PCA و Covariance Matrix</h2>
+
+        <p>یکی از روش‌های کلاسیک PCA:</p>
+
+        <p>ابتدا داده را center می‌کنیم:</p>
+        <div class="formula">$$X_c = X - \mu$$</div>
+
+        <p>سپس covariance matrix:</p>
+        <div class="formula">$$\Sigma = \frac{1}{n-1} X_c^T X_c$$</div>
+
+        <p>را محاسبه می‌کنیم.</p>
+
+        <p>بعد eigenvalue/eigenvectorهای آن را پیدا می‌کنیم.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>11. Eigenvector در PCA</h2>
+
+        <p>Eigenvectorها جهت componentها هستند.</p>
+
+        <p>اگر:</p>
+        <div class="formula">$$\Sigma v = \lambda v$$</div>
+
+        <p>آنگاه:</p>
+        <ul>
+            <li><span class="code-inline">v</span> = eigenvector</li>
+            <li><span class="code-inline">λ</span> = eigenvalue</li>
+        </ul>
+
+        <p>هرچه eigenvalue بزرگ‌تر باشد:</p>
+        <div class="inner-box">variance بیشتری در آن direction وجود دارد.</div>
+
+        <p>پس:</p>
+        <div class="chart">Largest eigenvalue
+            ↓
+            PC1
+            ↓
+            Second largest
+            ↓
+            PC2</div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>12. Explained Variance</h2>
+
+        <p>یکی از مهم‌ترین مفاهیم PCA:</p>
+        <div class="inner-box">Explained Variance</div>
+
+        <p>است.</p>
+
+        <p>مثلاً:</p>
+        <ul>
+            <li>PC1 → 60%</li>
+            <li>PC2 → 20%</li>
+            <li>PC3 → 10%</li>
+            <li>PC4 → 5%</li>
+            <li>PC5 → 3%</li>
+            <li>PC6 → 2%</li>
+        </ul>
+
+        <p>پس cumulative:</p>
+        <ul>
+            <li>PC1 = 60%</li>
+            <li>PC1+PC2 = 80%</li>
+            <li>PC1..3 = 90%</li>
+            <li>PC1..4 = 95%</li>
+        </ul>
+
+        <p>می‌توانیم مثلاً 95% variance را حفظ کنیم.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>13. Explained Variance Ratio</h2>
+
+        <p>فرمول:</p>
+        <div class="formula">$$EVR_i = \frac{\lambda_i}{\sum_j \lambda_j}$$</div>
+
+        <p>و cumulative:</p>
+        <div class="formula">$$CEVR_k = \sum_{i=1}^k EVR_i$$</div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>14. انتخاب تعداد Components</h2>
+
+        <p>سه روش رایج:</p>
+
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">روش 1 — Threshold</div>
+            <ul>
+                <li>95%</li>
+                <li>99%</li>
+            </ul>
+            <p>مثلاً:</p>
+            <div class="formula-inline" style="direction:ltr; background:#0d1117; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">CEVR ≥ 0.95</div>
+        </div>
+
+        <div class="inner-box" style="border-right-color:#3fb950;">
+            <div class="inner-title">روش 2 — Fixed dimension</div>
+            <p>مثلاً:</p>
+            <div class="formula-inline" style="direction:ltr; background:#0d1117; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">100 → 20</div>
+        </div>
+
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">روش 3 — Performance-based</div>
+            <p>چند مقدار مختلف را امتحان کن:</p>
+            <ul>
+                <li>10 components</li>
+                <li>20 components</li>
+                <li>50 components</li>
+                <li>100 components</li>
+            </ul>
+            <p>و validation performance را مقایسه کن.</p>
+        </div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>15. نکته بسیار مهم</h2>
+
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">⚠️ بیشترین explained variance الزاماً به معنی بهترین predictive performance نیست.</div>
+            <p>ممکن است target information در variance پایین dataset باشد.</p>
+            <p>مثلاً:</p>
+            <ul>
+                <li>PC1 → 80% variance</li>
+                <li>PC2 → 10%</li>
+                <li>PC3 → 5%</li>
+                <li>PC4 → 3%</li>
+                <li>PC5 → 2%</li>
+            </ul>
+            <p>ولی target بیشتر با PC5 مرتبط باشد.</p>
+            <p>پس:</p>
+            <div class="formula-inline" style="direction:ltr; background:#0d1117; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">High Variance ≠ High Predictive Power</div>
+        </div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>16. PCA بدون Scaling</h2>
+
+        <p>فرض کن:</p>
+        <ul>
+            <li>age: 20-60</li>
+            <li>income: 10,000-1,000,000</li>
+        </ul>
+
+        <p>income variance بسیار بزرگ‌تری دارد.</p>
+
+        <p>PCA ممکن است عمدتاً تحت تأثیر income قرار بگیرد.</p>
+
+        <p>پس معمولاً:</p>
+        <div class="chart">StandardScaler
+            ↓
+            PCA</div>
+
+        <p>استفاده می‌شود.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>17. آیا همیشه باید Standardize کنیم؟</h2>
+
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">نه.</div>
+            <p>اگر scaleها معنای واقعی دارند و نمی‌خواهی feature با variance کوچک را از نظر importance نادیده بگیری، ممکن است scaling نخواهی.</p>
+            <p>بنابراین:</p>
+            <div class="inner-box" style="background:#0d1117;">Scaling یک تصمیم domain/model-dependent است.</div>
+        </div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>18. PCA روی Sparse Data</h2>
+
+        <p>PCA معمولی معمولاً matrix را <strong>dense</strong> می‌کند.</p>
+
+        <p>اگر data خیلی sparse باشد، مثلاً:</p>
+        <div class="inner-box">TF-IDF</div>
+
+        <p>این می‌تواند مشکل memory ایجاد کند.</p>
+
+        <p>اینجا:</p>
+        <div class="inner-box">Truncated SVD</div>
+        <p>بسیار مهم است.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>19. SVD</h2>
+
+        <p>Singular Value Decomposition:</p>
+        <div class="formula">$$X = U \Sigma V^T$$</div>
+
+        <p>که:</p>
+        <ul>
+            <li><span class="code-inline">U</span> = left singular vectors</li>
+            <li><span class="code-inline">Σ</span> = singular values</li>
+            <li><span class="code-inline">V^T</span> = right singular vectors</li>
+        </ul>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>20. تفاوت Eigen Decomposition و SVD</h2>
+
+        <p>PCA را می‌توان با eigen decomposition covariance matrix انجام داد.</p>
+
+        <p>اما SVD مستقیماً روی:</p>
+        <div class="formula">$$X$$</div>
+        <p>کار می‌کند.</p>
+
+        <p>این در عمل معمولاً:</p>
+        <ul>
+            <li>numerical stableتر</li>
+            <li>و برای داده‌های بزرگ مناسب‌تر است</li>
+        </ul>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>21. Truncated SVD</h2>
+
+        <p>در SVD کامل:</p>
+        <div class="chart">X
+            ↓
+            U Σ Vᵀ</div>
+
+        <p>تمام components را داریم.</p>
+
+        <p>اما در Truncated SVD فقط:</p>
+        <div class="formula">$$k$$</div>
+        <p>component اول را نگه می‌داریم:</p>
+        <div class="formula">$$X \approx U_k \Sigma_k V_k^T$$</div>
+
+        <p>که:</p>
+        <div class="formula">$$k \ll d$$</div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>22. Truncated SVD و NLP</h2>
+
+        <p>یکی از کاربردهای کلاسیک:</p>
+
+        <div class="chart">Documents
+            ↓
+            TF-IDF
+            ↓
+            Sparse Matrix
+            ↓
+            Truncated SVD
+            ↓
+            Low-dimensional representation</div>
+
+        <p>این ایده در:</p>
+        <div class="inner-box">Latent Semantic Analysis (LSA)</div>
+        <p>مشهور است.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>23. PCA vs Truncated SVD</h2>
+
+        <div style="overflow-x:auto;">
+            <table>
+                <thead>
+                    <tr><th>PCA</th><th>Truncated SVD</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>معمولاً centering دارد</td><td>لزوماً centering ندارد</td></tr>
+                    <tr><td>covariance-oriented</td><td>مستقیم روی X</td></tr>
+                    <tr><td>برای dense data مناسب</td><td>sparse data بسیار مناسب</td></tr>
+                    <tr><td>scale مهم است</td><td>بسته به preprocessing</td></tr>
+                    <tr><td>components orthogonal</td><td>بله</td></tr>
+                    <tr><td>کاربرد NLP</td><td>کمتر</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">نکته:</div>
+            <p>PCA و Truncated SVD در شرایط خاص ارتباط ریاضی بسیار نزدیکی دارند.</p>
+            <p>اگر data center شده باشد، PCA را می‌توان با SVD محاسبه کرد.</p>
+        </div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>24. Kernel PCA</h2>
+
+        <p>PCA فقط روابط:</p>
+        <div class="inner-box">Linear</div>
+        <p>را می‌بیند.</p>
+
+        <p>فرض کن داده:</p>
+
+        <div class="chart">       •••
+            •       •
+            •         •
+            •       •
+            •••</div>
+
+        <p>باشد.</p>
+
+        <p>در فضای اصلی، structure غیرخطی است.</p>
+
+        <p>Kernel PCA می‌تواند ابتدا داده را به فضای feature غیرخطی implicit ببرد:</p>
+        <div class="formula">$$x \to \phi(x)$$</div>
+        <p>و سپس PCA انجام دهد.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>25. Kernel Trick</h2>
+
+        <p>به جای محاسبه مستقیم:</p>
+        <div class="formula">$$\phi(x)$$</div>
+
+        <p>از kernel استفاده می‌کنیم:</p>
+        <div class="formula">$$K(x_i, x_j) = \phi(x_i)^T \phi(x_j)$$</div>
+
+        <p>مثلاً:</p>
+        <div class="inner-box">RBF Kernel</div>
+        <div class="formula">$$K(x, x') = e^{-\gamma \|x - x'\|^2}$$</div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>26. Kernel PCA چه زمانی مفید است؟</h2>
+
+        <p>وقتی:</p>
+        <div class="inner-box">structure داده nonlinear باشد.</div>
+
+        <p>اما هزینه محاسباتی آن می‌تواند زیاد باشد.</p>
+
+        <p>برای:</p>
+        <div class="formula">$$n$$</div>
+        <p>sample، kernel matrix:</p>
+        <div class="formula">$$n \times n$$</div>
+        <p>داریم.</p>
+
+        <p>پس:</p>
+        <div class="formula">$$O(n^2)$$</div>
+        <p>memory فقط برای kernel matrix می‌تواند مشکل‌ساز شود.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>27. t-SNE</h2>
+
+        <p>t-SNE:</p>
+        <div class="inner-box">t-distributed Stochastic Neighbor Embedding</div>
+
+        <p>بیشتر برای:</p>
+        <div class="inner-box">Visualization</div>
+        <p>است.</p>
+
+        <p>مثلاً:</p>
+        <div class="chart">100 dimensions
+            ↓
+            t-SNE
+            ↓
+            2D</div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>28. ایده اصلی t-SNE</h2>
+
+        <p>t-SNE سعی می‌کند:</p>
+        <div class="inner-box">همسایه‌های نزدیک در فضای high-dimensional در فضای low-dimensional نیز نزدیک باقی بمانند.</div>
+
+        <p>یعنی <strong>local structure</strong> را حفظ می‌کند.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>29. t-SNE چه چیزی را خوب حفظ می‌کند؟</h2>
+
+        <div class="inner-box">Local Neighborhoods</div>
+
+        <p>مثلاً اگر:</p>
+        <ul>
+            <li>A نزدیک B</li>
+            <li>A نزدیک C</li>
+        </ul>
+
+        <p>باشد، t-SNE سعی می‌کند:</p>
+        <div class="chart">A
+            B C</div>
+        <p>را نزدیک نگه دارد.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>30. t-SNE چه چیزی را خوب حفظ نمی‌کند؟</h2>
+
+        <div class="inner-box">Global distances</div>
+
+        <p>اگر دو cluster در t-SNE خیلی دور باشند، الزاماً نمی‌توان گفت:</p>
+        <div class="inner-box">این دو cluster در فضای اصلی دقیقاً همین‌قدر دور بوده‌اند.</div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>31. یک اشتباه بسیار رایج</h2>
+
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">⚠️ این:</div>
+            <div class="chart">Cluster A       Cluster B</div>
+            <p>در t-SNE</p>
+            <p>به این معنی نیست که:</p>
+            <div class="inner-box" style="background:#0d1117;">A و B ذاتاً دو گروه واقعی و جدا هستند.</div>
+            <p>t-SNE می‌تواند ساختارهای cluster-like ایجاد کند.</p>
+            <p>پس:</p>
+            <div class="formula-inline" style="direction:ltr; background:#0d1117; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">t-SNE is visualization, not proof of clustering</div>
+        </div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>32. Perplexity</h2>
+
+        <p>یکی از hyperparameterهای مهم t-SNE:</p>
+        <div class="inner-box">Perplexity</div>
+
+        <p>است.</p>
+
+        <p>تقریباً میزان:</p>
+        <div class="inner-box">effective number of local neighbors</div>
+        <p>را کنترل می‌کند.</p>
+
+        <p>مقادیر معمول:</p>
+        <ul>
+            <li>5</li>
+            <li>10</li>
+            <li>30</li>
+            <li>50</li>
+        </ul>
+
+        <p>اما مقدار مناسب به dataset بستگی دارد.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>33. t-SNE و Randomness</h2>
+
+        <p>t-SNE معمولاً <strong>stochastic</strong> است.</p>
+
+        <p>پس:</p>
+        <div class="inner-box">random_state = 42</div>
+
+        <p>برای reproducibility مهم است.</p>
+
+        <p>ممکن است دو run:</p>
+        <ul>
+            <li>Run 1 → visualization A</li>
+            <li>Run 2 → visualization B</li>
+        </ul>
+        <p>تولید کنند.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>34. t-SNE و Perplexity</h2>
+
+        <p>اگر perplexity خیلی پایین باشد:</p>
+        <div class="inner-box">local structure خیلی محدود می‌شود.</div>
+
+        <p>اگر خیلی بالا باشد:</p>
+        <div class="inner-box">ساختارهای بزرگ‌تر مورد توجه قرار می‌گیرند.</div>
+
+        <p>اما هیچ مقدار universal وجود ندارد.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>35. t-SNE و Scaling</h2>
+
+        <p>t-SNE بر اساس فاصله‌ها کار می‌کند.</p>
+
+        <p>بنابراین اگر featureها scaleهای متفاوت داشته باشند:</p>
+        <ul>
+            <li>age</li>
+            <li>income</li>
+        </ul>
+
+        <p>distance می‌تواند تحت domination یک feature قرار گیرد.</p>
+
+        <p>اغلب:</p>
+        <div class="chart">Scaling
+            ↓
+            t-SNE</div>
+
+        <p>منطقی است.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>36. t-SNE برای Production Feature Reduction؟</h2>
+
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">معمولاً:</div>
+            <p>انتخاب خوبی نیست.</p>
+            <p>چون:</p>
+            <ul>
+                <li>computationally expensive</li>
+                <li>stochastic</li>
+                <li>global structure ضعیف</li>
+                <li>transform برای داده جدید پیچیده است</li>
+                <li>بیشتر visualization-oriented است</li>
+            </ul>
+            <p>پس t-SNE معمولاً:</p>
+            <div class="inner-box" style="background:#0d1117;">Visualization</div>
+            <p>است نه feature engineering عمومی.</p>
+        </div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>37. UMAP</h2>
+
+        <p>UMAP:</p>
+        <div class="inner-box">Uniform Manifold Approximation and Projection</div>
+
+        <p>برای کاهش ابعاد nonlinear بسیار محبوب است.</p>
+
+        <p>هدف:</p>
+        <div class="inner-box">حفظ local structure و تا حدی global structure.</div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>38. UMAP vs t-SNE</h2>
+
+        <p>به صورت کلی:</p>
+
+        <div style="overflow-x:auto;">
+            <table>
+                <thead>
+                    <tr><th></th><th>t-SNE</th><th>UMAP</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Local structure</td><td>عالی</td><td>عالی</td></tr>
+                    <tr><td>Global structure</td><td>محدود</td><td>معمولاً بهتر</td></tr>
+                    <tr><td>Speed</td><td>کندتر</td><td>سریع‌تر</td></tr>
+                    <tr><td>Scalability</td><td>ضعیف‌تر</td><td>بهتر</td></tr>
+                    <tr><td>New-point transform</td><td>محدود</td><td>بهتر</td></tr>
+                    <tr><td>Visualization</td><td>عالی</td><td>عالی</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>39. UMAP Hyperparameters</h2>
+
+        <p>مهم‌ترین‌ها:</p>
+
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">n_neighbors</div>
+            <p>تعداد همسایه‌هایی که برای manifold structure در نظر می‌گیرد.</p>
+            <ul>
+                <li><strong>کم:</strong> local structure</li>
+                <li><strong>زیاد:</strong> broader/global structure</li>
+            </ul>
+        </div>
+
+        <div class="inner-box" style="border-right-color:#3fb950;">
+            <div class="inner-title">min_dist</div>
+            <p>حداقل فاصله بین نقاط در embedding.</p>
+            <ul>
+                <li><strong>مقدار کم:</strong> clusters compactتر</li>
+                <li><strong>مقدار زیاد:</strong> embedding پخش‌تر</li>
+            </ul>
+        </div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>40. UMAP هم Visualization است؟</h2>
+
+        <p>بله، ولی برخلاف t-SNE می‌تواند برای:</p>
+        <div class="inner-box">feature transformation</div>
+        <p>هم کاربردی‌تر باشد.</p>
+
+        <p>مثلاً:</p>
+        <div class="box" style="direction:ltr; text-align:left; font-family:'Courier New',monospace; font-size:0.9rem; background:#0d1117;">
+            umap.fit(X_train)<br>
+            X_train_emb = umap.transform(X_train)<br>
+            X_test_emb = umap.transform(X_test)
+        </div>
+
+        <p>این قابلیت آن را برای pipelineها جذاب‌تر می‌کند.</p>
+
+        <p>اما هنوز باید <strong>leakage</strong>، <strong>stability</strong> و <strong>downstream performance</strong> را بررسی کرد.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>41. Autoencoder</h2>
+
+        <p>Autoencoder یک neural network است که سعی می‌کند:</p>
+        <div class="formula">$$X \to Z \to \hat{X}$$</div>
+        <p>را یاد بگیرد.</p>
+
+        <p>ساختار:</p>
+        <div class="chart">Input
+            │
+            ▼
+            Encoder
+            │
+            ▼
+            Latent Space
+            │
+            ▼
+            Decoder
+            │
+            ▼
+            Reconstruction</div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>42. Encoder</h2>
+
+        <p>Encoder:</p>
+        <div class="formula">$$z = f_\theta(x)$$</div>
+
+        <p>است.</p>
+
+        <p>مثلاً:</p>
+        <div class="chart">100 features
+            ↓
+            64
+            ↓
+            32
+            ↓
+            10</div>
+
+        <p>پس:</p>
+        <div class="inner-box">Latent representation = 10 dimensions</div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>43. Decoder</h2>
+
+        <p>Decoder:</p>
+        <div class="formula">$$\hat{x} = g_\phi(z)$$</div>
+
+        <p>است.</p>
+
+        <p>هدف:</p>
+        <div class="formula">$$\hat{x} \approx x$$</div>
+
+        <p>است.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>44. Loss Autoencoder</h2>
+
+        <p>مثلاً:</p>
+        <div class="formula">$$L = \|x - \hat{x}\|^2$$</div>
+
+        <p>یا:</p>
+        <div class="formula">$$MAE(x, \hat{x})$$</div>
+
+        <p>پس شبکه یاد می‌گیرد representationای بسازد که بتواند input را reconstruct کند.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>45. چرا Autoencoder Dimensionality Reduction است؟</h2>
+
+        <p>چون:</p>
+        <div class="chart">X
+            ↓
+            Encoder
+            ↓
+            Z</div>
+
+        <p>داریم و:</p>
+        <div class="formula">$$\dim(Z) \ll \dim(X)$$</div>
+
+        <p>مثلاً:</p>
+        <div class="formula">$$1000 \to 32$$</div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>46. تفاوت PCA و Autoencoder</h2>
+
+        <p>PCA:</p>
+        <div class="formula">$$Z = WX$$</div>
+        <p>یعنی transformation <strong>خطی</strong>.</p>
+
+        <p>Autoencoder:</p>
+        <div class="formula">$$Z = f_\theta(X)$$</div>
+        <p>می‌تواند <strong>nonlinear</strong> باشد.</p>
+
+        <p>پس:</p>
+        <div class="formula">$$PCA \subset \text{Linear Representation}$$</div>
+
+        <p>ولی:</p>
+        <div class="formula">$$Autoencoder \to \text{Nonlinear Representation}$$</div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>47. Autoencoder و PCA</h2>
+
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">یک نکته مهم مصاحبه‌ای:</div>
+            <p>یک autoencoder خطی با معماری مناسب و MSE می‌تواند subspace مشابه PCA را یاد بگیرد.</p>
+            <p>پس PCA را می‌توان یک <strong>baseline</strong> بسیار مهم برای autoencoder دانست.</p>
+        </div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>48. انواع Autoencoder</h2>
+
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">Undercomplete Autoencoder</div>
+            <p>latent dimension کمتر از input:</p>
+            <div class="formula-inline" style="direction:ltr; background:#0d1117; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">1000 → 32</div>
+            <p>برای dimensionality reduction مناسب است.</p>
+        </div>
+
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">Overcomplete Autoencoder</div>
+            <p>latent dimension بزرگ‌تر یا مساوی input.</p>
+            <p>ممکن است بدون regularization فقط identity function یاد بگیرد:</p>
+            <div class="formula-inline" style="direction:ltr; background:#0d1117; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">f(x) ≈ x</div>
+            <p>پس الزاماً dimensionality reduction نیست.</p>
+        </div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>49. Denoising Autoencoder</h2>
+
+        <p>به جای reconstruct کردن input تمیز از input تمیز:</p>
+
+        <div class="chart">Clean X
+            ↓
+            Add Noise
+            ↓
+            Noisy X
+            ↓
+            Encoder
+            ↓
+            Decoder
+            ↓
+            Reconstruct Clean X</div>
+
+        <p>هدف:</p>
+        <div class="inner-box">robust representation</div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>50. Variational Autoencoder</h2>
+
+        <p>VAE فقط یک vector deterministic نمی‌سازد.</p>
+
+        <p>بلکه distribution یاد می‌گیرد:</p>
+        <div class="formula">$$q(z \mid x)$$</div>
+
+        <p>و latent space ساختار probabilistic دارد.</p>
+
+        <p>VAE بیشتر برای:</p>
+        <ul>
+            <li>generative modeling</li>
+            <li>representation learning</li>
+            <li>latent space learning</li>
+        </ul>
+
+        <p>است.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>51. آیا VAE فقط Dimensionality Reduction است؟</h2>
+
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">نه.</div>
+            <p>VAE اساساً:</p>
+            <div class="inner-box" style="background:#0d1117;">Generative Model</div>
+            <p>است.</p>
+            <p>اما latent representation آن می‌تواند برای dimensionality reduction استفاده شود.</p>
+        </div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>52. PCA vs Autoencoder</h2>
+
+        <div style="overflow-x:auto;">
+            <table>
+                <thead>
+                    <tr><th>PCA</th><th>Autoencoder</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Linear</td><td>Nonlinear</td></tr>
+                    <tr><td>Fast</td><td>معمولاً گران‌تر</td></tr>
+                    <tr><td>Explainableتر</td><td>کمتر explainable</td></tr>
+                    <tr><td>Convex-ish closed-form solution</td><td>neural optimization</td></tr>
+                    <tr><td>Data کم → baseline خوب</td><td>Data بزرگ/complex → powerful</td></tr>
+                    <tr><td>Reconstruction</td><td>linear reconstruction</td></tr>
+                    <tr><td>Feature interactions</td><td>nonlinear → محدود</td></tr>
+                    <tr><td>Hyperparameter کم</td><td>Hyperparameter زیاد</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>53. PCA vs SVD vs Truncated SVD</h2>
+
+        <p>یک نکته بسیار مهم:</p>
+
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">PCA</div>
+            <p>هدف: پیدا کردن orthogonal directions با بیشترین variance</p>
+        </div>
+
+        <div class="inner-box" style="border-right-color:#3fb950;">
+            <div class="inner-title">SVD</div>
+            <p>یک matrix factorization عمومی:</p>
+            <div class="formula">$$X = U \Sigma V^T$$</div>
+        </div>
+
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">Truncated SVD</div>
+            <p>فقط top k singular components</p>
+        </div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>54. ارتباط PCA و SVD</h2>
+
+        <p>اگر:</p>
+        <div class="formula">$$X_c$$</div>
+        <p>مرکز شده باشد:</p>
+        <div class="formula">$$X_c = U \Sigma V^T$$</div>
+
+        <p>آنگاه principal directions در:</p>
+        <div class="formula">$$V$$</div>
+        <p>هستند.</p>
+
+        <p>و explained variance با singular values مرتبط است:</p>
+        <div class="formula">$$\lambda_i = \frac{\sigma_i^2}{n-1}$$</div>
+
+        <p>پس:</p>
+        <div class="inner-box">PCA can be computed efficiently using SVD</div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>55. Feature Selection vs Feature Extraction</h2>
+
+        <p>این تفاوت را خیلی خوب یاد بگیر.</p>
+
+        <div class="box" style="display:flex; flex-wrap:wrap; gap:16px; justify-content:space-around;">
+            <div style="flex:1; min-width:200px; background:#161b22; border-radius:8px; padding:14px; border:1px solid #30363d; text-align:center;">
+                <div style="font-weight:700; color:#58a6ff;">Feature Selection</div>
+                <div class="chart">X1 X2 X3 X4 X5
+                    ↓
+                    X1 X3 X5</div>
+            </div>
+            <div style="flex:1; min-width:200px; background:#161b22; border-radius:8px; padding:14px; border:1px solid #30363d; text-align:center;">
+                <div style="font-weight:700; color:#f0883e;">Feature Extraction</div>
+                <div class="chart">X1 X2 X3 X4 X5
+                    ↓
+                    PCA
+                    ↓
+                    PC1 PC2</div>
+            </div>
+        </div>
+
+        <p>در اولی featureهای original حفظ می‌شوند.</p>
+        <p>در دومی:</p>
+        <div class="inner-box"><span class="code-inline">PC₁</span> ترکیبی از چند feature است.</div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>56. Feature Selection مثال</h2>
+
+        <p>فرض کن:</p>
+        <ul>
+            <li>age</li>
+            <li>income</li>
+            <li>height</li>
+            <li>weight</li>
+            <li>salary</li>
+        </ul>
+
+        <p>feature selection:</p>
+        <ul>
+            <li>age</li>
+            <li>income</li>
+            <li>salary</li>
+        </ul>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>57. Feature Extraction مثال</h2>
+
+        <p>مثلاً:</p>
+        <div class="formula">$$PC_1 = 0.4 \cdot \text{age} + 0.5 \cdot \text{income} + 0.7 \cdot \text{salary}$$</div>
+
+        <p>و:</p>
+        <div class="formula">$$PC_2 = \dots$$</div>
+
+        <p>حالا featureهای جدید داریم.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>58. مزیت Feature Selection</h2>
+
+        <div class="inner-box">Interpretability</div>
+
+        <p>مدل می‌گوید:</p>
+        <ul>
+            <li>income</li>
+            <li>salary</li>
+            <li>age</li>
+        </ul>
+        <p>و انسان می‌تواند آنها را بفهمد.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>59. مزیت Feature Extraction</h2>
+
+        <p>می‌توانیم:</p>
+        <div class="formula">$$1000 \text{ features} \to 50 \text{ latent components}$$</div>
+
+        <p>داشته باشیم.</p>
+
+        <p>این برای:</p>
+        <ul>
+            <li>compression</li>
+            <li>visualization</li>
+            <li>noise reduction</li>
+            <li>computational efficiency</li>
+        </ul>
+        <p>مفید است.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>60. عیب Feature Extraction</h2>
+
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">⚠️ ممکن است interpretability را از دست بدهیم.</div>
+            <p>مثلاً:</p>
+            <div class="formula-inline" style="direction:ltr; background:#0d1117; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">PC₁</div>
+            <p>یعنی چه؟</p>
+            <p>ممکن است ترکیبی از:</p>
+            <ul>
+                <li>age</li>
+                <li>income</li>
+                <li>balance</li>
+                <li>transaction_amount</li>
+            </ul>
+            <p>باشد.</p>
+        </div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>61. Feature Selection vs Dimensionality Reduction</h2>
+
+        <p>Feature selection خودش می‌تواند dimensionality را کاهش دهد.</p>
+
+        <p>اما:</p>
+        <div class="inner-box">dimensionality reduction الزاماً feature selection نیست.</div>
+
+        <p>مثلاً PCA:</p>
+        <div class="formula">$$1000 \to 50$$</div>
+        <p>اما 50 feature جدید ساخته شده‌اند.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>62. Visualization vs Predictive Dimensionality Reduction</h2>
+
+        <p>این distinction بسیار مهم است.</p>
+
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">Visualization</div>
+            <p>هدف: دیدن structure</p>
+            <p>مثل:</p>
+            <ul>
+                <li>t-SNE</li>
+                <li>UMAP</li>
+            </ul>
+        </div>
+
+        <div class="inner-box" style="border-right-color:#3fb950;">
+            <div class="inner-title">Predictive preprocessing</div>
+            <p>هدف: کمک به model</p>
+            <p>مثل:</p>
+            <ul>
+                <li>PCA</li>
+                <li>Truncated SVD</li>
+                <li>Autoencoder</li>
+            </ul>
+        </div>
+
+        <p>اما UMAP هم می‌تواند در predictive pipelines استفاده شود.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>63. Dimensionality Reduction و Leakage</h2>
+
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">⚠️ یکی از مهم‌ترین نکات Senior.</div>
+            <p>فرض کن:</p>
+            <ul>
+                <li>Train</li>
+                <li>Validation</li>
+            </ul>
+            <p>داری.</p>
+
+            <p><strong>غلط:</strong></p>
+            <div class="chart">Train + Validation
+                ↓
+                PCA
+                ↓
+                Split</div>
+            <p>چون PCA statistics را از validation دیده است.</p>
+        </div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>64. روش صحیح</h2>
+
+        <div class="chart">Train
+            ↓
+            Fit PCA
+            ↓
+            Transform Train
+            ↓
+            Transform Validation</div>
+
+        <p>و:</p>
+        <div class="chart">Test
+            ↓
+            Transform using SAME PCA</div>
+
+        <p>نه:</p>
+        <div class="inner-box">Fit PCA on Test</div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>65. PCA در Cross-Validation</h2>
+
+        <p><strong>غلط:</strong></p>
+        <div class="chart">Full Dataset
+            ↓
+            PCA
+            ↓
+            K-Fold</div>
+
+        <p><strong>درست:</strong></p>
+        <div class="chart">Fold 1
+            Train Fold
+            ↓
+            Fit PCA
+            ↓
+            Transform Train
+            ↓
+            Transform Validation</div>
+
+        <p>و برای Foldهای دیگر هم همین کار.</p>
+        <p>یعنی PCA باید <strong>داخل pipeline</strong> باشد.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>66. Scaling + PCA + CV</h2>
+
+        <p>یک pipeline حرفه‌ای:</p>
+
+        <div class="chart">Raw X
+            │
+            ▼
+            Train Fold
+            │
+            ▼
+            Imputation
+            │
+            ▼
+            Scaling
+            │
+            ▼
+            PCA
+            │
+            ▼
+            Model
+            │
+            ▼
+            Validation Fold</div>
+
+        <p>تمام transformationهایی که از داده statistics یاد می‌گیرند باید داخل CV fit شوند.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>67. آیا PCA باید قبل از Train/Test Split انجام شود؟</h2>
+
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">خیر، اگر PCA از data statistics استفاده می‌کند.</div>
+            <p>روش صحیح:</p>
+            <div class="formula-inline" style="direction:ltr; background:#0d1117; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">Train → Fit(PCA)</div>
+            <p>سپس:</p>
+            <div class="formula-inline" style="direction:ltr; background:#0d1117; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">Validation/Test → Transform(PCA)</div>
+        </div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>68. PCA و Supervised Learning</h2>
+
+        <p>PCA کاملاً <strong>unsupervised</strong> است.</p>
+
+        <p>یعنی target را نمی‌بیند:</p>
+        <div class="formula">$$PCA(X)$$</div>
+
+        <p>نه:</p>
+        <div class="formula">$$PCA(X, Y)$$</div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>69. مشکل PCA در Classification</h2>
+
+        <p>فرض کن:</p>
+        <ul>
+            <li>Class A</li>
+            <li>Class B</li>
+        </ul>
+
+        <p>جهت variance بالا لزوماً directionی نیست که کلاس‌ها را جدا کند.</p>
+
+        <p>ممکن است:</p>
+        <ul>
+            <li>PC1 → 95% variance</li>
+        </ul>
+        <p>ولی:</p>
+        <ul>
+            <li>Class information → PC10</li>
+        </ul>
+        <p>باشد.</p>
+
+        <p>پس کاهش ابعاد با PCA ممکن است predictive signal را حذف کند.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>70. PCA و LDA</h2>
+
+        <p>برای همین، روش‌هایی مثل:</p>
+        <div class="inner-box">Linear Discriminant Analysis</div>
+
+        <p>می‌توانند supervised dimensionality reduction انجام دهند.</p>
+
+        <p>LDA به جای صرفاً variance:</p>
+        <div class="inner-box">class separability</div>
+        <p>را در نظر می‌گیرد.</p>
+
+        <p>پس:</p>
+        <div class="formula">$$PCA : \text{maximize variance}$$</div>
+        <p>ولی:</p>
+        <div class="formula">$$LDA : \text{maximize class separability}$$</div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>71. PCA و Noise Reduction</h2>
+
+        <p>اگر noise عمدتاً در directions با variance پایین باشد:</p>
+
+        <div class="chart">PC1 PC2 PC3
+            ↓
+            signal
+
+            PC50 PC51...
+            ↓
+            noise</div>
+
+        <p>حذف componentهای آخر می‌تواند denoising انجام دهد.</p>
+
+        <p>اما این تضمین‌شده نیست.</p>
+
+        <p>چون:</p>
+        <div class="formula-inline" style="direction:ltr; background:#0d1117; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">low variance ≠ noise</div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>72. Curse of Dimensionality و Dimensionality Reduction</h2>
+
+        <p>در ابعاد بالا:</p>
+        <ul>
+            <li>فاصله‌ها کمتر informative می‌شوند</li>
+            <li>nearest neighborها مشکل پیدا می‌کنند</li>
+            <li>data sparsity افزایش می‌یابد</li>
+            <li>حجم داده مورد نیاز افزایش می‌یابد</li>
+        </ul>
+
+        <p>Dimensionality reduction می‌تواند در بعضی مسائل این مشکل را کاهش دهد.</p>
+
+        <p>اما:</p>
+        <div class="inner-box">dimensionality reduction cure-all نیست.</div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>73. PCA و Distance</h2>
+
+        <p>PCA transformation هندسی مهمی دارد.</p>
+
+        <p>اگر تمام componentها را نگه داری، transformation orthogonal است و Euclidean distances حفظ می‌شوند.</p>
+
+        <p>اما وقتی:</p>
+        <div class="formula">$$d \to k$$</div>
+        <p>و componentها را حذف می‌کنی:</p>
+        <div class="inner-box">بعضی اطلاعات و فاصله‌ها از بین می‌روند.</div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>74. Reconstruction Error</h2>
+
+        <p>برای PCA می‌توان:</p>
+        <div class="formula">$$X \to Z \to \hat{X}$$</div>
+        <p>داشت.</p>
+
+        <p>خطای reconstruction:</p>
+        <div class="formula">$$\|X - \hat{X}\|^2$$</div>
+
+        <p>هرچه component کمتر:</p>
+        <ul>
+            <li>Compression ↑</li>
+            <li>Reconstruction Error ↑</li>
+        </ul>
+        <p>معمولاً.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>75. Trade-off اصلی PCA</h2>
+
+        <div class="formula">$$Compression \leftrightarrow Information Loss$$</div>
+
+        <p>مثلاً:</p>
+        <div class="formula">$$1000 \text{ dimensions} \to 10 \text{ dimensions}$$</div>
+        <p>compression عالی است ولی ممکن است اطلاعات زیادی از دست برود.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>76. انتخاب تعداد Component با Reconstruction</h2>
+
+        <p>می‌توانی بررسی کنی:</p>
+        <ul>
+            <li>k=10 → error 30%</li>
+            <li>k=20 → error 15%</li>
+            <li>k=50 → error 5%</li>
+            <li>k=100 → error 1%</li>
+        </ul>
+        <p>و تصمیم بگیری.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>77. اما Reconstruction Error کافی نیست</h2>
+
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">⚠️ چون ممکن است:</div>
+            <div class="formula-inline" style="direction:ltr; background:#0d1117; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">low reconstruction error</div>
+            <p>داشته باشی ولی:</p>
+            <div class="formula-inline" style="direction:ltr; background:#0d1117; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">poor classification performance</div>
+            <p>بنابراین در supervised task باید downstream metric را نیز بررسی کنی.</p>
+        </div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>78. Dimensionality Reduction و Trees</h2>
+
+        <p>این نکته خیلی مهم است.</p>
+
+        <p>PCA معمولاً برای:</p>
+        <ul>
+            <li>Linear Models</li>
+            <li>KNN</li>
+            <li>SVM</li>
+            <li>Neural Networks</li>
+        </ul>
+        <p>ممکن است مفید باشد.</p>
+
+        <p>اما برای:</p>
+        <ul>
+            <li>Decision Tree</li>
+            <li>Random Forest</li>
+            <li>XGBoost</li>
+            <li>LightGBM</li>
+            <li>CatBoost</li>
+        </ul>
+        <p>اغلب dimensionality reduction ضرورت ندارد.</p>
+
+        <p>چرا؟</p>
+        <div class="inner-box">چون treeها feature interactions و feature selection را به شکل متفاوتی handle می‌کنند.</div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>79. PCA و Tree Model</h2>
+
+        <p>مثلاً:</p>
+        <div class="chart">100 features
+            ↓
+            PCA
+            ↓
+            20 PCs
+            ↓
+            XGBoost</div>
+
+        <p>ممکن است performance بدتر شود.</p>
+
+        <p>چرا؟</p>
+        <div class="inner-box">چون <span class="code-inline">PC₁</span> دیگر یک feature interpretable نیست و splitهای tree روی ترکیبات خطی انجام می‌شوند.</div>
+
+        <p>در بعضی datasets مفید است، اما default نیست.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>80. PCA برای KNN</h2>
+
+        <p>KNN بر اساس distance است:</p>
+        <div class="formula">$$d(x_i, x_j)$$</div>
+
+        <p>در high-dimensional space مشکل distance concentration داریم.</p>
+
+        <p>PCA می‌تواند:</p>
+        <div class="chart">noise dimensions
+            ↓
+            remove</div>
+        <p>کند.</p>
+
+        <p>در نتیجه KNN گاهی بهتر می‌شود.</p>
+
+        <p>اما باید با CV آزمایش شود.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>81. PCA برای SVM</h2>
+
+        <p>SVM مخصوصاً وقتی:</p>
+        <div class="formula">$$d \gg n$$</div>
+        <p>باشد، می‌تواند از dimensionality reduction سود ببرد.</p>
+
+        <p>ولی Kernel SVM خودش می‌تواند بسیار expensive باشد.</p>
+
+        <p>پس trade-off مهم است.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>82. PCA برای Neural Networks</h2>
+
+        <p>در deep learning معمولاً neural network خودش representation learning انجام می‌دهد.</p>
+
+        <p>پس PCA قبل از network همیشه لازم نیست.</p>
+
+        <p>ولی برای:</p>
+        <ul>
+            <li>tabular high-dimensional</li>
+            <li>noisy data</li>
+            <li>compression</li>
+            <li>preprocessing</li>
+        </ul>
+        <p>می‌تواند مفید باشد.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>83. Autoencoder vs PCA</h2>
+
+        <p>اگر داده پیچیده و nonlinear باشد:</p>
+        <div class="chart">PCA
+            ↓
+            linear manifold</div>
+        <p>ممکن است کافی نباشد.</p>
+
+        <p>Autoencoder:</p>
+        <div class="chart">X
+            ↓
+            nonlinear encoder
+            ↓
+            latent Z</div>
+        <p>می‌تواند representation پیچیده‌تری یاد بگیرد.</p>
+
+        <p>اما هزینه:</p>
+        <ul>
+            <li>training</li>
+            <li>hyperparameter tuning</li>
+            <li>stability</li>
+            <li>interpretability</li>
+        </ul>
+        <p>بیشتر است.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>84. t-SNE vs UMAP</h2>
+
+        <p>اگر سؤال مصاحبه:</p>
+        <div class="inner-box">t-SNE or UMAP?</div>
+
+        <p>باشد:</p>
+
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">t-SNE</div>
+            <p>وقتی:</p>
+            <div class="inner-box" style="background:#0d1117;">visualization of local neighborhoods</div>
+            <p>مهم است.</p>
+        </div>
+
+        <div class="inner-box" style="border-right-color:#3fb950;">
+            <div class="inner-title">UMAP</div>
+            <p>وقتی:</p>
+            <div class="inner-box" style="background:#0d1117;">visualization + scalability + better global structure + transform</div>
+            <p>مهم‌تر است.</p>
+        </div>
+
+        <p>اما benchmark روی dataset خودت همیشه بهتر از rule-of-thumb است.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>85. یک نکته بسیار مهم درباره Cluster‌های t-SNE/UMAP</h2>
+
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">⚠️ فرض کن visualization این باشد:</div>
+            <div class="chart">●●●●●
+
+                ●●●●●
+
+                ●●●●●</div>
+            <p>نباید سریع بگویی:</p>
+            <div class="inner-box" style="background:#0d1117;">سه cluster واقعی داریم.</div>
+            <p>ممکن است visualization artifact باشد.</p>
+            <p>باید clustering را با روش مستقل و metricهای مناسب بررسی کنی.</p>
+        </div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>86. Stability Analysis</h2>
+
+        <p>در سطح Senior فقط یک بار UMAP/t-SNE اجرا نمی‌کنی.</p>
+
+        <p>مثلاً:</p>
+        <ul>
+            <li>seed=1</li>
+            <li>seed=2</li>
+            <li>seed=3</li>
+        </ul>
+
+        <p>و:</p>
+        <ul>
+            <li>different perplexities</li>
+            <li>different n_neighbors</li>
+        </ul>
+
+        <p>را بررسی می‌کنی.</p>
+
+        <p>اگر structure کاملاً تغییر کند:</p>
+        <div class="inner-box">interpretation باید با احتیاط انجام شود.</div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>87. Pipeline واقعی Senior</h2>
+
+        <p>فرض کن:</p>
+        <ul>
+            <li>1M rows</li>
+            <li>5000 features</li>
+        </ul>
+
+        <p>داریم.</p>
+
+        <p>می‌توانی pipeline زیر را بررسی کنی:</p>
+
+        <div class="chart">Raw Data
+            │
+            ▼
+            Data Quality
+            │
+            ▼
+            Train/Test Split
+            │
+            ▼
+            Imputation
+            │
+            ▼
+            Scaling
+            │
+            ▼
+            Dimensionality Reduction
+            │
+            ├── PCA
+            ├── Truncated SVD
+            └── Autoencoder
+            │
+            ▼
+            Model
+            │
+            ▼
+            Validation
+            │
+            ▼
+            Business Metric</div>
+
+        <p>و چند candidate pipeline را مقایسه کنی.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>88. مقایسه نهایی الگوریتم‌ها</h2>
+
+        <div style="overflow-x:auto;">
+            <table>
+                <thead>
+                    <tr><th>Method</th><th>Type</th><th>Nonlinear</th><th>Main Use</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>PCA</td><td>Linear</td><td>❌</td><td>Compression</td></tr>
+                    <tr><td>SVD</td><td>Linear algebra</td><td>❌</td><td>Matrix factorization</td></tr>
+                    <tr><td>Truncated SVD</td><td>Linear</td><td>❌</td><td>Sparse/high-dimensional</td></tr>
+                    <tr><td>Kernel PCA</td><td>Nonlinear</td><td>✅</td><td>Nonlinear structure</td></tr>
+                    <tr><td>t-SNE</td><td>Nonlinear</td><td>✅</td><td>Visualization</td></tr>
+                    <tr><td>UMAP</td><td>Nonlinear</td><td>✅</td><td>Visualization/embedding</td></tr>
+                    <tr><td>Autoencoder</td><td>Nonlinear</td><td>✅</td><td>Representation learning</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>89. اگر در مصاحبه بپرسند PCA چگونه کار می‌کند؟</h2>
+
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <p>یک جواب Senior:</p>
+            <p style="font-size:1.05rem;">PCA داده را به یک فضای جدید orthogonal projection می‌کند که در آن componentها بر اساس مقدار variance مرتب شده‌اند. ابتدا داده معمولاً center/standardize می‌شود، سپس covariance structure از طریق eigendecomposition یا SVD بررسی می‌شود. بزرگ‌ترین eigenvalueها جهت‌هایی با بیشترین variance را مشخص می‌کنند و با نگه‌داشتن top-k components می‌توان dimensionality را کاهش داد. انتخاب k را نباید صرفاً بر اساس explained variance انجام داد؛ در supervised tasks باید downstream validation performance و احتمال حذف predictive signal را هم بررسی کرد.</p>
+        </div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>90. اگر بپرسند PCA چرا ممکن است بد باشد؟</h2>
+
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <p>جواب:</p>
+            <p>PCA unsupervised است و target را نمی‌بیند؛ بنابراین componentهایی که variance بالایی دارند الزاماً predictive signal بیشتری ندارند. همچنین interpretability کاهش می‌یابد، sparse data ممکن است با PCA معمولی مشکل memory داشته باشد، و اگر preprocessing/PCA قبل از cross-validation fit شود می‌تواند leakage ایجاد کند.</p>
+        </div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>91. اگر بپرسند چرا Truncated SVD برای NLP؟</h2>
+
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <p>جواب:</p>
+            <p>چون TF-IDF/document-term matrices معمولاً بسیار sparse و high-dimensional هستند و PCA استاندارد به دلیل centering می‌تواند sparse matrix را dense کند. Truncated SVD بدون نیاز به centering مستقیم روی sparse matrix کار می‌کند و با نگه‌داشتن top singular components یک latent low-dimensional representation می‌سازد؛ این همان ایده‌ای است که در LSA استفاده می‌شود.</p>
+        </div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>92. اگر بپرسند t-SNE برای production مناسب است؟</h2>
+
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <p>جواب:</p>
+            <p>معمولاً نه به عنوان preprocessing عمومی. t-SNE عمدتاً visualization-oriented است، stochastic و computationally expensive است، global geometry را به‌خوبی حفظ نمی‌کند و handling داده‌های جدید محدودتر است. برای visualization عالی است، ولی برای production feature transformation معمولاً PCA، Truncated SVD، UMAP یا learned embeddings گزینه‌های عملی‌تری هستند.</p>
+        </div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>93. اگر بپرسند UMAP بهتر است یا t-SNE؟</h2>
+
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <p>جواب Senior:</p>
+            <p>بستگی به objective دارد. t-SNE برای visualization local neighborhoods بسیار قوی است، در حالی که UMAP معمولاً scalability و preservation ساختار global را بهتر trade-off می‌کند و transform کردن داده جدید را نیز بهتر پشتیبانی می‌کند. ولی هیچ‌کدام universally superior نیستند و باید stability و downstream objective بررسی شود.</p>
+        </div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>94. مهم‌ترین تفاوت سه مفهوم</h2>
+
+        <p>این را حتماً حفظ کن:</p>
+
+        <div class="chart">                 Feature Engineering
+            │
+            ┌─────────┴─────────┐
+            │                   │
+            Feature Selection    Feature Extraction
+            │                   │
+            │                   │
+            Original Features    New Features
+            │                   │
+            └─────────┬─────────┘
+            │
+            Dimensionality
+            Reduction</div>
+
+        <p>مثلاً:</p>
+        <div class="inner-box">
+            <strong>Selection:</strong>
+            <div class="formula-inline" style="direction:ltr; background:#0d1117; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">[X₁, X₂, X₃, X₄, X₅] → [X₁, X₃]</div>
+        </div>
+
+        <div class="inner-box">
+            <strong>Extraction:</strong>
+            <div class="formula-inline" style="direction:ltr; background:#0d1117; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">[X₁, X₂, X₃, X₄, X₅] → [PC₁, PC₂]</div>
+        </div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>🧠 95. Mental Model برای Senior ML</h2>
+
+        <p>وقتی dataset high-dimensional دیدی، این سؤال‌ها را به ترتیب از خودت بپرس:</p>
+
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">1. آیا واقعاً باید dimension را کم کنم؟</div>
+            <p>نه اینکه صرفاً چون <span class="code-inline">500 features</span> دارم، فوراً PCA بزنم.</p>
+        </div>
+
+        <div class="inner-box" style="border-right-color:#3fb950;">
+            <div class="inner-title">2. آیا feature selection بهتر نیست؟</div>
+            <p>اگر interpretability مهم است: <span class="code-inline">Selection</span> ممکن است بهتر باشد.</p>
+        </div>
+
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">3. آیا داده sparse است؟</div>
+            <p>اگر <span class="code-inline">TF-IDF</span> یا <span class="code-inline">Bag of Words</span> یا <span class="code-inline">Huge categorical space</span> است: <span class="code-inline">Truncated SVD / hashing</span> را بررسی کن.</p>
+        </div>
+
+        <div class="inner-box" style="border-right-color:#d2a8ff;">
+            <div class="inner-title">4. آیا structure nonlinear است؟</div>
+            <p>اگر بله: <span class="code-inline">UMAP / Kernel PCA / Autoencoder</span> را بررسی کن.</p>
+        </div>
+
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">5. آیا فقط visualization می‌خواهم؟</div>
+            <p>پس: <span class="code-inline">t-SNE / UMAP</span></p>
+        </div>
+
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">6. آیا target دارم؟</div>
+            <p>اگر supervised هستی: فقط explained variance را معیار انتخاب قرار نده. <strong>Downstream metric</strong> مهم است.</p>
+        </div>
+
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">7. آیا leakage ایجاد می‌کنم؟</div>
+            <p>هر transformationی که از data یاد می‌گیرد:</p>
+            <ul>
+                <li>Scaling</li>
+                <li>Imputation</li>
+                <li>PCA</li>
+                <li>SVD</li>
+                <li>Target Encoding</li>
+                <li>Feature Selection</li>
+                <li>UMAP</li>
+            </ul>
+            <p>باید با دقت داخل train/CV fit شود.</p>
+        </div>
+
+        <hr style="border:1px solid #444; margin:30px 0;">
+
+        <h2>🔥 96. نکات مصاحبه‌ای که باید خیلی خوب بلد باشی</h2>
+
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">PCA</div>
+            <div class="formula-inline" style="direction:ltr; background:#0d1117; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">maximize variance</div>
+        </div>
+
+        <div class="inner-box" style="border-right-color:#3fb950;">
+            <div class="inner-title">Truncated SVD</div>
+            <div class="formula-inline" style="direction:ltr; background:#0d1117; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">low-rank approximation</div>
+        </div>
+
+        <div class="inner-box" style="border-right-color:#d2a8ff;">
+            <div class="inner-title">Kernel PCA</div>
+            <div class="formula-inline" style="direction:ltr; background:#0d1117; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">nonlinear PCA via kernel</div>
+        </div>
+
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">t-SNE</div>
+            <div class="formula-inline" style="direction:ltr; background:#0d1117; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">local-neighborhood visualization</div>
+        </div>
+
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">UMAP</div>
+            <div class="formula-inline" style="direction:ltr; background:#0d1117; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">manifold-based embedding with good scalability</div>
+        </div>
+
+        <div class="inner-box" style="border-right-color:#3fb950;">
+            <div class="inner-title">Autoencoder</div>
+            <div class="formula-inline" style="direction:ltr; background:#0d1117; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">learned nonlinear latent representation</div>
+        </div>
+
+        <div style="margin-top:30px; background:#161b22; border-radius:12px; border:1px solid #30363d; padding:20px;">
+            <p style="font-size:1.1rem; text-align:center;">و در نهایت:</p>
+
+            <div class="formula" style="background:#0d1117; border-color:#30363d; font-size:1.1rem;">Feature Selection = Keep Original Features</div>
+
+            <div style="text-align:center; margin:10px 0; color:#8b949e;">در مقابل</div>
+
+            <div class="formula" style="background:#0d1117; border-color:#30363d; font-size:1.1rem;">Feature Extraction = Create New Features</div>
+
+            <div style="text-align:center; margin:10px 0; color:#8b949e;">و در نهایت</div>
+
+            <div class="formula" style="background:#0d1117; border-color:#30363d; font-size:1.1rem;">Dimensionality Reduction = Reduce Number of Dimensions</div>
+
+            <div class="inner-box" style="border-right-color:#f0883e; margin-top:15px;">
+                <p style="text-align:center;">این سه مفهوم هم‌معنی نیستند؛ این یکی از مهم‌ترین نکات این فصل است 🎯</p>
+            </div>
+        </div>
+
+        <hr style="border:1px solid #444; margin:50px 0;">
+        <p style="text-align:center; color:#8b949e; font-size:0.85rem; padding:16px 0;">Dimensionality Reduction · Senior ML · تمام نکات ریز 🧠</p>
+
+    </div>
+
+</body>
+</html>

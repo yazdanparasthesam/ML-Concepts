@@ -1,0 +1,2025 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classical Machine Learning Algorithms · Senior ML</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}]});"></script>
+    <style>
+        body {
+            background-color: #0d1117;
+            color: #e6edf3;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.8;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h1, h2, h3, h4 {
+            color: #e6edf3;
+            text-align: right;
+            border-bottom: 1px solid #444;
+            padding-bottom: 15px;
+            margin-top: 50px;
+        }
+        p, li {
+            text-align: right;
+        }
+
+        .box {
+            background-color: #21262d;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            color: #e6edf3;
+        }
+        .inner-box {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 10px;
+            border-right: 4px solid #58a6ff;
+        }
+        .inner-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .formula {
+            direction: ltr;
+            background-color: #000;
+            border: 1px solid #fff;
+            border-radius: 0;
+            padding: 20px;
+            margin: 20px auto;
+            width: fit-content;
+            max-width: 100%;
+            overflow-x: auto;
+            text-align: center;
+            font-size: 1.2em;
+            font-family: "Times New Roman", Times, serif;
+            color: #fff;
+        }
+
+        .chart {
+            direction: ltr;
+            text-align: left;
+            font-family: monospace;
+            background-color: #21262d;
+            border-radius: 8px;
+            padding: 15px;
+            overflow-x: auto;
+            white-space: pre;
+            border: 1px solid #444;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            direction: rtl;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #444;
+            padding: 12px;
+            text-align: right;
+        }
+        th {
+            background-color: #21262d;
+        }
+
+        .viz-box {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            direction: ltr;
+        }
+
+        .slider-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background-color: #21262d;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #30363d;
+        }
+        .slider-row label {
+            width: 20px;
+            font-weight: bold;
+            color: #58a6ff;
+            font-size: 1.2em;
+            text-align: center;
+        }
+        .slider-row input[type="range"] {
+            flex: 1;
+            accent-color: #58a6ff;
+            height: 8px;
+            background-color: #30363d;
+            border-radius: 4px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        .slider-row input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+            border: 2px solid #58a6ff;
+        }
+        .slider-row input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+            border: 2px solid #58a6ff;
+        }
+        .slider-row .value {
+            width: 40px;
+            text-align: center;
+            font-family: monospace;
+            font-size: 1.1em;
+            color: #c9d1d9;
+        }
+        
+        .canvas-container {
+            width: 100%;
+            height: auto;
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        
+        .focus-btn {
+            flex: 1;
+            padding: 8px;
+            background-color: #21262d;
+            color: #e6edf3;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'Segoe UI', sans-serif;
+            font-size: 0.95em;
+        }
+        .focus-btn.active {
+            background-color: #58a6ff;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌳 9. Classical Machine Learning Algorithms</h1>
+
+        <p style="font-size:1.1rem;">حتماً. این بخش Classical ML Algorithms یکی از مهم‌ترین بخش‌ها برای سطح Senior است؛ چون در مصاحبه Senior معمولاً فقط نمی‌پرسند «XGBoost چیست؟»، بلکه می‌پرسند:</p>
+        <ul>
+            <li>چرا Linear Regression را به XGBoost ترجیح می‌دهی؟</li>
+            <li>چه زمانی KNN بهتر از یک مدل پیچیده است؟</li>
+            <li>چرا Random Forest نسبت به یک Decision Tree بهتر generalize می‌کند؟</li>
+            <li>XGBoost و LightGBM و CatBoost دقیقاً چه تفاوتی دارند؟</li>
+            <li>چرا SVM با Kernel می‌تواند nonlinear باشد؟</li>
+            <li>چرا K-Means برای بعضی داده‌ها مناسب نیست؟</li>
+            <li>چه زمانی Naive Bayes با وجود فرض اشتباه استقلال، عملکرد خوبی دارد؟</li>
+            <li>GMM چه تفاوتی با K-Means دارد؟</li>
+            <li>Scaling برای کدام مدل‌ها ضروری است؟</li>
+            <li>Complexity و Training/Inference Cost هر مدل چیست؟</li>
+            <li>مدل‌ها با missing values، categorical features، outlier و high-dimensional data چگونه رفتار می‌کنند؟</li>
+        </ul>
+        <p style="font-size:1.1rem;">من هر خانواده را از intuition → mathematics → training → hyperparameters → assumptions → strengths/weaknesses → complexity → practical usage → interview نکات Senior توضیح می‌دهم.</p>
+
+        <h2>اول یک نقشه کلی داشته باشیم:</h2>
+        <div class="chart">Classical ML
+│
+├── Linear Models
+│   ├── Linear Regression
+│   ├── Polynomial Regression
+│   ├── Ridge
+│   ├── Lasso
+│   ├── Elastic Net
+│   └── Logistic Regression
+│
+├── Distance-Based
+│   ├── KNN
+│   ├── K-Means
+│   └── K-Medoids
+│
+├── Tree-Based
+│   ├── Decision Tree
+│   ├── Random Forest
+│   ├── Extra Trees
+│   ├── Gradient Boosting
+│   ├── XGBoost
+│   ├── LightGBM
+│   └── CatBoost
+│
+├── Margin-Based
+│   ├── SVM
+│   └── SVR
+│
+└── Probabilistic
+    ├── Naive Bayes
+    └── Gaussian Mixture Model</div>
+
+        <h2>بخش اول — Linear Models</h2>
+        <h3>1. Linear Regression</h3>
+        <div class="inner-box">
+            <div class="inner-title">ایده اصلی</div>
+            <p>Linear Regression می‌خواهد رابطه‌ای بین Features و Target پیدا کند که به شکل خطی باشد.</p>
+            <p>برای یک Feature:</p>
+            <div class="formula">$$\hat{y} = \beta_0 + \beta_1x$$</div>
+            <p>برای چند Feature:</p>
+            <div class="formula">$$\boxed{\hat{y} = \beta_0 + \beta_1x_1 + \beta_2x_2 + \cdots + \beta_px_p}$$</div>
+            <p>یا:</p>
+            <div class="formula">$$\hat{y} = X\beta$$</div>
+        </div>
+
+        <h3>مثال</h3>
+        <p>فرض کن می‌خواهیم قیمت خانه را پیش‌بینی کنیم:</p>
+        <div class="chart">Area
+Rooms
+Age
+Location Score
+      │
+      ▼
+Linear Regression
+      │
+      ▼
+House Price</div>
+        <p>مدل ممکن است یاد بگیرد:</p>
+        <div class="formula">$$Price = 50000 + 3000Area + 20000Rooms - 1000Age$$</div>
+
+        <h3>2. هدف Linear Regression</h3>
+        <p>معمولاً Mean Squared Error را کمینه می‌کنیم:</p>
+        <div class="formula">$$\boxed{MSE = \frac{1}{n}\sum_{i=1}^{n}(y_i - \hat{y}_i)^2}$$</div>
+        <p>بنابراین:</p>
+        <div class="formula">$$\boxed{\min_{\beta} \sum_i(y_i - X_i\beta)^2}$$</div>
+
+        <h3>3. Least Squares</h3>
+        <p>Linear Regression کلاسیک از:</p>
+        <div class="chart">Ordinary Least Squares — OLS</div>
+        <p>استفاده می‌کند.</p>
+        
+        <!-- Visualizations for Section 3 (UNCHANGED) -->
+        <div class="viz-box">
+            <div class="inner-box" style="border-right: none; background: #161b22; border: 1px solid #30363d; margin: 0;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #30363d; padding-bottom: 10px; margin-bottom: 20px;">
+                    <div style="color: #e6edf3; font-weight: bold;">یک نقطه را بکشید تا خط دوباره برازش شود.</div>
+                    <div style="color: #8b949e; font-size: 0.9em;">بازخورد بدهید</div>
+                </div>
+                <div style="display: flex; flex-wrap: wrap; gap: 20px;">
+                    <div style="flex: 1; min-width: 300px;">
+                        <div class="canvas-container"><canvas id="leastSquaresCanvas" width="500" height="400"></canvas></div>
+                    </div>
+                    <div style="flex: 1; min-width: 200px; background: #21262d; padding: 15px; border-radius: 8px;">
+                        <h4 style="color: #e6edf3; margin-top: 0; border-bottom: 1px solid #30363d; padding-bottom: 10px;">آمار مدل</h4>
+                        <div style="background: #161b22; padding: 15px; border-radius: 8px; margin-bottom: 10px; text-align: left; direction: ltr; font-family: 'Times New Roman', serif; font-size: 1.2em;">
+                            <p style="margin: 0;">\(\hat{y} = b_0 + b_1x\)</p>
+                            <p style="color: #58a6ff; margin: 10px 0 0 0;" id="ls-equation">\(\hat{y} = 8.49 - 0.54x\)</p>
+                            <p style="color: #8b949e; font-family: 'Segoe UI', sans-serif; font-size: 0.9em; margin-top: 10px;">R² = 0.72 · b₀ = عرض از مبدأ · b₁ = شیب · حداقل مربعات، مجذور فاصله های باقیمانده عمودی را کمینه می کند.</p>
+                        </div>
+                        
+                        <div style="display: flex; gap: 5px; margin-bottom: 10px; direction: rtl;">
+                            <button id="btn-data" class="focus-btn active" type="button">داده ها</button>
+                            <button id="btn-line" class="focus-btn" type="button">خط</button>
+                            <button id="btn-pred" class="focus-btn" type="button">پیش بینی ها</button>
+                            <button id="btn-res" class="focus-btn" type="button">باقی مانده ها</button>
+                        </div>
+                        
+                        <button id="ls-generate" style="width: 100%; padding: 10px; background: #58a6ff; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-family: 'Segoe UI', sans-serif; font-weight: bold; margin-top: 5px;">تولید داده های جدید</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <p>هدف این است که مجموع مربع فاصله‌های عمودی بین:</p>
+        <div class="chart">Actual y
+   │
+   │ residual
+   ▼
+Predicted y</div>
+        <p>کمینه شود.</p>
+
+        <h3>4. Closed-Form Solution</h3>
+        <p>در شرایط مناسب:</p>
+        <div class="formula">$$\boxed{\hat{\beta} = (X^TX)^{-1}X^Ty}$$</div>
+        <p>این همان Normal Equation است.</p>
+        <p>اما در عمل همیشه Matrix Inverse را مستقیماً حساب نمی‌کنیم.</p>
+        <p>معمولاً از روش‌هایی مثل:</p>
+        <div class="chart">QR decomposition
+SVD
+iterative optimization</div>
+        <p>استفاده می‌شود.</p>
+
+        <h3>5. چرا Matrix Inverse خطرناک است؟</h3>
+        <p>اگر:</p>
+        <div class="formula">$$X^TX$$</div>
+        <p>ill-conditioned یا singular باشد، inverse می‌تواند از نظر عددی ناپایدار باشد.</p>
+        <p>این اتفاق خصوصاً با:</p>
+        <div class="chart">Multicollinearity</div>
+        <p>رخ می‌دهد.</p>
+
+        <h3>6. Assumptions در Linear Regression</h3>
+        <p>برای استنباط آماری کلاسیک، assumptions مهم هستند:</p>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">1. Linearity</div>
+            <p>رابطه conditional mean تقریباً خطی باشد:</p>
+            <div class="formula">$$E[Y|X] = X\beta$$</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">2. Independence</div>
+            <p>مشاهدات وابسته نباشند.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#3fb950;">
+            <div class="inner-title">3. Homoscedasticity</div>
+            <p>Variance خطاها ثابت باشد:</p>
+            <div class="formula">$$Var(\epsilon|X) = \sigma^2$$</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#d2a8ff;">
+            <div class="inner-title">4. Zero Conditional Mean</div>
+            <div class="formula">$$E[\epsilon|X] = 0$$</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">5. Normality of Errors</div>
+            <p>برای برخی inferenceهای کلاسیک مهم است، ولی برای خود point prediction الزام مطلق نیست.</p>
+        </div>
+
+        <h3>7. نکته بسیار مهم Senior</h3>
+        <p>خیلی‌ها می‌گویند:</p>
+        <div class="chart">Linear Regression فقط وقتی خوب است که داده‌ها Normal باشند.</div>
+        <p>این اشتباه است.</p>
+        <p>Normality بیشتر برای:</p>
+        <div class="chart">statistical inference / confidence intervals / hypothesis tests</div>
+        <p>مهم است، نه اینکه الزاماً خود Linear Regression نتواند prediction انجام دهد.</p>
+
+        <h3>8. Multicollinearity</h3>
+        <p>اگر:</p>
+        <div class="formula">$$X_1 \approx X_2$$</div>
+        <p>باشد، coefficients ممکن است ناپایدار شوند.</p>
+        <p>مثلاً:</p>
+        <div class="chart">House Size
+Number of Rooms</div>
+        <p>ممکن است شدیداً correlated باشند.</p>
+        <p>نتیجه:</p>
+        <div class="chart">coefficient variance بالا
+interpretability ضعیف
+instability</div>
+
+        <h3>9. مزایای Linear Regression</h3>
+        <div class="chart">ساده
+سریع
+قابل تفسیر
+baseline عالی
+مناسب برای رابطه تقریباً خطی
+training ارزان
+مناسب برای datasets بزرگ و sparse</div>
+
+        <h3>10. محدودیت‌ها</h3>
+        <div class="chart">رابطه‌های nonlinear را به‌صورت مستقیم یاد نمی‌گیرد.
+نسبت به outlierها با MSE حساس است.
+multicollinearity می‌تواند مشکل‌ساز شود.
+feature engineering ممکن است لازم باشد.</div>
+
+        <h3>11. Polynomial Regression</h3>
+        <p>اگر رابطه خطی نباشد می‌توان Features را به polynomial تبدیل کرد.</p>
+        <p>مثلاً:</p>
+        <div class="formula">$$\boxed{y = \beta_0 + \beta_1x + \beta_2x^2}$$</div>
+        <p>یا:</p>
+        <div class="formula">$$y = \beta_0 + \beta_1x + \beta_2x^2 + \beta_3x^3$$</div>
+
+        <h3>12. نکته بسیار مهم</h3>
+        <p>Polynomial Regression در واقع:</p>
+        <div class="chart">هنوز Linear Model است.</div>
+        <p>چرا؟</p>
+        <p>چون نسبت به parameters خطی است:</p>
+        <div class="chart">y = β₀ + β₁x + β₂x²</div>
+        <p>Features nonlinear شده‌اند، اما coefficients خطی هستند.</p>
+
+        <h3>13. مشکل Polynomial Regression</h3>
+        <p>اگر degree زیاد شود:</p>
+        <div class="chart">degree ↑</div>
+        <p>آنگاه:</p>
+        <div class="chart">Complexity ↑
+Bias ↓
+Variance ↑</div>
+        <p>و ممکن است:</p>
+        <div class="chart">Overfitting</div>
+        <p>رخ دهد.</p>
+
+        <h3>14. Polynomial Explosion</h3>
+        <p>با \(p\) feature و degree \(d\)، تعداد polynomial features می‌تواند بسیار زیاد شود.</p>
+        <p>خصوصاً interaction terms.</p>
+        <p>مثلاً:</p>
+        <div class="chart">x1
+x2
+x1²
+x2²
+x1*x2
+x1³
+x2³
+x1²*x2
+x1*x2²
+...</div>
+        <p>پس:</p>
+        <div class="chart">Curse of Dimensionality / computational cost</div>
+        <p>مهم می‌شود.</p>
+
+        <h3>15. Ridge Regression</h3>
+        <p>Ridge همان Linear Regression با:</p>
+        <div class="chart">L2</div>
+        <p>است.</p>
+        <div class="formula">$$\boxed{J(\beta) = MSE + \lambda\sum_j\beta_j^2}$$</div>
+        <p>هدف:</p>
+        <div class="chart">جلوگیری از coefficientهای بسیار بزرگ.</div>
+
+        <h3>16. Ridge چه زمانی عالی است؟</h3>
+        <p>وقتی:</p>
+        <div class="chart">Features زیاد
++
+Features correlated</div>
+        <p>داریم.</p>
+        <p>Ridge معمولاً coefficients را:</p>
+        <div class="chart">→ 0</div>
+        <p>shrink می‌کند، ولی اغلب دقیقاً صفر نمی‌کند.</p>
+
+        <h3>17. Ridge و Multicollinearity</h3>
+        <p>فرض کن:</p>
+        <div class="chart">x1 ── correlation ── x2</div>
+        <p>L2 تمایل دارد اثر را بین آن‌ها توزیع کند.</p>
+        <p>این یکی از دلایلی است که Ridge برای correlated predictors مناسب است.</p>
+
+        <h3>18. Lasso</h3>
+        <p>Lasso:</p>
+        <div class="formula">$$\boxed{J(\beta) = MSE + \lambda\sum_j|\beta_j|}$$</div>
+        <p>است.</p>
+        <p>L1 باعث:</p>
+        <div class="formula">$$\beta_j = 0$$</div>
+        <p>برای برخی features می‌شود.</p>
+        <p>پس:</p>
+        <div class="chart">Feature Selection</div>
+        <p>انجام می‌دهد.</p>
+
+        <h3>19. Lasso چه زمانی مفید است؟</h3>
+        <p>وقتی:</p>
+        <div class="chart">p بسیار بزرگ
++
+بسیاری از features احتمالاً irrelevant</div>
+        <p>داریم.</p>
+        <p>مثلاً:</p>
+        <div class="chart">10000 features
+50 useful</div>
+        <p>Lasso می‌تواند solution sparse ایجاد کند.</p>
+
+        <h3>20. مشکل Lasso</h3>
+        <p>با correlated features:</p>
+        <div class="chart">x1 ≈ x2 ≈ x3</div>
+        <p>ممکن است یکی را نگه دارد و بقیه را حذف کند.</p>
+        <p>انتخاب ممکن است ناپایدار باشد.</p>
+
+        <h3>21. Elastic Net</h3>
+        <p>ترکیب:</p>
+        <div class="chart">L1 + L2</div>
+        <p>است:</p>
+        <div class="formula">$$\boxed{J = MSE + \lambda[\alpha||\beta||_1 + (1-\alpha)||\beta||_2^2]}$$</div>
+        <p>مزیت:</p>
+        <div class="chart">L1
+→ sparsity
+
+L2
+→ stability with correlated features</div>
+
+        <h3>22. Logistic Regression</h3>
+        <p>با وجود اسمش:</p>
+        <div class="chart">Logistic Regression یک Classification Algorithm است.</div>
+        <p>برای binary classification:</p>
+        <div class="formula">$$z = w^Tx + b$$</div>
+        <p>و:</p>
+        <div class="formula">$$\boxed{p(y=1|x) = \sigma(z)}$$</div>
+        <p>که:</p>
+        <div class="formula">$$\sigma(z) = \frac{1}{1+e^{-z}}$$</div>
+        <p>است.</p>
+
+        <h3>23. چرا Sigmoid؟</h3>
+        <p>Sigmoid:</p>
+        <div class="formula">$$(-\infty, +\infty) \rightarrow (0,1)$$</div>
+        <p>تبدیل می‌کند.</p>
+        <p>پس می‌توانیم probability تفسیر کنیم.</p>
+
+        <h3>24. Logistic Regression</h3>
+        <p>اگر:</p>
+        <div class="formula">$$p = P(y=1|x)$$</div>
+        <p>باشد:</p>
+        <div class="formula">$$\boxed{\log\frac{p}{1-p} = w^Tx + b}$$</div>
+        <p>یعنی Logistic Regression در:</p>
+        <div class="chart">log-odds space</div>
+        <p>رابطه خطی دارد.</p>
+
+        <h3>25. Loss</h3>
+        <p>معمولاً:</p>
+        <div class="chart">Binary Cross Entropy / Log Loss</div>
+        <p>است:</p>
+        <div class="formula">$$\boxed{L = -[y\log p + (1-y)\log(1-p)]}$$</div>
+
+        <h3>26. Decision Boundary</h3>
+        <p>اگر threshold:</p>
+        <div class="chart">0.5</div>
+        <p>باشد:</p>
+        <div class="chart">$$p \geq 0.5 \Rightarrow y = 1$$</div>
+        <p>چون:</p>
+        <div class="chart">$$\sigma(z) = 0.5$$</div>
+        <p>وقتی:</p>
+        <div class="chart">$$z = 0$$</div>
+        <p>پس decision boundary:</p>
+        <div class="formula">$$\boxed{w^Tx + b = 0}$$</div>
+        <p>است.</p>
+
+        <h3>27. Logistic Regression Linear است؟</h3>
+        <p>بله.</p>
+        <p>Decision Boundary آن در فضای Feature:</p>
+        <div class="chart">Linear</div>
+        <p>است.</p>
+        <p>ولی Probability output nonlinear است.</p>
+        <p>این distinction خیلی مهم است.</p>
+
+        <h3>28. Regularized Logistic Regression</h3>
+        <p>می‌توان:</p>
+        <div class="chart">$$L + \lambda||w||_2^2$$</div>
+        <p>یا:</p>
+        <div class="chart">$$L + \lambda||w||_1$$</div>
+        <p>داشت.</p>
+        <p>در عمل این مدل بسیار قوی و underrated است.</p>
+
+        <h2>بخش دوم — Distance-Based</h2>
+        <h3>29. KNN</h3>
+        <p>K-Nearest Neighbors یک:</p>
+        <div class="chart">Instance-Based / Lazy Learning</div>
+        <p>algorithm است.</p>
+        <p>Training تقریباً:</p>
+        <div class="chart">فقط ذخیره کردن داده</div>
+        <p>است.</p>
+
+        <h3>30. KNN چگونه prediction می‌کند؟</h3>
+        <p>برای نمونه جدید:</p>
+        <div class="chart">New Point
+    │
+    ▼
+Calculate distances
+    │
+    ▼
+Find K nearest samples
+    │
+    ▼
+Vote / Average</div>
+        <p>Classification:</p>
+        <div class="chart">$$\hat{y} = mode(neighbors)$$</div>
+        <p>Regression:</p>
+        <div class="chart">$$\hat{y} = average(neighbors)$$</div>
+
+        <h3>31. چرا K مهم است؟</h3>
+        <p>اگر:</p>
+        <div class="chart">$$K = 1$$</div>
+        <p>مدل بسیار local است.</p>
+        <div class="chart">Bias ↓
+Variance ↑</div>
+        <p>اگر:</p>
+        <div class="chart">$$K$$</div>
+        <p>بزرگ شود:</p>
+        <div class="chart">Bias ↑
+Variance ↓</div>
+        <p>پس K خودش یک Bias-Variance hyperparameter است.</p>
+
+        <h3>32. KNN و Scaling</h3>
+        <p>بسیار مهم.</p>
+        <p>فرض کن:</p>
+        <div class="chart">Age = 20–80
+Salary = 10,000–1,000,000</div>
+        <p>Euclidean distance تقریباً تحت domination Salary قرار می‌گیرد.</p>
+        <p>پس معمولاً:</p>
+        <div class="chart">Scaling</div>
+        <p>ضروری است.</p>
+
+        <h3>33. Complexity KNN</h3>
+        <p>Training:</p>
+        <p>تقریباً:</p>
+        <div class="chart">$$O(1)$$</div>
+        <p>از نظر fitting ساده است.</p>
+        <p>اما inference:</p>
+        <div class="chart">$$O(nd)$$</div>
+        <p>برای brute-force، برای هر query.</p>
+        <p>اگر:</p>
+        <div class="chart">\(n\): تعداد samples
+\(d\): تعداد features</div>
+        <p>باشد.</p>
+        <p>پس KNN:</p>
+        <div class="chart">Training cheap, inference expensive</div>
+        <p>است.</p>
+
+        <h3>34. Curse of Dimensionality در KNN</h3>
+        <p>در ابعاد بالا:</p>
+        <p>فاصله‌ها کمتر meaningful می‌شوند.</p>
+        <p>ممکن است:</p>
+        <div class="chart">Nearest distance
+≈
+Farthest distance</div>
+        <p>شود.</p>
+        <p>در نتیجه KNN در high-dimensional space ممکن است ضعیف شود.</p>
+
+        <h3>35. K-Means</h3>
+        <p>K-Means یک:</p>
+        <div class="chart">Unsupervised Clustering Algorithm</div>
+        <p>است.</p>
+        <p>هدف:</p>
+        <div class="formula">$$\boxed{\min \sum_{i=1}^{n} ||x_i - \mu_{c_i}||^2}$$</div>
+        <p>است.</p>
+        <p>یعنی هر نقطه را به نزدیک‌ترین centroid نسبت می‌دهیم.</p>
+
+        <h3>36. الگوریتم K-Means</h3>
+        <div class="chart">Initialize K centroids
+       ↓
+Assign points
+       ↓
+Update centroids
+       ↓
+Repeat
+       ↓
+Converge</div>
+
+        <h3>37. K-Means چرا Local Minimum دارد؟</h3>
+        <p>K-Means objective غیر-convex نسبت به assignments و centroids به صورت joint است.</p>
+        <p>پس initialization مهم است.</p>
+        <p>به همین دلیل:</p>
+        <div class="chart">K-Means++</div>
+        <p>استفاده می‌شود.</p>
+
+        <h3>38. K-Means++</h3>
+        <p>Centroidهای اولیه را هوشمندتر انتخاب می‌کند تا احتمال initialization بد کاهش یابد.</p>
+
+        <h3>39. انتخاب K</h3>
+        <p>روش‌های رایج:</p>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">Elbow Method</div>
+            <p>Plot:</p>
+            <div class="chart">$$Inertia$$</div>
+            <p>در مقابل K.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">Silhouette Score</div>
+            <p>می‌تواند quality clustering را بررسی کند.</p>
+            <p>اما:</p>
+            <div class="chart">هیچ‌کدام تضمین نمی‌کنند K واقعی کسب‌وکار را پیدا کرده‌ایم.</div>
+        </div>
+
+        <h3>40. فرض مهم K-Means</h3>
+        <p>K-Means عمدتاً برای clusterهایی مناسب است که:</p>
+        <div class="chart">compact
+roughly spherical
+مشابه از نظر scale</div>
+        <p>باشند.</p>
+        <p>برای:</p>
+        <div class="chart">moons
+rings
+complex shapes</div>
+        <p>ممکن است ضعیف باشد.</p>
+
+        <h3>41. K-Means به Outlier حساس است</h3>
+        <p>Centroid:</p>
+        <div class="chart">$$mean$$</div>
+        <p>است.</p>
+        <p>Mean نسبت به outlier حساس است.</p>
+        <p>مثلاً:</p>
+        <div class="chart">1, 2, 3, 4, 1000</div>
+        <p>Centroid شدیداً جابه‌جا می‌شود.</p>
+
+        <h3>42. K-Medoids</h3>
+        <p>K-Medoids شبیه K-Means است، ولی:</p>
+        <div class="chart">centroid باید یکی از داده‌های واقعی باشد.</div>
+        <p>Medoid:</p>
+        <div class="chart">Actual Data Point</div>
+        <p>است.</p>
+
+        <h3>43. مزیت K-Medoids</h3>
+        <p>چون از actual observations استفاده می‌کند و می‌توان از distanceهای generalتر استفاده کرد، معمولاً:</p>
+        <div class="chart">Robustتر نسبت به K-Means</div>
+        <p>است.</p>
+        <p>مثلاً برای داده‌هایی که outlier دارند.</p>
+
+        <h3>44. تفاوت K-Means و K-Medoids</h3>
+        <div style="overflow-x:auto;">
+            <table>
+                <thead><tr><th></th><th>K-Means</th><th>K-Medoids</th></tr></thead>
+                <tbody>
+                    <tr><td>Center</td><td>Mean</td><td>Actual point</td></tr>
+                    <tr><td>Outlier sensitivity</td><td>بالا</td><td>کمتر</td></tr>
+                    <tr><td>Distance</td><td>معمولاً Euclidean</td><td>General distances</td></tr>
+                    <tr><td>Speed</td><td>سریع‌تر</td><td>معمولاً کندتر</td></tr>
+                    <tr><td>Interpretability</td><td>کمتر</td><td>بیشتر</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2>بخش سوم — Tree-Based Models</h2>
+        <h3>45. Decision Tree</h3>
+        <p>Decision Tree داده را با:</p>
+        <div class="chart">سؤال‌های متوالی</div>
+        <p>تقسیم می‌کند.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Income > 50K?
+       /       \
+     Yes       No
+     /           \
+Age > 30?       Reject
+ /    \
+Yes    No
+ |      |
+Approve Reject</div>
+
+        <h3>46. Split چگونه انتخاب می‌شود؟</h3>
+        <p>برای Classification معیارهای رایج:</p>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">Gini Impurity</div>
+            <div class="formula">$$\boxed{Gini = 1 - \sum_k p_k^2}$$</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">Entropy</div>
+            <div class="formula">$$\boxed{H = -\sum_k p_k \log p_k}$$</div>
+        </div>
+
+        <h3>47. Information Gain</h3>
+        <div class="formula">$$\boxed{IG = H(parent) - \sum_j \frac{n_j}{n} H(child_j)}$$</div>
+        <p>Splitی را انتخاب می‌کنیم که impurity را بیشتر کاهش دهد.</p>
+
+        <h3>48. Regression Tree</h3>
+        <p>برای Regression معمولاً کاهش:</p>
+        <div class="chart">MSE / variance</div>
+        <p>مدنظر است.</p>
+
+        <h3>49. مزایای Decision Tree</h3>
+        <div class="chart">nonlinear
+interactionها را خودکار یاد می‌گیرد
+scaling معمولاً لازم نیست
+interpretability خوب
+categorical/ordinal data را در برخی implementations خوب مدیریت می‌کند
+feature engineering کمتر</div>
+
+        <h3>50. مشکل Decision Tree</h3>
+        <p>اگر بدون محدودیت رشد کند:</p>
+        <div class="chart">$$depth \uparrow$$</div>
+        <p>ممکن است:</p>
+        <div class="chart">Training Error → تقریباً 0
+Validation Error → بالا</div>
+        <p>یعنی:</p>
+        <div class="chart">High Variance</div>
+
+        <h3>51. کنترل Complexity</h3>
+        <p>Hyperparameters:</p>
+        <div class="chart">max_depth
+min_samples_split
+min_samples_leaf
+max_leaf_nodes
+max_features
+pruning</div>
+
+        <h3>52. Random Forest</h3>
+        <p>Random Forest:</p>
+        <div class="chart">Ensemble of Decision Trees</div>
+        <p>است.</p>
+        <p>ایده:</p>
+        <div class="chart">Dataset
+ │
+ ├── Bootstrap → Tree 1
+ ├── Bootstrap → Tree 2
+ ├── Bootstrap → Tree 3
+ ├── Bootstrap → Tree 4
+ └── ...
+       ↓
+Aggregation</div>
+
+        <h3>53. Bagging</h3>
+        <p>Random Forest نوعی:</p>
+        <div class="chart">Bagging</div>
+        <p>است.</p>
+        <p>هر tree روی bootstrap sample آموزش می‌بیند.</p>
+
+        <h3>54. Feature Randomness</h3>
+        <p>Random Forest فقط sampleها را random نمی‌کند.</p>
+        <p>در هر split:</p>
+        <div class="chart">subset تصادفی از features</div>
+        <p>بررسی می‌شود.</p>
+        <p>این باعث کاهش correlation بین trees می‌شود.</p>
+
+        <h3>55. چرا Ensemble بهتر می‌شود؟</h3>
+        <p>اگر خطاهای مدل‌ها تا حدی مستقل باشند:</p>
+        <div class="chart">$$Variance$$</div>
+        <p>با averaging کاهش می‌یابد.</p>
+        <p>به صورت مفهومی:</p>
+        <div class="formula">$$\boxed{Variance_{ensemble} < Variance_{single\ tree}}$$</div>
+
+        <h3>56. Random Forest vs Decision Tree</h3>
+        <div class="chart">Decision Tree
+Bias ↓
+Variance ↑
+
+Random Forest
+Bias کمی ↑
+Variance ↓↓↓</div>
+        <p>این دقیقاً یکی از کاربردهای مهم:</p>
+        <div class="chart">Bias–Variance Tradeoff</div>
+        <p>است.</p>
+
+        <h3>57. Extra Trees</h3>
+        <p>Extra Trees:</p>
+        <div class="chart">Extremely Randomized Trees</div>
+        <p>است.</p>
+        <p>شباهت زیادی به Random Forest دارد، اما randomness بیشتری وارد split selection می‌کند.</p>
+
+        <h3>58. تفاوت Random Forest و Extra Trees</h3>
+        <p>به صورت مفهومی:</p>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">Random Forest</div>
+            <p>برای splitها:</p>
+            <div class="chart">thresholdهای candidate بر اساس داده بررسی می‌شوند.</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">Extra Trees</div>
+            <p>thresholdها را randomتر انتخاب می‌کند.</p>
+            <p>این randomness بیشتر می‌تواند:</p>
+            <div class="chart">$$Variance \downarrow$$</div>
+            <p>کند، ولی ممکن است:</p>
+            <div class="chart">$$Bias \uparrow$$</div>
+            <p>شود.</p>
+        </div>
+
+        <h3>59. Gradient Boosting</h3>
+        <p>اینجا وارد خانواده بسیار مهمی می‌شویم.</p>
+        <p>Boosting بر خلاف Bagging:</p>
+        <div class="chart">trees را sequentially می‌سازد.</div>
+        <div class="chart">Tree 1
+   ↓
+Errors
+   ↓
+Tree 2
+   ↓
+Remaining errors
+   ↓
+Tree 3
+   ↓
+...</div>
+
+        <h3>60. ایده Gradient Boosting</h3>
+        <p>فرض کن مدل فعلی:</p>
+        <div class="chart">$$F_{m-1}(x)$$</div>
+        <p>است.</p>
+        <p>یک weak learner جدید \(h_m(x)\) اضافه می‌کنیم:</p>
+        <div class="formula">$$\boxed{F_m(x) = F_{m-1}(x) + \eta h_m(x)}$$</div>
+        <p>که:</p>
+        <div class="chart">$$\eta$$</div>
+        <p>learning rate است.</p>
+
+        <h3>61. چرا اسمش Gradient Boosting است؟</h3>
+        <p>در هر مرحله، مدل جدید سعی می‌کند در جهت:</p>
+        <div class="chart">$$-\nabla_F L$$</div>
+        <p>حرکت کند.</p>
+        <p>یعنی تقریباً:</p>
+        <div class="chart">Negative Gradient of Loss</div>
+        <p>را fit می‌کند.</p>
+        <p>این یک نکته خیلی مهم برای Senior است.</p>
+
+        <h3>62. Learning Rate در Boosting</h3>
+        <p>اگر:</p>
+        <div class="chart">$$\eta$$</div>
+        <p>کوچک باشد:</p>
+        <div class="chart">Learning slow
+Trees needed ↑
+Often generalization better</div>
+        <p>اگر زیاد باشد:</p>
+        <div class="chart">Learning fast
+Overfitting risk ↑</div>
+        <p>پس معمولاً:</p>
+        <div class="chart">$$learning\ rate \downarrow \Rightarrow n\_estimators \uparrow$$</div>
+        <p>یک trade-off رایج است.</p>
+
+        <h3>63. XGBoost</h3>
+        <p>XGBoost:</p>
+        <div class="chart">Extreme Gradient Boosting</div>
+        <p>است.</p>
+        <p>یک implementation بسیار optimized از gradient boosting با regularization و engineering قوی.</p>
+
+        <h3>64. Objective در XGBoost</h3>
+        <p>به صورت کلی:</p>
+        <div class="formula">$$\boxed{Obj = \sum_i L(y_i, \hat{y}_i) + \sum_k \Omega(f_k)}$$</div>
+        <p>یعنی:</p>
+        <div class="chart">Training Loss
++
+Model Complexity Penalty</div>
+
+        <h3>65. Regularization در XGBoost</h3>
+        <p>برای tree complexity پارامترهایی مانند:</p>
+        <div class="chart">gamma
+max_depth
+min_child_weight
+lambda
+alpha</div>
+        <p>مهم هستند.</p>
+
+        <h3>66. XGBoost و Second-Order Information</h3>
+        <p>XGBoost از:</p>
+        <div class="chart">Gradient + Hessian</div>
+        <p>برای optimization استفاده می‌کند.</p>
+        <p>تقریب Taylor:</p>
+        <div class="formula">$$L(y, \hat{y} + f) \approx L(y, \hat{y}) + gf + \frac{1}{2}hf^2$$</div>
+        <p>که:</p>
+        <div class="chart">\(g\): first derivative
+\(h\): second derivative</div>
+        <p>است.</p>
+        <p>این یکی از تفاوت‌های مهم آن با توضیح ساده Gradient Boosting است.</p>
+
+        <h3>67. XGBoost چرا محبوب است؟</h3>
+        <div class="chart">performance قوی
+regularization
+handling missing values
+parallelization
+mature ecosystem
+good tabular performance</div>
+
+        <h3>68. LightGBM</h3>
+        <p>LightGBM نیز Gradient Boosting بر پایه Decision Trees است.</p>
+        <p>اما design آن برای:</p>
+        <div class="chart">سرعت و مقیاس‌پذیری بالا</div>
+        <p>بسیار مهم است.</p>
+
+        <h3>69. مهم‌ترین تفاوت LightGBM</h3>
+        <p>LightGBM از:</p>
+        <div class="chart">Histogram-based algorithms</div>
+        <p>استفاده می‌کند.</p>
+        <p>Feature values را به bins تبدیل می‌کند.</p>
+        <p>به جای:</p>
+        <div class="chart">continuous exact thresholds</div>
+        <p>از:</p>
+        <div class="chart">bins</div>
+        <p>استفاده می‌شود.</p>
+
+        <h3>70. Leaf-wise Growth</h3>
+        <p>این یکی از مهم‌ترین تفاوت‌های LightGBM است.</p>
+        <p>بسیاری از tree boostingها رشد:</p>
+        <div class="chart">level-wise</div>
+        <p>دارند.</p>
+        <p>LightGBM معمولاً:</p>
+        <div class="chart">leaf-wise / best-first</div>
+        <p>رشد می‌کند.</p>
+        <p>یعنی leafای را split می‌کند که بیشترین reduction در loss را ایجاد کند.</p>
+
+        <h3>71. مزیت Leaf-wise</h3>
+        <p>می‌تواند با تعداد split مشابه:</p>
+        <div class="chart">loss را سریع‌تر کاهش دهد.</div>
+        <p>اما:</p>
+        <div class="chart">Overfitting risk</div>
+        <p>بیشتر می‌شود، مخصوصاً روی datasets کوچک.</p>
+        <p>به همین دلیل:</p>
+        <div class="chart">$$max\_depth$$</div>
+        <p>و:</p>
+        <div class="chart">$$num\_leaves$$</div>
+        <p>مهم هستند.</p>
+
+        <h3>72. CatBoost</h3>
+        <p>CatBoost نیز Gradient Boosting است.</p>
+        <p>نقطه قوت مشهور آن:</p>
+        <div class="chart">Categorical Features</div>
+        <p>است.</p>
+
+        <h3>73. مشکل categorical features</h3>
+        <p>فرض کن:</p>
+        <div class="chart">City:
+Tehran
+Istanbul
+Baku
+Berlin</div>
+        <p>One-Hot می‌تواند تعداد ستون‌ها را بسیار زیاد کند.</p>
+        <p>CatBoost روش‌های خاصی برای categorical encoding دارد.</p>
+
+        <h3>74. Target Encoding خطرناک است</h3>
+        <p>اگر:</p>
+        <div class="chart">$$Category \rightarrow Target Mean$$</div>
+        <p>را naïvely روی کل dataset حساب کنیم:</p>
+        <div class="chart">Target Leakage</div>
+        <p>رخ می‌دهد.</p>
+        <p>CatBoost با روش‌های ordered statistics تلاش می‌کند این leakage را کاهش دهد.</p>
+
+        <h3>75. Ordered Target Statistics</h3>
+        <p>ایده ساده:</p>
+        <p>به جای اینکه category encoding را با استفاده از target تمام داده‌ها بسازیم، از اطلاعات قبلی در یک ترتیب استفاده می‌شود.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Samples:
+1
+2
+3
+4
+5</div>
+        <p>برای sample 5، از targetهای قبلی استفاده می‌کنیم، نه target خودش.</p>
+        <p>این باعث کاهش:</p>
+        <div class="chart">Target Leakage</div>
+        <p>می‌شود.</p>
+
+        <h3>76. مقایسه XGBoost / LightGBM / CatBoost</h3>
+        <div style="overflow-x:auto;">
+            <table>
+                <thead><tr><th>ویژگی</th><th>XGBoost</th><th>LightGBM</th><th>CatBoost</th></tr></thead>
+                <tbody>
+                    <tr><td>Boosting</td><td>بله</td><td>بله</td><td>بله</td></tr>
+                    <tr><td>Trees</td><td>معمولاً level-wise</td><td>leaf-wise</td><td>symmetric trees در طراحی کلاسیک</td></tr>
+                    <tr><td>Histogram</td><td>بله</td><td>بله</td><td>بله</td></tr>
+                    <tr><td>Categorical</td><td>نیازمند preprocessing/روش مناسب</td><td>پشتیبانی دارد</td><td>بسیار قوی</td></tr>
+                    <tr><td>Speed</td><td>بالا</td><td>بسیار بالا</td><td>خوب</td></tr>
+                    <tr><td>Small data</td><td>خوب</td><td>ممکن است overfit کند</td><td>خوب</td></tr>
+                    <tr><td>High-cardinality categorical</td><td>متوسط</td><td>خوب</td><td>بسیار خوب</td></tr>
+                    <tr><td>Tabular</td><td>عالی</td><td>عالی</td><td>عالی</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3>77. نکته مهم</h3>
+        <p>هیچ‌کدام:</p>
+        <div class="chart">همیشه بهترین</div>
+        <p>نیستند.</p>
+        <p>Dataset، preprocessing، noise، cardinality، sample size و hyperparameter tuning تعیین می‌کنند کدام بهتر است.</p>
+
+        <h3>78. Bagging vs Boosting</h3>
+        <p>این را باید خیلی خوب بلد باشی.</p>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">Bagging</div>
+            <div class="chart">Trees independent
+       ↓
+Parallel
+       ↓
+Average</div>
+            <p>هدف:</p>
+            <div class="chart">Variance Reduction</div>
+            <p>مثال:</p>
+            <div class="chart">Random Forest</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">Boosting</div>
+            <div class="chart">Tree 1
+ ↓
+Tree 2 learns from errors
+ ↓
+Tree 3
+ ↓
+...</div>
+            <p>هدف:</p>
+            <div class="chart">Sequentially reduce bias / loss</div>
+            <p>مثال:</p>
+            <div class="chart">Gradient Boosting
+XGBoost
+LightGBM
+CatBoost</div>
+        </div>
+
+        <h3>79. Random Forest vs XGBoost</h3>
+        <div style="overflow-x:auto;">
+            <table>
+                <thead><tr><th></th><th>Random Forest</th><th>XGBoost</th></tr></thead>
+                <tbody>
+                    <tr><td>Ensemble</td><td>Bagging</td><td>Boosting</td></tr>
+                    <tr><td>Trees</td><td>مستقل‌تر</td><td>Sequential</td></tr>
+                    <tr><td>Main effect</td><td>Variance ↓</td><td>Bias/loss ↓</td></tr>
+                    <tr><td>Training</td><td>Parallel</td><td>Sequential dependency</td></tr>
+                    <tr><td>Tuning</td><td>ساده‌تر</td><td>پیچیده‌تر</td></tr>
+                    <tr><td>Overfit</td><td>نسبتاً مقاوم</td><td>نیازمند tuning</td></tr>
+                    <tr><td>Tabular</td><td>عالی</td><td>اغلب بسیار عالی</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2>بخش چهارم — Margin-Based</h2>
+        <h3>80. SVM</h3>
+        <p>Support Vector Machine هدفش پیدا کردن hyperplaneای است که کلاس‌ها را با:</p>
+        <div class="chart">Maximum Margin</div>
+        <p>جدا کند.</p>
+
+        <h3>81. Hyperplane</h3>
+        <p>برای binary classification:</p>
+        <div class="formula">$$\boxed{w^Tx + b = 0}$$</div>
+
+        <h3>82. Margin</h3>
+        <p>SVM می‌خواهد فاصله بین:</p>
+        <div class="chart">نزدیک‌ترین نقاط دو کلاس</div>
+        <p>و boundary بیشینه شود.</p>
+        <p>به این نقاط:</p>
+        <div class="chart">Support Vectors</div>
+        <p>می‌گوییم.</p>
+
+        <h3>83. Hard Margin SVM</h3>
+        <p>اگر داده کاملاً separable باشد:</p>
+        <div class="chart">$$y_i(w^Tx_i + b) \geq 1$$</div>
+        <p>و هدف:</p>
+        <div class="formula">$$\boxed{\min_w \frac{1}{2}||w||^2}$$</div>
+        <p>است.</p>
+        <p>چرا؟</p>
+        <p>چون:</p>
+        <div class="chart">$$Margin \propto \frac{1}{||w||}$$</div>
+
+        <h3>84. Soft Margin SVM</h3>
+        <p>داده واقعی معمولاً perfectly separable نیست.</p>
+        <p>پس slack variables:</p>
+        <div class="chart">$$\xi_i$$</div>
+        <p>اضافه می‌کنیم.</p>
+        <p>Objective:</p>
+        <div class="formula">$$\boxed{\min \frac{1}{2}||w||^2 + C\sum_i \xi_i}$$</div>
+
+        <h3>85. C در SVM</h3>
+        <p>\(C\) trade-off بین:</p>
+        <div class="chart">Large margin
+vs
+Training violations</div>
+        <p>است.</p>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">C بزرگ</div>
+            <p>خطا را شدیدتر penalize می‌کند:</p>
+            <div class="chart">Training fit ↑
+Margin flexibility ↓
+Overfitting risk ↑</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#3fb950;">
+            <div class="inner-title">C کوچک</div>
+            <p>margin را بیشتر ترجیح می‌دهد:</p>
+            <div class="chart">Regularization ↑
+Bias ↑
+Variance ↓</div>
+        </div>
+
+        <h3>86. Kernel Trick</h3>
+        <p>SVM می‌تواند nonlinear boundary ایجاد کند بدون اینکه صراحتاً Feature Space عظیم را بسازیم.</p>
+        <p>ایده:</p>
+        <div class="formula">$$K(x, x') = \phi(x)^T\phi(x')$$</div>
+        <p>است.</p>
+
+        <h3>87. RBF Kernel</h3>
+        <p>یکی از معروف‌ترین‌ها:</p>
+        <div class="formula">$$\boxed{K(x, x') = e^{-\gamma||x - x'||^2}}$$</div>
+        <p>است.</p>
+
+        <h3>88. Gamma در RBF SVM</h3>
+        <p>Gamma تعیین می‌کند influence یک point چقدر local باشد.</p>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">Gamma زیاد</div>
+            <div class="chart">Very local
+Boundary complex
+Variance ↑
+Overfitting risk ↑</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#3fb950;">
+            <div class="inner-title">Gamma کم</div>
+            <div class="chart">Smooth boundary
+Bias ↑</div>
+        </div>
+
+        <h3>89. SVM و Scaling</h3>
+        <p>بسیار مهم.</p>
+        <p>چون SVM بر:</p>
+        <div class="chart">Distance / Dot Product</div>
+        <p>متکی است.</p>
+        <p>پس معمولاً:</p>
+        <div class="chart">Feature Scaling</div>
+        <p>ضروری است.</p>
+
+        <h3>90. Support Vectorها</h3>
+        <p>یکی از ویژگی‌های جذاب SVM:</p>
+        <p>تمام داده‌ها الزاماً مستقیماً مدل را تعیین نمی‌کنند.</p>
+        <p>نقاط مهم‌تر:</p>
+        <div class="chart">Support Vectors</div>
+        <p>هستند.</p>
+
+        <h3>91. SVM برای چه داده‌ای مناسب است؟</h3>
+        <p>خصوصاً:</p>
+        <div class="chart">medium-sized datasets
+high-dimensional data
+sparse features
+clear margins</div>
+        <p>اما برای میلیون‌ها نمونه با kernelهای non-linear معمولاً expensive می‌شود.</p>
+
+        <h3>92. SVR</h3>
+        <p>Support Vector Regression نسخه Regression از SVM است.</p>
+        <p>ایده:</p>
+        <p>به جای اینکه همه خطاها را penalize کنیم، یک ε-tube ایجاد می‌کنیم.</p>
+
+        <h3>93. ε-Insensitive Loss</h3>
+        <p>اگر:</p>
+        <div class="chart">$$|y - \hat{y}| \leq \epsilon$$</div>
+        <p>باشد:</p>
+        <div class="chart">$$Loss = 0$$</div>
+        <p>تقریباً.</p>
+        <p>اگر خارج شود:</p>
+        <div class="chart">$$Loss = |y - \hat{y}| - \epsilon$$</div>
+
+        <h3>94. چرا SVR جالب است؟</h3>
+        <p>به جای تلاش برای fit کردن دقیق همه points، می‌گوید:</p>
+        <div class="chart">خطاهای کوچک مهم نیستند.</div>
+        <p>این می‌تواند robustness خوبی ایجاد کند.</p>
+
+        <h2>بخش پنجم — Probabilistic Models</h2>
+        <h3>95. Naive Bayes</h3>
+        <p>Naive Bayes بر:</p>
+        <div class="chart">Bayes Theorem</div>
+        <p>استوار است.</p>
+
+        <!-- Naive Bayes Interactive Visualizer (UPDATED) -->
+        <div class="viz-box">
+            <div class="inner-box" style="border-right: none; background: #161b22; border: 1px solid #30363d; margin: 0;">
+                <div style="display: flex; flex-wrap: wrap; gap: 20px;">
+                    <div style="flex: 1; min-width: 300px;">
+                        <div class="canvas-container"><canvas id="naiveBayesCanvas" width="500" height="300"></canvas></div>
+                    </div>
+                    <div style="flex: 1; min-width: 300px; background: #21262d; padding: 15px; border-radius: 8px;">
+                        <h4 style="color: #e6edf3; margin-top: 0; border-bottom: 1px solid #30363d; padding-bottom: 10px;">محاسبه احتمال</h4>
+                        <div style="background: #161b22; padding: 15px; border-radius: 8px; margin-bottom: 15px; text-align: center; direction: ltr; font-family: 'Times New Roman', serif; font-size: 1.2em;">
+                            <p style="margin: 0;">$$P(A|B) = \frac{P(B|A)P(A)}{P(B)}$$</p>
+                            <p style="color: #58a6ff; margin: 10px 0 0 0;" id="nb-equation">$$P(A|B) = ۰٫۶۸$$</p>
+                        </div>
+                        <div style="color: #8b949e; font-size: 0.9em; margin-bottom: 15px;">بازخورد بدهید</div>
+                        
+                        <div class="slider-row">
+                            <label>P(A)</label>
+                            <span class="value" id="nb-pa">0.7</span>
+                            <input type="range" id="nb-pa-slider" min="0.01" max="0.99" step="0.01" value="0.7">
+                        </div>
+                        <div class="slider-row">
+                            <label>P(B|A)</label>
+                            <span class="value" id="nb-pba">0.6</span>
+                            <input type="range" id="nb-pba-slider" min="0.01" max="0.99" step="0.01" value="0.6">
+                        </div>
+                        <div class="slider-row">
+                            <label>P(B|¬A)</label>
+                            <span class="value" id="nb-pbna">0.2</span>
+                            <input type="range" id="nb-pbna-slider" min="0.01" max="0.99" step="0.01" value="0.2">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <p>برای Classification:</p>
+        <div class="chart">$$P(y|x) \propto P(y)P(x|y)$$</div>
+
+        <h3>96. چرا Naive؟</h3>
+        <p>فرض می‌کند Features با شرط کلاس مستقل هستند:</p>
+        <div class="formula">$$\boxed{P(x_1, \dots, x_n|y) = \prod_i P(x_i|y)}$$</div>
+        <p>این فرض معمولاً کاملاً درست نیست.</p>
+        <p>اما:</p>
+        <div class="chart">surprisingly effective</div>
+        <p>است.</p>
+
+        <h3>97. چرا با فرض غلط هم خوب کار می‌کند؟</h3>
+        <p>هدف classification فقط الزاماً تخمین probability کامل نیست.</p>
+        <p>حتی اگر probabilityها imperfect باشند، ranking کلاس‌ها ممکن است درست باشد.</p>
+
+        <h3>98. انواع Naive Bayes</h3>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">Gaussian NB</div>
+            <p>برای continuous features با فرض Gaussian:</p>
+            <div class="chart">$$x_j|y=k \sim \mathcal{N}(\mu_{jk}, \sigma_{jk}^2)$$</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">Multinomial NB</div>
+            <p>مناسب:</p>
+            <div class="chart">word counts / text</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#3fb950;">
+            <div class="inner-title">Bernoulli NB</div>
+            <p>برای binary features.</p>
+        </div>
+
+        <h3>99. Naive Bayes و NLP</h3>
+        <p>مثلاً Spam Detection:</p>
+        <div class="chart">words
+  ↓
+word probabilities
+  ↓
+P(Spam | words)</div>
+        <p>بسیار سریع است.</p>
+
+        <h3>100. مشکل Zero Frequency</h3>
+        <p>اگر:</p>
+        <div class="chart">$$P(word|class) = 0$$</div>
+        <p>باشد، کل product ممکن است صفر شود.</p>
+        <p>راه‌حل:</p>
+        <div class="chart">Laplace Smoothing</div>
+        <p>مثلاً:</p>
+        <div class="formula">$$\boxed{P = \frac{count + \alpha}{N + \alpha V}}$$</div>
+
+        <h3>101. مزایای Naive Bayes</h3>
+        <div class="chart">بسیار سریع
+مناسب high-dimensional sparse data
+baseline عالی برای text
+نیاز کم به data
+training بسیار ارزان</div>
+
+        <h3>102. محدودیت</h3>
+        <p>فرض Conditional Independence می‌تواند بسیار غیرواقعی باشد.</p>
+        <p>مثلاً:</p>
+        <div class="chart">"New York"</div>
+        <p>دو کلمه مستقل نیستند.</p>
+        <p>با این حال NB ممکن است همچنان classification خوبی بدهد.</p>
+
+        <h3>103. Gaussian Mixture Model — GMM</h3>
+        <p>GMM یک:</p>
+        <div class="chart">Probabilistic Clustering Model</div>
+        <p>است.</p>
+        <p>فرض می‌کند داده از ترکیب چند Gaussian ایجاد شده:</p>
+        <div class="formula">$$\boxed{p(x) = \sum_{k=1}^{K} \pi_k \mathcal{N}(x|\mu_k, \Sigma_k)}$$</div>
+        <p>که:</p>
+        <div class="chart">$$\sum_k \pi_k = 1$$</div>
+
+        <h3>104. K-Means vs GMM</h3>
+        <p>این تفاوت را خیلی خوب یاد بگیر.</p>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">K-Means</div>
+            <p>هر point:</p>
+            <div class="chart">فقط به یک cluster</div>
+            <p>تعلق دارد.</p>
+            <div class="chart">Point → Cluster 2</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">GMM</div>
+            <p>هر point:</p>
+            <div class="chart">Probability distribution over clusters</div>
+            <p>دارد.</p>
+            <div class="chart">Point:
+Cluster 1 = 0.7
+Cluster 2 = 0.3</div>
+            <p>این:</p>
+            <div class="chart">Soft Clustering</div>
+            <p>است.</p>
+        </div>
+
+        <h3>105. GMM با EM</h3>
+        <p>GMM معمولاً با:</p>
+        <div class="chart">Expectation-Maximization — EM</div>
+        <p>آموزش داده می‌شود.</p>
+
+        <h3>106. E-Step</h3>
+        <p>محاسبه می‌کنیم:</p>
+        <div class="chart">$$\gamma_{ik} = P(z_i = k | x_i)$$</div>
+        <p>یعنی:</p>
+        <p>probability اینکه point \(i\) متعلق به component \(k\) باشد.</p>
+
+        <h3>107. M-Step</h3>
+        <p>پارامترها را با استفاده از responsibilities به‌روزرسانی می‌کنیم:</p>
+        <div class="chart">\(\mu_k\)
+\(\Sigma_k\)
+\(\pi_k\)</div>
+
+        <h3>108. EM</h3>
+        <p>فرآیند:</p>
+        <div class="chart">Initialize parameters
+        ↓
+E-Step
+        ↓
+M-Step
+        ↓
+Likelihood improves
+        ↓
+Repeat</div>
+        <p>تا convergence.</p>
+
+        <h3>109. K-Means را می‌توان حالت خاصی از GMM دانست؟</h3>
+        <p>به صورت مفهومی:</p>
+        <p>بله، تحت assumptions خاص.</p>
+        <p>اگر:</p>
+        <div class="chart">covarianceها spherical باشند
+برابر باشند
+assignments hard شوند</div>
+        <p>GMM به رفتار K-Means نزدیک می‌شود.</p>
+        <p>این یک connection بسیار مهم بین دو الگوریتم است.</p>
+
+        <h3>110. GMM چه زمانی بهتر است؟</h3>
+        <p>وقتی clusterها:</p>
+        <div class="chart">Elliptical
+Different covariance
+Different orientation</div>
+        <p>دارند.</p>
+        <p>مثلاً:</p>
+        <div class="chart">      /////        ●●●
+    //////        ●●●
+   /////          ●●●</div>
+        <p>K-Means ممکن است بد باشد، ولی GMM می‌تواند covariance را مدل کند.</p>
+
+        <h3>111. مشکل GMM</h3>
+        <p>Covariance matrix می‌تواند:</p>
+        <div class="chart">singular / ill-conditioned</div>
+        <p>شود.</p>
+        <p>خصوصاً وقتی:</p>
+        <div class="chart">samples کم
+dimensions زیاد</div>
+        <p>باشند.</p>
+        <p>Regularization روی covariance می‌تواند لازم باشد.</p>
+
+        <h3>112. GMM و انتخاب K</h3>
+        <p>می‌توان از:</p>
+        <div class="chart">BIC</div>
+        <p>یا:</p>
+        <div class="chart">AIC</div>
+        <p>استفاده کرد.</p>
+        <p>این‌ها complexity را هم در نظر می‌گیرند.</p>
+        <p>مثلاً:</p>
+        <div class="chart">$$BIC = -2\log L + k \log n$$</div>
+        <p>هرچه کمتر بهتر.</p>
+
+        <h3>113. مقایسه کلی الگوریتم‌ها</h3>
+        <div style="overflow-x:auto;">
+            <table>
+                <thead><tr><th>Algorithm</th><th>Supervised?</th><th>Nonlinear?</th><th>Scaling مهم؟</th><th>Outlier حساس؟</th></tr></thead>
+                <tbody>
+                    <tr><td>Linear Regression</td><td>✓</td><td>✗</td><td>معمولاً مفید</td><td>زیاد</td></tr>
+                    <tr><td>Ridge</td><td>✓</td><td>✗</td><td>✓</td><td>نسبتاً زیاد</td></tr>
+                    <tr><td>Lasso</td><td>✓</td><td>✗</td><td>✓</td><td>نسبتاً زیاد</td></tr>
+                    <tr><td>Logistic</td><td>✓</td><td>✗</td><td>✓</td><td>متوسط</td></tr>
+                    <tr><td>Polynomial</td><td>✓</td><td>✓</td><td>✓</td><td>زیاد</td></tr>
+                    <tr><td>KNN</td><td>✓</td><td>✓</td><td>خیلی مهم</td><td>زیاد</td></tr>
+                    <tr><td>K-Means</td><td>✗</td><td>—</td><td>خیلی مهم</td><td>زیاد</td></tr>
+                    <tr><td>K-Medoids</td><td>✗</td><td>—</td><td>مهم</td><td>کمتر</td></tr>
+                    <tr><td>Decision Tree</td><td>✓</td><td>✓</td><td>معمولاً نه</td><td>نسبتاً مقاوم</td></tr>
+                    <tr><td>Random Forest</td><td>✓</td><td>✓</td><td>معمولاً نه</td><td>مقاوم‌تر</td></tr>
+                    <tr><td>XGBoost</td><td>✓</td><td>✓</td><td>معمولاً نه</td><td>نسبتاً مقاوم</td></tr>
+                    <tr><td>LightGBM</td><td>✓</td><td>✓</td><td>معمولاً نه</td><td>نسبتاً مقاوم</td></tr>
+                    <tr><td>CatBoost</td><td>✓</td><td>✓</td><td>معمولاً نه</td><td>نسبتاً مقاوم</td></tr>
+                    <tr><td>SVM</td><td>✓</td><td>✓ با Kernel</td><td>خیلی مهم</td><td>نسبتاً حساس</td></tr>
+                    <tr><td>SVR</td><td>✓</td><td>✓ با Kernel</td><td>خیلی مهم</td><td>نسبتاً حساس</td></tr>
+                    <tr><td>Naive Bayes</td><td>✓</td><td>محدود</td><td>معمولاً کم</td><td>وابسته به داده</td></tr>
+                    <tr><td>GMM</td><td>✗</td><td>—</td><td>مهم</td><td>حساس</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3>114. انتخاب مدل در پروژه واقعی</h3>
+        <p>به جای:</p>
+        <div class="chart">«کدام مدل بهترین است؟»</div>
+        <p>باید بپرسی:</p>
+        <div class="chart">1. Data size؟
+10K؟
+1M؟
+100M؟
+2. Feature type؟
+Numerical
+Categorical
+Text
+Sparse
+Dense
+3. Nonlinearity؟
+Low
+Medium
+High
+4. Interpretability؟
+5. Latency؟
+6. Training cost؟
+7. Missing values؟
+8. Outliers؟
+9. Class imbalance？
+10. Probability calibration؟</div>
+
+        <h3>115. مثلاً برای Tabular Data</h3>
+        <p>یک Strategy خوب:</p>
+        <div class="chart">Baseline
+   │
+   ├── Logistic / Linear
+   │
+   ├── Decision Tree
+   │
+   ├── Random Forest
+   │
+   ├── XGBoost
+   │
+   ├── LightGBM
+   │
+   └── CatBoost</div>
+        <p>بعد:</p>
+        <div class="chart">Cross-validation + Hyperparameter tuning</div>
+        <p>و مقایسه.</p>
+
+        <h3>116. اگر Dataset کوچک باشد</h3>
+        <p>مثلاً:</p>
+        <div class="chart">n = 5,000</div>
+        <p>مدل‌های بسیار پیچیده ممکن است overfit کنند.</p>
+        <p>گزینه‌های خوب:</p>
+        <div class="chart">Logistic Regression
+Ridge
+Random Forest
+XGBoost با regularization
+SVM
+CatBoost</div>
+        <p>ولی باید با CV ارزیابی شوند.</p>
+
+        <h3>117. اگر Dataset بسیار بزرگ باشد</h3>
+        <p>مثلاً:</p>
+        <div class="chart">n = 100M</div>
+        <p>KNN یا Kernel SVM می‌تواند بسیار expensive باشد.</p>
+        <p>ممکن است:</p>
+        <div class="chart">Linear models
+LightGBM
+Distributed boosting
+Approximate nearest neighbors</div>
+        <p>مناسب‌تر باشند.</p>
+
+        <h3>118. اگر categorical features زیاد باشند</h3>
+        <p>مثلاً:</p>
+        <div class="chart">City
+Merchant
+Product
+Device
+Category</div>
+        <p>CatBoost می‌تواند گزینه بسیار جذابی باشد.</p>
+
+        <h3>119. اگر Featureها sparse و high-dimensional باشند</h3>
+        <p>مثلاً:</p>
+        <div class="chart">TF-IDF
+Bag of Words</div>
+        <p>گزینه‌های بسیار خوب:</p>
+        <div class="chart">Logistic Regression
+Linear SVM
+Naive Bayes</div>
+        <p>هستند.</p>
+
+        <h3>120. اگر nonlinear relationships قوی باشند</h3>
+        <p>مثلاً:</p>
+        <div class="chart">Feature interactions
+Threshold effects
+Complex nonlinearities</div>
+        <p>Tree ensembles معمولاً گزینه‌های قوی هستند:</p>
+        <div class="chart">XGBoost
+LightGBM
+CatBoost
+Random Forest</div>
+
+        <h3>121. اگر Interpretability خیلی مهم باشد</h3>
+        <p>اغلب:</p>
+        <div class="chart">Linear / Logistic Regression
+Decision Tree</div>
+        <p>شروع‌های خوبی هستند.</p>
+        <p>البته Tree عمیق هم می‌تواند بسیار پیچیده شود.</p>
+
+        <h3>122. اگر Probability مهم باشد</h3>
+        <p>مثلاً:</p>
+        <div class="chart">Risk score</div>
+        <p>در اینجا صرفاً Accuracy کافی نیست.</p>
+        <p>باید:</p>
+        <div class="chart">Log Loss
+Brier Score
+Calibration Curve</div>
+        <p>را هم بررسی کنی.</p>
+        <p>و ممکن است مدل‌هایی مثل:</p>
+        <div class="chart">Logistic Regression</div>
+        <p>baseline بسیار خوبی باشند.</p>
+
+        <h3>123. یک نکته بسیار مهم درباره Tree Models</h3>
+        <p>Treeها معمولاً:</p>
+        <div class="chart">scale invariant</div>
+        <p>هستند.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Age = 20</div>
+        <p>را به:</p>
+        <div class="chart">Age_scaled = 0.2</div>
+        <p>تبدیل کنی، ordering تقریباً حفظ می‌شود.</p>
+        <p>Split:</p>
+        <div class="chart">$$Age < 35$$</div>
+        <p>به:</p>
+        <div class="chart">$$Age_{scaled} < 0.35$$</div>
+        <p>تبدیل می‌شود.</p>
+        <p>پس StandardScaler معمولاً برای Decision Tree / Random Forest / XGBoost لازم نیست.</p>
+
+        <h3>124. چرا KNN/SVM Scaling می‌خواهند ولی Tree نه؟</h3>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">KNN</div>
+            <p>Distance:</p>
+            <div class="chart">$$d(x, x')$$</div>
+            <p>مستقیماً به scale وابسته است.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">SVM</div>
+            <p>Margin و kernel به dot product/distance وابسته‌اند.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#3fb950;">
+            <div class="inner-title">Tree</div>
+            <p>Split بر اساس:</p>
+            <div class="chart">$$x_j < t$$</div>
+            <p>است.</p>
+            <p>Scale monotonic معمولاً ordering را حفظ می‌کند.</p>
+        </div>
+
+        <h3>125. مهم‌ترین Trade-offهای این فصل</h3>
+        <div class="chart">Linear Models
+Interpretability ↑
+Speed ↑
+Complexity ↓
+Nonlinearity ↓
+
+KNN
+Training cost ↓
+Inference cost ↑
+Local flexibility ↑
+High-dimensional performance ↓
+
+Trees
+Nonlinearity ↑
+Feature engineering ↓
+Interpretability متوسط
+Overfitting risk ↑
+
+Random Forest
+Variance ↓
+Robustness ↑
+Parallelism ↑
+Interpretability ↓ نسبت به single tree
+
+Boosting
+Predictive power ↑
+Complexity ↑
+Tuning importance ↑
+Overfitting risk if poorly tuned ↑
+
+SVM
+Strong margin-based generalization
++
+Kernel flexibility
+-
+Large-scale nonlinear training expensive
+
+Naive Bayes
+Speed ↑↑
+Data requirement ↓
+High-dimensional sparse data ✓
+Assumption strength ↑
+
+GMM
+Probabilistic clustering ✓
+Soft assignments ✓
+Flexible covariance ✓
+Complexity / instability ↑</div>
+
+        <h3>126. اگر بخواهی در مصاحبه Senior خیلی حرفه‌ای جواب بدهی</h3>
+        <p>مثلاً می‌پرسند:</p>
+        <div class="chart">«برای یک مسئله Tabular Classification چه مدلی انتخاب می‌کنی؟»</div>
+        <p>نگو:</p>
+        <div class="chart">XGBoost.</div>
+        <p>جواب Senior:</p>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <p>ابتدا یک baseline ساده مثل Logistic Regression می‌سازم تا یک reference قابل تفسیر داشته باشم. سپس بسته به نوع features و اندازه dataset، tree ensembles مثل Random Forest و Gradient Boosting/LightGBM/XGBoost/CatBoost را بررسی می‌کنم. اگر categorical features با cardinality بالا داشته باشم CatBoost را جدی‌تر بررسی می‌کنم. ارزیابی را با stratified cross-validation انجام می‌دهم، metric را بر اساس business objective انتخاب می‌کنم و علاوه بر discrimination، calibration و هزینه inference را هم بررسی می‌کنم. در نهایت مدل را بر اساس validation/CV انتخاب و Test Set را فقط برای final unbiased evaluation استفاده می‌کنم.</p>
+        </div>
+        <p>این:</p>
+        <div class="chart">Senior-level answer</div>
+        <p>است.</p>
+
+        <h3>127. نقشه ذهنی نهایی</h3>
+        <div class="chart">                    CLASSICAL ML
+                         │
+       ┌─────────────────┼──────────────────┐
+       │                 │                  │
+    Linear            Trees             Distance
+       │                 │                  │
+  ┌────┼────┐       ┌────┼────┐        ┌────┼────┐
+  │    │    │       │    │    │        │    │    │
+ LR  Ridge Lasso   DT    RF Boosting   KNN KMeans KMedoids
+       │              │      │
+   Elastic Net        │   ┌──┼──────┐
+       │              │ XGB LGBM CatBoost
+   Logistic
+       │
+       └──────────────┐
+                      │
+                 Margin Based
+                      │
+                   ┌──┴──┐
+                   │     │
+                  SVM   SVR
+                      │
+                      │
+                Probabilistic
+                      │
+                  ┌───┴────┐
+                  │        │
+               Naive Bayes GMM</div>
+
+        <h2>🎯 جمع‌بندی نهایی Senior</h2>
+        <p>اگر بخواهی کل فصل را واقعاً در ذهن نگه داری، این associationها را حفظ کن:</p>
+        <div style="overflow-x:auto;">
+            <table>
+                <thead><tr><th>وقتی این مشکل را داری</th><th>اولین مدل‌هایی که بررسی می‌کنی</th></tr></thead>
+                <tbody>
+                    <tr><td>رابطه خطی + interpretability</td><td>Linear / Ridge / Lasso</td></tr>
+                    <tr><td>Features زیاد + sparse</td><td>Lasso / Linear SVM / Logistic</td></tr>
+                    <tr><td>Correlated features</td><td>Ridge / Elastic Net</td></tr>
+                    <tr><td>Local similarity</td><td>KNN</td></tr>
+                    <tr><td>Simple clustering</td><td>K-Means</td></tr>
+                    <tr><td>Outlier در clustering</td><td>K-Medoids</td></tr>
+                    <tr><td>Nonlinear tabular</td><td>Tree / Random Forest / Boosting</td></tr>
+                    <tr><td>بهترین performance روی tabular</td><td>XGBoost / LightGBM / CatBoost</td></tr>
+                    <tr><td>Categorical زیاد</td><td>CatBoost</td></tr>
+                    <tr><td>Sparse high-dimensional classification</td><td>Linear SVM / Logistic / Naive Bayes</td></tr>
+                    <tr><td>Maximum-margin classification</td><td>SVM</td></tr>
+                    <tr><td>Nonlinear SVM</td><td>Kernel SVM</td></tr>
+                    <tr><td>Regression با margin</td><td>SVR</td></tr>
+                    <tr><td>Probabilistic clustering</td><td>GMM</td></tr>
+                    <tr><td>Soft clustering</td><td>GMM</td></tr>
+                    <tr><td>Spherical clusters</td><td>K-Means</td></tr>
+                    <tr><td>Elliptical clusters</td><td>GMM</td></tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <p>و چهار connection بسیار مهم را باید بدون فکر کردن بتوانی توضیح بدهی:</p>
+        <div class="formula" style="font-size: 1.2em;">
+            $$\boxed{Decision\ Tree \rightarrow High\ Variance \rightarrow Random\ Forest \rightarrow Bagging \rightarrow Variance\ Reduction}$$
+            $$\boxed{Weak\ Trees \rightarrow Sequential\ Errors \rightarrow Gradient\ Boosting \rightarrow XGBoost/LightGBM/CatBoost}$$
+            $$\boxed{L1 \rightarrow Sparsity \rightarrow Feature\ Selection}$$
+            $$\boxed{L2 \rightarrow Weight\ Shrinkage \rightarrow Multicollinearity\ Control}$$
+        </div>
+        <p>و یک connection بسیار مهم دیگر:</p>
+        <div class="formula" style="font-size: 1.2em;">
+            $$\boxed{K\text{-Means} \approx Special\ Case\ of\ GMM}$$
+        </div>
+        <p>تحت assumptions خاص مربوط به covariance و hard assignments.</p>
+        <p>این‌ها همان connectionهایی هستند که دانستنشان تو را از کسی که فقط الگوریتم‌ها را حفظ کرده، به کسی که واقعاً ML را می‌فهمد نزدیک می‌کند.</p>
+
+        <hr style="border:1px solid #444; margin:50px 0;" />
+        <p style="text-align:center; color:#8b949e; font-size:0.85rem; padding:16px 0;">Classical Machine Learning Algorithms · Senior ML · تمام نکات ریز 🧠</p>
+
+    </div>
+
+    <!-- Interactive JS for Visualizations -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // 1. Least Squares Interactive Graph (Part 3 - UNCHANGED)
+            const canvasLS = document.getElementById('leastSquaresCanvas');
+            const ctxLS = canvasLS.getContext('2d');
+            
+            canvasLS.width = 500;
+            canvasLS.height = 400;
+            
+            let points = [
+                {x: 2, y: 4}, {x: 3, y: 5}, {x: 4, y: 5}, {x: 5, y: 7},
+                {x: 6, y: 6}, {x: 7, y: 8}, {x: 8, y: 9}, {x: 9, y: 7}
+            ];
+            
+            let draggingIndex = -1;
+            let focusMode = 'all'; // Default to all
+            
+            function updateFocusButtons(activeId) {
+                const ids = ['btn-data', 'btn-line', 'btn-pred', 'btn-res'];
+                ids.forEach(id => {
+                    document.getElementById(id).classList.remove('active');
+                });
+                if (activeId) {
+                    document.getElementById(activeId).classList.add('active');
+                }
+            }
+            
+            document.getElementById('btn-data').addEventListener('click', () => {
+                focusMode = 'data'; updateFocusButtons('btn-data'); drawLS();
+            });
+            document.getElementById('btn-line').addEventListener('click', () => {
+                focusMode = 'line'; updateFocusButtons('btn-line'); drawLS();
+            });
+            document.getElementById('btn-pred').addEventListener('click', () => {
+                focusMode = 'pred'; updateFocusButtons('btn-pred'); drawLS();
+            });
+            document.getElementById('btn-res').addEventListener('click', () => {
+                focusMode = 'res'; updateFocusButtons('btn-res'); drawLS();
+            });
+            
+            function drawLS() {
+                ctxLS.clearRect(0, 0, canvasLS.width, canvasLS.height);
+                
+                // Grid
+                ctxLS.strokeStyle = '#30363d';
+                ctxLS.lineWidth = 1;
+                ctxLS.beginPath();
+                ctxLS.moveTo(50, 30); ctxLS.lineTo(450, 30);
+                ctxLS.moveTo(50, 90); ctxLS.lineTo(450, 90);
+                ctxLS.moveTo(50, 150); ctxLS.lineTo(450, 150);
+                ctxLS.moveTo(50, 210); ctxLS.lineTo(450, 210);
+                ctxLS.moveTo(50, 270); ctxLS.lineTo(450, 270);
+                ctxLS.moveTo(50, 330); ctxLS.lineTo(450, 330);
+                ctxLS.moveTo(50, 30); ctxLS.lineTo(50, 330);
+                ctxLS.moveTo(130, 30); ctxLS.lineTo(130, 330);
+                ctxLS.moveTo(210, 30); ctxLS.lineTo(210, 330);
+                ctxLS.moveTo(290, 30); ctxLS.lineTo(290, 330);
+                ctxLS.moveTo(370, 30); ctxLS.lineTo(370, 330);
+                ctxLS.stroke();
+                
+                // Axes
+                ctxLS.strokeStyle = '#e6edf3';
+                ctxLS.lineWidth = 2;
+                ctxLS.beginPath();
+                ctxLS.moveTo(50, 330); ctxLS.lineTo(450, 330);
+                ctxLS.moveTo(50, 30); ctxLS.lineTo(50, 330);
+                ctxLS.stroke();
+                
+                let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+                let n = points.length;
+                for (let p of points) {
+                    sumX += p.x; sumY += p.y; sumXY += p.x * p.y; sumX2 += p.x * p.x;
+                }
+                let slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+                let intercept = (sumY - slope * sumX) / n;
+                
+                // Draw Line
+                if (focusMode === 'line' || focusMode === 'pred' || focusMode === 'all' || focusMode === 'res') {
+                    ctxLS.strokeStyle = '#58a6ff';
+                    ctxLS.lineWidth = 3;
+                    ctxLS.beginPath();
+                    ctxLS.moveTo(50, 330 - (slope * 2 + intercept) * 25);
+                    ctxLS.lineTo(450, 330 - (slope * 10 + intercept) * 25);
+                    ctxLS.stroke();
+                }
+                
+                // Draw Predictions (Blue points on line)
+                if (focusMode === 'pred' || focusMode === 'res' || focusMode === 'all') {
+                    for (let p of points) {
+                        let px = 50 + p.x * 40;
+                        let lineY = 330 - (slope * p.x + intercept) * 25;
+                        ctxLS.fillStyle = '#58a6ff';
+                        ctxLS.beginPath();
+                        ctxLS.arc(px, lineY, 5, 0, 2 * Math.PI);
+                        ctxLS.fill();
+                        ctxLS.strokeStyle = '#e6edf3';
+                        ctxLS.lineWidth = 1;
+                        ctxLS.stroke();
+                    }
+                }
+                
+                // Draw Residuals
+                if (focusMode === 'res' || focusMode === 'all') {
+                    for (let p of points) {
+                        let px = 50 + p.x * 40;
+                        let py = 330 - p.y * 25;
+                        let lineY = 330 - (slope * p.x + intercept) * 25;
+                        ctxLS.strokeStyle = '#3fb950';
+                        ctxLS.lineWidth = 2;
+                        ctxLS.beginPath();
+                        ctxLS.moveTo(px, py);
+                        ctxLS.lineTo(px, lineY);
+                        ctxLS.stroke();
+                    }
+                }
+                
+                // Draw Data Points (Green)
+                if (focusMode === 'data' || focusMode === 'all' || focusMode === 'res') {
+                    for (let p of points) {
+                        let px = 50 + p.x * 40;
+                        let py = 330 - p.y * 25;
+                        ctxLS.fillStyle = '#3fb950';
+                        ctxLS.beginPath();
+                        ctxLS.arc(px, py, 6, 0, 2 * Math.PI);
+                        ctxLS.fill();
+                        ctxLS.strokeStyle = '#e6edf3';
+                        ctxLS.lineWidth = 1;
+                        ctxLS.stroke();
+                    }
+                }
+                
+                // Labels
+                ctxLS.fillStyle = '#8b949e';
+                ctxLS.font = '14px monospace';
+                ctxLS.fillText('2', 75, 350); ctxLS.fillText('4', 155, 350); ctxLS.fillText('6', 235, 350); ctxLS.fillText('8', 315, 350); ctxLS.fillText('10', 395, 350);
+                ctxLS.fillText('2', 20, 280); ctxLS.fillText('4', 20, 230); ctxLS.fillText('6', 20, 180); ctxLS.fillText('8', 20, 130); ctxLS.fillText('10', 15, 80);
+                
+                // Update Equation Text
+                let sign = slope >= 0 ? '+' : '-';
+                document.getElementById('ls-equation').innerHTML = `\\(\\hat{y} = ${intercept.toFixed(2)} ${sign} ${Math.abs(slope).toFixed(2)}x\\)`;
+                renderMathInElement(document.getElementById('ls-equation'), {
+                    delimiters: [{left: '\\(', right: '\\)', display: false}]
+                });
+            }
+            
+            function getMousePosLS(evt) {
+                const rect = canvasLS.getBoundingClientRect();
+                let scaleX = canvasLS.width / rect.width;
+                let scaleY = canvasLS.height / rect.height;
+                let px = (evt.clientX - rect.left) * scaleX;
+                let py = (evt.clientY - rect.top) * scaleY;
+                return {x: (px - 50) / 40, y: (330 - py) / 25};
+            }
+            
+            canvasLS.addEventListener('mousedown', (e) => {
+                let pos = getMousePosLS(e);
+                for (let i = 0; i < points.length; i++) {
+                    if (Math.abs(points[i].x - pos.x) < 0.5 && Math.abs(points[i].y - pos.y) < 0.5) {
+                        draggingIndex = i; break;
+                    }
+                }
+            });
+            
+            canvasLS.addEventListener('mousemove', (e) => {
+                if (draggingIndex !== -1) {
+                    let pos = getMousePosLS(e);
+                    points[draggingIndex] = {x: Math.max(1, Math.min(10, pos.x)), y: Math.max(1, Math.min(12, pos.y))};
+                    drawLS();
+                }
+            });
+            
+            canvasLS.addEventListener('mouseup', () => { draggingIndex = -1; });
+            canvasLS.addEventListener('mouseleave', () => { draggingIndex = -1; });
+            
+            // Generate New Data Button
+            document.getElementById('ls-generate').addEventListener('click', () => {
+                let newPoints = [];
+                for (let i = 0; i < 8; i++) {
+                    let x = Math.floor(Math.random() * 8) + 2;
+                    let y = Math.floor(Math.random() * 6) + 4;
+                    newPoints.push({x: x, y: y});
+                }
+                points = newPoints;
+                drawLS();
+            });
+            
+            drawLS();
+            
+            // 2. Naive Bayes Interactive Graph (Part 95 - UPDATED)
+            const canvasNB = document.getElementById('naiveBayesCanvas');
+            const ctxNB = canvasNB.getContext('2d');
+            
+            canvasNB.width = 500;
+            canvasNB.height = 300;
+            
+            const sliderPA = document.getElementById('nb-pa-slider');
+            const sliderPBA = document.getElementById('nb-pba-slider');
+            const sliderPBNA = document.getElementById('nb-pbna-slider');
+            
+            function drawNB() {
+                let PA = parseFloat(sliderPA.value);
+                let PBA = parseFloat(sliderPBA.value);
+                let PBNA = parseFloat(sliderPBNA.value);
+                
+                document.getElementById('nb-pa').textContent = PA.toFixed(2);
+                document.getElementById('nb-pba').textContent = PBA.toFixed(2);
+                document.getElementById('nb-pbna').textContent = PBNA.toFixed(2);
+                
+                let PB = PA * PBA + (1 - PA) * PBNA;
+                let PAB = (PBA * PA) / PB;
+                
+                document.getElementById('nb-equation').innerHTML = `\\(P(A|B) = ${PAB.toFixed(2)}\\)`;
+                
+                if (typeof renderMathInElement === 'function') {
+                    renderMathInElement(document.getElementById('nb-equation'), {
+                        delimiters: [{left: '\\(', right: '\\)', display: false}]
+                    });
+                }
+                
+                // Clear and redraw canvas
+                ctxNB.clearRect(0, 0, canvasNB.width, canvasNB.height);
+                
+                // Calculate widths based on joint probabilities
+                // Blue represents P(A, B) = P(A)*P(B|A)
+                // Green represents P(¬A, B) = P(¬A)*P(B|¬A)
+                let blueWidth = 450 * (PA * PBA) / PB;
+                let greenWidth = 450 * ((1 - PA) * PBNA) / PB;
+                
+                // Draw P(B) Bar
+                ctxNB.fillStyle = '#21262d';
+                ctxNB.fillRect(20, 20, 450, 50);
+                
+                // Blue segment
+                ctxNB.fillStyle = '#58a6ff';
+                ctxNB.fillRect(20, 20, blueWidth, 50); 
+                
+                // Green segment
+                ctxNB.fillStyle = '#3fb950';
+                ctxNB.fillRect(20 + blueWidth, 20, greenWidth, 50); 
+                
+                ctxNB.strokeStyle = '#30363d';
+                ctxNB.strokeRect(20, 20, 450, 50);
+                
+                // Labels
+                ctxNB.fillStyle = '#e6edf3';
+                ctxNB.font = '20px sans-serif';
+                ctxNB.fillText('P(B|A)', 30, 95);
+                ctxNB.fillText('P(¬A)', 300, 95);
+            }
+            
+            sliderPA.addEventListener('input', drawNB);
+            sliderPBA.addEventListener('input', drawNB);
+            sliderPBNA.addEventListener('input', drawNB);
+            
+            drawNB();
+        });
+    </script>
+</body>
+</html>

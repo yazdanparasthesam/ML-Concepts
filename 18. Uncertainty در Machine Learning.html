@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uncertainty - Senior ML Level</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}]});"></script>
+    <style>
+        body { background-color: #0d1117; color: #e6edf3; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.8; margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1, h2, h3 { color: #e6edf3; text-align: right; border-bottom: 1px solid #444; padding-bottom: 15px; margin-top: 50px; }
+        p, li { text-align: right; }
+        
+        /* Boxes */
+        .box { background-color: #21262d; border: 1px solid #30363d; border-radius: 8px; padding: 15px; margin: 15px 0; color: #e6edf3; }
+        .inner-box { background-color: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 15px; margin: 10px; }
+        .inner-title { font-weight: bold; margin-bottom: 5px; }
+
+        /* Formula Box */
+        .formula {
+            direction: ltr;
+            background-color: #000;
+            border: 1px solid #fff;
+            border-radius: 0;
+            padding: 20px;
+            margin: 20px auto;
+            width: fit-content;
+            max-width: 100%;
+            overflow-x: auto;
+            text-align: center;
+            font-size: 1.2em;
+            font-family: "Times New Roman", Times, serif;
+            color: #fff;
+        }
+
+        /* Charts / Flowcharts / ASCII Art */
+        .chart { direction: ltr; text-align: left; font-family: monospace; background-color: #21262d; border-radius: 8px; padding: 15px; overflow-x: auto; white-space: pre; border: 1px solid #444; }
+
+        /* Tables */
+        table { width: 100%; border-collapse: collapse; direction: rtl; margin-bottom: 20px; }
+        th, td { border: 1px solid #444; padding: 12px; text-align: right; }
+        th { background-color: #21262d; }
+        
+        .highlight { color: #58a6ff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎲 18. Uncertainty در Machine Learning</h1>
+        
+        <p>حتماً. Uncertainty یکی از مباحثی است که تفاوت بین یک ML Engineer معمولی و یک Senior ML Engineer را خیلی خوب نشان می‌دهد؛ چون در production معمولاً کافی نیست مدل بگوید:</p>
+        <div class="box"><div class="chart">Fraud = 1</div></div>
+        <p>باید بدانیم:</p>
+        <div class="inner-box">مدل چقدر به این prediction مطمئن است؟ چرا ممکن است اشتباه کند؟ و آیا می‌توانیم یک بازه/مجموعه prediction بدهیم که احتمالاً جواب واقعی داخل آن باشد؟</div>
+
+        <h2>1. Uncertainty چیست؟</h2>
+        <p>فرض کن مدل برای یک تراکنش می‌گوید:</p>
+        <div class="box"><div class="chart">Fraud probability = 0.92</div></div>
+        <p>دو حالت کاملاً متفاوت ممکن است وجود داشته باشد:</p>
+        <div class="inner-box"><div class="inner-title">حالت A</div></div>
+        <p>مدل این نوع transaction را هزاران بار در training دیده است.</p>
+        <div class="box"><div class="chart">Model knowledge: HIGH
+Uncertainty: LOW</div></div>
+        
+        <div class="inner-box"><div class="inner-title">حالت B</div></div>
+        <p>این transaction از یک الگوی کاملاً جدید آمده است.</p>
+        <div class="box"><div class="chart">Model knowledge: LOW
+Uncertainty: HIGH</div></div>
+        <p>هر دو ممکن است prediction برابر 0.92 داشته باشند، اما ماهیت uncertainty آنها کاملاً متفاوت است.</p>
+
+        <h2>2. چرا Uncertainty مهم است؟</h2>
+        <p>در سیستم‌های واقعی، prediction همیشه binary نیست.</p>
+        <p>مثلاً:</p>
+        <div class="inner-box"><div class="inner-title">Medical AI</div></div>
+        <div class="box"><div class="chart">Cancer probability = 0.87</div></div>
+        <div class="inner-box"><div class="inner-title">Fraud Detection</div></div>
+        <div class="box"><div class="chart">Fraud probability = 0.91</div></div>
+        <div class="inner-box"><div class="inner-title">Autonomous Driving</div></div>
+        <div class="box"><div class="chart">Pedestrian probability = 0.76</div></div>
+        <div class="inner-box"><div class="inner-title">House Price</div></div>
+        <div class="box"><div class="chart">Predicted price = $500,000</div></div>
+        <p>سؤال مهم:</p>
+        <div class="inner-box">چقدر می‌توانیم به این prediction اعتماد کنیم؟</div>
+
+        <h2>3. دو نوع اصلی Uncertainty</h2>
+        <p>مهم‌ترین تقسیم‌بندی:</p>
+        <div class="inner-box">Aleatoric Uncertainty</div>
+        <p>و:</p>
+        <div class="inner-box">Epistemic Uncertainty</div>
+
+        <h2>4. Aleatoric Uncertainty</h2>
+        <p>Aleatoric uncertainty ناشی از:</p>
+        <div class="inner-box">ذاتی و تصادفی بودن فرآیند مشاهده</div>
+        <p>است.</p>
+        <p>یعنی حتی اگر infinite data داشته باشیم، بخشی از uncertainty باقی می‌ماند.</p>
+
+        <h2>5. مثال Aleatoric</h2>
+        <p>فرض کن می‌خواهیم زمان رسیدن تاکسی را پیش‌بینی کنیم.</p>
+        <p>دو راننده دقیقاً شرایط یکسانی دارند:</p>
+        <div class="box">
+            <div class="chart">Distance = 5 km
+Traffic = Medium
+Weather = Normal</div>
+        </div>
+        <p>اما زمان واقعی ممکن است:</p>
+        <div class="box">
+            <div class="chart">12 min
+15 min
+17 min</div>
+        </div>
+        <p>باشد.</p>
+        <p>چرا؟</p>
+        <p>عوامل تصادفی یا مشاهده‌نشده وجود دارند.</p>
+        <p>این:</p>
+        <div class="inner-box">Aleatoric Uncertainty</div>
+        <p>است.</p>
+
+        <h2>6. Aleatoric Uncertainty قابل حذف نیست</h2>
+        <p>اگر:</p>
+        <div class="formula">$$N \rightarrow \infty$$</div>
+        <p>باشد، باز هم ممکن است:</p>
+        <div class="formula">$$Aleatoric \ Uncertainty > 0$$</div>
+        <p>باشد.</p>
+        <p>مثلاً noise اندازه‌گیری.</p>
+
+        <h2>7. مثال Measurement Noise</h2>
+        <p>فرض کن یک sensor داریم:</p>
+        <div class="box"><div class="chart">True temperature = 25°C</div></div>
+        <p>sensor ممکن است بگوید:</p>
+        <div class="box">
+            <div class="chart">24.7
+25.2
+24.9
+25.4</div>
+        </div>
+        <p>حتی اگر میلیون‌ها observation جمع کنیم، noise sensor از بین نمی‌رود.</p>
+        <p>این Aleatoric uncertainty است.</p>
+
+        <h2>8. دو نوع Aleatoric Uncertainty</h2>
+        <p>یک تفکیک پیشرفته‌تر:</p>
+        <div class="inner-box"><div class="inner-title">Homoscedastic</div></div>
+        <p>noise تقریباً ثابت است:</p>
+        <div class="formula">$$\sigma^2(x) = constant$$</div>
+        <div class="inner-box"><div class="inner-title">Heteroscedastic</div></div>
+        <p>noise وابسته به input است:</p>
+        <div class="formula">$$\sigma^2(x)$$</div>
+        <p>تغییر می‌کند.</p>
+        <p>این بسیار مهم است.</p>
+
+        <h2>9. مثال Heteroscedastic Regression</h2>
+        <p>فرض کن قیمت خانه را پیش‌بینی می‌کنیم.</p>
+        <p>برای خانه‌های کوچک:</p>
+        <div class="box">
+            <div class="chart">Predicted = 100K
+Actual:
+98K
+101K
+102K</div>
+        </div>
+        <p>ولی برای خانه‌های luxury:</p>
+        <div class="box">
+            <div class="chart">Predicted = 2M
+Actual:
+1.5M
+2.3M
+2.7M
+3.1M</div>
+        </div>
+        <p>یعنی uncertainty برای خانه‌های luxury بیشتر است.</p>
+        <p>پس:</p>
+        <div class="formula">$$Var(Y|X=x)$$</div>
+        <p>به x وابسته است.</p>
+
+        <h2>10. Epistemic Uncertainty</h2>
+        <p>Epistemic uncertainty ناشی از:</p>
+        <div class="inner-box">عدم دانش مدل</div>
+        <p>است.</p>
+        <p>یعنی مدل داده کافی برای یادگیری آن قسمت از problem نداشته است.</p>
+
+        <h2>11. مثال Epistemic</h2>
+        <p>فرض کن مدل fraud detection داریم.</p>
+        <p>Training:</p>
+        <div class="box"><div class="chart">Transactions from:
+2023-2025</div></div>
+        <p>در production:</p>
+        <div class="box"><div class="chart">New payment method</div></div>
+        <p>که مدل قبلاً هیچ نمونه‌ای از آن ندیده.</p>
+        <p>مدل نمی‌داند این pattern چیست.</p>
+        <p>پس:</p>
+        <div class="inner-box">Epistemic Uncertainty</div>
+        <p>بالا است.</p>
+
+        <h2>12. تفاوت مهم</h2>
+        <div class="inner-box"><div class="inner-title">Aleatoric</div></div>
+        <div class="box"><div class="chart">World is uncertain</div></div>
+        <div class="inner-box"><div class="inner-title">Epistemic</div></div>
+        <div class="box"><div class="chart">Model is uncertain</div></div>
+        <p>این جمله را برای مصاحبه حفظ کن:</p>
+        <div class="inner-box">Aleatoric uncertainty comes from inherent noise in the data; epistemic uncertainty comes from lack of knowledge in the model.</div>
+
+        <h2>13. آیا Epistemic Uncertainty قابل کاهش است؟</h2>
+        <p>بله.</p>
+        <p>با:</p>
+        <div class="box">
+            <div class="chart">More data
+Better data
+Better coverage
+Better model</div>
+        </div>
+        <p>می‌توان آن را کاهش داد.</p>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">Before:
+
+Rare transaction type
+Epistemic uncertainty = HIGH
+
+After collecting 1M examples:
+
+Epistemic uncertainty = LOW</div>
+        </div>
+
+        <h2>14. Aleatoric vs Epistemic</h2>
+        <table>
+            <thead><tr><th>ویژگی</th><th>Aleatoric</th><th>Epistemic</th></tr></thead>
+            <tbody>
+                <tr><td>منبع</td><td>Noise / randomness</td><td>Lack of knowledge</td></tr>
+                <tr><td>با data بیشتر کاهش می‌یابد؟</td><td>معمولاً خیر</td><td>بله</td></tr>
+                <tr><td>مثال</td><td>sensor noise</td><td>unseen domain</td></tr>
+                <tr><td>وابسته به input؟</td><td>ممکن است</td><td>معمولاً بله</td></tr>
+                <tr><td>در production</td><td>inherent uncertainty</td><td>model uncertainty</td></tr>
+            </tbody>
+        </table>
+
+        <h2>15. یک مثال ترکیبی</h2>
+        <p>فرض کن autonomous vehicle دارد pedestrian detection انجام می‌دهد.</p>
+        <div class="inner-box"><div class="inner-title">حالت اول</div></div>
+        <p>مه شدید است.</p>
+        <p>دوربین نمی‌تواند شخص را واضح ببیند.</p>
+        <div class="inner-box">→ Aleatoric</div>
+        
+        <div class="inner-box"><div class="inner-title">حالت دوم</div></div>
+        <p>دوربین وارد محیطی شده که مدل در training ندیده.</p>
+        <div class="inner-box">→ Epistemic</div>
+
+        <div class="inner-box"><div class="inner-title">حالت سوم</div></div>
+        <p>هر دو اتفاق افتاده:</p>
+        <div class="box">
+            <div class="chart">Fog
++
+Unseen environment</div>
+        </div>
+        <div class="inner-box">→ هر دو uncertainty بالا هستند.</div>
+
+        <h2>16. Predictive Uncertainty</h2>
+        <p>Predictive uncertainty یعنی:</p>
+        <div class="inner-box">uncertainty موجود در prediction نهایی مدل.</div>
+        <p>می‌توان آن را به دو بخش مرتبط کرد:</p>
+        <div class="formula">$$Predictive \ Uncertainty = Aleatoric + Epistemic$$</div>
+        <p>به شکل مفهومی.</p>
+        <p>در Bayesian predictive inference:</p>
+        <div class="formula">$$p(y|x, D) = \int p(y|x, \theta)p(\theta|D)d\theta$$</div>
+        <p>یعنی uncertainty مربوط به prediction را با uncertainty روی پارامترهای مدل ترکیب می‌کنیم.</p>
+
+        <h2>17. نکته مهم</h2>
+        <p>این رابطه یک decomposition مفهومی است و در مدل‌های مختلف روش محاسبه دقیق variance می‌تواند متفاوت باشد.</p>
+        <p>اما برای درک Senior-level:</p>
+        <div class="box">
+            <div class="chart">Predictive uncertainty
+       │
+       ├── Aleatoric
+       │
+       └── Epistemic</div>
+        </div>
+        <p>مدل ذهنی بسیار خوبی است.</p>
+
+        <h2>18. Confidence Interval چیست؟</h2>
+        <p>Confidence Interval معمولاً درباره:</p>
+        <div class="inner-box">یک پارامتر آماری</div>
+        <p>است.</p>
+        <p>مثلاً:</p>
+        <div class="formula">$$\mu$$</div>
+        <p>میانگین واقعی population.</p>
+        <p>فرض کن:</p>
+        <div class="box">
+            <div class="chart">Estimated mean = 100
+95% CI = [95, 105]</div>
+        </div>
+
+        <h2>19. تفسیر صحیح 95% Confidence Interval</h2>
+        <p>یکی از دام‌های بسیار رایج مصاحبه:</p>
+        <div class="box"><div class="chart">❌ اشتباه:</div></div>
+        <div class="inner-box">احتمال اینکه μ داخل این interval باشد 95% است.</div>
+        <p>در frequentist interpretation، پارامتر μ ثابت است و interval تصادفی است.</p>
+        <p>تفسیر دقیق‌تر:</p>
+        <div class="inner-box">اگر فرآیند نمونه‌گیری و ساخت CI را بارها تکرار کنیم، حدود 95٪ از intervalهای ساخته‌شده پارامتر واقعی را پوشش می‌دهند.</div>
+
+        <h2>20. Confidence Interval vs Prediction Interval</h2>
+        <p>این دو را خیلی‌ها اشتباه می‌کنند.</p>
+        <div class="inner-box"><div class="inner-title">Confidence Interval</div></div>
+        <p>عدم قطعیت درباره:</p>
+        <div class="inner-box">پارامتر/میانگین مورد انتظار</div>
+        <div class="inner-box"><div class="inner-title">Prediction Interval</div></div>
+        <p>عدم قطعیت درباره:</p>
+        <div class="inner-box">یک observation آینده</div>
+
+        <h2>21. مثال Regression</h2>
+        <p>فرض کن:</p>
+        <div class="formula">$$\hat{y} = 100$$</div>
+        <div class="inner-box"><div class="inner-title">Confidence Interval</div></div>
+        <div class="box">
+            <div class="chart">Expected mean:
+95% CI = [98, 102]</div>
+        </div>
+        <div class="inner-box"><div class="inner-title">Prediction Interval</div></div>
+        <div class="box">
+            <div class="chart">Future observation:
+95% PI = [80, 120]</div>
+        </div>
+        <p>Prediction Interval معمولاً وسیع‌تر است.</p>
+        <p>چون علاوه بر uncertainty در estimated mean/model، noise مربوط به observation جدید را هم شامل می‌شود.</p>
+
+        <h2>22. رابطه مفهومی</h2>
+        <p>در regression:</p>
+        <div class="formula">$$Var(Y_{new}) = Var(E[Y|X]) + Var(Y|X)$$</div>
+        <p>به صورت مفهومی:</p>
+        <div class="box">
+            <div class="chart">Prediction uncertainty
+=
+Model/mean uncertainty
++
+Observation noise</div>
+        </div>
+
+        <h2>23. Confidence Interval در ML</h2>
+        <p>مثلاً می‌خواهیم اثر feature را تخمین بزنیم:</p>
+        <div class="formula">$$\beta_1$$</div>
+        <p>و:</p>
+        <div class="formula">$$\hat{\beta}_1 = 2.4$$</div>
+        <p>با:</p>
+        <div class="formula">$$95\% CI = [1.8, 3.0]$$</div>
+        <p>این به ما uncertainty درباره estimate می‌دهد.</p>
+
+        <h2>24. Prediction Interval در ML</h2>
+        <p>فرض کن:</p>
+        <div class="box">
+            <div class="chart">House:
+Predicted price = $500K
+95% Prediction Interval:
+$420K - $590K</div>
+        </div>
+        <p>این برای business بسیار مفیدتر از فقط:</p>
+        <div class="box"><div class="chart">500K</div></div>
+        <p>است.</p>
+
+        <h2>25. Bayesian ML</h2>
+        <p>حالا می‌رسیم به یکی از مهم‌ترین ابزارهای uncertainty.</p>
+        <p>در ML معمولی ممکن است پارامترها را یک مقدار ثابت در نظر بگیریم:</p>
+        <div class="formula">$$\theta$$</div>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">weight1 = 0.82
+weight2 = -1.21</div>
+        </div>
+        <p>در Bayesian ML:</p>
+        <p>پارامترها distribution دارند.</p>
+        <p>یعنی:</p>
+        <div class="formula">$$p(\theta|D)$$</div>
+
+        <h2>26. Bayes Theorem</h2>
+        <p>فرمول اصلی:</p>
+        <div class="formula">$$p(\theta|D) = \frac{p(D|\theta)p(\theta)}{p(D)}$$</div>
+        <p>که:</p>
+        <div class="inner-box"><div class="inner-title">Prior</div></div>
+        <div class="formula">$$p(\theta)$$</div>
+        <p>باور اولیه درباره parameter.</p>
+        <div class="inner-box"><div class="inner-title">Likelihood</div></div>
+        <div class="formula">$$p(D|\theta)$$</div>
+        <p>احتمال داده با توجه به parameter.</p>
+        <div class="inner-box"><div class="inner-title">Posterior</div></div>
+        <div class="formula">$$p(\theta|D)$$</div>
+        <p>باور به parameter بعد از دیدن داده.</p>
+
+        <h2>27. Predictive Distribution در Bayesian ML</h2>
+        <p>برای prediction:</p>
+        <div class="formula">$$p(y^*|x^*, D) = \int p(y^*|x^*, \theta)p(\theta|D)d\theta$$</div>
+        <p>این فرمول خیلی مهم است.</p>
+        <p>یعنی:</p>
+        <div class="inner-box">به جای اینکه فقط یک parameter point estimate داشته باشیم، روی uncertainty پارامترها integrate می‌کنیم.</div>
+
+        <h2>28. چرا Bayesian ML برای Uncertainty مناسب است؟</h2>
+        <p>چون به صورت طبیعی:</p>
+        <div class="box">
+            <div class="chart">Parameter uncertainty
+        ↓
+Posterior distribution
+        ↓
+Predictive distribution
+        ↓
+Uncertainty</div>
+        </div>
+        <p>می‌دهد.</p>
+
+        <h2>29. مشکل Bayesian Deep Learning</h2>
+        <p>برای neural networkهای بزرگ:</p>
+        <div class="formula">$$p(\theta|D)$$</div>
+        <p>بسیار high-dimensional است.</p>
+        <p>مثلاً شبکه‌ای با:</p>
+        <div class="box"><div class="chart">100M parameters</div></div>
+        <p>داریم.</p>
+        <p>محاسبه دقیق posterior بسیار سخت است.</p>
+        <p>اینجاست که روش‌های approximate وارد می‌شوند.</p>
+
+        <h2>30. Monte Carlo Dropout</h2>
+        <p>یکی از روش‌های معروف:</p>
+        <div class="inner-box">MC Dropout</div>
+        <p>است.</p>
+        <p>ایده:</p>
+        <div class="inner-box">Dropout را در inference هم فعال نگه می‌داریم.</div>
+
+        <h2>31. Dropout معمولی</h2>
+        <p>در training:</p>
+        <div class="box">
+            <div class="chart">Neuron
+  ↓
+Randomly dropped</div>
+        </div>
+        <p>اما معمولاً در inference:</p>
+        <div class="box"><div class="chart">Dropout OFF</div></div>
+        <p>است.</p>
+
+        <h2>32. MC Dropout</h2>
+        <p>در MC Dropout:</p>
+        <div class="box">
+            <div class="chart">Inference #1 → Dropout mask A
+Inference #2 → Dropout mask B
+Inference #3 → Dropout mask C
+...
+Inference #N → Dropout mask N</div>
+        </div>
+        <p>پس یک input را چندین بار به مدل می‌دهیم.</p>
+
+        <h2>33. مثال</h2>
+        <p>فرض کن:</p>
+        <div class="box"><div class="chart">N = 100</div></div>
+        <p>predictionها:</p>
+        <div class="box">
+            <div class="chart">0.91
+0.88
+0.93
+0.89
+...</div>
+        </div>
+        <p>می‌توانیم:</p>
+        <div class="inner-box"><div class="inner-title">Mean</div></div>
+        <div class="formula">$$\bar{p} = \frac{1}{N} \sum_{i=1}^{N} p_i$$</div>
+        <p>را محاسبه کنیم.</p>
+        <p>و:</p>
+        <div class="inner-box"><div class="inner-title">Variance</div></div>
+        <div class="formula">$$Var(p) = \frac{1}{N} \sum (p_i - \bar{p})^2$$</div>
+        <p>را به عنوان signalی از uncertainty استفاده کنیم.</p>
+
+        <h2>34. تفسیر MC Dropout</h2>
+        <p>اگر:</p>
+        <div class="box">
+            <div class="chart">Predictions:
+
+0.91
+0.90
+0.92
+0.89
+0.91</div>
+        </div>
+        <p>باشد:</p>
+        <div class="box"><div class="chart">Mean ≈ 0.91
+Variance = Low</div></div>
+        <p>→ model نسبتاً confident است.</p>
+        <p>ولی:</p>
+        <div class="box">
+            <div class="chart">0.10
+0.92
+0.34
+0.76
+0.21</div>
+        </div>
+        <div class="box"><div class="chart">→ variance بالا.
+→ uncertainty بالا.</div></div>
+
+        <h2>35. نکته مهم MC Dropout</h2>
+        <p>MC Dropout یک approximation است و uncertainty estimate آن:</p>
+        <div class="inner-box">perfect Bayesian posterior</div>
+        <p>نیست.</p>
+        <p>بلکه یک روش approximate Bayesian inference / approximate uncertainty estimation است.</p>
+
+        <h2>36. Deep Ensembles</h2>
+        <p>یکی از روش‌های بسیار قدرتمند:</p>
+        <div class="inner-box">Deep Ensembles</div>
+        <p>است.</p>
+        <p>به جای یک neural network:</p>
+        <div class="box">
+            <div class="chart">Model 1
+Model 2
+Model 3
+Model 4
+Model 5</div>
+        </div>
+        <p>می‌سازیم.</p>
+
+        <h2>37. چگونه Deep Ensemble بسازیم؟</h2>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">Same architecture
+Different random initialization
+Different training trajectories</div>
+        </div>
+        <p>هر model:</p>
+        <div class="formula">$$f_1, f_2, \dots, f_M$$</div>
+        <p>است.</p>
+
+        <h2>38. Prediction</h2>
+        <p>برای regression:</p>
+        <div class="formula">$$\mu(x) = \frac{1}{M} \sum_{m=1}^{M} f_m(x)$$</div>
+        <p>و variance بین modelها:</p>
+        <div class="formula">$$Var_{models}(x) = \frac{1}{M} \sum_m (f_m(x) - \mu(x))^2$$</div>
+        <p>می‌تواند signalی از epistemic uncertainty باشد.</p>
+
+        <h2>39. چرا Ensemble uncertainty می‌دهد؟</h2>
+        <p>چون مدل‌های مختلف ممکن است:</p>
+        <div class="box">
+            <div class="chart">Model 1 → 0.91
+Model 2 → 0.90
+Model 3 → 0.92</div>
+        </div>
+        <p>پیش‌بینی‌های مشابه بدهند.</p>
+        <p>یعنی:</p>
+        <div class="inner-box">consensus بالا</div>
+        <p>ولی:</p>
+        <div class="box">
+            <div class="chart">Model 1 → 0.95
+Model 2 → 0.20
+Model 3 → 0.70</div>
+        </div>
+        <p>یعنی:</p>
+        <div class="inner-box">disagreement بالا</div>
+        <p>و این می‌تواند نشانه epistemic uncertainty باشد.</p>
+
+        <h2>40. Deep Ensemble vs MC Dropout</h2>
+        <table>
+            <thead><tr><th>ویژگی</th><th>MC Dropout</th><th>Deep Ensemble</th></tr></thead>
+            <tbody>
+                <tr><td>تعداد مدل واقعی</td><td>یک</td><td>چند مدل</td></tr>
+                <tr><td>inference</td><td>چند forward pass</td><td>چند model</td></tr>
+                <tr><td>هزینه training</td><td>کمتر</td><td>بیشتر</td></tr>
+                <tr><td>uncertainty</td><td>approximate</td><td>معمولاً robust</td></tr>
+                <tr><td>epistemic signal</td><td>بله</td><td>بله</td></tr>
+                <tr><td>complexity</td><td>کمتر</td><td>بیشتر</td></tr>
+            </tbody>
+        </table>
+        <p>در بسیاری از کاربردهای عملی، Deep Ensembles baseline بسیار قدرتمندی برای uncertainty estimation هستند.</p>
+
+        <h2>41. Conformal Prediction</h2>
+        <p>حالا می‌رسیم به یکی از مهم‌ترین مباحث مدرن uncertainty:</p>
+        <div class="inner-box">Conformal Prediction</div>
+        <p>ایده اصلی:</p>
+        <div class="inner-box">به جای اینکه فقط یک prediction بدهیم، prediction set یا interval بدهیم که تحت فرض‌های مشخص، پوشش آماری قابل تضمین داشته باشد.</div>
+
+        <h2>42. مثال Classification</h2>
+        <p>مدل می‌گوید:</p>
+        <div class="box">
+            <div class="chart">Cat = 0.45
+Dog = 0.40
+Fox = 0.10
+Horse = 0.05</div>
+        </div>
+        <p>به جای:</p>
+        <div class="box"><div class="chart">Prediction = Cat</div></div>
+        <p>می‌توانیم بگوییم:</p>
+        <div class="box">
+            <div class="chart">Prediction Set:
+{Cat, Dog}</div>
+        </div>
+
+        <h2>43. مثال Regression</h2>
+        <p>مدل می‌گوید:</p>
+        <div class="box"><div class="chart">Predicted price = $500K</div></div>
+        <p>Conformal Prediction می‌تواند بگوید:</p>
+        <div class="box">
+            <div class="chart">Prediction Interval:
+
+$430K ───────── $570K</div>
+        </div>
+        <p>با یک target coverage مشخص.</p>
+        <p>مثلاً:</p>
+        <div class="formula">$$1 - \alpha = 0.90$$</div>
+
+        <h2>44. Coverage</h2>
+        <p>هدف مثلاً:</p>
+        <div class="inner-box">90%</div>
+        <p>است.</p>
+        <p>به شکل مفهومی:</p>
+        <div class="formula">$$P(Y_{new} \in C(X_{new})) \ge 1 - \alpha$$</div>
+        <p>در شرایط و تعریف پوشش مربوط به روش conformal.</p>
+        <p>یعنی prediction interval/set طوری ساخته می‌شود که coverage مورد نظر داشته باشد.</p>
+
+        <h2>45. نکته بسیار مهم Conformal</h2>
+        <p>Conformal Prediction لزوماً نمی‌گوید:</p>
+        <div class="inner-box">interval از نظر Bayesian probability دارای 90% probability است.</div>
+        <p>بلکه:</p>
+        <div class="inner-box">یک guarantee پوشش frequentist تحت exchangeability/assumptions مربوطه ارائه می‌دهد.</div>
+        <p>این تفاوت بسیار مهم است.</p>
+
+        <h2>46. Exchangeability</h2>
+        <p>یکی از assumptions مهم در conformal prediction:</p>
+        <div class="formula">$$(X_1, Y_1), \dots, (X_n, Y_n)$$</div>
+        <p>باید به طور مناسب exchangeable باشند.</p>
+        <p>در حالت IID، exchangeability برقرار است.</p>
+        <p>اما time series و distribution shift شدید می‌توانند این فرض را نقض کنند.</p>
+        <p>این نکته برای Senior ML بسیار مهم است.</p>
+
+        <h2>47. Conformal Prediction چگونه کار می‌کند؟</h2>
+        <p>ایده ساده:</p>
+        <div class="inner-box"><div class="inner-title">Step 1</div></div>
+        <p>مدل را train می‌کنیم.</p>
+        <div class="inner-box"><div class="inner-title">Step 2</div></div>
+        <p>روی calibration set prediction می‌گیریم.</p>
+        <div class="inner-box"><div class="inner-title">Step 3</div></div>
+        <p>خطای prediction را اندازه می‌گیریم.</p>
+        <p>مثلاً:</p>
+        <div class="formula">$$r_i = |y_i - \hat{y}_i|$$</div>
+        <div class="inner-box"><div class="inner-title">Step 4</div></div>
+        <p>quantile مناسب residualها را پیدا می‌کنیم.</p>
+        <p>مثلاً:</p>
+        <div class="formula">$$q_{1-\alpha}$$</div>
+        <div class="inner-box"><div class="inner-title">Step 5</div></div>
+        <p>برای prediction جدید:</p>
+        <div class="formula">$$[\hat{y} - q, \hat{y} + q]$$</div>
+        <p>می‌سازیم.</p>
+
+        <h2>48. مثال Conformal Regression</h2>
+        <p>Calibration residualها:</p>
+        <div class="box">
+            <div class="chart">2
+5
+7
+3
+8
+10
+4</div>
+        </div>
+        <p>فرض کنیم quantile مورد نظر:</p>
+        <div class="formula">$$q = 8$$</div>
+        <p>باشد.</p>
+        <p>مدل برای نمونه جدید:</p>
+        <div class="formula">$$\hat{y} = 100$$</div>
+        <p>پیش‌بینی می‌کند.</p>
+        <p>پس:</p>
+        <div class="formula">$$[100 - 8, 100 + 8]$$</div>
+        <p>یعنی:</p>
+        <div class="box"><div class="chart">[92, 108]</div></div>
+
+        <h2>49. Conformal Classification</h2>
+        <p>در classification می‌توان prediction set ساخت:</p>
+        <div class="box">
+            <div class="chart">Input
+  ↓
+Model probabilities
+  ↓
+Calibration
+  ↓
+Prediction Set</div>
+        </div>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">{Cat, Dog}</div></div>
+        <p>به جای یک class.</p>
+
+        <h2>50. چرا Conformal Prediction جذاب است؟</h2>
+        <p>چون:</p>
+        <div class="inner-box">به مدل اجازه می‌دهد uncertainty را به شکل prediction set/interval با coverage مشخص ارائه کند.</div>
+        <p>و لازم نیست مدل کاملاً Bayesian باشد.</p>
+        <p>این نکته بسیار مهم است:</p>
+        <div class="inner-box">Conformal Prediction ≠ Bayesian Inference</div>
+
+        <h2>51. Confidence vs Prediction vs Conformal Interval</h2>
+        <p>این سه را مقایسه کنیم:</p>
+        <table>
+            <thead><tr><th>مفهوم</th><th>هدف</th></tr></thead>
+            <tbody>
+                <tr><td>Confidence Interval</td><td>uncertainty درباره parameter/mean</td></tr>
+                <tr><td>Prediction Interval</td><td>uncertainty درباره future observation</td></tr>
+                <tr><td>Conformal Interval</td><td>prediction interval/set با coverage guarantee تحت assumptions</td></tr>
+            </tbody>
+        </table>
+
+        <h2>52. یک نکته بسیار مهم</h2>
+        <p>Confidence Interval و Prediction Interval لزوماً uncertainty مدل را به یک شکل اندازه نمی‌گیرند.</p>
+        <p>در ML مدرن، وقتی می‌گوییم:</p>
+        <div class="inner-box">uncertainty estimate</div>
+        <p>باید مشخص کنیم:</p>
+        <div class="inner-box">Uncertainty of what?</div>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">Parameter uncertainty?
+Prediction uncertainty?
+Data noise?
+Future observation?
+Model uncertainty?
+Coverage?</div>
+        </div>
+
+        <h2>53. Uncertainty در Classification</h2>
+        <p>فرض کن classifier:</p>
+        <div class="formula">$$P(Y=1|X) = 0.5$$</div>
+        <p>می‌دهد.</p>
+        <p>این می‌تواند uncertainty بالا باشد.</p>
+        <p>اما اگر:</p>
+        <div class="formula">$$P(Y=1|X) = 0.99$$</div>
+        <p>باشد، مدل confident است.</p>
+        <p>ولی یک نکته بسیار مهم:</p>
+        <div class="inner-box">Confidence ≠ Correctness</div>
+
+        <h2>54. مدل می‌تواند Confidently Wrong باشد</h2>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">True class = Dog
+
+Model:
+Cat = 0.999
+Dog = 0.001</div>
+        </div>
+        <p>این:</p>
+        <div class="inner-box">High confidence + Wrong prediction</div>
+        <p>است.</p>
+        <p>پس probability output به تنهایی uncertainty واقعی را تضمین نمی‌کند.</p>
+
+        <h2>55. Calibration</h2>
+        <p>اینجا calibration اهمیت پیدا می‌کند.</p>
+        <p>اگر مدل می‌گوید:</p>
+        <div class="box"><div class="chart">p = 0.8</div></div>
+        <p>در میان predictionهایی که probability آنها حدود 0.8 است، ideally حدود:</p>
+        <div class="inner-box">80%</div>
+        <p>باید واقعاً positive باشند.</p>
+
+        <h2>56. مثال Calibration</h2>
+        <p>اگر 1000 prediction با:</p>
+        <div class="box"><div class="chart">Probability ≈ 0.8</div></div>
+        <p>داریم و:</p>
+        <div class="box"><div class="chart">Actual positives = 800</div></div>
+        <p>مدل خوب calibrated است.</p>
+        <p>اما اگر:</p>
+        <div class="box"><div class="chart">Actual positives = 500</div></div>
+        <p>باشد:</p>
+        <div class="inner-box">مدل overconfident است.</div>
+
+        <h2>57. Uncertainty و Calibration</h2>
+        <p>این دو به هم مرتبط‌اند ولی یکی نیستند.</p>
+        <div class="inner-box"><div class="inner-title">Calibration</div></div>
+        <p>می‌گوید:</p>
+        <div class="inner-box">آیا probability output با frequency واقعی سازگار است؟</div>
+        <div class="inner-box"><div class="inner-title">Uncertainty</div></div>
+        <p>می‌گوید:</p>
+        <div class="inner-box">prediction چقدر uncertain است و uncertainty از کجا می‌آید؟</div>
+
+        <h2>58. Aleatoric Uncertainty در Classification</h2>
+        <p>حتی اگر model perfect باشد، ممکن است یک input inherently ambiguous باشد.</p>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">Image:
+Blurry object</div>
+        </div>
+        <p>ممکن است:</p>
+        <div class="box">
+            <div class="chart">Cat = 0.55
+Fox = 0.45</div>
+        </div>
+        <p>باشد.</p>
+        <p>این ambiguity می‌تواند ناشی از:</p>
+        <div class="inner-box">aleatoric uncertainty</div>
+        <p>باشد.</p>
+
+        <h2>59. Epistemic Uncertainty در Classification</h2>
+        <p>اگر تصویر از domain کاملاً جدید باشد:</p>
+        <div class="box">
+            <div class="chart">Training:
+Normal daytime images
+
+Production:
+Infrared images</div>
+        </div>
+        <p>مدل ممکن است uncertainty epistemic بالایی داشته باشد.</p>
+
+        <h2>60. Out-of-Distribution و Uncertainty</h2>
+        <p>یک کاربرد مهم uncertainty:</p>
+        <p>تشخیص OOD</p>
+        <p>یعنی:</p>
+        <div class="inner-box">Out − of − Distribution</div>
+        <p>مثلاً مدل فقط:</p>
+        <div class="box">
+            <div class="chart">Cats
+Dogs</div>
+        </div>
+        <p>دیده.</p>
+        <p>در production:</p>
+        <div class="box"><div class="chart">Elephant</div></div>
+        <p>می‌بیند.</p>
+        <p>یک مدل uncertainty-aware ideally باید بگوید:</p>
+        <div class="inner-box">I don't know.</div>
+
+        <h2>61. مشکل Neural Networks</h2>
+        <p>شبکه‌های عصبی استاندارد ممکن است روی OOD:</p>
+        <div class="box">
+            <div class="chart">Prediction:
+Cat = 0.99</div>
+        </div>
+        <p>بدهند.</p>
+        <p>این:</p>
+        <div class="inner-box">Overconfidence</div>
+        <p>است.</p>
+        <p>به همین دلیل uncertainty estimation در safety-critical systems بسیار مهم است.</p>
+
+        <h2>62. Active Learning و Epistemic Uncertainty</h2>
+        <p>یک کاربرد خیلی جالب:</p>
+        <p>اگر uncertainty بالا باشد:</p>
+        <div class="box">
+            <div class="chart">Model uncertainty
+      ↓
+Select sample
+      ↓
+Human labeling
+      ↓
+Add to training
+      ↓
+Retrain</div>
+        </div>
+        <p>این:</p>
+        <div class="inner-box">Active Learning</div>
+        <p>است.</p>
+        <p>یعنی uncertainty می‌تواند برای انتخاب داده‌هایی که ارزش label شدن دارند استفاده شود.</p>
+
+        <h2>63. Human-in-the-Loop و Uncertainty</h2>
+        <p>مثلاً در medical AI:</p>
+        <div class="box">
+            <div class="chart">Model confidence > 99%
+        ↓
+Automatic decision</div>
+        </div>
+        <p>ولی:</p>
+        <div class="box">
+            <div class="chart">Uncertainty > threshold
+        ↓
+Human expert review</div>
+        </div>
+        <p>این architecture بسیار مهم است.</p>
+
+        <h2>64. Risk و Uncertainty</h2>
+        <p>ممکن است:</p>
+        <div class="box"><div class="chart">Prediction = 0.95</div></div>
+        <p>ولی uncertainty زیاد باشد.</p>
+        <p>در سیستم‌های حساس:</p>
+        <div class="box">
+            <div class="chart">High confidence
++
+High uncertainty</div>
+        </div>
+        <p>باید بررسی شود.</p>
+
+        <h2>65. Decision Making Under Uncertainty</h2>
+        <p>در سطح Senior بهتر است uncertainty را مستقیماً به business decision وصل کنی.</p>
+        <p>مثلاً:</p>
+        <div class="formula">$$Expected Loss = P(error) \times Cost(error)$$</div>
+        <p>ممکن است دو prediction با probability یکسان، تصمیم متفاوتی ایجاد کنند چون:</p>
+        <div class="formula">$$Cost_{FP} \neq Cost_{FN}$$</div>
+
+        <h2>66. مثلاً در Fraud</h2>
+        <p>فرض کن:</p>
+        <div class="box"><div class="chart">Fraud probability = 0.8</div></div>
+        <p>ولی:</p>
+        <div class="box">
+            <div class="chart">False Positive Cost = $5
+False Negative Cost = $10,000</div>
+        </div>
+        <p>ممکن است تصمیم:</p>
+        <div class="inner-box">Block</div>
+        <p>باشد.</p>
+        <p>اما در یک application معمولی ممکن است:</p>
+        <div class="inner-box">Allow</div>
+        <p>بهتر باشد.</p>
+        <p>پس:</p>
+        <div class="inner-box">Uncertainty + Cost + Decision Threshold</div>
+        <p>باید با هم دیده شوند.</p>
+
+        <h2>67. Deep Ensemble برای Regression</h2>
+        <p>فرض کن 5 مدل داریم:</p>
+        <div class="box">
+            <div class="chart">Model 1 → 98
+Model 2 → 101
+Model 3 → 99
+Model 4 → 100
+Model 5 → 102</div>
+        </div>
+        <p>میانگین:</p>
+        <div class="formula">$$\mu \approx 100$$</div>
+        <p>و disagreement کم است.</p>
+        <p>پس epistemic uncertainty کم است.</p>
+        <p>اما اگر:</p>
+        <div class="box">
+            <div class="chart">98
+150
+72
+130
+45</div>
+        </div>
+        <p>باشد:</p>
+        <div class="inner-box">model disagreement زیاد است.</div>
+        <p>پس uncertainty epistemic بیشتر است.</p>
+
+        <h2>68. Aleatoric + Epistemic در Ensemble Regression</h2>
+        <p>اگر هر مدل علاوه بر mean، variance را هم پیش‌بینی کند:</p>
+        <div class="box">
+            <div class="chart">Model 1:
+μ1, σ1²
+
+Model 2:
+μ2, σ2²
+...</div>
+        </div>
+        <p>می‌توانیم مفهومی این‌گونه decomposition کنیم:</p>
+        <div class="formula">$$Total Predictive Variance \approx Aleatoric + Epistemic$$</div>
+        <p>که در ensemble می‌توان بخش uncertainty درون مدل‌ها و disagreement بین مدل‌ها را جدا کرد.</p>
+
+        <h2>69. MC Dropout vs Deep Ensemble vs Conformal</h2>
+        <table>
+            <thead><tr><th>روش</th><th>هدف اصلی</th></tr></thead>
+            <tbody>
+                <tr><td>MC Dropout</td><td>Approximate epistemic uncertainty</td></tr>
+                <tr><td>Deep Ensemble</td><td>Model disagreement / epistemic uncertainty</td></tr>
+                <tr><td>Conformal Prediction</td><td>Prediction set/interval با coverage</td></tr>
+                <tr><td>Bayesian ML</td><td>Posterior-based uncertainty</td></tr>
+                <tr><td>Calibration</td><td>Reliability of probabilities</td></tr>
+            </tbody>
+        </table>
+        <p>این‌ها جایگزین کامل یکدیگر نیستند.</p>
+
+        <h2>70. Bayesian ML vs Deep Ensemble</h2>
+        <div class="inner-box"><div class="inner-title">Bayesian</div></div>
+        <p>به دنبال:</p>
+        <div class="formula">$$p(\theta|D)$$</div>
+        <p>است.</p>
+        <div class="inner-box"><div class="inner-title">Deep Ensemble</div></div>
+        <p>چند مدل مختلف train می‌کند و disagreement را استفاده می‌کند.</p>
+        <p>Deep Ensemble:</p>
+        <p>Bayesian posterior دقیق نیست.</p>
+        <p>ولی در عمل می‌تواند uncertainty بسیار خوبی بدهد.</p>
+
+        <h2>71. Monte Carlo Dropout vs Bayesian</h2>
+        <p>MC Dropout از نظر نظری به نوعی approximate Bayesian inference مرتبط است.</p>
+        <p>ولی:</p>
+        <div class="inner-box">MC Dropout ≠ Exact Bayesian Inference</div>
+
+        <h2>72. Conformal Prediction vs Bayesian</h2>
+        <div class="inner-box"><div class="inner-title">Bayesian</div></div>
+        <p>Posterior probability</p>
+        <p>می‌دهد.</p>
+        <div class="inner-box"><div class="inner-title">Conformal</div></div>
+        <p>Coverage guarantee</p>
+        <p>می‌دهد.</p>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">Bayesian
+P(Y ∈ interval | D) = ...
+Conformal
+Long-run coverage = 90%</div>
+        </div>
+        <p>با assumptions مربوطه.</p>
+
+        <h2>73. یک Architecture حرفه‌ای</h2>
+        <p>فرض کن یک سیستم production regression داریم:</p>
+        <div class="box">
+            <div class="chart">                    Input
+                      │
+                      ▼
+              ┌──────────────┐
+              │ ML Model     │
+              └──────┬───────┘
+                     │
+             ┌───────┴────────┐
+             ▼                ▼
+        Prediction        Uncertainty
+             │                │
+             │       ┌────────┼────────┐
+             │       ▼        ▼        ▼
+             │    Ensemble   MC     Conformal
+             │               Dropout
+             │
+             └────────┬───────────────┘
+                      ▼
+              Decision / Interval
+                      │
+                      ▼
+                Business Action</div>
+        </div>
+
+        <h2>74. یک مثال کامل Senior-Level</h2>
+        <p>فرض کن مدل قیمت طلا داریم.</p>
+        <p>Model:</p>
+        <div class="box"><div class="chart">Predicted price = 5,000,000</div></div>
+        <p>ولی:</p>
+        <div class="box">
+            <div class="chart">Deep Ensemble:
+
+4.8M
+4.9M
+5.0M
+5.1M
+5.2M</div>
+        </div>
+        <p>disagreement کم است.</p>
+        <p>پس epistemic uncertainty نسبتاً پایین است.</p>
+        <p>اما بازار volatile است.</p>
+        <p>پس:</p>
+        <div class="inner-box">Aleatoric uncertainty = High</div>
+        <p>در نتیجه:</p>
+        <div class="box">
+            <div class="chart">Prediction = 5.0M
+Prediction Interval:
+4.4M ───────── 5.6M</div>
+        </div>
+        <p>ممکن است مناسب‌تر از ارائه صرفاً:</p>
+        <div class="box"><div class="chart">5.0M</div></div>
+        <p>باشد.</p>
+
+        <h2>75. مثال پزشکی</h2>
+        <p>مدل:</p>
+        <div class="box"><div class="chart">Cancer probability = 0.92</div></div>
+        <p>ولی:</p>
+        <div class="box"><div class="chart">MC Dropout variance = HIGH</div></div>
+        <p>یعنی:</p>
+        <div class="box">
+            <div class="chart">Probability = high
+Uncertainty = high</div>
+        </div>
+        <p>پس:</p>
+        <div class="box"><div class="chart">Human review required</div></div>
+        <p>این دقیقاً جایی است که uncertainty به operational decision تبدیل می‌شود.</p>
+
+        <h2>76. Confidence Interval vs Model Confidence</h2>
+        <p>این دو را قاطی نکن.</p>
+        <p>وقتی neural network می‌گوید:</p>
+        <div class="box"><div class="chart">Cat = 0.95</div></div>
+        <p>این الزاماً:</p>
+        <div class="inner-box">95% Confidence Interval</div>
+        <p>نیست.</p>
+        <p>این:</p>
+        <div class="inner-box">predicted probability / model score</div>
+        <p>است.</p>
+        <p>Confidence Interval یک مفهوم آماری متفاوت است.</p>
+
+        <h2>77. Common Interview Trap</h2>
+        <p>سؤال:</p>
+        <div class="inner-box">مدل گفته probability = 0.95. آیا یعنی uncertainty فقط 5% است؟</div>
+        <div class="box"><div class="chart">❌ خیر.</div></div>
+        <p>چون:</p>
+        <div class="box"><div class="chart">0.95 probability output</div></div>
+        <p>با:</p>
+        <div class="box"><div class="chart">well-calibrated uncertainty estimate</div></div>
+        <p>یکی نیست.</p>
+        <p>ممکن است مدل overconfident باشد.</p>
+
+        <h2>78. Common Interview Trap 2</h2>
+        <p>سؤال:</p>
+        <div class="inner-box">آیا با افزایش داده Aleatoric uncertainty از بین می‌رود؟</div>
+        <div class="box"><div class="chart">❌ معمولاً خیر.</div></div>
+        <p>چرا؟</p>
+        <p>چون:</p>
+        <div class="inner-box">Aleatoric = Intrinsic Noise</div>
+        <p>است.</p>
+        <p>اما:</p>
+        <div class="inner-box">Epistemic</div>
+        <p>با داده بهتر و بیشتر می‌تواند کاهش پیدا کند.</p>
+
+        <h2>79. Common Interview Trap 3</h2>
+        <p>سؤال:</p>
+        <div class="inner-box">Deep Ensemble بیشتر کدام uncertainty را capture می‌کند؟</div>
+        <p>عمدتاً:</p>
+        <div class="inner-box">Epistemic Uncertainty</div>
+        <p>از طریق disagreement مدل‌ها.</p>
+        <p>ولی اگر مدل‌ها uncertainty مربوط به observation noise را نیز مدل کنند، می‌توانند information درباره aleatoric uncertainty هم ارائه دهند.</p>
+
+        <h2>80. Common Interview Trap 4</h2>
+        <p>سؤال:</p>
+        <div class="inner-box">آیا Conformal Prediction Bayesian است؟</div>
+        <div class="box"><div class="chart">❌ خیر.</div></div>
+        <p>Conformal یک چارچوب آماری برای ساخت:</p>
+        <div class="inner-box">prediction intervals
+prediction sets</div>
+        <p>با coverage guarantees تحت assumptions مربوطه است.</p>
+
+        <h2>81. Common Interview Trap 5</h2>
+        <p>سؤال:</p>
+        <div class="inner-box">Confidence Interval یا Prediction Interval کدام بزرگ‌تر است؟</div>
+        <p>معمولاً:</p>
+        <div class="formula">$$Prediction Interval > Confidence Interval$$</div>
+        <p>چون prediction interval uncertainty مربوط به future observation را هم در بر می‌گیرد.</p>
+
+        <h2>82. جمع‌بندی کامل</h2>
+        <p>در ذهن خودت این hierarchy را داشته باش:</p>
+        <div class="box">
+            <div class="chart">                    UNCERTAINTY
+                         │
+          ┌──────────────┴──────────────┐
+          │                             │
+      Aleatoric                    Epistemic
+          │                             │
+   Data/Measurement               Model Knowledge
+       Noise                          Lack
+          │                             │
+          └──────────────┬──────────────┘
+                         │
+                         ▼
+                Predictive Uncertainty
+                         │
+        ┌────────────────┼────────────────┐
+        ▼                ▼                ▼
+   Bayesian ML       MC Dropout     Deep Ensemble
+                         │
+                         └───────────────┐
+                                         ▼
+                               Uncertainty Estimation
+                                         │
+                                         ▼
+                                Conformal Prediction
+                                         │
+                                         ▼
+                               Prediction Set/Interval</div>
+        </div>
+
+        <h2>83. Cheat Sheet نهایی Senior ML</h2>
+        <table>
+            <thead><tr><th>مفهوم</th><th>معنی</th></tr></thead>
+            <tbody>
+                <tr><td>Aleatoric</td><td>uncertainty ذاتی داده</td></tr>
+                <tr><td>Epistemic</td><td>uncertainty ناشی از کمبود دانش مدل</td></tr>
+                <tr><td>Predictive</td><td>uncertainty prediction نهایی</td></tr>
+                <tr><td>Confidence Interval</td><td>uncertainty درباره parameter/mean</td></tr>
+                <tr><td>Prediction Interval</td><td>uncertainty درباره observation آینده</td></tr>
+                <tr><td>Bayesian ML</td><td>مدل‌سازی uncertainty با posterior</td></tr>
+                <tr><td>MC Dropout</td><td>چند forward pass با dropout</td></tr>
+                <tr><td>Deep Ensemble</td><td>چند مدل و استفاده از disagreement</td></tr>
+                <tr><td>Conformal Prediction</td><td>prediction set/interval با coverage guarantee</td></tr>
+            </tbody>
+        </table>
+
+        <h2>🎯 اگر بخواهم کل مبحث را در 5 جمله Senior-Level خلاصه کنم</h2>
+        <ol>
+            <li>Aleatoric uncertainty از noise ذاتی data می‌آید و معمولاً با data بیشتر حذف نمی‌شود.</li>
+            <li>Epistemic uncertainty از ناآگاهی مدل می‌آید و با data، coverage و مدل بهتر می‌تواند کاهش پیدا کند.</li>
+            <li>Predictive uncertainty uncertainty مربوط به prediction نهایی است و می‌تواند ترکیبی از aleatoric و epistemic باشد.</li>
+            <li>Bayesian ML، MC Dropout و Deep Ensembles روش‌هایی برای تخمین uncertainty هستند، در حالی که Conformal Prediction راهی برای ساخت prediction interval/set با پوشش آماری تضمین‌شده تحت assumptions مربوطه است.</li>
+            <li>در production، confidence بالا الزاماً به معنی uncertainty پایین یا prediction صحیح نیست؛ بنابراین یک Senior ML Engineer باید علاوه بر prediction، calibration، uncertainty، OOD behavior، coverage و business risk را هم در نظر بگیرد.</li>
+        </ol>
+    </div>
+</body>
+</html>

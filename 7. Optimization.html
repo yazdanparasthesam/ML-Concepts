@@ -1,0 +1,1651 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Optimization - Senior ML Level</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}]});"></script>
+    <style>
+        body { background-color: #0d1117; color: #e6edf3; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.8; margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1, h2, h3 { color: #e6edf3; text-align: right; border-bottom: 1px solid #444; padding-bottom: 15px; margin-top: 50px; }
+        p, li { text-align: right; }
+        
+        /* Boxes */
+        .box { background-color: #21262d; border: 1px solid #30363d; border-radius: 8px; padding: 15px; margin: 15px 0; color: #e6edf3; }
+        .inner-box { background-color: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 15px; margin: 10px; }
+        .inner-title { font-weight: bold; margin-bottom: 5px; }
+
+        /* Formula Box */
+        .formula {
+            direction: ltr;
+            background-color: #000;
+            border: 1px solid #fff;
+            border-radius: 0;
+            padding: 15px;
+            margin: 20px auto;
+            width: fit-content;
+            max-width: 100%;
+            overflow-x: auto;
+            text-align: center;
+            font-size: 1.2em;
+            font-family: "Times New Roman", Times, serif;
+            color: #fff;
+        }
+
+        /* Charts / Flowcharts / ASCII Art */
+        .chart { direction: ltr; text-align: left; font-family: monospace; background-color: #21262d; border-radius: 8px; padding: 15px; overflow-x: auto; white-space: pre; border: 1px solid #444; }
+
+        /* Tables */
+        table { width: 100%; border-collapse: collapse; direction: rtl; }
+        th, td { border: 1px solid #444; padding: 12px; text-align: right; }
+        th { background-color: #21262d; }
+        
+        /* Highlight */
+        .highlight { color: #58a6ff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 7. Optimization</h1>
+        <ul>
+            <li>Objective Function</li>
+            <li>Loss Function</li>
+            <li>Gradient</li>
+            <li>Gradient Descent</li>
+            <li>Batch Gradient Descent</li>
+            <li>Stochastic Gradient Descent</li>
+            <li>Mini-Batch Gradient Descent</li>
+            <li>Learning Rate</li>
+            <li>Learning Rate Scheduling</li>
+            <li>Momentum</li>
+            <li>Nesterov Momentum</li>
+            <li>AdaGrad</li>
+            <li>RMSProp</li>
+            <li>Adam</li>
+            <li>AdamW</li>
+            <li>Second-Order Optimization</li>
+            <li>Newton's Method</li>
+            <li>Convex vs Non-Convex Optimization</li>
+            <li>Local Minimum</li>
+            <li>Global Minimum</li>
+            <li>Saddle Point</li>
+            <li>Gradient Explosion</li>
+            <li>Gradient Vanishing</li>
+        </ul>
+
+        <p>حتماً. این بخش Optimization یکی از بنیادی‌ترین بخش‌های ML است و برای سطح Senior باید فقط حفظ کردن اسم optimizerها کافی نباشد؛ باید بفهمی چه چیزی را optimize می‌کنیم، gradient از کجا می‌آید، چرا learning rate مهم است، چرا Adam با AdamW فرق دارد، چه زمانی SGD بهتر است، و مشکلاتی مثل vanishing/exploding gradient دقیقاً چرا رخ می‌دهند.</p>
+
+        <h2>🔧 7. Optimization — از پایه تا Senior ML</h2>
+        <p>ابتدا تصویر کلی:</p>
+        <div class="box">
+            <div class="chart">
+                    Dataset
+                       │
+                       ▼
+                  Model fθ(x)
+                       │
+                       ▼
+                 Predictions ŷ
+                       │
+                       ▼
+                Loss / Objective
+                       │
+                       ▼
+                  Gradient ∇θL
+                       │
+                       ▼
+                 Optimizer
+                       │
+                       ▼
+              Update Parameters θ
+                       │
+                       └───────────────┐
+                                       │
+                                       ▼
+                                  Next Iteration
+            </div>
+        </div>
+        <p>یعنی تقریباً کل Training یک مدل این حلقه است:</p>
+        <div class="formula">Forward → Loss → Gradient → Update → Repeat</div>
+
+        <h3>1. Optimization چیست؟</h3>
+        <p>Optimization یعنی پیدا کردن پارامترهای مدل به شکلی که یک تابع هدف را کمینه یا بیشینه کنیم.</p>
+        <p>فرض کن مدل داریم:</p>
+        <div class="formula">$$\hat{y} = f_{\theta}(x)$$</div>
+        <p>که:</p>
+        <div class="formula">$$\theta$$</div>
+        <p>پارامترهای مدل هستند.</p>
+        <p>مثلاً در Linear Regression:</p>
+        <div class="formula">$$\hat{y} = w_1 x_1 + w_2 x_2 + b$$</div>
+        <p>پارامترها:</p>
+        <div class="formula">$$\theta = [w_1, w_2, b]$$</div>
+        <p>هستند.</p>
+        <p>ما می‌خواهیم پارامترهایی پیدا کنیم که خطای مدل کمینه شود:</p>
+        <div class="formula">$$\theta^* = \arg\min_{\theta} L(\theta)$$</div>
+
+        <h3>2. Objective Function</h3>
+        <p>Objective Function تابعی است که دقیقاً مشخص می‌کند:</p>
+        <div class="inner-box">«مدل قرار است چه چیزی را optimize کند؟»</div>
+        <p>مثلاً:</p>
+        <div class="formula">$$J(\theta)$$</div>
+        <p>می‌تواند باشد:</p>
+        <div class="formula">$$J(\theta) = MSE(\theta)$$</div>
+        <p>و مسئله:</p>
+        <div class="formula">$$\theta^* = \arg\min_{\theta} J(\theta)$$</div>
+
+        <h3>3. Loss Function vs Objective Function</h3>
+        <p>این دو اصطلاح خیلی نزدیک‌اند ولی دقیقاً یکی نیستند.</p>
+        <div class="inner-box"><div class="inner-title">Loss</div></div>
+        <p>معمولاً خطای یک نمونه:</p>
+        <div class="formula">$$\ell(y_i, \hat{y}_i)$$</div>
+        <p>مثلاً:</p>
+        <div class="formula">$$\ell_i = (y_i - \hat{y}_i)^2$$</div>
+        
+        <div class="inner-box"><div class="inner-title">Objective</div></div>
+        <p>معمولاً چیزی که در کل Dataset optimize می‌کنیم:</p>
+        <div class="formula">$$J(\theta) = \frac{1}{N} \sum_{i=1}^{N} \ell_i$$</div>
+        <p>ممکن است Objective شامل Regularization هم باشد:</p>
+        <div class="formula">$$J(\theta) = \frac{1}{N} \sum_{i} \ell_i + \lambda R(\theta)$$</div>
+        <p>مثلاً:</p>
+        <div class="formula">$$J = MSE + \lambda ||w||_2^2$$</div>
+        <p>پس:</p>
+        <div class="box">
+            <div class="chart">
+Loss
+   ↓
+Per-example error
+
+Objective
+   ↓
+What optimizer actually minimizes
+            </div>
+        </div>
+        <p>البته در ادبیات ML این دو واژه گاهی به‌جای هم استفاده می‌شوند؛ مهم این است که در یک پروژه تعریف دقیق را مشخص کنی.</p>
+
+        <h3>4. Gradient چیست؟</h3>
+        <p>فرض کن:</p>
+        <div class="formula">$$L(w_1, w_2)$$</div>
+        <p>داریم.</p>
+        <p>Gradient مجموعه مشتق‌های جزئی است:</p>
+        <div class="formula">$$\nabla L = \begin{bmatrix} \frac{\partial L}{\partial w_1} \\ \frac{\partial L}{\partial w_2} \end{bmatrix}$$</div>
+        <p>Gradient به ما می‌گوید:</p>
+        <div class="inner-box">اگر پارامترها را کمی تغییر دهیم، Loss در چه جهتی و با چه شدتی تغییر می‌کند؟</div>
+
+        <h3>5. Gradient Direction</h3>
+        <p>اگر:</p>
+        <div class="formula">$$\nabla L$$</div>
+        <p>جهت افزایش سریع Loss باشد، بنابراین برای کاهش Loss در جهت مخالف آن حرکت می‌کنیم:</p>
+        <div class="formula">$$-\nabla L$$</div>
+        <p>این اساس Gradient Descent است.</p>
+
+        <h3>6. Gradient Descent</h3>
+        <p>قاعده اصلی:</p>
+        <div class="formula">$$\theta_{t+1} = \theta_t - \eta \nabla_{\theta} J(\theta_t)$$</div>
+        <p>که:</p>
+        <ul>
+            <li>θ: پارامترهای مدل</li>
+            <li>η: Learning Rate</li>
+            <li>∇J: Gradient</li>
+        </ul>
+        <p>است.</p>
+        <p>مثال ساده</p>
+        <p>فرض کن:</p>
+        <div class="formula">$$J(w) = w^2$$</div>
+        <p>پس:</p>
+        <div class="formula">$$\frac{dJ}{dw} = 2w$$</div>
+        <p>اگر:</p>
+        <div class="formula">$$w = 4$$</div>
+        <p>و:</p>
+        <div class="formula">$$\eta = 0.1$$</div>
+        <p>آنگاه:</p>
+        <div class="formula">$$w_{new} = 4 - 0.1(8)$$</div>
+        <p>پس:</p>
+        <div class="formula">$$w_{new} = 3.2$$</div>
+        <p>دوباره:</p>
+        <div class="formula">$$3.2 \rightarrow 2.56 \rightarrow 2.048 \rightarrow ...$$</div>
+        <p>و به سمت:</p>
+        <div class="formula">$$w^* = 0$$</div>
+        <p>حرکت می‌کنیم.</p>
+
+        <h3>7. چرا Minus داریم؟</h3>
+        <p>چون Gradient جهت افزایش Loss را نشان می‌دهد.</p>
+        <p>بنابراین:</p>
+        <div class="formula">$$-\nabla J$$</div>
+        <p>جهت کاهش سریع Loss است.</p>
+
+        <h3>8. Learning Rate</h3>
+        <p>Learning Rate:</p>
+        <div class="formula">$$\eta$$</div>
+        <p>اندازه قدم Optimization را مشخص می‌کند.</p>
+        <div class="inner-box"><div class="inner-title">Learning Rate خیلی کوچک</div></div>
+        <div class="box">
+            <div class="chart">
+Loss
+ │\
+ │ \
+ │  \
+ │   \__
+ │      \__
+ └────────────
+       Step
+            </div>
+        </div>
+        <p>مدل یاد می‌گیرد ولی:</p>
+        <div class="inner-box">خیلی آهسته.</div>
+        
+        <div class="inner-box"><div class="inner-title">Learning Rate خیلی بزرگ</div></div>
+        <p>ممکن است:</p>
+        <div class="box">
+            <div class="chart">
+       ●
+      / \
+     /   \
+----/-----\----
+   /       \
+            </div>
+        </div>
+        <p>از minimum عبور کند.</p>
+        <p>حتی ممکن است:</p>
+        <div class="box"><div class="chart">Loss → NaN</div></div>
+        <p>شود.</p>
+
+        <h3>9. Learning Rate مناسب</h3>
+        <p>هدف:</p>
+        <div class="box">
+            <div class="chart">
+Fast enough
++
+Stable enough
+            </div>
+        </div>
+        <p>است.</p>
+        <p>یکی از مهم‌ترین Hyperparameterهای Training همین است.</p>
+
+        <h3>10. Batch Gradient Descent</h3>
+        <p>در Full-Batch Gradient Descent، Gradient را با کل Dataset محاسبه می‌کنیم:</p>
+        <div class="formula">$$\nabla J(\theta) = \frac{1}{N} \sum_{i=1}^{N} \nabla \ell_i$$</div>
+        <p>بعد یک update انجام می‌دهیم.</p>
+        <p>مثال</p>
+        <p>Dataset:</p>
+        <div class="box"><div class="chart">1,000,000 samples</div></div>
+        <p>در هر Step:</p>
+        <div class="box">
+            <div class="chart">
+1,000,000 samples
+       ↓
+Forward
+       ↓
+Loss
+       ↓
+Gradient
+       ↓
+Update
+            </div>
+        </div>
+        <div class="inner-box"><div class="inner-title">مزیت</div></div>
+        <p>Gradient نسبتاً دقیق است.</p>
+        <div class="inner-box"><div class="inner-title">مشکل</div></div>
+        <p>برای Dataset بزرگ:</p>
+        <ul>
+            <li>Memory زیاد</li>
+            <li>Computation زیاد</li>
+            <li>Updateهای کم</li>
+        </ul>
+
+        <h3>11. Stochastic Gradient Descent — SGD</h3>
+        <p>در SGD برای هر Update فقط یک نمونه استفاده می‌کنیم:</p>
+        <div class="formula">$$\theta_{t+1} = \theta_t - \eta \nabla \ell_i(\theta_t)$$</div>
+        <p>پس:</p>
+        <div class="box">
+            <div class="chart">
+Sample 1 → Update
+Sample 2 → Update
+Sample 3 → Update
+...
+            </div>
+        </div>
+        <div class="inner-box"><div class="inner-title">مزیت SGD</div></div>
+        <p>Update زیاد است.</p>
+        <p>و Noise موجود در Gradient گاهی می‌تواند کمک کند از بعضی نواحی نامناسب Optimization عبور کنیم.</p>
+        <div class="inner-box"><div class="inner-title">مشکل</div></div>
+        <p>Gradient بسیار noisy است.</p>
+        <p>Loss ممکن است:</p>
+        <div class="box"><div class="chart">↓ ↑ ↓ ↑ ↓ ↓ ↑ ↓</div></div>
+        <p>نوسان کند.</p>
+
+        <h3>12. Mini-Batch Gradient Descent</h3>
+        <p>در Deep Learning روش رایج:</p>
+        <div class="inner-box"><div class="inner-title">Mini-Batch Gradient Descent</div></div>
+        <p>است.</p>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">
+Dataset = 1,000,000
+Batch size = 256
+            </div>
+        </div>
+        <p>در هر Step:</p>
+        <div class="box">
+            <div class="chart">
+256 samples
+    ↓
+Gradient
+    ↓
+Update
+            </div>
+        </div>
+        <div class="inner-box"><div class="inner-title">چرا Mini-Batch محبوب است؟</div></div>
+        <p>چون بین این دو تعادل ایجاد می‌کند:</p>
+        <div class="box">
+            <div class="chart">
+Full Batch
+   │
+   ├── Stable gradient
+   └── Expensive
+
+Mini Batch
+   │
+   ├── Efficient GPU utilization
+   ├── Some gradient noise
+   └── Frequent updates
+
+SGD
+   │
+   ├── Very noisy
+   └── Less computationally efficient
+            </div>
+        </div>
+
+        <h3>13. Epoch vs Batch vs Iteration</h3>
+        <p>این‌ها را خیلی خوب بلد باش.</p>
+        <p>فرض کن:</p>
+        <div class="box">
+            <div class="chart">
+N = 10,000 samples
+Batch Size = 100
+            </div>
+        </div>
+        <p>تعداد Update در یک Epoch:</p>
+        <div class="formula">$$\frac{10000}{100} = 100$$</div>
+        <p>پس:</p>
+        <div class="box"><div class="chart">1 Epoch = 100 iterations / optimizer steps</div></div>
+        <p>در حالت ساده.</p>
+
+        <h3>14. Momentum</h3>
+        <p>Gradient Descent ممکن است در مسیرهایی که Loss خیلی کشیده است نوسان کند.</p>
+        <p>Momentum ایده‌ای شبیه:</p>
+        <div class="inner-box">«سرعت قبلی را هم در نظر بگیر.»</div>
+        <p>است.</p>
+        <p>فرمول کلاسیک:</p>
+        <div class="formula">$$v_t = \beta v_{t-1} + \nabla J(\theta_t)$$</div>
+        <p>و:</p>
+        <div class="formula">$$\theta_{t+1} = \theta_t - \eta v_t$$</div>
+        <div class="inner-box"><div class="inner-title">Intuition</div></div>
+        <p>بدون Momentum:</p>
+        <div class="box"><div class="chart">↙ ↘ ↙ ↘ ↙ ↘</div></div>
+        <p>با Momentum:</p>
+        <div class="box"><div class="chart">──────────────→</div></div>
+        <p>Momentum باعث می‌شود:</p>
+        <ul>
+            <li>حرکت در جهت پایدار تقویت شود.</li>
+            <li>نوسان در جهت‌های متناوب کاهش پیدا کند.</li>
+        </ul>
+
+        <h3>15. چرا Momentum مفید است؟</h3>
+        <p>فرض کن Gradient در یک جهت:</p>
+        <div class="box"><div class="chart">+
++
++
++</div></div>
+        <p>باشد.</p>
+        <p>Momentum این حرکت را جمع می‌کند.</p>
+        <p>ولی در جهت دیگر:</p>
+        <div class="box"><div class="chart">+
+-
++
+-
++
+-</div></div>
+        <p>داریم.</p>
+        <p>Momentum بخشی از این نوسان را خنثی می‌کند.</p>
+
+        <h3>16. Nesterov Momentum</h3>
+        <p>Nesterov نسخه‌ای از Momentum است که قبل از محاسبه Gradient:</p>
+        <div class="inner-box">ابتدا یک قدم به سمت حرکت فعلی نگاه می‌کند.</div>
+        <p>ایده:</p>
+        <div class="box">
+            <div class="chart">
+Current θ
+   │
+   ▼
+Look ahead
+   │
+   ▼
+Compute gradient
+   │
+   ▼
+Update
+            </div>
+        </div>
+        <p>فرم مفهومی:</p>
+        <div class="formula">$$v_t = \mu v_{t-1} + \nabla J(\theta_t - \eta \mu v_{t-1})$$</div>
+        <p>و:</p>
+        <div class="formula">$$\theta_{t+1} = \theta_t - \eta v_t$$</div>
+        <div class="inner-box"><div class="inner-title">تفاوت Momentum و Nesterov</div></div>
+        <p>Momentum:</p>
+        <div class="box">
+            <div class="chart">
+Gradient at current position
+       ↓
+Momentum
+       ↓
+Update
+            </div>
+        </div>
+        <p>Nesterov:</p>
+        <div class="box">
+            <div class="chart">
+Look ahead
+       ↓
+Gradient
+       ↓
+Update
+            </div>
+        </div>
+        <p>Nesterov معمولاً اطلاعات بهتری از جهت آینده حرکت می‌گیرد.</p>
+
+        <h3>17. AdaGrad</h3>
+        <p>AdaGrad:</p>
+        <p>Learning rate را برای هر پارامتر به صورت جداگانه adaptive می‌کند.</p>
+        <p>فرمول ساده:</p>
+        <div class="formula">$$G_t = G_{t-1} + g_t^2$$</div>
+        <p>و:</p>
+        <div class="formula">$$\theta_{t+1} = \theta_t - \frac{\eta}{\sqrt{G_t + \epsilon}} g_t$$</div>
+        <div class="inner-box"><div class="inner-title">Intuition</div></div>
+        <p>اگر یک Parameter مرتباً Gradient بزرگی داشته باشد:</p>
+        <div class="formula">$$G_t$$</div>
+        <p>بزرگ می‌شود.</p>
+        <p>در نتیجه:</p>
+        <div class="inner-box">Effective LR</div>
+        <p>کاهش پیدا می‌کند.</p>
+        <div class="inner-box"><div class="inner-title">مشکل AdaGrad</div></div>
+        <p>چون:</p>
+        <div class="formula">$$G_t$$</div>
+        <p>همیشه جمع می‌شود، ممکن است در طول زمان بسیار بزرگ شود.</p>
+        <p>در نتیجه:</p>
+        <div class="formula">$$LearningRate \rightarrow 0$$</div>
+        <p>شود.</p>
+
+        <h3>18. RMSProp</h3>
+        <p>RMSProp برای حل مشکل AdaGrad آمد.</p>
+        <p>به جای جمع کردن تمام Gradientهای تاریخ:</p>
+        <div class="inner-box">میانگین متحرک نمایی مربع Gradientها</div>
+        <p>را نگه می‌دارد.</p>
+        <div class="formula">$$v_t = \beta v_{t-1} + (1-\beta)g_t^2$$</div>
+        <p>سپس:</p>
+        <div class="formula">$$\theta_{t+1} = \theta_t - \frac{\eta}{\sqrt{v_t + \epsilon}} g_t$$</div>
+        <div class="inner-box"><div class="inner-title">تفاوت AdaGrad و RMSProp</div></div>
+        <div class="box">
+            <div class="inner-title">AdaGrad</div>
+            <div class="chart">All historical squared gradients</div>
+        </div>
+        <div class="box">
+            <div class="inner-title">RMSProp</div>
+            <div class="chart">Exponentially weighted recent squared gradients</div>
+        </div>
+        <p>پس RMSProp اجازه می‌دهد Effective LR دائماً به صفر نرود.</p>
+
+        <h3>19. Adam</h3>
+        <p>Adam:</p>
+        <div class="inner-box"><div class="inner-title">Adaptive Moment Estimation</div></div>
+        <p>است.</p>
+        <p>یکی از محبوب‌ترین Optimizerها.</p>
+        <p>Adam ایده‌های:</p>
+        <div class="box">
+            <div class="chart">
+Momentum
++
+RMSProp-like adaptive scaling
+            </div>
+        </div>
+        <p>را ترکیب می‌کند.</p>
+        <p>Adam دو مقدار نگه می‌دارد</p>
+        <div class="inner-box"><div class="inner-title">First Moment</div></div>
+        <p>میانگین Gradient:</p>
+        <div class="formula">$$m_t = \beta_1 m_{t-1} + (1-\beta_1)g_t$$</div>
+        <div class="inner-box"><div class="inner-title">Second Moment</div></div>
+        <p>میانگین مربع Gradient:</p>
+        <div class="formula">$$v_t = \beta_2 v_{t-1} + (1-\beta_2)g_t^2$$</div>
+
+        <h3>20. Bias Correction در Adam</h3>
+        <p>در ابتدا:</p>
+        <div class="formula">$$m_0 = 0$$</div>
+        <p>و:</p>
+        <div class="formula">$$v_0 = 0$$</div>
+        <p>پس این تخمین‌ها در مراحل اولیه biased هستند.</p>
+        <p>بنابراین:</p>
+        <div class="formula">$$\hat{m}_t = \frac{m_t}{1 - \beta_1^t}$$</div>
+        <p>و:</p>
+        <div class="formula">$$\hat{v}_t = \frac{v_t}{1 - \beta_2^t}$$</div>
+        <div class="inner-box"><div class="inner-title">Update Adam</div></div>
+        <div class="formula">$$\theta_{t+1} = \theta_t - \eta \frac{\hat{m}_t}{\sqrt{\hat{v}_t} + \epsilon}$$</div>
+
+        <h3>21. Hyperparameterهای معمول Adam</h3>
+        <p>مقادیر رایج:</p>
+        <div class="formula">$$\beta_1 = 0.9$$</div>
+        <div class="formula">$$\beta_2 = 0.999$$</div>
+        <div class="formula">$$\epsilon \approx 10^{-8}$$</div>
+        <p>اما:</p>
+        <div class="inner-box">این‌ها قانون طبیعت نیستند.</div>
+        <p>باید بر اساس مسئله و Training بررسی شوند.</p>
+
+        <h3>22. چرا Adam محبوب است؟</h3>
+        <p>چون:</p>
+        <ul>
+            <li>Gradient noise را مدیریت می‌کند.</li>
+            <li>برای Parameterها LR adaptive دارد.</li>
+            <li>معمولاً نیاز به tuning اولیه کمتری نسبت به SGD دارد.</li>
+            <li>برای بسیاری از Deep Learning problems سریعاً خوب عمل می‌کند.</li>
+        </ul>
+        <p>اما Adam همیشه بهترین نیست.</p>
+        <p>در بعضی مسائل:</p>
+        <div class="box"><div class="chart">SGD + Momentum</div></div>
+        <p>ممکن است:</p>
+        <div class="inner-box">Generalization بهتر</div>
+        <p>بدهد.</p>
+        <p>به‌خصوص در برخی مسائل Computer Vision و supervised deep learning کلاسیک، SGD با schedule مناسب هنوز بسیار قوی است.</p>
+
+        <h3>23. AdamW</h3>
+        <p>یکی از مهم‌ترین نکات Senior.</p>
+        <p>AdamW:</p>
+        <div class="inner-box"><div class="inner-title">Adam with Decoupled Weight Decay</div></div>
+        <p>است.</p>
+        <p>برای فهم آن باید:</p>
+        <div class="inner-box"><div class="inner-title">L2 Regularization</div></div>
+        <p>و:</p>
+        <div class="inner-box"><div class="inner-title">Weight Decay</div></div>
+        <p>را از هم تفکیک کنیم.</p>
+
+        <h3>24. L2 Regularization</h3>
+        <p>Objective:</p>
+        <div class="formula">$$J(\theta) = L(\theta) + \frac{\lambda}{2} ||\theta||^2$$</div>
+        <p>Gradient:</p>
+        <div class="formula">$$\nabla J = \nabla L + \lambda \theta$$</div>
+        <p>در Gradient Descent:</p>
+        <div class="formula">$$\theta_{t+1} = \theta_t - \eta (\nabla L + \lambda \theta_t)$$</div>
+        <p>که شامل:</p>
+        <div class="formula">$$-\eta \lambda \theta_t$$</div>
+        <p>می‌شود.</p>
+
+        <h3>25. چرا در Adam مشکل ایجاد می‌شود؟</h3>
+        <p>در SGD ساده، L2 regularization و weight decay ارتباط بسیار نزدیکی دارند.</p>
+        <p>اما در Adam، چون Gradient توسط:</p>
+        <div class="formula">$$\frac{1}{\sqrt{\hat{v}_t} + \epsilon}$$</div>
+        <p>scale می‌شود، اگر L2 را داخل Gradient قرار دهیم، اثر regularization نیز به شکل adaptive scale می‌شود.</p>
+        <p>در نتیجه:</p>
+        <div class="inner-box">L2 regularization دقیقاً معادل weight decay مستقل نیست.</div>
+
+        <h3>26. AdamW</h3>
+        <p>AdamW این دو را جدا می‌کند:</p>
+        <div class="box">
+            <div class="chart">
+Gradient update
++
+Explicit weight decay
+            </div>
+        </div>
+        <p>فرم ساده:</p>
+        <div class="formula">$$\theta_{t+1} = \theta_t - \eta \frac{\hat{m}_t}{\sqrt{\hat{v}_t} + \epsilon} - \eta \lambda \theta_t$$</div>
+        <p>پس:</p>
+        <div class="inner-box">Weight decay از adaptive gradient update جدا شده است.</div>
+
+        <h3>27. Adam vs AdamW</h3>
+        <table>
+            <thead><tr><th></th><th>Adam</th><th>AdamW</th></tr></thead>
+            <tbody>
+                <tr><td>Adaptive gradient</td><td>دارد</td><td>دارد</td></tr>
+                <tr><td>Momentum</td><td>دارد</td><td>دارد</td></tr>
+                <tr><td>Second moment</td><td>دارد</td><td>دارد</td></tr>
+                <tr><td>Weight decay</td><td>به‌صورت کلاسیک ممکن است داخل objective/L2 پیاده شود</td><td>Decoupled</td></tr>
+                <tr><td>Regularization behavior</td><td>وابسته به implementation</td><td>تمیزتر</td></tr>
+                <tr><td>مدرن Deep Learning</td><td>خوب</td><td>معمولاً انتخاب بهتر برای weight decay</td></tr>
+            </tbody>
+        </table>
+
+        <h3>28. Learning Rate Scheduling</h3>
+        <p>گاهی یک Learning Rate ثابت کافی نیست.</p>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">
+Epoch 1
+LR = 0.001
+
+Epoch 50
+LR = 0.0005
+
+Epoch 100
+LR = 0.0001
+            </div>
+        </div>
+        <p>به این:</p>
+        <div class="inner-box">Learning Rate Schedule</div>
+        <p>می‌گوییم.</p>
+        <p>چرا LR را کاهش می‌دهیم؟</p>
+        <p>ابتدا می‌خواهیم:</p>
+        <div class="inner-box">سریع حرکت کنیم.</div>
+        <p>در اواخر Training می‌خواهیم:</p>
+        <div class="inner-box">دقیق‌تر اطراف minimum حرکت کنیم.</div>
+        <p>پس:</p>
+        <div class="box">
+            <div class="chart">
+Early Training
+Large LR
+     ↓
+Fast exploration
+
+Late Training
+Small LR
+     ↓
+Fine optimization
+            </div>
+        </div>
+
+        <h3>29. Step Decay</h3>
+        <p>مثلاً:</p>
+        <div class="formula">$$\eta_t = \eta_0 \gamma^{\lfloor t/k \rfloor}$$</div>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">
+Epoch 0–30   → 0.001
+Epoch 31–60  → 0.0001
+Epoch 61–90  → 0.00001
+            </div>
+        </div>
+
+        <h3>30. Exponential Decay</h3>
+        <div class="formula">$$\eta_t = \eta_0 e^{-kt}$$</div>
+        <p>Learning Rate به صورت پیوسته کاهش می‌یابد.</p>
+
+        <h3>31. Cosine Annealing</h3>
+        <p>Learning Rate تقریباً طبق:</p>
+        <div class="formula">$$\eta_t = \eta_{min} + \frac{1}{2}(\eta_{max} - \eta_{min})(1 + \cos \frac{\pi t}{T})$$</div>
+        <p>کاهش می‌یابد.</p>
+
+        <h3>32. Warmup</h3>
+        <p>در بسیاری از مدل‌های Deep Learning، مخصوصاً Trainingهای حساس، LR را از مقدار کوچک شروع می‌کنیم و به LR اصلی می‌رسانیم.</p>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">
+Step 0      → 0.00001
+Step 100     → 0.0001
+Step 500     → 0.001
+            </div>
+        </div>
+        <p>بعد schedule اصلی شروع می‌شود.</p>
+        <div class="inner-box"><div class="inner-title">چرا Warmup؟</div></div>
+        <p>در ابتدای Training:</p>
+        <ul>
+            <li>Parameters هنوز random هستند.</li>
+            <li>Gradientها ممکن است unstable باشند.</li>
+            <li>Optimizer state هنوز شکل نگرفته است.</li>
+        </ul>
+        <p>پس:</p>
+        <div class="inner-box">شروع با LR کامل ممکن است Training را ناپایدار کند.</div>
+
+        <h3>33. Warmup + Cosine</h3>
+        <p>یک الگوی رایج:</p>
+        <div class="box">
+            <div class="chart">
+LR
+│        ______
+│       /      \
+│      /        \
+│_____/          \____
+└──────────────────────
+  Warmup       Cosine
+            </div>
+        </div>
+        <p>یعنی:</p>
+        <div class="box">
+            <div class="chart">
+Warmup
+   ↓
+Peak LR
+   ↓
+Cosine Decay
+            </div>
+        </div>
+
+        <h3>34. ReduceLROnPlateau</h3>
+        <p>یک Strategy دیگر:</p>
+        <p>اگر Validation Metric مثلاً:</p>
+        <div class="box"><div class="chart">val_loss</div></div>
+        <p>برای چند Epoch بهتر نشود:</p>
+        <div class="box"><div class="chart">LR = LR × factor</div></div>
+        <p>شود.</p>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">
+val_loss
+↓
+↓
+↓
+→
+→
+→
+LR ↓
+↓
+↓
+            </div>
+        </div>
+
+        <h3>35. Second-Order Optimization</h3>
+        <p>تا اینجا بیشتر درباره:</p>
+        <div class="inner-box"><div class="inner-title">First-order methods</div></div>
+        <p>صحبت کردیم.</p>
+        <p>آن‌ها از:</p>
+        <div class="formula">$$\nabla f$$</div>
+        <p>استفاده می‌کنند.</p>
+        <p>Second-order methods از:</p>
+        <div class="formula">$$\nabla^2 f$$</div>
+        <p>یعنی:</p>
+        <div class="inner-box"><div class="inner-title">Hessian</div></div>
+        <p>استفاده می‌کنند.</p>
+
+        <h3>36. Hessian</h3>
+        <p>اگر:</p>
+        <div class="formula">$$f(\theta_1, \theta_2)$$</div>
+        <p>داشته باشیم:</p>
+        <div class="formula">$$H = \begin{bmatrix} \frac{\partial^2 f}{\partial \theta_1^2} & \frac{\partial^2 f}{\partial \theta_2 \partial \theta_1} \\ \frac{\partial^2 f}{\partial \theta_1 \partial \theta_2} & \frac{\partial^2 f}{\partial \theta_2^2} \end{bmatrix}$$</div>
+        <p>این ماتریس اطلاعاتی درباره:</p>
+        <div class="inner-box"><div class="inner-title">Curvature</div></div>
+        <p>سطح Loss می‌دهد.</p>
+
+        <h3>37. First-Order vs Second-Order</h3>
+        <div class="inner-box"><div class="inner-title">First-order</div></div>
+        <div class="formula">$$\nabla f$$</div>
+        <p>می‌گوید:</p>
+        <div class="inner-box">کدام سمت بالا/پایین است؟</div>
+        <div class="inner-box"><div class="inner-title">Second-order</div></div>
+        <div class="formula">$$\nabla^2 f$$</div>
+        <p>می‌گوید:</p>
+        <div class="inner-box">سطح چقدر خم شده و curvature در جهت‌های مختلف چگونه است؟</div>
+
+        <h3>38. Newton's Method</h3>
+        <p>Newton از Approximation مرتبه دوم استفاده می‌کند.</p>
+        <p>تقریب Taylor:</p>
+        <div class="formula">$$f(\theta + \Delta) \approx f(\theta) + \nabla f^T \Delta + \frac{1}{2} \Delta^T H \Delta$$</div>
+        <p>با حل شرایط بهینه:</p>
+        <div class="formula">$$\Delta = -H^{-1} \nabla f$$</div>
+        <p>پس:</p>
+        <div class="formula">$$\theta_{t+1} = \theta_t - H^{-1} \nabla f$$</div>
+
+        <h3>39. چرا Newton سریع است؟</h3>
+        <p>در نزدیکی یک minimum خوب:</p>
+        <p>Newton می‌تواند Convergence بسیار سریعی داشته باشد.</p>
+        <p>در برخی شرایط Convergence محلی تقریباً:</p>
+        <div class="inner-box">Quadratic</div>
+        <p>است.</p>
+        <p>یعنی تعداد correct digits می‌تواند خیلی سریع افزایش پیدا کند.</p>
+
+        <h3>40. پس چرا همیشه Newton استفاده نمی‌کنیم؟</h3>
+        <p>چون Hessian بسیار گران است.</p>
+        <p>اگر تعداد Parameters:</p>
+        <div class="formula">$$d$$</div>
+        <p>باشد، Hessian:</p>
+        <div class="formula">$$d \times d$$</div>
+        <p>است.</p>
+        <p>پس Memory تقریباً:</p>
+        <div class="formula">$$O(d^2)$$</div>
+        <p>می‌شود.</p>
+        <p>برای Neural Network با میلیون‌ها یا میلیاردها Parameter:</p>
+        <div class="inner-box">عملاً غیرعملی است.</div>
+
+        <h3>41. Hessian Inverse</h3>
+        <p>حتی بدتر:</p>
+        <div class="formula">$$H^{-1}$$</div>
+        <p>محاسبه مستقیم بسیار پرهزینه است.</p>
+        <p>به همین دلیل روش‌هایی مثل:</p>
+        <div class="box">
+            <div class="chart">
+BFGS
+L-BFGS
+Quasi-Newton
+            </div>
+        </div>
+        <p>به وجود آمده‌اند.</p>
+
+        <h3>42. Convex Optimization</h3>
+        <p>یک تابع Convex به‌طور شهودی شکلی شبیه کاسه دارد:</p>
+        <div class="box">
+            <div class="chart">
+       \     /
+        \   /
+         \_/
+            </div>
+        </div>
+        <p>خاصیت مهم:</p>
+        <div class="inner-box">هر Local Minimum یک Global Minimum است.</div>
+
+        <h3>43. Global Minimum</h3>
+        <p>نقطه‌ای که:</p>
+        <div class="formula">$$f(\theta^*) \leq f(\theta)$$</div>
+        <p>برای همه θ باشد.</p>
+
+        <h3>44. Local Minimum</h3>
+        <p>نقطه‌ای که فقط در یک همسایگی کوچک minimum باشد.</p>
+        <div class="box">
+            <div class="chart">
+       \      /
+        \_/\_/
+           ↑
+       Local Min
+            </div>
+        </div>
+        <p>ممکن است minimum بهتری جای دیگری وجود داشته باشد.</p>
+
+        <h3>45. Convex vs Non-Convex</h3>
+        <div class="inner-box"><div class="inner-title">Convex</div></div>
+        <div class="box">
+            <div class="chart">
+      \       /
+       \_____/
+
+یک minimum جهانی.
+            </div>
+        </div>
+        <div class="inner-box"><div class="inner-title">Non-Convex</div></div>
+        <div class="box">
+            <div class="chart">
+    \_/\____/\_/
+      ↑      ↑
+     local  local
+     min    min
+            </div>
+        </div>
+        <p>ممکن است داشته باشیم:</p>
+        <ul>
+            <li>Local minima</li>
+            <li>Saddle points</li>
+            <li>Ridges</li>
+            <li>Flat regions</li>
+        </ul>
+
+        <h3>46. آیا Neural Networkها Non-Convex هستند؟</h3>
+        <p>بله.</p>
+        <p>Loss landscape شبکه‌های عصبی عموماً:</p>
+        <div class="inner-box">Highly non-convex</div>
+        <p>است.</p>
+
+        <h3>47. آیا Local Minimum مشکل اصلی Deep Learning است؟</h3>
+        <p>این نکته مهم است:</p>
+        <p>در Deep Learning مدرن، Saddle Points و Flat/Ill-conditioned regions اغلب از Local Minima مهم‌تر تلقی می‌شوند.</p>
+        <p>همچنین در مدل‌های overparameterized، بسیاری از local minima ممکن است lossهای نسبتاً مشابهی داشته باشند.</p>
+        <p>پس داستان:</p>
+        <div class="inner-box">«Gradient Descent در یک Local Minimum بد گیر می‌کند»</div>
+        <p>بیش از حد ساده‌سازی شده است.</p>
+
+        <h3>48. Saddle Point</h3>
+        <p>نقطه‌ای که در یک جهت minimum و در جهت دیگر maximum است.</p>
+        <p>مثلاً:</p>
+        <div class="formula">$$f(x,y) = x^2 - y^2$$</div>
+        <p>در:</p>
+        <div class="formula">$$(0,0)$$</div>
+        <p>داریم:</p>
+        <ul>
+            <li>در جهت x → minimum</li>
+            <li>در جهت y → maximum</li>
+        </ul>
+        <p>پس:</p>
+        <div class="inner-box">Saddle Point</div>
+        <p>است.</p>
+
+        <h3>49. Gradient در Saddle Point</h3>
+        <p>ممکن است:</p>
+        <div class="formula">$$\nabla f = 0$$</div>
+        <p>باشد.</p>
+        <p>اما:</p>
+        <div class="inner-box">این نقطه minimum نیست.</div>
+        <p>این یکی از دلایل مهمی است که:</p>
+        <div class="formula">$$\nabla f = 0$$</div>
+        <p>به تنهایی به معنی:</p>
+        <div class="inner-box">Optimal Solution</div>
+        <p>نیست.</p>
+
+        <h3>50. Hessian و تشخیص نقطه</h3>
+        <p>در نقطه‌ای که Gradient صفر است:</p>
+        <div class="inner-box">Hessian Positive Definite</div>
+        <p>→ Local Minimum</p>
+        <div class="inner-box">Hessian Negative Definite</div>
+        <p>→ Local Maximum</p>
+        <div class="inner-box">Hessian دارای Eigenvalueهای مثبت و منفی</div>
+        <p>→ Saddle Point</p>
+        <p>این یک نکته مهم برای مصاحبه‌های سطح بالا است.</p>
+
+        <h3>51. Gradient Vanishing</h3>
+        <p>در شبکه‌های عمیق، Gradient ممکن است هنگام Backpropagation بسیار کوچک شود.</p>
+        <p>یعنی:</p>
+        <div class="formula">$$||\nabla_{\theta} L|| \rightarrow 0$$</div>
+        <div class="inner-box"><div class="inner-title">چرا؟</div></div>
+        <p>Backpropagation از Chain Rule استفاده می‌کند:</p>
+        <div class="formula">$$\frac{\partial L}{\partial x} = \frac{\partial L}{\partial z_n} \frac{\partial z_n}{\partial z_{n-1}} ... \frac{\partial z_1}{\partial x}$$</div>
+        <p>اگر هر مشتق مثلاً:</p>
+        <div class="formula">$$0.5$$</div>
+        <p>باشد:</p>
+        <div class="formula">$$0.5^{20}$$</div>
+        <p>خیلی کوچک می‌شود.</p>
+
+        <h3>52. مثال</h3>
+        <p>اگر:</p>
+        <div class="formula">$$0.5^{50}$$</div>
+        <p>را حساب کنیم:</p>
+        <p>تقریباً:</p>
+        <div class="formula">$$8.9 \times 10^{-16}$$</div>
+        <p>است.</p>
+        <p>پس Gradient تقریباً صفر می‌شود.</p>
+
+        <h3>53. Activation Function و Vanishing Gradient</h3>
+        <div class="inner-box"><div class="inner-title">Sigmoid</div></div>
+        <div class="formula">$$\sigma(x) = \frac{1}{1 + e^{-x}}$$</div>
+        <p>مشتق:</p>
+        <div class="formula">$$\sigma'(x) = \sigma(x)(1 - \sigma(x))$$</div>
+        <p>و:</p>
+        <div class="formula">$$\sigma'(x) \leq 0.25$$</div>
+        <p>پس در نواحی saturated:</p>
+        <div class="box">
+            <div class="chart">
+x very positive → derivative ≈ 0
+x very negative → derivative ≈ 0
+            </div>
+        </div>
+
+        <h3>54. Tanh</h3>
+        <p>Tanh هم می‌تواند Saturate شود:</p>
+        <div class="box">
+            <div class="chart">
+x → +∞ → tanh(x) → 1
+x → -∞ → tanh(x) → -1
+            </div>
+        </div>
+        <p>مشتق:</p>
+        <div class="formula">$$1 - \tanh^2(x)$$</div>
+        <p>و در saturation:</p>
+        <div class="formula">$$\approx 0$$</div>
+
+        <h3>55. ReLU</h3>
+        <div class="formula">$$ReLU(x) = \max(0, x)$$</div>
+        <p>برای:</p>
+        <div class="formula">$$x > 0$$</div>
+        <p>مشتق:</p>
+        <div class="formula">$$1$$</div>
+        <p>پس مشکل Vanishing Gradient در بخش مثبت بسیار کمتر است.</p>
+
+        <h3>56. Dead ReLU</h3>
+        <p>ولی ReLU یک مشکل دیگر دارد.</p>
+        <p>برای:</p>
+        <div class="formula">$$x < 0$$</div>
+        <p>مشتق:</p>
+        <div class="formula">$$0$$</div>
+        <p>است.</p>
+        <p>اگر نورون دائماً در ناحیه منفی باشد:</p>
+        <div class="inner-box">Gradient دریافت نمی‌کند.</div>
+        <p>و ممکن است:</p>
+        <div class="inner-box">Dead Neuron</div>
+        <p>شود.</p>
+
+        <h3>57. راه‌حل‌های Vanishing Gradient</h3>
+        <p>روش‌های مختلف:</p>
+        <div class="box">
+            <div class="chart">
+ReLU family
+Leaky ReLU
+GELU
+Proper initialization
+Residual connections
+Normalization
+Gated architectures
+Careful architecture design
+            </div>
+        </div>
+
+        <h3>58. Residual Connection</h3>
+        <p>در ResNet:</p>
+        <div class="formula">$$y = F(x) + x$$</div>
+        <p>داریم.</p>
+        <p>Gradient:</p>
+        <div class="formula">$$\frac{\partial y}{\partial x} = \frac{\partial F(x)}{\partial x} + I$$</div>
+        <p>این مسیر مستقیم:</p>
+        <div class="inner-box">Gradient Highway</div>
+        <p>ایجاد می‌کند.</p>
+        <p>به همین دلیل شبکه‌های بسیار عمیق‌تر قابل آموزش شدند.</p>
+
+        <h3>59. Gradient Explosion</h3>
+        <p>برعکس Vanishing:</p>
+        <div class="formula">$$||\nabla L|| \rightarrow \infty$$</div>
+        <p>یا بسیار بزرگ می‌شود.</p>
+        <div class="inner-box"><div class="inner-title">چرا؟</div></div>
+        <p>اگر در Chain Rule مشتق‌ها بزرگ‌تر از 1 باشند:</p>
+        <div class="formula">$$2^{20}$$</div>
+        <p>خیلی بزرگ می‌شود.</p>
+
+        <h3>60. نتیجه Gradient Explosion</h3>
+        <p>ممکن است ببینی:</p>
+        <div class="box">
+            <div class="chart">
+Loss
+1.2
+2.4
+8.9
+120
+NaN
+            </div>
+        </div>
+        <p>و:</p>
+        <div class="box"><div class="chart">Weights → huge</div></div>
+        <p>شوند.</p>
+
+        <h3>61. Gradient Clipping</h3>
+        <p>یکی از راه‌حل‌های مهم:</p>
+        <div class="inner-box">Gradient Clipping</div>
+        <p>است.</p>
+        <p>اگر:</p>
+        <div class="formula">$$||g|| > c$$</div>
+        <p>باشد:</p>
+        <div class="formula">$$g \leftarrow c \frac{g}{||g||}$$</div>
+        <p>در نتیجه:</p>
+        <div class="formula">$$||g|| = c$$</div>
+        <p>می‌شود.</p>
+
+        <h3>62. Gradient Clipping by Value</h3>
+        <p>یک روش دیگر:</p>
+        <div class="box"><div class="chart">g_i = clip(g_i,-c,c)</div></div>
+        <p>یعنی هر Component جداگانه محدود می‌شود.</p>
+
+        <h3>63. Gradient Clipping by Norm</h3>
+        <p>کل Vector را Scale می‌کنیم:</p>
+        <div class="formula">$$g \leftarrow g \frac{c}{||g||}$$</div>
+        <p>اگر:</p>
+        <div class="formula">$$||g|| > c$$</div>
+        <p>باشد.</p>
+        <p>این روش در بسیاری از Trainingها مفید است.</p>
+
+        <h3>64. Vanishing vs Exploding</h3>
+        <table>
+            <thead><tr><th></th><th>Vanishing</th><th>Exploding</th></tr></thead>
+            <tbody>
+                <tr><td>Gradient</td><td>خیلی کوچک</td><td>خیلی بزرگ</td></tr>
+                <tr><td>Effect</td><td>Learning بسیار کند/متوقف</td><td>Training ناپایدار</td></tr>
+                <tr><td>Loss</td><td>ممکن است plateau</td><td>ممکن است NaN</td></tr>
+                <tr><td>Common cause</td><td>Saturation / repeated contractions</td><td>Repeated amplification</td></tr>
+                <tr><td>Solution</td><td>Initialization, ReLU/GELU, residual</td><td>Gradient clipping, LR, initialization</td></tr>
+            </tbody>
+        </table>
+
+        <h3>65. Initialization و Gradient Stability</h3>
+        <p>Initialization خیلی مهم است.</p>
+        <p>اگر Weightها:</p>
+        <div class="box"><div class="chart">خیلی بزرگ</div></div>
+        <p>باشند:</p>
+        <div class="formula">$$Activation \uparrow$$</div>
+        <p>و ممکن است:</p>
+        <div class="formula">$$Gradient \uparrow$$</div>
+        <p>شود.</p>
+        <p>اگر Weightها:</p>
+        <div class="box"><div class="chart">خیلی کوچک</div></div>
+        <p>باشند:</p>
+        <div class="formula">$$Gradient \downarrow$$</div>
+        <p>شود.</p>
+
+        <h3>66. Xavier / Glorot Initialization</h3>
+        <p>برای بعضی activationها، Variance وزن‌ها را متناسب با Fan-in/Fan-out انتخاب می‌کنیم.</p>
+        <p>به شکل تقریبی:</p>
+        <div class="formula">$$Var(W) \approx \frac{2}{n_{in} + n_{out}}$$</div>
+        <p>این به حفظ Signal/Gradient کمک می‌کند.</p>
+
+        <h3>67. He Initialization</h3>
+        <p>برای ReLU معمولاً:</p>
+        <div class="formula">$$Var(W) \approx \frac{2}{n_{in}}$$</div>
+        <p>است.</p>
+        <p>برای شبکه‌های ReLU-based بسیار رایج است.</p>
+
+        <h3>68. Optimization و Generalization</h3>
+        <p>یک نکته Senior:</p>
+        <p>Optimizer فقط سرعت Training را تعیین نمی‌کند.</p>
+        <p>ممکن است روی:</p>
+        <ul>
+            <li>Generalization</li>
+            <li>Implicit regularization</li>
+            <li>Final solution</li>
+        </ul>
+        <p>هم اثر بگذارد.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">SGD + Momentum</div></div>
+        <p>و:</p>
+        <div class="box"><div class="chart">Adam / AdamW</div></div>
+        <p>ممکن است Training Loss مشابهی داشته باشند ولی Test Performance متفاوت باشد.</p>
+
+        <h3>69. Training Loss vs Validation Loss</h3>
+        <p>فرض کن:</p>
+        <div class="box">
+            <div class="chart">
+Epoch
+1     Train ↓ Validation ↓
+10    Train ↓ Validation ↓
+20    Train ↓ Validation →
+40    Train ↓ Validation ↑
+            </div>
+        </div>
+        <p>مدل دارد Training Data را بهتر fit می‌کند ولی Generalization بدتر می‌شود.</p>
+        <p>این:</p>
+        <div class="inner-box">Overfitting</div>
+        <p>است.</p>
+        <p>Optimization نباید صرفاً:</p>
+        <div class="formula">$$TrainLoss \rightarrow 0$$</div>
+        <p>باشد.</p>
+
+        <h3>70. Early Stopping</h3>
+        <p>می‌توانیم Training را زمانی متوقف کنیم که Validation Metric دیگر بهتر نمی‌شود.</p>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">
+Validation Loss
+
+0.50
+0.40
+0.35
+0.32
+0.31
+0.31
+0.32 ←
+0.34
+            </div>
+        </div>
+        <p>Training را مثلاً بعد از patience مشخص متوقف می‌کنیم.</p>
+
+        <h3>71. Optimization Objective vs Business Objective</h3>
+        <p>یکی از مهم‌ترین نکات Senior ML:</p>
+        <p>فرض کن Business می‌گوید:</p>
+        <div class="inner-box">Fraud Detection</div>
+        <p>ولی Training Objective:</p>
+        <div class="inner-box">BCE</div>
+        <p>است.</p>
+        <p>و Evaluation:</p>
+        <div class="inner-box">F1</div>
+        <p>است.</p>
+        <p>این سه یکی نیستند:</p>
+        <div class="box">
+            <div class="chart">
+Business Objective
+        ↓
+Evaluation Metric
+        ↓
+Training Objective
+            </div>
+        </div>
+        <p>ممکن است متفاوت باشند.</p>
+
+        <h3>72. چرا Loss را مستقیم Business Metric نمی‌گذاریم؟</h3>
+        <p>چون بعضی Business Metrics:</p>
+        <ul>
+            <li>Non-differentiable</li>
+            <li>Discontinuous</li>
+            <li>Noisy</li>
+        </ul>
+        <p>هستند.</p>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">
+F1
+Accuracy
+Precision@K
+            </div>
+        </div>
+        <p>را نمی‌توان همیشه به شکل مستقیم و راحت با Gradient Descent optimize کرد.</p>
+        <p>پس معمولاً:</p>
+        <div class="inner-box">یک differentiable surrogate loss</div>
+        <p>انتخاب می‌کنیم.</p>
+
+        <h3>73. Surrogate Loss</h3>
+        <p>مثلاً Classification:</p>
+        <div class="box">
+            <div class="chart">
+Business goal
+    ↓
+High-quality classification
+    ↓
+Cross Entropy
+    ↓
+Gradient Descent
+            </div>
+        </div>
+        <p>Cross Entropy یک Objective differentiable و مناسب برای optimization است.</p>
+
+        <h3>74. چرا Gradient Descent کار می‌کند؟</h3>
+        <p>اگر Function محلی باشد:</p>
+        <div class="formula">$$J(\theta + \Delta) \approx J(\theta) + \nabla J^T \Delta$$</div>
+        <p>اگر:</p>
+        <div class="formula">$$\Delta = - \eta \nabla J$$</div>
+        <p>بگیریم:</p>
+        <div class="formula">$$J(\theta + \Delta) \approx J(\theta) - \eta ||\nabla J||^2$$</div>
+        <p>که برای η مناسب کاهش Loss می‌دهد.</p>
+        <p>البته این استدلال محلی است و تضمین نمی‌کند در تمام مسائل غیرمحدب همیشه به Global Minimum برسیم.</p>
+
+        <h3>75. Learning Rate و Stability</h3>
+        <p>برای یک تابع ساده:</p>
+        <div class="formula">$$f(w) = \frac{1}{2} a w^2$$</div>
+        <p>Gradient:</p>
+        <div class="formula">$$a w$$</div>
+        <p>Update:</p>
+        <div class="formula">$$w_{t+1} = (1 - \eta a)w_t$$</div>
+        <p>برای همگرایی در این مثال ساده باید:</p>
+        <div class="formula">$$|1 - \eta a| < 1$$</div>
+        <p>پس:</p>
+        <div class="formula">$$0 < \eta < \frac{2}{a}$$</div>
+        <p>این مثال نشان می‌دهد چرا:</p>
+        <p>Learning Rate خیلی بزرگ می‌تواند Optimization را ناپایدار کند.</p>
+
+        <h3>76. Ill-Conditioning</h3>
+        <p>یک Loss ممکن است در یک جهت:</p>
+        <div class="box"><div class="chart">خیلی steep</div></div>
+        <p>و در جهت دیگر:</p>
+        <div class="box"><div class="chart">خیلی flat</div></div>
+        <p>باشد.</p>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">
+        ______
+      /        \
+    /            \
+   \              /
+    \____________/
+            </div>
+        </div>
+        <p>Gradient Descent ممکن است:</p>
+        <div class="box">
+            <div class="chart">
+زیگزاگ
+↗
+↘
+↗
+↘
+            </div>
+        </div>
+        <p>حرکت کند.</p>
+        <p>Momentum و adaptive optimizers می‌توانند این وضعیت را بهتر مدیریت کنند.</p>
+
+        <h3>77. Condition Number</h3>
+        <p>برای Hessian مثبت معین:</p>
+        <div class="formula">$$\kappa(H) = \frac{\lambda_{max}}{\lambda_{min}}$$</div>
+        <p>اگر:</p>
+        <div class="formula">$$\kappa$$</div>
+        <p>بزرگ باشد:</p>
+        <div class="inner-box">Problem ill-conditioned</div>
+        <p>است.</p>
+
+        <h3>78. Optimizerها را این‌طور دسته‌بندی کن</h3>
+        <div class="box">
+            <div class="chart">
+Optimization
+│
+├── First Order
+│   │
+│   ├── Gradient Descent
+│   ├── SGD
+│   ├── Momentum
+│   ├── Nesterov
+│   ├── AdaGrad
+│   ├── RMSProp
+│   ├── Adam
+│   └── AdamW
+│
+└── Second Order / Quasi-Second Order
+    │
+    ├── Newton
+    ├── BFGS
+    └── L-BFGS
+            </div>
+        </div>
+
+        <h3>79. مقایسه Optimizerها</h3>
+        <table>
+            <thead><tr><th>Optimizer</th><th>ایده اصلی</th></tr></thead>
+            <tbody>
+                <tr><td>GD</td><td>Gradient کل داده</td></tr>
+                <tr><td>SGD</td><td>یک Sample</td></tr>
+                <tr><td>Mini-Batch</td><td>Batch کوچک</td></tr>
+                <tr><td>Momentum</td><td>استفاده از velocity قبلی</td></tr>
+                <tr><td>Nesterov</td><td>Look-ahead gradient</td></tr>
+                <tr><td>AdaGrad</td><td>LR تطبیقی بر اساس accumulated gradients</td></tr>
+                <tr><td>RMSProp</td><td>EMA از squared gradients</td></tr>
+                <tr><td>Adam</td><td>Momentum + adaptive second moment</td></tr>
+                <tr><td>AdamW</td><td>Adam + decoupled weight decay</td></tr>
+                <tr><td>Newton</td><td>Gradient + Hessian</td></tr>
+            </tbody>
+        </table>
+
+        <h3>80. Adam vs SGD — سؤال مهم مصاحبه</h3>
+        <p>اگر بپرسند:</p>
+        <div class="inner-box">چرا همیشه Adam استفاده نمی‌کنیم؟</div>
+        <p>جواب Senior:</p>
+        <div class="inner-box">Adam معمولاً convergence اولیه سریع و optimization راحتی دارد، اما adaptive updates آن می‌تواند رفتار generalization متفاوتی نسبت به SGD ایجاد کند. در برخی مسائل، SGD + Momentum با learning-rate schedule مناسب، solutionی با generalization بهتر می‌دهد. بنابراین optimizer باید با validation و characteristics مسئله انتخاب شود، نه صرفاً بر اساس سرعت کاهش training loss.</div>
+
+        <h3>81. AdamW vs Adam — جواب مصاحبه</h3>
+        <p>اگر پرسیدند:</p>
+        <div class="inner-box">تفاوت Adam و AdamW چیست؟</div>
+        <p>جواب:</p>
+        <div class="inner-box">AdamW weight decay را از adaptive gradient update جدا می‌کند. در Adam کلاسیک، اگر L2 regularization را داخل objective قرار دهیم، اثر regularization تحت adaptive scaling قرار می‌گیرد و دقیقاً معادل weight decay نیست. AdamW این coupling را جدا می‌کند و بنابراین weight decay را به شکل مستقیم روی parameters اعمال می‌کند.</div>
+
+        <h3>82. Gradient Clipping vs Learning Rate</h3>
+        <p>این دو یکی نیستند.</p>
+        <div class="inner-box">Learning Rate</div>
+        <p>اندازه update را به صورت کلی کنترل می‌کند:</p>
+        <div class="formula">$$\Delta \theta \propto \eta$$</div>
+        <div class="inner-box">Gradient Clipping</div>
+        <p>Gradientهای غیرعادی بزرگ را محدود می‌کند.</p>
+        <div class="box">
+            <div class="chart">
+LR
+→ global step size
+
+Clipping
+→ controls extreme gradients
+            </div>
+        </div>
+        <p>ممکن است هر دو را همزمان استفاده کنیم.</p>
+
+        <h3>83. آیا Gradient صفر یعنی Training تمام شده؟</h3>
+        <p>نه.</p>
+        <p>ممکن است:</p>
+        <div class="box">
+            <div class="chart">
+Global minimum
+Local minimum
+Saddle point
+Flat region
+            </div>
+        </div>
+        <p>باشد.</p>
+        <p>همچنین numerical issues هم ممکن است نقش داشته باشند.</p>
+
+        <h3>84. Optimization در یک Deep Neural Network</h3>
+        <p>فرض کن:</p>
+        <div class="box">
+            <div class="chart">
+Input
+  ↓
+Linear
+  ↓
+GELU
+  ↓
+Linear
+  ↓
+GELU
+  ↓
+Linear
+  ↓
+Softmax
+            </div>
+        </div>
+        <p>Training:</p>
+        <div class="box">
+            <div class="chart">
+Forward Pass
+     ↓
+Prediction
+     ↓
+Loss
+     ↓
+Backpropagation
+     ↓
+Gradients
+     ↓
+Optimizer
+     ↓
+Weights Updated
+            </div>
+        </div>
+        <p>و این چرخه هزاران/میلیون‌ها بار تکرار می‌شود.</p>
+
+        <h3>85. Backpropagation vs Gradient Descent</h3>
+        <p>این دو را هم قاطی نکن.</p>
+        <div class="inner-box">Backpropagation</div>
+        <p>روش محاسبه:</p>
+        <div class="formula">$$\nabla_{\theta} L$$</div>
+        <p>با Chain Rule است.</p>
+        <div class="inner-box">Gradient Descent</div>
+        <p>روش استفاده از Gradient برای Update:</p>
+        <div class="formula">$$\theta \leftarrow \theta - \eta \nabla L$$</div>
+        <p>است.</p>
+        <p>پس:</p>
+        <div class="box">
+            <div class="chart">
+Backpropagation
+      ↓
+Compute gradient
+
+Gradient Descent / Adam
+      ↓
+Use gradient to update parameters
+            </div>
+        </div>
+
+        <h3>86. یک Mental Model بسیار مهم</h3>
+        <div class="box">
+            <div class="chart">
+                 FORWARD
+                    │
+                    ▼
+             Prediction ŷ
+                    │
+                    ▼
+                  LOSS
+                    │
+                    ▼
+              BACKPROP
+                    │
+                    ▼
+                GRADIENT
+                    │
+                    ▼
+               OPTIMIZER
+                    │
+                    ▼
+          PARAMETER UPDATE
+                    │
+                    ▼
+                 REPEAT
+            </div>
+        </div>
+
+        <h3>87. Senior-Level Optimization Checklist</h3>
+        <p>وقتی یک مدل Training نمی‌شود، فقط نمی‌گویی:</p>
+        <div class="inner-box">«Optimizer را عوض کن.»</div>
+        <p>بلکه سیستماتیک بررسی می‌کنی:</p>
+        <ol>
+            <li><div class="inner-box">1.Data</div>
+                <br>Labels correct?
+                <br>Features normalized?
+                <br>Leakage?
+                <br>Distribution?</li>
+            <li><div class="inner-box">2.Loss</div>
+                <br>Correct loss?
+                <br>Correct reduction?
+                <br>Class imbalance?
+                <br>Numerical stability?</li>
+            <li><div class="inner-box">3.Gradients</div>
+                <br>Vanishing?
+                <br>Exploding?
+                <br>NaN?
+                <br>Inf?</li>
+            <li><div class="inner-box">4.Learning Rate</div>
+                <br>Too high?
+                <br>Too low?
+                <br>Schedule?
+                <br>Warmup?</li>
+            <li><div class="inner-box">5.Initialization</div>
+                <br>Xavier?
+                <br>He?
+                <br>Bad initialization?</li>
+            <li><div class="inner-box">6.Architecture</div>
+                <br>Too deep?
+                <br>Residual connections?
+                <br>Normalization?
+                <br>Activation?</li>
+            <li><div class="inner-box">7.Optimizer</div>
+                <br>SGD?
+                <br>Adam?
+                <br>AdamW?
+                <br>Momentum?</li>
+            <li><div class="inner-box">8.Regularization</div>
+                <br>Weight decay?
+                <br>Dropout?
+                <br>Early stopping?</li>
+        </ol>
+
+        <h3>88. Debugging Training به سبک Senior</h3>
+        <p>اگر Loss از ابتدا:</p>
+        <div class="formula">$$NaN$$</div>
+        <p>شد:</p>
+        <div class="box">
+            <div class="chart">
+Check:
+- Learning rate
+- Input scale
+- Loss numerical stability
+- Overflow
+- Gradient explosion
+- Invalid labels
+- NaN/Inf in data
+            </div>
+        </div>
+        <p>اگر Loss ثابت ماند:</p>
+        <div class="box">
+            <div class="chart">
+Check:
+- Learning rate too small
+- Frozen parameters
+- Broken gradient
+- Saturated activations
+- Bad initialization
+- Wrong labels
+- Incorrect loss implementation
+            </div>
+        </div>
+        <p>اگر Training خوب ولی Validation بد:</p>
+        <div class="box">
+            <div class="chart">
+Check:
+- Overfitting
+- Data leakage
+- Distribution shift
+- Regularization
+- Data quantity
+- Train/validation mismatch
+            </div>
+        </div>
+
+        <h3>🧠 89. خلاصه نهایی Optimization</h3>
+        <p>تمام این فصل را می‌توانی به این شکل در ذهن نگه داری:</p>
+        <div class="box">
+            <div class="chart">
+                    OPTIMIZATION
+                         │
+          ┌──────────────┴──────────────┐
+          │                             │
+      OBJECTIVE                      PARAMETERS
+          │                             │
+          ▼                             ▼
+        LOSS                         θ / W / b
+          │                             │
+          ▼                             │
+      GRADIENT ◄──── BACKPROP           │
+          │                             │
+          ▼                             │
+     OPTIMIZER ─────────────────────────┘
+          │
+          ▼
+     UPDATE θ
+          │
+          ▼
+      NEXT STEP
+            </div>
+        </div>
+        <p>و Optimizerها:</p>
+        <div class="box">
+            <div class="chart">
+Gradient Descent
+      │
+      ├── Batch GD
+      ├── SGD
+      └── Mini-Batch GD
+              │
+              ├── Momentum
+              │     └── Nesterov
+              │
+              └── Adaptive
+                    ├── AdaGrad
+                    ├── RMSProp
+                    ├── Adam
+                    └── AdamW
+            </div>
+        </div>
+        <p>و از نظر Order:</p>
+        <div class="box">
+            <div class="chart">
+First Order
+    │
+    └── Gradient ∇f
+
+Second Order
+    │
+    └── Hessian ∇²f
+           │
+           └── Newton
+            </div>
+        </div>
+        <p>و مشکلات:</p>
+        <div class="box">
+            <div class="chart">
+Optimization Problems
+│
+├── Learning Rate
+│   ├── Too Small
+│   └── Too Large
+│
+├── Gradient
+│   ├── Vanishing
+│   └── Exploding
+│
+├── Landscape
+│   ├── Local Minimum
+│   ├── Global Minimum
+│   ├── Saddle Point
+│   └── Flat / Ill-conditioned regions
+│
+└── Generalization
+    ├── Overfitting
+    └── Underfitting
+            </div>
+        </div>
+
+        <h2>🎯 اگر بخواهم مهم‌ترین نکات Senior این فصل را در 10 جمله جمع کنم:</h2>
+        <ol>
+            <li>Loss خطای مدل است، اما Objective چیزی است که واقعاً optimize می‌شود و می‌تواند شامل Regularization باشد.</li>
+            <li>Backpropagation gradient را محاسبه می‌کند؛ Optimizer از آن برای update پارامترها استفاده می‌کند.</li>
+            <li>Learning Rate یکی از مهم‌ترین عوامل پایداری و سرعت Optimization است.</li>
+            <li>Mini-Batch Gradient Descent به دلیل تعادل بین efficiency و gradient noise، روش استاندارد بسیاری از سیستم‌های Deep Learning است.</li>
+            <li>Momentum جهت حرکت قبلی را وارد می‌کند و نوسانات Optimization را کاهش می‌دهد.</li>
+            <li>Adam Momentum و adaptive second-moment scaling را ترکیب می‌کند؛ AdamW weight decay را از این adaptive update جدا می‌کند.</li>
+            <li>Second-order methods از curvature استفاده می‌کنند ولی محاسبه Hessian برای مدل‌های بسیار بزرگ گران است.</li>
+            <li>در مسائل Non-Convex، وجود gradient صفر الزاماً به معنی Global Minimum نیست؛ Saddle Point و flat regions بسیار مهم‌اند.</li>
+            <li>Vanishing/Exploding Gradients مستقیماً به propagation گرادیان در شبکه عمیق مربوط‌اند و با initialization، activation، residual connections، normalization، optimizer و gradient clipping می‌توان آن‌ها را مدیریت کرد.</li>
+            <li>در سطح Senior، هدف فقط کمینه کردن Training Loss نیست؛ باید بین Optimization، Generalization، Stability و Business Objective تعادل برقرار کنی.</li>
+        </ol>
+
+    </div>
+</body>
+</html>

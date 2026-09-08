@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Deep Learning - Senior ML Level</title>
+    <style>
+        body { background-color: #0d1117; color: #e6edf3; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.8; margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1, h2, h3 { color: #e6edf3; text-align: right; border-bottom: 1px solid #444; padding-bottom: 15px; margin-top: 50px; }
+        p, li { text-align: right; }
+        
+        /* Boxes: Force RTL for Persian */
+        .box { background-color: #21262d; border: 1px solid #30363d; border-radius: 8px; padding: 15px; margin: 15px 0; color: #e6edf3; direction: rtl !important; text-align: right !important; }
+        .inner-box { background-color: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 15px; margin: 10px; direction: rtl !important; text-align: right !important; }
+        .inner-title { font-weight: bold; margin-bottom: 5px; text-align: right !important; }
+
+        /* Formula Box: Force LTR, no raw $$ or \[ \] */
+        .formula {
+            direction: ltr !important;
+            background-color: #000;
+            border: 1px solid #fff;
+            border-radius: 0;
+            padding: 20px;
+            margin: 20px auto;
+            width: fit-content;
+            max-width: 100%;
+            overflow-x: auto;
+            text-align: center;
+            font-size: 1.2em;
+            font-family: "Times New Roman", Times, serif;
+            color: #fff;
+        }
+
+        /* Charts / Flowcharts / ASCII Art: Force LTR */
+        .chart { direction: ltr !important; text-align: left !important; font-family: monospace; background-color: #21262d; border-radius: 8px; padding: 15px; overflow-x: auto; white-space: pre; border: 1px solid #444; }
+
+        /* Tables */
+        table { width: 100%; border-collapse: collapse; direction: rtl; margin-bottom: 20px; }
+        th, td { border: 1px solid #444; padding: 12px; text-align: right; }
+        th { background-color: #21262d; }
+        
+        .highlight { color: #58a6ff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧠 32. Advanced Deep Learning — سطح Senior ML Engineer</h1>
+
+        <p>این بخش در واقع جایی است که از «بلدم با PyTorch مدل بسازم» وارد سطح Senior ML Engineer می‌شویم.</p>
+        <p>در سطح Senior باید فقط بدانیم LoRA چیست؛ باید بدانیم:</p>
+        <div class="inner-box">چه مشکلی را حل می‌کند، چرا کار می‌کند، چه trade-offهایی دارد، چه زمانی نباید استفاده شود، و در production چه اثری روی memory / latency / quality دارد.</div>
+
+        <p>مسیر مفهومی این فصل:</p>
+        <div class="box">
+            <div class="chart">Training Instability
+        │
+        ├── Vanishing Gradient
+        ├── Exploding Gradient
+        │
+        ▼
+Residual Connections
+Normalization
+        │
+        ├── BatchNorm
+        └── LayerNorm
+                │
+                ├── Pre-Norm
+                └── Post-Norm
+                        │
+                        ▼
+                    Attention
+                        │
+             ┌──────────┴──────────┐
+             ▼                     ▼
+        Self-Attention       Cross-Attention
+             │
+             ▼
+       Multi-Head Attention
+             │
+             ▼
+      Positional Information
+             │
+             ▼
+       Encoder / Decoder
+             │
+             ▼
+      Transfer Learning
+             │
+       ┌─────┴────────┐
+       ▼              ▼
+   Fine-Tuning    Freezing
+       │
+       ▼
+       PEFT
+       │
+   ┌───┴────┐
+   ▼        ▼
+ LoRA     QLoRA
+       │
+       ▼
+Knowledge Distillation</div>
+        </div>
+
+        <h2>1. Vanishing Gradient</h2>
+        <p>یکی از کلاسیک‌ترین مشکلات Deep Neural Networks است.</p>
+        <p>فرض کنید شبکه‌ای با لایه‌های زیاد داریم:</p>
+        <div class="box"><div class="chart">x
+ ↓
+Layer 1
+ ↓
+Layer 2
+ ↓
+Layer 3
+ ↓
+...
+ ↓
+Layer 50
+ ↓
+Output</div></div>
+        <p>در Backpropagation گرادیان با استفاده از Chain Rule از خروجی به سمت ورودی حرکت می‌کند.</p>
+        <p>اگر:</p>
+        <div class="formula">∂L / ∂w</div>
+        <p>در هر layer کمی کوچک‌تر شود، بعد از عبور از ده‌ها layer ممکن است تقریباً صفر شود.</p>
+
+        <div class="inner-box"><div class="inner-title">Chain Rule</div></div>
+        <p>به شکل ساده:</p>
+        <div class="formula">∂L / ∂x = (∂L / ∂z<sub>3</sub>) * (∂z<sub>3</sub> / ∂z<sub>2</sub>) * (∂z<sub>2</sub> / ∂z<sub>1</sub>) * (∂z<sub>1</sub> / ∂x)</div>
+        <p>اگر هر کدام مثلاً:</p>
+        <div class="formula">0.1</div>
+        <p>باشد:</p>
+        <div class="formula">0.1<sup>10</sup> = 10<sup>-10</sup></div>
+        <p>پس gradient تقریباً ناپدید می‌شود.</p>
+
+        <div class="inner-box"><div class="inner-title">نتیجه</div></div>
+        <p>لایه‌های ابتدایی:</p>
+        <div class="box"><div class="chart">gradient ≈ 0</div></div>
+        <p>و در نتیجه:</p>
+        <div class="box"><div class="chart">weights ≈ don't learn</div></div>
+
+        <div class="inner-box"><div class="inner-title">Sigmoid و Vanishing Gradient</div></div>
+        <p>Sigmoid:</p>
+        <div class="formula">σ(x) = 1 / (1 + e<sup>-x</sup>)</div>
+        <p>مشتق آن:</p>
+        <div class="formula">σ'(x) = σ(x)(1 - σ(x))</div>
+        <p>حداکثر مشتق:</p>
+        <div class="formula">0.25</div>
+        <p>است.</p>
+        <p>بنابراین در شبکه عمیق، ضرب تعداد زیادی مقدار کوچک باعث vanishing gradient می‌شود.</p>
+
+        <h2>2. راه‌حل‌های Vanishing Gradient</h2>
+        <p>چند راه‌حل مهم:</p>
+        <div class="inner-box"><div class="inner-title">1. ReLU</div></div>
+        <div class="formula">ReLU(x) = max(0, x)</div>
+        <p>برای بخش مثبت:</p>
+        <div class="formula">d/dx ReLU(x) = 1</div>
+        <p>پس gradient راحت‌تر عبور می‌کند.</p>
+        <div class="inner-box"><div class="inner-title">2. Better Initialization</div></div>
+        <p>مثل:</p>
+        <div class="inner-box">Xavier</div>
+        <div class="inner-box">He Initialization</div>
+        <div class="inner-box"><div class="inner-title">3. Residual Connections</div></div>
+        <p>مخصوصاً در شبکه‌های عمیق.</p>
+        <div class="inner-box"><div class="inner-title">4. Normalization</div></div>
+        <p>مثل:</p>
+        <div class="inner-box">BatchNorm</div>
+        <div class="inner-box">LayerNorm</div>
+        <div class="inner-box"><div class="inner-title">5. معماری مناسب</div></div>
+        <p>مثلاً:</p>
+        <div class="inner-box">LSTM برای sequenceهای قدیمی‌تر</div>
+        <div class="inner-box">Transformer برای sequenceهای مدرن</div>
+
+        <h2>3. Exploding Gradient</h2>
+        <p>مشکل برعکس:</p>
+        <p>به جای:</p>
+        <div class="formula">gradient → 0</div>
+        <p>داریم:</p>
+        <div class="formula">gradient → ∞</div>
+        <p>اگر مشتقات در chain rule بزرگ باشند:</p>
+        <div class="formula">1.5<sup>100</sup></div>
+        <p>عدد بسیار بزرگی می‌شود.</p>
+
+        <div class="inner-box"><div class="inner-title">نتیجه</div></div>
+        <p>ممکن است:</p>
+        <div class="box"><div class="chart">Loss = NaN</div></div>
+        <p>یا:</p>
+        <div class="box"><div class="chart">Weights = Inf</div></div>
+        <p>شود.</p>
+
+        <div class="inner-box"><div class="inner-title">نشانه‌های Exploding Gradient</div></div>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Loss:
+
+0.8
+0.9
+1.4
+10
+1000
+NaN</div></div>
+        <p>یا gradient norm:</p>
+        <div class="box"><div class="chart">5
+20
+500
+100000</div></div>
+
+        <h2>4. Gradient Clipping</h2>
+        <p>یکی از راه‌های مقابله با exploding gradient.</p>
+        <p>مثلاً:</p>
+        <div class="formula">||g|| > threshold</div>
+        <p>اگر gradient بیش از حد بزرگ باشد، آن را scale می‌کنیم.</p>
+        <p>برای norm clipping:</p>
+        <div class="formula">g' = g * (c / ||g||)</div>
+        <p>وقتی:</p>
+        <div class="formula">||g|| > c</div>
+        <p>باشد.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">max_grad_norm = 1.0</div></div>
+        <p>در training مدل‌های sequence و Transformer بسیار رایج است.</p>
+
+        <h2>5. Vanishing vs Exploding</h2>
+        <table>
+            <thead><tr><th>مشکل</th><th>اثر</th></tr></thead>
+            <tbody>
+                <tr><td>Vanishing Gradient</td><td>gradient خیلی کوچک</td></tr>
+                <tr><td>Exploding Gradient</td><td>gradient خیلی بزرگ</td></tr>
+                <tr><td>نتیجه Vanishing</td><td>لایه‌ها یاد نمی‌گیرند</td></tr>
+                <tr><td>نتیجه Exploding</td><td>training ناپایدار / NaN</td></tr>
+                <tr><td>راه‌حل</td><td>Initialization, Normalization, Residual, مناسب‌سازی architecture</td></tr>
+                <tr><td>راه‌حل Exploding</td><td>Gradient Clipping</td></tr>
+            </tbody>
+        </table>
+
+        <h2>6. Batch Normalization</h2>
+        <p>BatchNorm activationهای داخل شبکه را normalize می‌کند.</p>
+        <p>برای یک feature:</p>
+        <div class="formula">μ<sub>B</sub> = (1/m) Σ<sub>i</sub> x<sub>i</sub></div>
+        <p>و:</p>
+        <div class="formula">σ<sub>B</sub><sup>2</sup> = (1/m) Σ<sub>i</sub> (x<sub>i</sub> - μ<sub>B</sub>)<sup>2</sup></div>
+        <p>سپس:</p>
+        <div class="formula">x̂ = (x - μ<sub>B</sub>) / √(σ<sub>B</sub><sup>2</sup> + ε)</div>
+        <p>و در نهایت:</p>
+        <div class="formula">y = γx̂ + β</div>
+        <p>دو پارامتر:</p>
+        <div class="inner-box">γ: scale</div>
+        <div class="inner-box">β: shift</div>
+        <p>قابل یادگیری هستند.</p>
+
+        <h2>7. BatchNorm دقیقاً چه چیزی را normalize می‌کند؟</h2>
+        <p>این موضوع خیلی مهم است.</p>
+        <p>فرض کنید:</p>
+        <div class="box"><div class="chart">Batch × Features</div></div>
+        <p>داریم.</p>
+        <p>BatchNorm برای هر feature، statistics را روی batch محاسبه می‌کند.</p>
+        <p>یعنی تقریباً:</p>
+        <div class="box"><div class="chart">Feature 1:
+samples → mean/std
+
+Feature 2:
+samples → mean/std</div></div>
+
+        <h2>8. BatchNorm در Training و Inference</h2>
+        <p>این نکته Senior-level است.</p>
+        <div class="inner-box"><div class="inner-title">Training</div></div>
+        <p>از statistics همان batch استفاده می‌شود.</p>
+        <div class="inner-box"><div class="inner-title">Inference</div></div>
+        <p>معمولاً از:</p>
+        <div class="box"><div class="chart">running mean
+running variance</div></div>
+        <p>استفاده می‌شود.</p>
+        <p>به همین دلیل رفتار BatchNorm در train و eval متفاوت است.</p>
+        <p>در PyTorch:</p>
+        <div class="box"><div class="chart">Python</div><div class="chart">model.train()</div></div>
+        <p>و:</p>
+        <div class="box"><div class="chart">Python</div><div class="chart">model.eval()</div></div>
+        <p>اهمیت دارند.</p>
+
+        <h2>9. مشکل BatchNorm</h2>
+        <p>BatchNorm به batch statistics وابسته است.</p>
+        <p>اگر:</p>
+        <div class="box"><div class="chart">batch size = 256</div></div>
+        <p>باشد معمولاً statistics پایدارتر است.</p>
+        <p>ولی:</p>
+        <div class="box"><div class="chart">batch size = 2</div></div>
+        <p>ممکن است statistics noisy شوند.</p>
+        <p>به همین دلیل در برخی معماری‌ها و مخصوصاً مدل‌های sequence / Transformer، LayerNorm ترجیح داده می‌شود.</p>
+
+        <h2>10. Layer Normalization</h2>
+        <p>LayerNorm به جای اینکه statistics را روی batch بگیرد، داخل representation هر نمونه normalize می‌کند.</p>
+        <p>به‌صورت مفهومی:</p>
+        <div class="box"><div class="chart">Sample 1
+ [f1 f2 f3 f4]
+       ↓
+    normalize</div></div>
+        <p>و مستقل از نمونه‌های دیگر است.</p>
+
+        <h2>11. BatchNorm vs LayerNorm</h2>
+        <table>
+            <thead><tr><th>ویژگی</th><th>BatchNorm</th><th>LayerNorm</th></tr></thead>
+            <tbody>
+                <tr><td>وابسته به Batch</td><td>بله</td><td>خیر</td></tr>
+                <tr><td>وابسته به sampleهای دیگر</td><td>بله</td><td>خیر</td></tr>
+                <tr><td>batch کوچک</td><td>ممکن است مشکل‌ساز شود</td><td>بهتر</td></tr>
+                <tr><td>CNN</td><td>بسیار رایج</td><td>کمتر</td></tr>
+                <tr><td>Transformer</td><td>معمولاً انتخاب اصلی نیست</td><td>بسیار رایج</td></tr>
+                <tr><td>Train/Eval behavior</td><td>متفاوت</td><td>تقریباً یکسان‌تر</td></tr>
+            </tbody>
+        </table>
+
+        <h2>12. یک نکته بسیار مهم</h2>
+        <p>نگوییم:</p>
+        <div class="inner-box">BatchNorm همیشه بهتر است.</div>
+        <p>یا:</p>
+        <div class="inner-box">LayerNorm همیشه بهتر است.</div>
+        <p>انتخاب normalization وابسته به architecture است.</p>
+        <p>مثلاً:</p>
+        <div class="inner-box">CNN → BatchNorm بسیار رایج</div>
+        <div class="inner-box">Transformer → LayerNorm / RMSNorm رایج</div>
+
+        <h2>13. Pre-Norm vs Post-Norm</h2>
+        <p>این موضوع مخصوصاً در Transformerها مهم است.</p>
+        <p>فرض کنید:</p>
+        <div class="box"><div class="chart">x
+ ↓
+Attention
+ ↓
+Residual
+ ↓
+Normalization</div></div>
+        <p>این تقریباً Post-Norm است.</p>
+        <p>در Post-Norm:</p>
+        <div class="formula">x' = LN(x + F(x))</div>
+
+        <h2>14. Pre-Norm</h2>
+        <p>در Pre-Norm:</p>
+        <div class="box"><div class="chart">x
+ ↓
+LayerNorm
+ ↓
+Attention
+ ↓
+Residual</div></div>
+        <p>فرمول:</p>
+        <div class="formula">x' = x + F(LN(x))</div>
+
+        <h2>15. تفاوت Pre-Norm و Post-Norm</h2>
+        <div class="inner-box"><div class="inner-title">Post-Norm</div></div>
+        <div class="formula">LN(x + F(x))</div>
+        <div class="inner-box"><div class="inner-title">Pre-Norm</div></div>
+        <div class="formula">x + F(LN(x))</div>
+
+        <h2>16. چرا Pre-Norm مهم است؟</h2>
+        <p>در Transformerهای بسیار عمیق، Pre-Norm معمولاً training stability و gradient flow بهتری فراهم می‌کند.</p>
+        <p>به‌خصوص:</p>
+        <div class="box"><div class="chart">Very Deep Transformer</div></div>
+        <p>می‌تواند با Pre-Norm راحت‌تر train شود.</p>
+        <p>اما trade-offهایی در optimization dynamics و representation quality وجود دارد؛ بنابراین نمی‌توان گفت Pre-Norm در همه شرایط مطلقاً بهتر است.</p>
+
+        <h2>17. Residual Learning</h2>
+        <p>ایده بسیار مهم:</p>
+        <p>به جای اینکه شبکه مستقیماً:</p>
+        <div class="formula">H(x)</div>
+        <p>را یاد بگیرد، یاد می‌گیرد:</p>
+        <div class="formula">F(x) = H(x) - x</div>
+        <p>سپس:</p>
+        <div class="formula">H(x) = F(x) + x</div>
+
+        <h2>18. چرا Residual Connection مفید است؟</h2>
+        <p>فرض کنید شبکه می‌خواهد identity mapping یاد بگیرد:</p>
+        <div class="formula">H(x) = x</div>
+        <p>در معماری معمولی باید چند layer یاد بگیرند:</p>
+        <div class="formula">H(x) = x</div>
+        <p>اما در residual:</p>
+        <div class="formula">F(x) = 0</div>
+        <p>کافی است.</p>
+
+        <h2>19. Residual و Gradient Flow</h2>
+        <p>فرض:</p>
+        <div class="formula">y = x + F(x)</div>
+        <p>پس:</p>
+        <div class="formula">∂y / ∂x = 1 + ∂F / ∂x</div>
+        <p>وجود آن:</p>
+        <div class="formula">1</div>
+        <p>باعث می‌شود مسیر مستقیم برای عبور gradient وجود داشته باشد.</p>
+        <p>این یکی از دلایل مهم موفقیت شبکه‌های عمیق است.</p>
+
+        <h2>20. Attention Mechanism</h2>
+        <p>Attention به شبکه اجازه می‌دهد:</p>
+        <div class="inner-box">هنگام تولید representation یک token، به بخش‌های مختلف input با وزن‌های متفاوت توجه کند.</div>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">The animal didn't cross the road
+because it was tired.</div></div>
+        <p>برای درک it باید رابطه آن با animal را بفهمیم.</p>
+        <p>Attention می‌تواند چنین dependencyهایی را مدل کند.</p>
+
+        <h2>21. Query, Key, Value</h2>
+        <p>Attention سه مفهوم دارد:</p>
+        <div class="box"><div class="chart">Query
+Key
+Value</div></div>
+        <p>می‌توانیم خیلی ساده تصور کنیم:</p>
+        <div class="inner-box"><div class="inner-title">Query</div></div>
+        <p>من دنبال چه چیزی هستم؟</p>
+        <div class="inner-box"><div class="inner-title">Key</div></div>
+        <p>هر token چه نوع اطلاعاتی دارد؟</p>
+        <div class="inner-box"><div class="inner-title">Value</div></div>
+        <p>اگر به آن token توجه کنم چه اطلاعاتی دریافت می‌کنم؟</p>
+
+        <h2>22. Scaled Dot-Product Attention</h2>
+        <p>فرمول اصلی:</p>
+        <div class="formula">Attention(Q, K, V) = softmax( QK<sup>T</sup> / √d<sub>k</sub> )V</div>
+        <p>سه مرحله:</p>
+        <div class="box"><div class="chart">QKᵀ
+ ↓
+Similarity Scores
+ ↓
+Scaling
+ ↓
+Softmax
+ ↓
+Weighted Sum of V</div></div>
+
+        <h2>23. چرا تقسیم بر √d<sub>k</sub>؟</h2>
+        <p>اگر dimension زیاد شود، dot productها می‌توانند magnitude بزرگی داشته باشند.</p>
+        <p>در نتیجه Softmax ممکن است بیش از حد sharp شود.</p>
+        <p>تقسیم بر:</p>
+        <div class="formula">√d<sub>k</sub></div>
+        <p>variance را کنترل می‌کند.</p>
+
+        <h2>24. Self-Attention</h2>
+        <p>در Self-Attention:</p>
+        <div class="box"><div class="chart">Q ← same sequence
+K ← same sequence
+V ← same sequence</div></div>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">I love machine learning</div></div>
+        <p>هر token می‌تواند به tokenهای دیگر توجه کند.</p>
+
+        <h2>25. Self-Attention vs Cross-Attention</h2>
+        <div class="inner-box"><div class="inner-title">Self-Attention</div></div>
+        <p>Q/K/V از یک sequence می‌آیند.</p>
+        <div class="inner-box"><div class="inner-title">Cross-Attention</div></div>
+        <p>Query از یک sequence و Key/Value از sequence دیگری می‌آیند.</p>
+        <p>مثلاً در encoder-decoder:</p>
+        <div class="box"><div class="chart">Decoder Query
+       ↓
+Encoder Key/Value</div></div>
+
+        <h2>26. Multi-Head Attention</h2>
+        <p>به جای یک attention:</p>
+        <div class="box"><div class="chart">Attention</div></div>
+        <p>داریم:</p>
+        <div class="box"><div class="chart">Head 1
+Head 2
+Head 3
+...
+Head h</div></div>
+        <p>هر head می‌تواند representation متفاوتی از روابط را یاد بگیرد.</p>
+
+        <h2>27. معماری Multi-Head Attention</h2>
+        <p>به شکل مفهومی:</p>
+        <div class="box"><div class="chart">Input
+  |
+  +----> Head 1
+  |
+  +----> Head 2
+  |
+  +----> Head 3
+  |
+  +----> ...
+  |
+  +----> Head h
+           |
+        Concatenate
+           |
+       Linear Layer</div></div>
+
+        <h2>28. چرا چند Head؟</h2>
+        <p>یک head ممکن است بیشتر به:</p>
+        <div class="box"><div class="chart">syntax</div></div>
+        <p>توجه کند.</p>
+        <p>دیگری:</p>
+        <div class="box"><div class="chart">semantic relation</div></div>
+        <p>و دیگری:</p>
+        <div class="box"><div class="chart">long-range dependency</div></div>
+        <p>البته این تفسیرها تضمین‌شده نیستند؛ attention headها الزاماً هرکدام یک نقش انسانی و ثابت ندارند.</p>
+
+        <h2>29. Positional Encoding</h2>
+        <p>یک مشکل اساسی:</p>
+        <p>Self-Attention ذاتاً permutation-equivariant است.</p>
+        <p>یعنی اگر ترتیب tokenها را عوض کنیم، بدون اطلاعات positional مناسب، مدل به‌صورت ذاتی نمی‌فهمد که ترتیب تغییر کرده است.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Dog bites man</div></div>
+        <p>با:</p>
+        <div class="box"><div class="chart">Man bites dog</div></div>
+        <p>متفاوت است.</p>
+        <p>پس باید اطلاعات position وارد representation شود.</p>
+
+        <h2>30. Sinusoidal Positional Encoding</h2>
+        <p>در Transformer اولیه از توابع sin/cos استفاده شد:</p>
+        <div class="formula">PE(pos, 2i) = sin( pos / 10000<sup>2i/d</sup> )</div>
+        <p>و:</p>
+        <div class="formula">PE(pos, 2i+1) = cos( pos / 10000<sup>2i/d</sup> )</div>
+
+        <h2>31. روش‌های مدرن Positional Information</h2>
+        <p>امروزه روش‌های مختلفی وجود دارد:</p>
+        <div class="inner-box">Learned positional embeddings</div>
+        <div class="inner-box">Sinusoidal encoding</div>
+        <div class="inner-box">Relative position representations</div>
+        <div class="inner-box">RoPE</div>
+        <div class="inner-box">ALiBi</div>
+        <p>در LLMهای مدرن، RoPE (Rotary Positional Embedding) بسیار مهم است.</p>
+
+        <h2>32. Encoder</h2>
+        <p>Encoder وظیفه دارد:</p>
+        <div class="inner-box">input را به representation تبدیل کند.</div>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Text
+ ↓
+Embedding
+ ↓
+Encoder
+ ↓
+Contextual Representation</div></div>
+
+        <h2>33. Decoder</h2>
+        <p>Decoder برای تولید output استفاده می‌شود.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Prompt
+ ↓
+Decoder
+ ↓
+Token
+ ↓
+Next Token
+ ↓
+Next Token</div></div>
+
+        <h2>34. Encoder-only</h2>
+        <p>مثلاً معماری‌های شبیه BERT:</p>
+        <div class="box"><div class="chart">Input
+ ↓
+Encoder
+ ↓
+Representation</div></div>
+        <p>برای کارهایی مثل:</p>
+        <div class="inner-box">classification</div>
+        <div class="inner-box">embeddings</div>
+        <div class="inner-box">token classification</div>
+        <p>مناسب هستند.</p>
+
+        <h2>35. Decoder-only</h2>
+        <p>مثل خانواده GPT:</p>
+        <div class="box"><div class="chart">Tokens
+ ↓
+Decoder blocks
+ ↓
+Next-token prediction</div></div>
+        <p>برای:</p>
+        <div class="inner-box">text generation</div>
+        <div class="inner-box">chat</div>
+        <div class="inner-box">code generation</div>
+        <p>بسیار مناسب است.</p>
+
+        <h2>36. Encoder-Decoder</h2>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Input
+ ↓
+Encoder
+ ↓
+Representation
+ ↓
+Decoder
+ ↓
+Output</div></div>
+        <p>برای sequence-to-sequence:</p>
+        <div class="inner-box">Translation</div>
+        <div class="inner-box">Summarization</div>
+        <div class="inner-box">بعضی انواع generation</div>
+        <p>بسیار مناسب است.</p>
+
+        <h2>37. Transfer Learning</h2>
+        <p>ایده:</p>
+        <p>مدلی که قبلاً روی dataset بزرگ آموزش دیده را برای task جدید استفاده کنیم.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">ImageNet pretrained CNN
+       ↓
+Medical Image Classification</div></div>
+        <p>یا:</p>
+        <div class="box"><div class="chart">Pretrained Language Model
+       ↓
+Fraud Classification</div></div>
+
+        <h2>38. چرا Transfer Learning جواب می‌دهد؟</h2>
+        <p>مدل pretrained representationهای عمومی یاد گرفته است.</p>
+        <p>مثلاً CNN:</p>
+        <div class="box"><div class="chart">Layer 1 → edges
+Layer 2 → textures
+Layer 3 → shapes
+Layer 4 → objects</div></div>
+        <p>بنابراین لازم نیست همه‌چیز را از صفر یاد بگیریم.</p>
+
+        <h2>39. Fine-Tuning</h2>
+        <p>در Fine-Tuning:</p>
+        <div class="inner-box">مدل pretrained را روی task جدید با داده جدید ادامه می‌دهیم.</div>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Pretrained BERT
+       ↓
+Fraud Text Dataset
+       ↓
+Fine-Tuning
+       ↓
+Fraud Classifier</div></div>
+
+        <h2>40. Full Fine-Tuning</h2>
+        <p>تمام پارامترهای مدل قابل آموزش هستند.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Model:
+7B parameters
+
+Trainable:
+7B</div></div>
+        <div class="inner-box"><div class="inner-title">مزیت</div></div>
+        <p>Maximum flexibility.</p>
+        <div class="inner-box"><div class="inner-title">مشکل</div></div>
+        <p>Memory بسیار زیاد.</p>
+        <p>چون علاوه بر weights باید برای optimizer و gradients هم memory داشته باشیم.</p>
+
+        <h2>41. Freezing Layers</h2>
+        <p>در freezing:</p>
+        <div class="inner-box">بعضی پارامترها را ثابت می‌کنیم.</div>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Layer 1  ❄️ frozen
+Layer 2  ❄️ frozen
+Layer 3  ❄️ frozen
+Layer 4  🔥 trainable
+Layer 5  🔥 trainable</div></div>
+        <p>در PyTorch:</p>
+        <div class="box"><div class="chart">Python</div><div class="chart">for param in model.parameters():
+    param.requires_grad = False</div></div>
+        <p>و سپس فقط بخش مورد نظر را train می‌کنیم.</p>
+
+        <h2>42. چرا Freeze کنیم؟</h2>
+        <p>برای:</p>
+        <div class="inner-box">کاهش training cost</div>
+        <div class="inner-box">کاهش memory</div>
+        <div class="inner-box">جلوگیری از overfitting</div>
+        <div class="inner-box">سرعت بیشتر</div>
+        <p>مفید است.</p>
+        <p>اما اگر task جدید خیلی متفاوت باشد، freezing بیش از حد می‌تواند ظرفیت adaptation را محدود کند.</p>
+
+        <h2>43. Fine-Tuning vs Feature Extraction</h2>
+        <div class="inner-box"><div class="inner-title">Feature Extraction</div></div>
+        <p>مدل pretrained را تقریباً ثابت نگه می‌داریم و فقط:</p>
+        <div class="box"><div class="chart">new head</div></div>
+        <p>را آموزش می‌دهیم.</p>
+        <div class="inner-box"><div class="inner-title">Fine-Tuning</div></div>
+        <p>بخشی یا تمام backbone را نیز update می‌کنیم.</p>
+
+        <h2>44. Parameter-Efficient Fine-Tuning — PEFT</h2>
+        <p>اینجا وارد دنیای LLMهای مدرن می‌شویم.</p>
+        <p>ایده:</p>
+        <div class="inner-box">به جای update کردن میلیاردها parameter، فقط بخش کوچکی را train کنیم.</div>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Base Model
+7B parameters
+
+Trainable:
+10M parameters</div></div>
+
+        <h2>45. چرا PEFT مهم است؟</h2>
+        <p>فرض کنید:</p>
+        <div class="box"><div class="chart">Model = 70B</div></div>
+        <p>Full Fine-Tuning بسیار پرهزینه است.</p>
+        <p>ولی اگر بتوانیم فقط:</p>
+        <div class="box"><div class="chart">0.1%</div></div>
+        <p>پارامترها را train کنیم، هزینه بسیار پایین‌تر می‌شود.</p>
+
+        <h2>46. انواع PEFT</h2>
+        <p>روش‌های مختلف:</p>
+        <div class="inner-box">LoRA</div>
+        <div class="inner-box">QLoRA</div>
+        <div class="inner-box">Adapters</div>
+        <div class="inner-box">Prefix Tuning</div>
+        <div class="inner-box">Prompt Tuning</div>
+        <div class="inner-box">IA³</div>
+        <p>مهم‌ترین‌ها برای Senior ML Engineer:</p>
+        <div class="inner-box">LoRA و QLoRA</div>
+
+        <h2>47. LoRA</h2>
+        <p>Low-Rank Adaptation</p>
+        <p>ایده بسیار مهم:</p>
+        <p>به جای اینکه matrix اصلی را مستقیماً update کنیم:</p>
+        <div class="formula">W</div>
+        <p>یک update کم‌رتبه اضافه می‌کنیم:</p>
+        <div class="formula">W' = W + ΔW</div>
+        <p>و:</p>
+        <div class="formula">ΔW = BA</div>
+        <p>که:</p>
+        <div class="formula">B ∈ R<sup>d×r</sup></div>
+        <p>و:</p>
+        <div class="formula">A ∈ R<sup>r×k</sup></div>
+        <p>و:</p>
+        <div class="formula">r &lt;&lt; min(d, k)</div>
+
+        <h2>48. چرا Low-Rank؟</h2>
+        <p>فرض کنید:</p>
+        <div class="formula">W ∈ R<sup>4096×4096</sup></div>
+        <p>پارامترهای کامل:</p>
+        <div class="formula">4096<sup>2</sup></div>
+        <p>اما اگر:</p>
+        <div class="formula">r = 8</div>
+        <p>باشد:</p>
+        <div class="formula">A ∈ R<sup>8×4096</sup></div>
+        <p>و:</p>
+        <div class="formula">B ∈ R<sup>4096×8</sup></div>
+        <p>در نتیجه تعداد پارامترهای trainable بسیار کمتر می‌شود.</p>
+
+        <h2>49. نکته مهم LoRA</h2>
+        <p>در LoRA:</p>
+        <div class="box"><div class="chart">Base model weights → Frozen
+
+LoRA matrices → Trainable</div></div>
+        <p>در inference می‌توانیم adapter را:</p>
+        <div class="box"><div class="chart">merge</div></div>
+        <p>کنیم.</p>
+        <p>یعنی:</p>
+        <div class="formula">W' = W + BA</div>
+        <p>و در برخی deploymentها می‌توان مدل merged را مانند مدل عادی اجرا کرد.</p>
+
+        <h2>50. LoRA معمولاً کجا اعمال می‌شود؟</h2>
+        <p>در Transformer معمولاً روی projectionهای attention:</p>
+        <div class="box"><div class="chart">Wq
+Wk
+Wv
+Wo</div></div>
+        <p>و گاهی روی لایه‌های MLP.</p>
+        <p>اما اینکه دقیقاً کدام moduleها انتخاب شوند یک hyperparameter / engineering decision است.</p>
+
+        <h2>51. LoRA Hyperparameters</h2>
+        <p>چند پارامتر مهم:</p>
+        <div class="inner-box"><div class="inner-title">Rank</div></div>
+        <div class="formula">r</div>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">r = 4
+8
+16
+32
+64</div></div>
+        <p>rank بیشتر:</p>
+        <div class="inner-box">capacity ↑</div>
+        <div class="inner-box">parameters ↑</div>
+        <div class="inner-box">memory ↑</div>
+        <div class="inner-box"><div class="inner-title">Alpha</div></div>
+        <p>Scaling factor.</p>
+        <p>معمولاً:</p>
+        <div class="formula">W' = W + (α / r)BA</div>
+        <p>است.</p>
+        <div class="inner-box"><div class="inner-title">Dropout</div></div>
+        <p>LoRA dropout نیز ممکن است استفاده شود.</p>
+
+        <h2>52. LoRA Trade-off</h2>
+        <p>Rank خیلی کم:</p>
+        <div class="box"><div class="chart">under-adaptation</div></div>
+        <p>Rank خیلی زیاد:</p>
+        <div class="box"><div class="chart">more parameters
+more memory
+potential overfitting</div></div>
+        <p>بنابراین:</p>
+        <div class="inner-box">بزرگ‌تر همیشه بهتر نیست.</div>
+
+        <h2>53. QLoRA</h2>
+        <p>QLoRA:</p>
+        <div class="inner-box">Quantized LoRA</div>
+        <p>ترکیب:</p>
+        <div class="box"><div class="chart">Quantization
++
+LoRA</div></div>
+        <p>ایده:</p>
+        <div class="inner-box">Base model را quantize می‌کنیم، ولی adapterهای LoRA را train می‌کنیم.</div>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Base Model
+   ↓
+4-bit Quantization
+   ↓
+Frozen
+
+
+LoRA
+   ↓
+Trainable</div></div>
+
+        <h2>54. چرا QLoRA مهم است؟</h2>
+        <p>فرض کنید مدل:</p>
+        <div class="box"><div class="chart">7B</div></div>
+        <p>باشد.</p>
+        <p>Full FP16 model:</p>
+        <p>تقریباً:</p>
+        <div class="formula">7B × 2</div>
+        <p>بایت برای weights =</p>
+        <div class="formula">14GB</div>
+        <p>فقط برای weights.</p>
+        <p>در QLoRA با 4-bit:</p>
+        <p>تقریب خام:</p>
+        <div class="formula">7B × 0.5</div>
+        <p>=</p>
+        <div class="formula">3.5GB</div>
+        <p>برای weights، قبل از overheadهای runtime، activations و سایر memoryها.</p>
+        <p>پس امکان fine-tuning مدل‌های بزرگ روی GPUهای بسیار کوچک‌تر فراهم می‌شود.</p>
+
+        <h2>55. QLoRA فقط "4-bit کردن مدل" نیست</h2>
+        <p>نکته Senior:</p>
+        <p>QLoRA یک روش کامل‌تر است که شامل ایده‌هایی مثل:</p>
+        <div class="inner-box">4-bit quantized base model</div>
+        <div class="inner-box">LoRA adapters</div>
+        <div class="inner-box">memory-efficient training</div>
+        <div class="inner-box">NormalFloat 4 (NF4)</div>
+        <div class="inner-box">Double Quantization</div>
+        <p>است.</p>
+
+        <h2>56. NF4</h2>
+        <p>NormalFloat 4-bit</p>
+        <p>برای weightهایی که distribution آنها تقریباً normal است، طراحی شده است.</p>
+        <p>هدف:</p>
+        <div class="inner-box">استفاده بهتر از محدوده محدود 4-bit برای حفظ کیفیت.</div>
+
+        <h2>57. Double Quantization</h2>
+        <p>Quantization خودش metadata / scaling parameters دارد.</p>
+        <p>QLoRA ایده Double Quantization را معرفی کرد تا حتی این information نیز با efficiency بیشتری ذخیره شود.</p>
+
+        <h2>58. LoRA vs QLoRA</h2>
+        <table>
+            <thead><tr><th></th><th>LoRA</th><th>QLoRA</th></tr></thead>
+            <tbody>
+                <tr><td>Base model</td><td>معمولاً full precision / lower precision</td><td>Quantized</td></tr>
+                <tr><td>Base weights trainable</td><td>❌</td><td>❌</td></tr>
+                <tr><td>Adapter</td><td>LoRA</td><td>LoRA</td></tr>
+                <tr><td>Memory</td><td>کم</td><td>خیلی کمتر</td></tr>
+                <tr><td>Fine-tuning بزرگ</td><td>خوب</td><td>بسیار مناسب</td></tr>
+                <tr><td>Quality</td><td>عموماً عالی</td><td>معمولاً نزدیک LoRA/full FT با تنظیم مناسب</td></tr>
+            </tbody>
+        </table>
+
+        <h2>59. Full FT vs LoRA vs QLoRA</h2>
+        <table>
+            <thead><tr><th>روش</th><th>Base Trainable</th><th>Memory</th><th>Trainable Params</th></tr></thead>
+            <tbody>
+                <tr><td>Full FT</td><td>Yes</td><td>زیاد</td><td>100%</td></tr>
+                <tr><td>LoRA</td><td>No</td><td>کمتر</td><td>کم</td></tr>
+                <tr><td>QLoRA</td><td>No</td><td>خیلی کمتر</td><td>خیلی کم</td></tr>
+            </tbody>
+        </table>
+
+        <h2>60. Knowledge Distillation</h2>
+        <p>یک ایده کاملاً متفاوت.</p>
+        <p>اینجا داریم:</p>
+        <div class="box"><div class="chart">Teacher
+   ↓
+Knowledge
+   ↓
+Student</div></div>
+        <p>Teacher:</p>
+        <div class="inner-box">مدل بزرگ و قدرتمند.</div>
+        <p>Student:</p>
+        <div class="inner-box">مدل کوچک‌تر و سریع‌تر.</div>
+
+        <h2>61. چرا Distillation؟</h2>
+        <p>فرض کنید:</p>
+        <div class="box"><div class="chart">Teacher = 70B LLM
+Student = 7B</div></div>
+        <p>Teacher:</p>
+        <div class="inner-box">دقیق</div>
+        <div class="inner-box">بزرگ</div>
+        <div class="inner-box">expensive</div>
+        <p>Student:</p>
+        <div class="inner-box">سریع</div>
+        <div class="inner-box">ارزان</div>
+        <div class="inner-box">مناسب edge/production</div>
+        <p>هدف:</p>
+        <div class="inner-box">Student رفتار Teacher را یاد بگیرد.</div>
+
+        <h2>62. Hard Targets</h2>
+        <p>معمولاً label واقعی داریم:</p>
+        <div class="box"><div class="chart">cat = 1
+dog = 0</div></div>
+        <p>Student:</p>
+        <div class="box"><div class="chart">cat = 0.7
+dog = 0.3</div></div>
+
+        <h2>63. Soft Targets</h2>
+        <p>Teacher می‌تواند distribution بدهد:</p>
+        <div class="box"><div class="chart">Cat: 0.70
+Dog: 0.25
+Horse: 0.05</div></div>
+        <p>این information بسیار غنی‌تر از:</p>
+        <div class="box"><div class="chart">Cat = 1</div></div>
+        <p>است.</p>
+
+        <h2>64. Distillation Loss</h2>
+        <p>یک روش رایج:</p>
+        <div class="formula">L = αL<sub>hard</sub> + (1 - α)L<sub>soft</sub></div>
+        <p>که:</p>
+        <div class="inner-box">L<sub>hard</sub>: loss نسبت به label واقعی</div>
+        <div class="inner-box">L<sub>soft</sub>: loss نسبت به Teacher</div>
+
+        <h2>65. Temperature</h2>
+        <p>برای soft کردن probability distribution از:</p>
+        <div class="formula">T</div>
+        <p>استفاده می‌کنیم.</p>
+        <p>Softmax:</p>
+        <div class="formula">p<sub>i</sub> = e<sup>z<sub>i</sub>/T</sup> / Σ<sub>j</sub> e<sup>z<sub>j</sub>/T</sup></div>
+        <p>وقتی:</p>
+        <div class="formula">T > 1</div>
+        <p>باشد distribution نرم‌تر می‌شود.</p>
+
+        <h2>66. چرا Soft Target بهتر است؟</h2>
+        <p>فرض کنید label:</p>
+        <div class="box"><div class="chart">Cat</div></div>
+        <p>باشد.</p>
+        <p>Hard label:</p>
+        <div class="box"><div class="chart">Cat = 1
+Dog = 0
+Horse = 0</div></div>
+        <p>ولی Teacher ممکن است بداند:</p>
+        <div class="box"><div class="chart">Cat = 0.80
+Dog = 0.15
+Tiger = 0.05</div></div>
+        <p>این روابط similarity بیشتری به Student منتقل می‌کنند.</p>
+        <p>به این information گاهی:</p>
+        <div class="inner-box">Dark Knowledge</div>
+        <p>گفته می‌شود.</p>
+
+        <h2>67. انواع Distillation</h2>
+        <div class="inner-box"><div class="inner-title">Response Distillation</div></div>
+        <p>Student خروجی Teacher را تقلید می‌کند.</p>
+        <div class="inner-box"><div class="inner-title">Feature Distillation</div></div>
+        <p>representationهای intermediate را نیز تقلید می‌کند.</p>
+        <div class="inner-box"><div class="inner-title">Logit Distillation</div></div>
+        <p>Student logits Teacher را تقلید می‌کند.</p>
+        <div class="inner-box"><div class="inner-title">Attention Distillation</div></div>
+        <p>attention patterns نیز می‌توانند هدف distillation باشند.</p>
+
+        <h2>68. Distillation در LLMها</h2>
+        <p>در LLMها می‌توانیم:</p>
+        <div class="box"><div class="chart">Large Teacher
+      ↓
+Generate examples
+      ↓
+Student training</div></div>
+        <p>انجام دهیم.</p>
+        <p>مثلاً Teacher:</p>
+        <div class="box"><div class="chart">70B</div></div>
+        <p>و Student:</p>
+        <div class="box"><div class="chart">7B</div></div>
+
+        <h2>69. نکته بسیار مهم: Distillation ≠ Fine-Tuning</h2>
+        <p>این دو را نباید قاطی کنیم.</p>
+        <div class="inner-box"><div class="inner-title">Fine-Tuning</div></div>
+        <p>مدل را با داده task جدید تطبیق می‌دهیم.</p>
+        <div class="inner-box"><div class="inner-title">Distillation</div></div>
+        <p>مدل Student را آموزش می‌دهیم تا رفتار/knowledge یک Teacher را تقلید کند.</p>
+        <p>می‌توانیم حتی هر دو را ترکیب کنیم:</p>
+        <div class="box"><div class="chart">Pretrained Student
+       ↓
+Distillation Fine-Tuning
+       ↓
+Small Specialized Model</div></div>
+
+        <h2>70. ارتباط همه این مفاهیم</h2>
+        <p>حالا کل فصل را کنار هم بگذاریم:</p>
+        <div class="box"><div class="chart">             Deep Network
+                  │
+          ┌───────┴───────┐
+          │               │
+      Training         Architecture
+       Problems             │
+          │                 │
+    ┌─────┴─────┐      ┌────┴─────┐
+    │           │      │          │
+Vanishing   Exploding  CNN      Transformer
+Gradient    Gradient              │
+    │           │                 │
+    └─────┬─────┘                 │
+          │                       │
+   Residual / Norm          Attention
+          │                       │
+          │                ┌──────┴──────┐
+          │                │             │
+      Stable Training   Self-Attention  Cross-Attention
+                                │
+                         Multi-Head Attention
+                                │
+                         Positional Info
+                                │
+                         Encoder/Decoder
+                                │
+                         Pretrained Model
+                                │
+                    ┌───────────┴────────────┐
+                    │                        │
+              Fine-Tuning              Frozen Model
+                    │                        │
+                    └──────────┬─────────────┘
+                               │
+                              PEFT
+                               │
+                        ┌──────┴──────┐
+                        │             │
+                       LoRA         QLoRA
+                        │
+                        └──────┬──────┘
+                               │
+                     Efficient Adaptation
+
+Teacher Model
+      │
+      ▼
+Knowledge Distillation
+      │
+      ▼
+Smaller Student Model</div></div>
+
+        <h2>71. یک مثال واقعی در سطح Senior</h2>
+        <p>فرض کنیم می‌خواهیم یک LLM را برای:</p>
+        <div class="inner-box">Payment Fraud Classification</div>
+        <p>adapt کنیم.</p>
+        <p>مدل:</p>
+        <div class="box"><div class="chart">7B pretrained LLM</div></div>
+        <p>داده:</p>
+        <div class="box"><div class="chart">5 million transactions</div></div>
+        <p>اما GPU محدود داریم.</p>
+        
+        <div class="inner-box"><div class="inner-title">راه اول: Full Fine-Tuning</div></div>
+        <div class="box"><div class="chart">7B parameters
+↓
+Full training</div></div>
+        <p>مشکل:</p>
+        <div class="inner-box">VRAM زیاد</div>
+        <div class="inner-box">training expensive</div>
+        <div class="inner-box">optimizer memory زیاد</div>
+        <div class="inner-box">deployment complexity</div>
+
+        <div class="inner-box"><div class="inner-title">راه دوم: LoRA</div></div>
+        <div class="box"><div class="chart">7B Base Model
+      ↓
+Frozen
+
+LoRA adapters
+      ↓
+Train</div></div>
+        <p>خیلی ارزان‌تر.</p>
+
+        <div class="inner-box"><div class="inner-title">راه سوم: QLoRA</div></div>
+        <p>اگر GPU حتی محدودتر باشد:</p>
+        <div class="box"><div class="chart">7B Model
+ ↓
+4-bit Quantization
+ ↓
+Frozen
+
+LoRA
+ ↓
+Train</div></div>
+        <p>Memory بسیار کمتر.</p>
+
+        <h2>72. اگر inference latency مهم باشد؟</h2>
+        <p>می‌توانیم بعداً adapter را merge کنیم:</p>
+        <div class="box"><div class="chart">Base
+ +
+LoRA
+ ↓
+Merged Model</div></div>
+        <p>تا در برخی setupها adapter overhead جداگانه نداشته باشیم.</p>
+
+        <h2>73. اگر مدل هنوز خیلی بزرگ باشد؟</h2>
+        <div class="inner-box">Knowledge Distillation:</div>
+        <div class="box"><div class="chart">Teacher
+7B
+
+      ↓
+
+Distillation
+
+      ↓
+
+Student
+1.5B</div></div>
+        <p>در نتیجه:</p>
+        <div class="inner-box">Latency ↓</div>
+        <div class="inner-box">Memory ↓</div>
+        <div class="inner-box">Cost ↓</div>
+        <p>اما معمولاً:</p>
+        <div class="inner-box">Capacity ↓</div>
+        <p>و ممکن است quality نیز افت کند.</p>
+
+        <h2>74. Senior-Level Decision Tree</h2>
+        <p>اگر سؤال مصاحبه این باشد:</p>
+        <div class="inner-box">من یک مدل pretrained دارم. چه کار کنم؟</div>
+        <p>اول بپرس:</p>
+        <div class="inner-box">داده چقدر است؟</div>
+        <p>کم:</p>
+        <div class="box"><div class="chart">Freeze / PEFT</div></div>
+        <p>زیاد:</p>
+        <div class="box"><div class="chart">Fine-Tuning</div></div>
+        <p>GPU چقدر است؟</p>
+        <p>زیاد:</p>
+        <div class="box"><div class="chart">LoRA / Full FT</div></div>
+        <p>کم:</p>
+        <div class="box"><div class="chart">QLoRA</div></div>
+        <p>Latency مهم است؟</p>
+        <p>بله:</p>
+        <div class="box"><div class="chart">Smaller model
++
+Distillation
++
+Quantization</div></div>
+        <p>کیفیت حداکثری مهم است؟</p>
+        <p>ممکن است:</p>
+        <div class="box"><div class="chart">Full Fine-Tuning</div></div>
+        <p>بهترین گزینه باشد، البته به اندازه داده، domain shift، compute و risk of overfitting بستگی دارد.</p>
+
+        <h2>75. نکات بسیار مهم مصاحبه Senior</h2>
+        <div class="inner-box">❓ چرا Residual Connection کمک می‌کند؟</div>
+        <p>به دلیل وجود مسیر identity که gradient را بهتر منتقل می‌کند:</p>
+        <div class="formula">∂(x + F(x)) / ∂x = 1 + ∂F(x) / ∂x</div>
+        
+        <div class="inner-box">❓ چرا Transformer به Positional Encoding نیاز دارد؟</div>
+        <p>چون attention به‌تنهایی ترتیب sequence را به شکل موردنیاز مدل نمی‌کند و باید اطلاعات موقعیت را به معماری اضافه کنیم.</p>
+        
+        <div class="inner-box">❓ چرا LayerNorm در Transformer رایج است؟</div>
+        <p>چون به batch statistics وابسته نیست و برای sequence modeling مناسب‌تر است.</p>
+        
+        <div class="inner-box">❓ Pre-Norm چیست؟</div>
+        <div class="formula">x + F(LN(x))</div>
+        <p>Normalization قبل از sublayer قرار می‌گیرد.</p>
+        
+        <div class="inner-box">❓ LoRA چه چیزی را train می‌کند؟</div>
+        <p>به‌جای update کردن W، یک low-rank update:</p>
+        <div class="formula">ΔW = BA</div>
+        <p>را train می‌کند.</p>
+        
+        <div class="inner-box">❓ QLoRA چیست؟</div>
+        <p>ترکیب:</p>
+        <div class="box"><div class="chart">Quantized Frozen Base Model
++
+Trainable LoRA Adapters</div></div>
+        
+        <div class="inner-box">❓ LoRA چرا memory را کاهش می‌دهد؟</div>
+        <p>چون تعداد پارامترهای trainable، gradientها و optimizer states مربوط به پارامترهای قابل‌آموزش به‌شدت کاهش پیدا می‌کنند.</p>
+        
+        <div class="inner-box">❓ Knowledge Distillation چیست؟</div>
+        <p>آموزش Student برای تقلید از behavior یا knowledge یک Teacher بزرگ‌تر.</p>
+
+        <h2>76. مهم‌ترین Mental Model</h2>
+        <p>اگر بخواهم کل فصل را در چند جمله خلاصه کنم:</p>
+        <div class="inner-box">Vanishing/Exploding Gradient مشکلات optimization در شبکه‌های عمیق هستند.</div>
+        <div class="inner-box">Residual Connections و Normalization به stable training شبکه‌های عمیق کمک می‌کنند.</div>
+        <div class="inner-box">Attention اجازه می‌دهد مدل وابستگی‌های مختلف بین عناصر sequence را به‌صورت داده‌محور وزن‌دهی کند.</div>
+        <div class="inner-box">Self-Attention روابط داخل همان sequence را مدل می‌کند.</div>
+        <div class="inner-box">Multi-Head Attention چند projection مستقل از attention را ترکیب می‌کند.</div>
+        <div class="inner-box">Positional Encoding / Representation اطلاعات ترتیب را وارد Transformer می‌کند.</div>
+        <div class="inner-box">Encoder/Decoder الگوهای مختلفی برای تبدیل input به representation یا output هستند.</div>
+        <div class="inner-box">Transfer Learning دانش pretrained را به task جدید منتقل می‌کند.</div>
+        <div class="inner-box">Fine-Tuning پارامترهای pretrained model را برای task/domain جدید تطبیق می‌دهد.</div>
+        <div class="inner-box">PEFT این adaptation را با تعداد کمی پارامتر trainable انجام می‌دهد.</div>
+        <div class="inner-box">LoRA adaptation را به یک low-rank update تبدیل می‌کند.</div>
+        <div class="inner-box">QLoRA همین ایده را روی یک base model کوانتایز‌شده برای کاهش بیشتر memory اجرا می‌کند.</div>
+        <div class="inner-box">Knowledge Distillation دانش/رفتار مدل بزرگ را به مدل کوچک منتقل می‌کند.</div>
+
+        <p>و مهم‌ترین نگاه Senior:</p>
+        <div class="box"><div class="chart">                Quality
+                   ↑
+                   │
+      Full FT ─────┤───── Maximum flexibility
+                   │
+       LoRA ───────┤───── Efficient adaptation
+                   │
+      QLoRA ───────┤───── Extreme memory efficiency
+                   │
+    Distillation ──┤───── Smaller / faster model
+                   │
+                   └────────────────────→
+                         Cost / Complexity</div></div>
+
+        <p>Senior ML Engineer کسی نیست که فقط همه این اصطلاحات را تعریف کند؛ باید بتواند بین Full Fine-Tuning، LoRA، QLoRA، Freezing و Distillation بر اساس data size + GPU/VRAM + latency + quality target + deployment cost + domain shift تصمیم مهندسی بگیرد.</p>
+
+    </div>
+</body>
+</html>

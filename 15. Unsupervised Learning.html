@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unsupervised Learning · Senior ML Level</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js">
+    </script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}]});">
+    </script>
+    <style>
+        body {
+            background-color: #0d1117;
+            color: #e6edf3;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.8;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h1,
+        h2,
+        h3 {
+            color: #e6edf3;
+            text-align: right;
+            border-bottom: 1px solid #444;
+            padding-bottom: 15px;
+            margin-top: 50px;
+        }
+        p,
+        li {
+            text-align: right;
+        }
+
+        .box {
+            background-color: #21262d;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            color: #e6edf3;
+        }
+        .inner-box {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 10px;
+            border-right: 4px solid #58a6ff;
+        }
+        .inner-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .formula {
+            direction: ltr;
+            background-color: #000;
+            border: 1px solid #fff;
+            border-radius: 0;
+            padding: 20px;
+            margin: 20px auto;
+            width: fit-content;
+            max-width: 100%;
+            overflow-x: auto;
+            text-align: center;
+            font-size: 1.2em;
+            font-family: "Times New Roman", Times, serif;
+            color: #fff;
+        }
+
+        .chart {
+            direction: ltr;
+            text-align: left;
+            font-family: monospace;
+            background-color: #21262d;
+            border-radius: 8px;
+            padding: 15px;
+            overflow-x: auto;
+            white-space: pre;
+            border: 1px solid #444;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            direction: rtl;
+            margin-bottom: 20px;
+        }
+        th,
+        td {
+            border: 1px solid #444;
+            padding: 12px;
+            text-align: right;
+        }
+        th {
+            background-color: #21262d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔬 15. Unsupervised Learning</h1>
+
+        <p style="font-size:1.1rem;">حتماً. این فصل را باید کمی عمیق‌تر از «تعریف الگوریتم» ببینیم، چون در سطح Senior ML مهم است بدانی:</p>
+
+        <ul>
+            <li>الگوریتم دقیقاً چه فرضی درباره داده دارد؟</li>
+            <li>objective آن چیست؟</li>
+            <li>چه نوع cluster / anomaly را می‌تواند پیدا کند؟</li>
+            <li>با noise و outlier چه می‌کند؟</li>
+            <li>چه زمانی scale کردن لازم است؟</li>
+            <li>چطور hyperparameterها را انتخاب می‌کنی؟</li>
+            <li>چطور ارزیابی می‌کنی وقتی label نداری؟</li>
+            <li>و مهم‌تر از همه: <strong>چه زمانی اصلاً نباید از clustering استفاده کنی؟</strong></li>
+        </ul>
+
+        <hr style="border:1px solid #444; margin:30px 0;" />
+
+        <h2>1. Unsupervised Learning چیست؟</h2>
+        <p>در supervised learning داریم:</p>
+        <div class="formula">$$(X, Y)$$</div>
+        <p>و هدف یادگیری:</p>
+        <div class="formula">$$f : X \to Y$$</div>
+        <p>است.</p>
+        <p>اما در unsupervised learning معمولاً:</p>
+        <div class="formula">$$X$$</div>
+        <p>داریم و <span style="font-family:monospace; background:#161b22; padding:1px 8px; border-radius:4px; border:1px solid #30363d;">Y</span> نداریم.</p>
+        <p>هدف این است که ساختار پنهان داده را پیدا کنیم:</p>
+        <div class="formula">$$X \to \text{Structure}$$</div>
+        <p>مثلاً:</p>
+        <div class="chart">Customers
+        │
+        ▼
+        Unsupervised Learning
+        │
+        ▼
+        Customer Segments</div>
+        <p>یا:</p>
+        <div class="chart">Transactions
+        │
+        ▼
+        Anomaly Detection
+        │
+        ▼
+        Suspicious Transactions</div>
+
+        <h2>2. سه خانواده مهم Unsupervised Learning</h2>
+        <div class="box">
+            <div style="display:flex; flex-wrap:wrap; gap:16px; justify-content:space-around;">
+                <div style="flex:1; min-width:140px; background:#161b22; border-radius:10px; padding:14px; border:1px solid #30363d; text-align:center;">
+                    <div style="font-size:2rem;">🧩</div>
+                    <div style="font-weight:700; color:#58a6ff;">Clustering</div>
+                    <div style="font-size:0.85rem; color:#8b949e;">پیدا کردن گروه‌های مشابه</div>
+                    <div style="direction:ltr; background:#0d1117; padding:2px 10px; border-radius:6px; border:1px solid #30363d; margin-top:6px; font-family:'Times New Roman',serif;">$$X \to C$$</div>
+                </div>
+                <div style="flex:1; min-width:140px; background:#161b22; border-radius:10px; padding:14px; border:1px solid #30363d; text-align:center;">
+                    <div style="font-size:2rem;">📊</div>
+                    <div style="font-weight:700; color:#3fb950;">Density Estimation</div>
+                    <div style="font-size:0.85rem; color:#8b949e;">تخمین distribution داده</div>
+                    <div style="direction:ltr; background:#0d1117; padding:2px 10px; border-radius:6px; border:1px solid #30363d; margin-top:6px; font-family:'Times New Roman',serif;">$$p(x)$$</div>
+                </div>
+                <div style="flex:1; min-width:140px; background:#161b22; border-radius:10px; padding:14px; border:1px solid #30363d; text-align:center;">
+                    <div style="font-size:2rem;">🚨</div>
+                    <div style="font-weight:700; color:#f0883e;">Anomaly Detection</div>
+                    <div style="font-size:0.85rem; color:#8b949e;">پیدا کردن observation‌های unusual</div>
+                    <div style="direction:ltr; background:#0d1117; padding:2px 10px; border-radius:6px; border:1px solid #30363d; margin-top:6px; font-family:'Times New Roman',serif;">$$p(x) \ll$$</div>
+                </div>
+            </div>
+        </div>
+
+        <h2>3. Clustering چیست؟</h2>
+        <p>هدف clustering این است که داده‌ها را به گروه‌هایی تقسیم کنیم که:</p>
+        <ul>
+            <li>داخل هر گروه مشابه‌تر باشند</li>
+            <li>بین گروه‌ها متفاوت‌تر باشند</li>
+        </ul>
+        <p>مثلاً:</p>
+        <div class="chart">       ● ● ●
+        ● ● ●
+
+        ▲ ▲ ▲
+        ▲ ▲ ▲ ▲
+
+        ■ ■
+        ■ ■ ■</div>
+        <p>ممکن است الگوریتم سه cluster پیدا کند:</p>
+        <ul>
+            <li><span style="color:#58a6ff;">Cluster 1</span> → ●</li>
+            <li><span style="color:#3fb950;">Cluster 2</span> → ▲</li>
+            <li><span style="color:#f0883e;">Cluster 3</span> → ■</li>
+        </ul>
+        <div class="inner-box">
+            <div class="inner-title">⚠️ نکته بسیار مهم</div>
+            <p>clustering همیشه به معنی کشف «کلاس واقعی» نیست.</p>
+            <p><strong>Cluster</strong> چیزی است که الگوریتم بر اساس <strong>objective</strong> و <strong>assumptions</strong> خودش تعریف می‌کند.</p>
+        </div>
+
+        <h2>4. Clustering با Classification فرق دارد</h2>
+        <div class="box" style="display:flex; flex-wrap:wrap; gap:16px; justify-content:space-around;">
+            <div style="flex:1; min-width:180px; background:#161b22; border-radius:8px; padding:14px; border:1px solid #30363d; text-align:center;">
+                <div style="font-weight:700; color:#58a6ff;">Classification</div>
+                <div style="direction:ltr; font-family:'Times New Roman',serif;">$$X \to \text{known labels}$$</div>
+                <div style="font-size:0.85rem; color:#8b949e; margin-top:4px;">مثلاً: transaction → fraud / legitimate</div>
+            </div>
+            <div style="flex:1; min-width:180px; background:#161b22; border-radius:8px; padding:14px; border:1px solid #30363d; text-align:center;">
+                <div style="font-weight:700; color:#f0883e;">Clustering</div>
+                <div style="direction:ltr; font-family:'Times New Roman',serif;">$$X \to \text{unknown groups}$$</div>
+                <div style="font-size:0.85rem; color:#8b949e; margin-top:4px;">مثلاً: transaction → cluster 1 / 2 / 3</div>
+            </div>
+        </div>
+
+        <h2>5. Clustering الزاماً Ground Truth ندارد</h2>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">🧠 نکته مصاحبه Senior</div>
+            <p>اگر:</p>
+            <div style="direction:ltr; background:#0d1117; padding:2px 12px; border-radius:6px; border:1px solid #30363d; margin:4px 0; display:inline-block;">Cluster A</div>
+            <div style="direction:ltr; background:#0d1117; padding:2px 12px; border-radius:6px; border:1px solid #30363d; margin:4px 0; display:inline-block;">Cluster B</div>
+            <p>پیدا کردی، نمی‌توانی بدون evidence بگویی:</p>
+            <div class="inner-box" style="margin:8px 0; background:#0d1117;">
+                A = good customers<br />
+                B = bad customers
+            </div>
+            <p>باید بعداً clusterها را با <strong>domain / business information</strong> تفسیر کنی.</p>
+        </div>
+
+        <hr style="border:1px solid #444; margin:30px 0;" />
+
+        <h2>6. خانواده‌های Clustering</h2>
+        <div class="chart">Clustering
+        │
+        ├── Centroid-based
+        │     └── K-Means
+        │
+        ├── Hierarchical
+        │     └── Agglomerative
+        │
+        ├── Density-based
+        │     ├── DBSCAN
+        │     └── HDBSCAN
+        │
+        └── Probabilistic
+        └── Gaussian Mixture Model</div>
+
+        <hr style="border:1px solid #444; margin:30px 0;" />
+
+        <h2>7. K-Means</h2>
+        <p>یکی از مهم‌ترین الگوریتم‌های clustering.</p>
+        <p>فرض کن:</p>
+        <div class="formula">$$X = \{x_1, x_2, \dots, x_n\}$$</div>
+        <p>و می‌خواهیم:</p>
+        <div class="formula">$$K$$</div>
+        <p>cluster داشته باشیم.</p>
+        <p>K-Means سعی می‌کند هر point را به نزدیک‌ترین centroid اختصاص دهد.</p>
+
+        <h3>7.1 Centroid چیست؟</h3>
+        <p>برای cluster <span style="font-family:monospace; background:#161b22; padding:1px 8px; border-radius:4px; border:1px solid #30363d;">k</span>:</p>
+        <div class="formula">$$\mu_k = \frac{1}{|C_k|} \sum_{x_i \in C_k} x_i$$</div>
+        <p>یعنی میانگین نقاط cluster.</p>
+        <p>مثلاً:</p>
+        <div class="inner-box">Points: (1,1) (2,2) (3,3)<br />Centroid: (2,2)</div>
+
+        <h3>8. Objective تابع K-Means</h3>
+        <p>K-Means معمولاً این objective را minimize می‌کند:</p>
+        <div class="formula">$$\sum_{k=1}^K \sum_{x_i \in C_k} \|x_i - \mu_k\|^2$$</div>
+        <p>یعنی:</p>
+        <div class="inner-box">مجموع <strong>squared distance</strong> نقاط تا centroid خودشان را کمینه کن.</div>
+        <p>این را می‌توان:</p>
+        <div style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">WCSS</div>
+        <p>یا:</p>
+        <div style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">Within-Cluster Sum of Squares</div>
+        <p>نیز در نظر گرفت.</p>
+
+        <h3>9. الگوریتم K-Means</h3>
+        <p>K-Means به صورت iterative کار می‌کند.</p>
+        <div class="inner-box"><div class="inner-title">Step 1</div><p><span style="font-family:monospace; background:#161b22; padding:1px 8px; border-radius:4px; border:1px solid #30363d;">K</span> centroid اولیه انتخاب کن.</p><div style="direction:ltr; background:#0d1117; padding:2px 12px; border-radius:6px; border:1px solid #30363d; margin:4px 0; display:inline-block;">μ₁ μ₂ μ₃</div></div>
+        <div class="inner-box"><div class="inner-title">Step 2</div><p>هر point را به نزدیک‌ترین centroid اختصاص بده.</p><div style="direction:ltr; background:#0d1117; padding:2px 12px; border-radius:6px; border:1px solid #30363d; margin:4px 0; display:inline-block;">x → nearest centroid</div></div>
+        <div class="inner-box"><div class="inner-title">Step 3</div><p>Centroidها را دوباره محاسبه کن.</p></div>
+        <div class="inner-box"><div class="inner-title">Step 4</div><p>این کار را تکرار کن:</p><div class="chart" style="font-size:0.9rem;">Assign
+            ↓
+            Update
+            ↓
+            Assign
+            ↓
+            Update</div><p>تا <strong>convergence</strong>.</p></div>
+
+        <h3>10. چرا اسمش K-Means است؟</h3>
+        <ul>
+            <li><span style="font-family:monospace; background:#161b22; padding:1px 8px; border-radius:4px; border:1px solid #30363d;">K</span> = تعداد clusterها</li>
+            <li><span style="font-family:monospace; background:#161b22; padding:1px 8px; border-radius:4px; border:1px solid #30363d;">Means</span> = centroid با میانگین نقاط ساخته می‌شود</li>
+        </ul>
+
+        <h3>11. K-Means یک الگوریتم Global Optimization ساده نیست</h3>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">⚠️ نکته Senior</div>
+            <p>Objective آن <strong>non-convex</strong> نسبت به assignment و centroids به صورت مشترک است و الگوریتم Lloyd معمولاً به:</p>
+            <div style="direction:ltr; background:#0d1117; padding:2px 12px; border-radius:6px; border:1px solid #30363d; margin:4px 0; display:inline-block;">local optimum</div>
+            <p>می‌رسد.</p>
+            <p>بنابراین <strong>initialization</strong> مهم است.</p>
+        </div>
+
+        <h3>12. K-Means++</h3>
+        <p>برای initialization بهتر از:</p>
+        <div style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">Random Initialization</div>
+        <p>استفاده می‌شود. K-Means++ centroidهای اولیه را طوری انتخاب می‌کند که معمولاً از هم فاصله بیشتری داشته باشند. در نتیجه: convergence بهتر، احتمال solution خوب بیشتر، حساسیت کمتر به initialization.</p>
+
+        <h3>13. Random State</h3>
+        <p>به همین دلیل اگر K-Means استفاده می‌کنی:</p>
+        <div class="box" style="direction:ltr; text-align:left; font-family:'Courier New',monospace; font-size:0.9rem; background:#0d1117;">
+            KMeans(<br />
+            &nbsp;&nbsp;&nbsp;&nbsp;n_clusters=5,<br />
+            &nbsp;&nbsp;&nbsp;&nbsp;random_state=42,<br />
+            &nbsp;&nbsp;&nbsp;&nbsp;n_init="auto"<br />
+            )
+        </div>
+        <ul>
+            <li><span style="font-family:monospace; background:#161b22; padding:1px 8px; border-radius:4px; border:1px solid #30363d;">reproducibility</span> مهم است.</li>
+            <li>و بهتر است initializationهای متعدد را در نظر بگیری.</li>
+        </ul>
+
+        <h3>14. K-Means و Scaling</h3>
+        <p>K-Means <strong>distance-based</strong> است. مثلاً: age: 20-60, income: 10,000-10,000,000. اگر scaling نکنیم: income تقریباً تمام distance را کنترل می‌کند.</p>
+        <p>بنابراین معمولاً:</p>
+        <div class="chart">Imputation
+        │
+        ▼
+        Scaling
+        │
+        ▼
+        K-Means</div>
+
+        <h3>15. K-Means چه نوع clusterهایی را خوب پیدا می‌کند؟</h3>
+        <p>K-Means برای clusterهایی که تقریباً: spherical, convex, مشابه از نظر spread, بر اساس Euclidean distance قابل تفکیک هستند مناسب‌تر است.</p>
+
+        <h3>16. مثال بد برای K-Means</h3>
+        <p>فرض کن cluster حلقه‌ای:</p>
+        <div class="chart">    ●●●●●
+        ●       ●
+        ●         ●
+        ●       ●
+        ●●●●●</div>
+        <p>K-Means معمولاً نمی‌تواند این ساختار را خوب تشخیص دهد، چون objective آن بر centroid بنا شده است.</p>
+
+        <h3>17. K-Means و Outlier</h3>
+        <p>K-Means به outlier <strong>حساس</strong> است.</p>
+        <div class="inner-box">
+            <div class="chart">● ● ● ● ●
+
+            ●
+            ↑
+            outlier</div>
+            <p>آن point دور می‌تواند centroid را جابه‌جا کند. چون objective از:</p>
+            <div style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">distance²</div>
+            <p>استفاده می‌کند.</p>
+        </div>
+
+        <h3>18. K-Medoids</h3>
+        <p>در K-Means: <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">centroid = mean</span> است. اما در K-Medoids: نماینده cluster یکی از خود نقاط داده است.</p>
+        <ul>
+            <li>K-Means: centroid = artificial point</li>
+            <li>K-Medoids: medoid = actual observation</li>
+        </ul>
+
+        <h3>19. مزیت K-Medoids</h3>
+        <p>چون median-like representative دارد، معمولاً: نسبت به outlierها <strong>robust</strong>تر از K-Means است.</p>
+
+        <h3>20. K-Means vs K-Medoids</h3>
+        <div style="overflow-x:auto;">
+            <table>
+                <thead><tr><th>ویژگی</th><th>K-Means</th><th>K-Medoids</th></tr></thead>
+                <tbody>
+                    <tr><td>Representative</td><td>Mean</td><td>Actual point</td></tr>
+                    <tr><td>Outlier sensitivity</td><td>بیشتر</td><td>کمتر</td></tr>
+                    <tr><td>Speed</td><td>سریع‌تر</td><td>معمولاً کندتر</td></tr>
+                    <tr><td>Distance</td><td>معمولاً Euclidean</td><td>flexible</td></tr>
+                    <tr><td>Interpretability</td><td>متوسط</td><td>representative واقعی</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3>21. انتخاب K</h3>
+        <p>یکی از سخت‌ترین مسائل K-Means:</p>
+        <div class="formula">$$\text{How many clusters?}$$</div>
+
+        <h4>22. Elbow Method</h4>
+        <p>برای چند مقدار <span style="font-family:monospace; background:#161b22; padding:1px 8px; border-radius:4px; border:1px solid #30363d;">K</span>: K=2, K=3, K=4, K=5 ... WCSS را محاسبه می‌کنیم.</p>
+        <p>معمولاً: <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">K↑ ⇒ WCSS↓</span></p>
+        <div class="chart">WCSS
+        │\
+        │ \
+        │  \
+        │   \__
+        │      \__
+        └────────── K
+        ↑
+        Elbow</div>
+
+        <h4>23. مشکل Elbow</h4>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">⚠️ همیشه elbow واضح وجود ندارد.</div>
+            <p>پس: <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">Elbow یک heuristic است، نه حقیقت ریاضی.</span></p>
+        </div>
+
+        <h4>24. Silhouette Score</h4>
+        <p>یکی از مهم‌ترین metricهای clustering. برای point <span style="font-family:monospace; background:#161b22; padding:1px 8px; border-radius:4px; border:1px solid #30363d;">i</span>:</p>
+        <div class="formula">$$s(i) = \frac{b(i) - a(i)}{\max(a(i), b(i))}$$</div>
+        <p>که: <span style="font-family:monospace; background:#161b22; padding:1px 8px; border-radius:4px; border:1px solid #30363d;">a(i)</span> میانگین فاصله point از cluster خودش، <span style="font-family:monospace; background:#161b22; padding:1px 8px; border-radius:4px; border:1px solid #30363d;">b(i)</span> کمترین میانگین فاصله از یک cluster دیگر. مقدار: <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">-1 ≤ s(i) ≤ 1</span></p>
+
+        <h4>25. تفسیر Silhouette</h4>
+        <ul>
+            <li><strong>نزدیک +1</strong> → point داخل cluster خودش خوب قرار گرفته.</li>
+            <li><strong>نزدیک 0</strong> → point بین دو cluster است.</li>
+            <li><strong>منفی</strong> → ممکن است به cluster دیگری تعلق بیشتری داشته باشد.</li>
+        </ul>
+
+        <h4>26. نکته مهم درباره Silhouette</h4>
+        <div class="inner-box"><p>Silhouette هم <strong>distance-based</strong> است. پس اگر distance metric نامناسب باشد، metric هم می‌تواند misleading شود.</p></div>
+
+        <hr style="border:1px solid #444; margin:30px 0;" />
+
+        <h2>27. Hierarchical Clustering</h2>
+        <p>Hierarchical clustering به جای اینکه فقط <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">K clusters</span> بدهد، یک <strong>hierarchy</strong> می‌سازد. نمایش رایج: <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">Dendrogram</span></p>
+
+        <h3>28. Agglomerative Clustering</h3>
+        <p>روش <strong>bottom-up</strong>:</p>
+        <div class="chart">Each point = cluster
+        │
+        ▼
+        Merge closest clusters
+        │
+        ▼
+        Merge
+        │
+        ▼
+        Merge
+        │
+        ▼
+        One big cluster</div>
+
+        <h3>29. مثال</h3>
+        <p>فرض کن: <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">A B C D E</span></p>
+        <p>ابتدا: <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">{A} {B} {C} {D} {E}</span></p>
+        <p>بعد: <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">{A,B} {C} {D,E}</span></p>
+        <p>بعد: <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">{A,B,C} {D,E}</span></p>
+        <p>و در نهایت: <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">{A,B,C,D,E}</span></p>
+
+        <h3>30. Dendrogram</h3>
+        <div class="chart">             ┌───────────────┐
+            │               │
+            ┌───┴───┐       ┌───┴───┐
+            A       B       C       D</div>
+        <p>با cut کردن dendrogram در ارتفاع خاص، تعداد clusterها تعیین می‌شود.</p>
+
+        <h3>31. Linkage</h3>
+        <p>یکی از مهم‌ترین hyperparameterهای hierarchical clustering: <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">Linkage</span></p>
+        <div class="inner-box">فاصله بین دو cluster را چطور تعریف کنیم؟</div>
+
+        <h4>32. Single Linkage</h4>
+        <p>فاصله دو cluster: نزدیک‌ترین دو point</p>
+        <div class="formula">$$d(A, B) = \min_{x \in A, y \in B} d(x, y)$$</div>
+
+        <h4>33. مشکل Single Linkage</h4>
+        <p>ممکن است: <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">chaining effect</span> ایجاد کند. حتی اگر ساختار دو گروه باشد، نقاط intermediate باعث اتصال آنها می‌شوند.</p>
+
+        <h4>34. Complete Linkage</h4>
+        <p>فاصله: دورترین دو point</p>
+        <div class="formula">$$d(A, B) = \max_{x \in A, y \in B} d(x, y)$$</div>
+        <p>معمولاً clusterهای compactتری می‌دهد.</p>
+
+        <h4>35. Average Linkage</h4>
+        <p>میانگین فاصله تمام pairها:</p>
+        <div class="formula">$$d(A, B) = \frac{1}{|A||B|} \sum_{x \in A} \sum_{y \in B} d(x, y)$$</div>
+
+        <h4>36. Ward Linkage</h4>
+        <p>Ward سعی می‌کند افزایش <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">Within Cluster Variance</span> را هنگام merge کمینه کند. برای clusterهای تقریباً spherical بسیار مفید است.</p>
+
+        <h3>37. Hierarchical vs K-Means</h3>
+        <div style="overflow-x:auto;">
+            <table>
+                <thead><tr><th></th><th>K-Means</th><th>Hierarchical</th></tr></thead>
+                <tbody>
+                    <tr><td>Need K initially</td><td>معمولاً بله</td><td>نه</td></tr>
+                    <tr><td>Dendrogram</td><td>❌</td><td>✅</td></tr>
+                    <tr><td>Scalability</td><td>بهتر</td><td>معمولاً ضعیف‌تر</td></tr>
+                    <tr><td>Cluster shape</td><td>بیشتر spherical</td><td>وابسته به linkage</td></tr>
+                    <tr><td>Hierarchy</td><td>❌</td><td>✅</td></tr>
+                    <tr><td>Reassignment</td><td>دارد</td><td>mergeها معمولاً برگشت‌ناپذیر</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <hr style="border:1px solid #444; margin:30px 0;" />
+
+        <h2>38. DBSCAN</h2>
+        <p>DBSCAN: <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">Density-Based Spatial Clustering of Applications with Noise</span></p>
+        <div class="inner-box">cluster = region with sufficiently high density</div>
+        <p>این تفاوت بسیار مهمی با K-Means دارد.</p>
+
+        <h3>39. دو hyperparameter اصلی DBSCAN</h3>
+        <ul>
+            <li><span style="font-family:monospace; background:#161b22; padding:1px 8px; border-radius:4px; border:1px solid #30363d;">eps</span> شعاع neighborhood: <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; font-size:0.9rem;">ε</span></li>
+            <li><span style="font-family:monospace; background:#161b22; padding:1px 8px; border-radius:4px; border:1px solid #30363d;">min_samples</span> حداقل تعداد نقاط برای dense بودن neighborhood.</li>
+        </ul>
+
+        <h3>40. Core Point</h3>
+        <p>اگر در شعاع <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">ε</span> حداقل <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">minPts</span> نقطه داشته باشیم، point یک Core Point است.</p>
+
+        <h3>41. Border Point</h3>
+        <p>نقطه‌ای که خودش density کافی ندارد ولی در neighborhood یک core point قرار دارد: Border Point.</p>
+
+        <h3>42. Noise</h3>
+        <p>نقطه‌ای که core نیست و border هم نیست به عنوان Noise علامت می‌خورد.</p>
+        <div class="inner-box" style="border-right-color:#3fb950;">
+            <div class="inner-title">✅ ویژگی بسیار مهم DBSCAN</div>
+            <p>K-Means مجبور است تقریباً هر point را به clusterی نسبت دهد؛ DBSCAN می‌تواند <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">Noise</span> تولید کند.</p>
+        </div>
+
+        <h3>43. DBSCAN مزیت مهم</h3>
+        <p>می‌تواند clusterهای <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">non-spherical</span> پیدا کند.</p>
+        <div class="chart">   ●●●●
+        ●      ●
+        ●        ●
+        ●      ●
+        ●●●●</div>
+
+        <h3>44. DBSCAN و Outlier Detection</h3>
+        <p>Noiseهای DBSCAN می‌توانند به عنوان candidate anomaly استفاده شوند. اما DBSCAN ذاتاً anomaly detector کامل نیست چون classification به عنوان noise شدیداً به <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">eps, minPts</span> وابسته است.</p>
+
+        <h3>45. مشکل بزرگ DBSCAN</h3>
+        <p>DBSCAN با <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">varying density</span> مشکل دارد. یک eps ثابت ممکن است برای دو cluster با density متفاوت مناسب نباشد.</p>
+
+        <h3>46. Curse of Dimensionality برای DBSCAN</h3>
+        <p>DBSCAN distance-based است. در high dimensions distanceها کمتر meaningful می‌شوند. در نتیجه انتخاب eps بسیار سخت می‌شود.</p>
+        <div class="chart">Scaling
+        │
+        ▼
+        Dimensionality Reduction
+        │
+        ▼
+        DBSCAN</div>
+        <div class="inner-box" style="border-right-color:#f0883e;"><div class="inner-title">⚠️ ولی</div><p>dimensionality reduction خودش می‌تواند structure را تغییر دهد، بنابراین باید validation شود.</p></div>
+
+        <hr style="border:1px solid #444; margin:30px 0;" />
+
+        <h2>47. HDBSCAN</h2>
+        <p>HDBSCAN: <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">Hierarchical Density-Based Spatial Clustering of Applications with Noise</span></p>
+        <p>در واقع ایده DBSCAN را توسعه می‌دهد تا densityهای مختلف را بهتر handle کند.</p>
+
+        <h3>48. تفاوت DBSCAN و HDBSCAN</h3>
+        <ul>
+            <li>DBSCAN: <span style="font-family:monospace; background:#161b22; padding:1px 8px; border-radius:4px; border:1px solid #30363d;">one eps</span></li>
+            <li>HDBSCAN: <span style="font-family:monospace; background:#161b22; padding:1px 8px; border-radius:4px; border:1px solid #30363d;">hierarchy of density levels</span></li>
+        </ul>
+
+        <h3>49. HDBSCAN چه کار می‌کند؟</h3>
+        <div class="chart">Data
+        │
+        ▼
+        Density hierarchy
+        │
+        ▼
+        Cluster tree
+        │
+        ▼
+        Select stable clusters
+        │
+        ▼
+        Noise</div>
+
+        <h3>50. Cluster Stability در HDBSCAN</h3>
+        <div class="inner-box">
+            <p>HDBSCAN فقط دنبال cluster نیست. به نوعی clusterهایی را ترجیح می‌دهد که در طی rangeای از density پایدار بمانند. این مفهوم <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">Cluster Stability</span> یکی از نکات کلیدی HDBSCAN است.</p>
+        </div>
+
+        <h3>51. مزیت HDBSCAN</h3>
+        <ul>
+            <li>varying density بهتر</li>
+            <li>hierarchical structure</li>
+            <li>noise handling</li>
+            <li>نیاز کمتر به انتخاب یک global eps</li>
+        </ul>
+
+        <h3>52. HDBSCAN و Probability</h3>
+        <p>در بسیاری از implementationها می‌توان برای membership یک point نوعی confidence/probability داشت. پس به جای <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">point → cluster 2</span> می‌توان دید: <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">cluster 2 membership strength = 0.91</span></p>
+
+        <h3>53. K-Means vs DBSCAN vs HDBSCAN</h3>
+        <div style="overflow-x:auto;">
+            <table>
+                <thead><tr><th></th><th>K-Means</th><th>DBSCAN</th><th>HDBSCAN</th></tr></thead>
+                <tbody>
+                    <tr><td>Need K</td><td>✅</td><td>❌</td><td>❌</td></tr>
+                    <tr><td>Noise</td><td>❌</td><td>✅</td><td>✅</td></tr>
+                    <tr><td>Non-spherical</td><td>ضعیف</td><td>خوب</td><td>خوب</td></tr>
+                    <tr><td>Variable density</td><td>ضعیف</td><td>ضعیف</td><td>بهتر</td></tr>
+                    <tr><td>Scalable</td><td>خوب</td><td>متوسط</td><td>متوسط</td></tr>
+                    <tr><td>Hyperparameters</td><td>K</td><td>eps/minPts</td><td>min cluster size و...</td></tr>
+                    <tr><td>Centroid</td><td>✅</td><td>❌</td><td>❌</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <hr style="border:1px solid #444; margin:30px 0;" />
+
+        <h2>54. Gaussian Mixture Model</h2>
+        <p>حالا می‌رسیم به <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">probabilistic clustering</span></p>
+        <p>K-Means می‌گوید: <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">point → cluster 1</span></p>
+        <p>اما GMM می‌تواند بگوید:</p>
+        <div class="inner-box">P(cluster 1 | x) = 0.8<br />P(cluster 2 | x) = 0.2</div>
+        <p>یعنی <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">Soft Clustering</span></p>
+
+        <h3>55. GMM چیست؟</h3>
+        <p>فرض می‌کنیم داده از mixtureای از Gaussianها آمده است:</p>
+        <div class="formula">$$p(x) = \sum_{k=1}^K \pi_k \mathcal{N}(x \mid \mu_k, \Sigma_k)$$</div>
+        <p>که: <span style="font-family:monospace; background:#161b22; padding:1px 8px; border-radius:4px; border:1px solid #30363d;">πₖ</span> = mixing coefficient, <span style="font-family:monospace; background:#161b22; padding:1px 8px; border-radius:4px; border:1px solid #30363d;">μₖ</span> = mean, <span style="font-family:monospace; background:#161b22; padding:1px 8px; border-radius:4px; border:1px solid #30363d;">Σₖ</span> = covariance</p>
+
+        <h3>56. Mixing Coefficient</h3>
+        <p>باید داشته باشیم: <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">πₖ ≥ 0</span> و <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">∑ πₖ = 1</span></p>
+        <p>مثلاً: Cluster 1 → π=0.5, Cluster 2 → π=0.3, Cluster 3 → π=0.2</p>
+
+        <h3>57. Soft Assignment</h3>
+        <p>برای point <span style="font-family:monospace; background:#161b22; padding:1px 8px; border-radius:4px; border:1px solid #30363d;">x</span>: <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">P(z = k | x)</span> محاسبه می‌شود.</p>
+        <div class="inner-box">Customer X<br />Cluster A → 0.05<br />Cluster B → 0.90<br />Cluster C → 0.05</div>
+
+        <h3>58. GMM با K-Means چه ارتباطی دارد؟</h3>
+        <p>K-Means را می‌توان یک حالت محدودشده از مدل mixture در نظر گرفت.</p>
+        <div class="box" style="display:flex; flex-wrap:wrap; gap:16px; justify-content:space-around;">
+            <div style="flex:1; min-width:180px; background:#161b22; border-radius:8px; padding:14px; border:1px solid #30363d; text-align:center;">
+                <div style="font-weight:700; color:#58a6ff;">K-Means</div>
+                <div>→ hard assignment</div>
+                <div>→ spherical clusters</div>
+                <div>→ similar variance</div>
+            </div>
+            <div style="flex:1; min-width:180px; background:#161b22; border-radius:8px; padding:14px; border:1px solid #30363d; text-align:center;">
+                <div style="font-weight:700; color:#d2a8ff;">GMM</div>
+                <div>→ soft assignment</div>
+                <div>→ probabilistic</div>
+                <div>→ covariance-aware</div>
+            </div>
+        </div>
+
+        <h3>59. Covariance در GMM</h3>
+        <p>این یکی از مزیت‌های مهم GMM است. Gaussian می‌تواند کشیده باشد. یعنی cluster می‌تواند <strong>elliptical</strong> باشد. K-Means بیشتر به فاصله تا centroid وابسته است.</p>
+
+        <h3>60. انواع Covariance در GMM</h3>
+        <ul>
+            <li><strong>Full</strong>: هر Gaussian covariance matrix خودش را دارد <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">Σₖ</span> – انعطاف‌پذیرترین حالت.</li>
+            <li><strong>Diagonal</strong>: فقط varianceهای featureها <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">Σₖ = diag(σ₁², …, σ_d²)</span></li>
+            <li><strong>Spherical</strong>: یک variance <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">Σₖ = σₖ² I</span></li>
+            <li><strong>Tied</strong>: همه clusterها covariance مشترک دارند.</li>
+        </ul>
+
+        <h3>61. GMM با چه الگوریتمی آموزش می‌بیند؟</h3>
+        <p>معمولاً: <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">Expectation-Maximization</span> یا <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">EM</span></p>
+
+        <h3>62. EM در GMM</h3>
+        <div class="inner-box"><div class="inner-title">E-Step</div><p>Probability membership را محاسبه می‌کنیم: <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">γᵢₖ = P(zᵢ = k | xᵢ)</span></p></div>
+        <div class="inner-box"><div class="inner-title">M-Step</div><p>پارامترهای Gaussianها را با توجه به این membershipها update می‌کنیم.</p></div>
+        <div class="chart">E-Step
+        │
+        ▼
+        M-Step
+        │
+        ▼
+        E-Step
+        │
+        ▼
+        M-Step</div>
+        <p>تا <strong>convergence</strong>.</p>
+
+        <h3>63. GMM و Local Optimum</h3>
+        <div class="inner-box" style="border-right-color:#f0883e;"><div class="inner-title">⚠️ EM نیز معمولاً تضمین نمی‌کند که به global optimum برسد.</div><p>بنابراین initialization مهم است. ممکن است چند initialization را امتحان کنیم.</p></div>
+
+        <h3>64. انتخاب K در GMM</h3>
+        <p>برای GMM فقط Elbow کافی نیست. معمولاً <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">AIC = 2k - 2 log L</span> و <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">BIC = k log n - 2 log L</span> را بررسی می‌کنیم. BIC معمولاً penalty بیشتری برای complexity دارد.</p>
+
+        <h3>65. GMM و Anomaly Detection</h3>
+        <p>GMM می‌تواند <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">p(x)</span> را تخمین بزند. اگر <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">p(x) ≪</span> باشد، point می‌تواند anomaly باشد. یا از <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">-log p(x)</span> به عنوان anomaly score استفاده کنیم.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;" />
+
+        <h2>66. Density Estimation</h2>
+        <p>حالا مفهوم مهم: <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">Density Estimation</span></p>
+        <div class="inner-box">هدف: تخمین distribution داده</div>
+        <p>یعنی به جای فقط cluster assignment، می‌خواهیم <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">p(x)</span> را تخمین بزنیم.</p>
+
+        <h3>67. چرا Density مهم است؟</h3>
+        <p>اگر distribution را بدانیم، می‌توانیم: احتمال observation, anomaly score, sampling, uncertainty, generative modeling را بررسی کنیم.</p>
+
+        <h3>68. Parametric Density Estimation</h3>
+        <p>مثلاً فرض کنیم <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">X ∼ N(μ, σ²)</span> و پارامترها را تخمین بزنیم: <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">μ, σ</span>. این یک مدل Parametric است.</p>
+
+        <h3>69. GMM یک Density Estimator است</h3>
+        <p>چون <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">p(x) = ∑ πₖ N(x|μₖ, Σₖ)</span> را مدل می‌کند. پس GMM هم clustering است و هم density estimation.</p>
+
+        <h3>70. Non-Parametric Density Estimation</h3>
+        <p>مثلاً <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">Kernel Density Estimation</span> یا <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">KDE</span></p>
+        <div class="formula">$$\hat{f}(x) = \frac{1}{n h} \sum_{i=1}^n K\left(\frac{x - x_i}{h}\right)$$</div>
+
+        <h3>71. Bandwidth در KDE</h3>
+        <p>یکی از مهم‌ترین hyperparameterها: <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">h</span></p>
+        <ul>
+            <li>اگر <span style="font-family:monospace; background:#161b22; padding:1px 8px; border-radius:4px; border:1px solid #30363d;">h</span> کوچک باشد: density خیلی noisy و spiky می‌شود.</li>
+            <li>اگر بزرگ باشد: <span style="font-family:monospace; background:#161b22; padding:1px 8px; border-radius:4px; border:1px solid #30363d;">over-smoothing</span> رخ می‌دهد.</li>
+        </ul>
+
+        <h3>72. Density Estimation و Curse of Dimensionality</h3>
+        <div class="inner-box" style="border-right-color:#f0883e;"><div class="inner-title">⚠️ KDE در dimensions بالا شدیداً مشکل پیدا می‌کند.</div><p>به همین دلیل: <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">Density estimation gets hard in high dimensions</span></p></div>
+
+        <hr style="border:1px solid #444; margin:30px 0;" />
+
+        <h2>73. Anomaly Detection</h2>
+        <div class="inner-box">هدف: observationهای unusual را پیدا کنیم.</div>
+        <div class="chart">Normal transactions
+        ████████████████████████
+
+        X
+        ↑
+        anomaly</div>
+
+        <h3>74. Anomaly vs Outlier</h3>
+        <div class="inner-box" style="border-right-color:#58a6ff;"><div class="inner-title">Outlier</div><p>مشاهده‌ای که نسبت به بقیه <strong>unusual</strong> است.</p></div>
+        <div class="inner-box" style="border-right-color:#f0883e;"><div class="inner-title">Anomaly</div><p>مشاهده‌ای که از perspective مسئله: <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">suspicious / abnormal</span> است.</p></div>
+        <div class="inner-box" style="border-right-color:#f0883e;"><div class="inner-title">⚠️ نکته</div><p>ممکن است یک point statistically rare باشد ولی business anomaly نباشد.</p></div>
+
+        <h3>75. سه نوع Anomaly</h3>
+        <div class="inner-box" style="border-right-color:#58a6ff;"><div class="inner-title">Point Anomaly</div><p>یک observation به تنهایی abnormal است. مثال: <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">transaction = $1,000,000</span></p></div>
+        <div class="inner-box" style="border-right-color:#f0883e;"><div class="inner-title">Contextual Anomaly</div><p>در یک context abnormal است. مثال: <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">$500 transaction</span> ممکن است برای یک مشتری عادی باشد، ولی ساعت 4 صبح در یک الگوی خاص غیرعادی شود.</p></div>
+        <div class="inner-box" style="border-right-color:#d2a8ff;"><div class="inner-title">Collective Anomaly</div><p>هر point به تنهایی عادی است ولی sequence/group غیرعادی است. مثال: <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">10,000 requests در 10 ثانیه</span></p></div>
+
+        <hr style="border:1px solid #444; margin:30px 0;" />
+
+        <h2>76. Isolation Forest</h2>
+        <p>یکی از مهم‌ترین anomaly detection algorithms. ایده بسیار جالب:</p>
+        <div class="inner-box">Anomalies راحت‌تر از normal points <strong>isolate</strong> می‌شوند.</div>
+
+        <h3>77. Isolation Tree</h3>
+        <p>درخت‌هایی با splitهای تصادفی ساخته می‌شود.</p>
+        <div class="chart">          X < 50?
+        /      \
+        Yes       No
+        |
+        X < 70?</div>
+        <p>اگر یک point خیلی unusual باشد: با چند split به تنهایی جدا می‌شود.</p>
+
+        <h3>78. Path Length</h3>
+        <ul>
+            <li>Anomaly: <span style="font-family:monospace; background:#161b22; padding:1px 8px; border-radius:4px; border:1px solid #30363d;">shorter path</span></li>
+            <li>Normal: <span style="font-family:monospace; background:#161b22; padding:1px 8px; border-radius:4px; border:1px solid #30363d;">longer path</span></li>
+        </ul>
+
+        <h3>79. چرا anomaly راحت‌تر isolate می‌شود؟</h3>
+        <div class="chart">● ● ● ● ● ● ● ●
+
+        X</div>
+        <p>point X فضای خالی زیادی اطرافش دارد. یک random split احتمالاً سریع آن را جدا می‌کند.</p>
+
+        <h3>80. Isolation Forest</h3>
+        <p>به جای یک tree:</p>
+        <div class="chart">Tree 1
+        Tree 2
+        Tree 3
+        ...
+        Tree N</div>
+        <p>داریم. بعد path lengthها aggregate می‌شوند. این همان <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">Forest</span> است.</p>
+
+        <h3>81. Isolation Forest مزیت مهم</h3>
+        <ul>
+            <li>نیاز به distance matrix ندارد</li>
+            <li>نسبتاً scalable است</li>
+            <li>در high-dimensional settings کاربردی‌تر است</li>
+            <li>distribution خاصی فرض نمی‌کند</li>
+        </ul>
+
+        <h3>82. محدودیت Isolation Forest</h3>
+        <div class="inner-box" style="border-right-color:#f0883e;"><div class="inner-title">⚠️ Random splitting همیشه بهترین representation برای anomaly نیست.</div><p>اگر anomaly فقط <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">contextual</span> باشد و feature context را مدل نکرده باشی، ممکن است detection ضعیف شود.</p></div>
+
+        <h3>83. Contamination</h3>
+        <p>در Isolation Forest معمولاً یک مفهوم مهم داریم: <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">contamination</span> یعنی تقریباً انتظار داریم چه نسبتی از داده anomaly باشد. مثال: <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">contamination = 0.01</span> یعنی حدود <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">1%</span></p>
+
+        <h4>84. آیا contamination واقعاً ground truth است؟</h4>
+        <div class="inner-box" style="border-right-color:#f0883e;"><div class="inner-title">نه.</div><p>اگر واقعاً anomaly rate را نمی‌دانی، انتخاب آن یک hyperparameter/domain assumption است. در production باید threshold را با <strong>business constraints</strong> و <strong>validation</strong> تعیین کنی.</p></div>
+
+        <hr style="border:1px solid #444; margin:30px 0;" />
+
+        <h2>85. One-Class SVM</h2>
+        <p>One-Class SVM با SVM معمولی متفاوت است. SVM classification: <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">Class A vs Class B</span></p>
+        <p>اما One-Class SVM:</p>
+        <div class="chart">Normal data
+        │
+        ▼
+        learn boundary
+        │
+        ▼
+        anything outside → anomaly</div>
+
+        <h3>86. ایده One-Class SVM</h3>
+        <p>می‌خواهیم یک region پیدا کنیم که بیشتر داده‌های normal را شامل شود. نقاط خارج از این region: <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">outlier / anomaly</span></p>
+
+        <h3>87. Kernel در One-Class SVM</h3>
+        <p>One-Class SVM می‌تواند از kernel استفاده کند. مثلاً RBF:</p>
+        <div class="formula">$$K(x, x') = e^{-\gamma \|x - x'\|^2}$$</div>
+        <p>بنابراین می‌تواند boundary <strong>غیرخطی</strong> ایجاد کند.</p>
+
+        <h3>88. پارامترهای مهم One-Class SVM</h3>
+        <h4>nu (ν)</h4>
+        <p>تقریباً کنترل می‌کند: upper bound روی fraction of training errors و lower bound روی fraction of support vectors. در عمل به عنوان کنترل حساسیت به outlierها هم دیده می‌شود.</p>
+        <h4>gamma (γ)</h4>
+        <p>در RBF: <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">γ</span> کنترل می‌کند kernel چقدر local باشد. <span style="font-family:monospace; background:#161b22; padding:1px 8px; border-radius:4px; border:1px solid #30363d;">gamma بالا</span>: boundary پیچیده‌تر و localتر. <span style="font-family:monospace; background:#161b22; padding:1px 8px; border-radius:4px; border:1px solid #30363d;">gamma پایین</span>: boundary smoothتر.</p>
+
+        <h3>89. One-Class SVM و Scaling</h3>
+        <div class="inner-box" style="border-right-color:#f0883e;"><div class="inner-title">⚠️ خیلی مهم</div><p>One-Class SVM به scale بسیار حساس است.</p></div>
+        <div class="chart">StandardScaler
+        │
+        ▼
+        One-Class SVM</div>
+
+        <h3>90. One-Class SVM مشکل scalability دارد</h3>
+        <p>One-Class SVM با kernel برای datasetهای بسیار بزرگ می‌تواند expensive باشد. بنابراین مثلاً <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">10 million samples</span> ممکن است Isolation Forest گزینه عملی‌تری باشد.</p>
+
+        <h3>91. Isolation Forest vs One-Class SVM</h3>
+        <div style="overflow-x:auto;">
+            <table>
+                <thead><tr><th></th><th>Isolation Forest</th><th>One-Class SVM</th></tr></thead>
+                <tbody>
+                    <tr><td>Scaling</td><td>معمولاً بهتر</td><td>ضعیف‌تر</td></tr>
+                    <tr><td>Kernel</td><td>❌</td><td>✅</td></tr>
+                    <tr><td>Nonlinear boundary</td><td>implicit</td><td>explicit via kernel</td></tr>
+                    <tr><td>Large dataset</td><td>بهتر</td><td>معمولاً سخت‌تر</td></tr>
+                    <tr><td>Distribution assumption</td><td>کم</td><td>کمتر</td></tr>
+                    <tr><td>Hyperparameters</td><td>نسبتاً ساده</td><td>حساس‌تر</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <hr style="border:1px solid #444; margin:30px 0;" />
+
+        <h2>92. GMM vs Isolation Forest</h2>
+        <div class="box" style="display:flex; flex-wrap:wrap; gap:16px; justify-content:space-around;">
+            <div style="flex:1; min-width:180px; background:#161b22; border-radius:8px; padding:14px; border:1px solid #30363d; text-align:center;">
+                <div style="font-weight:700; color:#d2a8ff;">GMM</div>
+                <div>من distribution داده را مدل می‌کنم.</div>
+                <div style="margin-top:4px;">بعد: <span style="direction:ltr; background:#0d1117; padding:2px 10px; border-radius:6px; border:1px solid #30363d; margin-top:2px; display:inline-block;">low p(x) ⇒ anomaly</span></div>
+            </div>
+            <div style="flex:1; min-width:180px; background:#161b22; border-radius:8px; padding:14px; border:1px solid #30363d; text-align:center;">
+                <div style="font-weight:700; color:#58a6ff;">Isolation Forest</div>
+                <div>pointهای unusual سریع‌تر isolate می‌شوند.</div>
+                <div style="margin-top:4px;">پس: <span style="direction:ltr; background:#0d1117; padding:2px 10px; border-radius:6px; border:1px solid #30363d; margin-top:2px; display:inline-block;">short path ⇒ anomaly</span></div>
+            </div>
+        </div>
+
+        <h3>93. DBSCAN vs HDBSCAN برای Anomaly</h3>
+        <ul>
+            <li>DBSCAN: cluster + cluster + noise</li>
+            <li>HDBSCAN: stable clusters + noise + membership strength</li>
+        </ul>
+        <p>اگر densityها متفاوت باشند: <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">HDBSCAN</span> معمولاً گزینه قوی‌تری است.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;" />
+
+        <h2>94. ارزیابی Clustering بدون Label</h2>
+        <p>این یکی از سخت‌ترین بخش‌های unsupervised learning است. چون <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">Y</span> نداری. پس نمی‌توانی مستقیماً accuracy یا F1 حساب کنی.</p>
+
+        <h3>95. Internal Validation</h3>
+        <ul>
+            <li><strong>Silhouette Score</strong> <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">[-1, 1]</span></li>
+            <li><strong>Davies-Bouldin Index</strong> کمتر بهتر: <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">DB ↓</span></li>
+            <li><strong>Calinski-Harabasz</strong> معمولاً: <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">CH ↑</span> بهتر است.</li>
+        </ul>
+
+        <h3>96. اما این Metricها کافی نیستند</h3>
+        <div class="inner-box" style="border-right-color:#f0883e;"><div class="inner-title">⚠️ مثال:</div><p>اگر business goal <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">customer segmentation</span> باشد، بهترین silhouette الزاماً بهترین segmentation نیست. باید بررسی کنی: segment size, stability, interpretability, business actionability, revenue, churn, conversion</p></div>
+
+        <h3>97. Cluster Stability</h3>
+        <div class="inner-box">اگر داده را کمی تغییر دهیم، آیا clusterها باقی می‌مانند؟</div>
+        <p>مثلاً: Bootstrap 1 → A B C, Bootstrap 2 → A B C, Bootstrap 3 → A B C. اگر cluster structure دائماً عوض شود: احتمالاً clustering پایدار نیست.</p>
+
+        <h3>98. External Validation</h3>
+        <p>اگر بعداً label یا ground truth داشته باشی، می‌توانی از: Adjusted Rand Index, Normalized Mutual Information, purity, Fowlkes-Mallows استفاده کنی. اما باید توجه کنی که cluster labelها arbitrary هستند.</p>
+        <div class="inner-box" style="border-right-color:#f0883e;"><div class="inner-title">⚠️</div><p>Run 1: Cluster 0 = customers A, Cluster 1 = customers B. Run 2: Cluster 0 = customers B, Cluster 1 = customers A. این دو از نظر clustering می‌توانند کاملاً یکسان باشند.</p></div>
+
+        <h3>99. Label Switching</h3>
+        <div class="inner-box" style="border-right-color:#f0883e;"><div class="inner-title">⚠️ این مسئله در clustering و GMM بسیار مهم است.</div><p>شماره cluster <strong>معنی ذاتی</strong> ندارد. <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">Cluster 1</span> ذاتاً معنای خاصی ندارد. ممکن است در run دیگر همان گروه <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">Cluster 3</span> باشد.</p></div>
+
+        <h3>100. Scaling در Unsupervised Learning</h3>
+        <p>تقریباً تمام الگوریتم‌های distance-based نسبت به scale حساس‌اند: K-Means, DBSCAN, HDBSCAN, Hierarchical, KNN-like methods, One-Class SVM</p>
+        <div class="chart">Imputation
+        │
+        ▼
+        Scaling
+        │
+        ▼
+        Algorithm</div>
+
+        <hr style="border:1px solid #444; margin:30px 0;" />
+
+        <h3>101. اما Tree-based Anomaly Methods</h3>
+        <p>Isolation Forest به اندازه روش‌های distance-based حساس نیست.</p>
+        <div class="inner-box">این یک نکته مهم عملی است.</div>
+
+        <h3>102. Categorical Data</h3>
+        <p>K-Means با categorical feature خام مناسب نیست. مثال: <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">country = Iran</span> را نمی‌توان به شکل naive: Iran = 1, Turkey = 2, Germany = 3 داد و Euclidean distance گرفت. چون <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">Germany - Turkey</span> معنی عددی ندارد. باید representation و distance مناسب طراحی شود.</p>
+
+        <h3>103. High-Dimensional Clustering</h3>
+        <p>در high-dimensional data: <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">d ≫ 1</span> distanceها ممکن است مشکل‌دار شوند.</p>
+        <div class="chart">Feature Selection
+        │
+        ▼
+        Dimensionality Reduction
+        │
+        ▼
+        Clustering</div>
+        <p>مثلاً: 1000 features → PCA → 50 → HDBSCAN</p>
+        <div class="inner-box" style="border-right-color:#f0883e;"><div class="inner-title">⚠️ اما:</div><p>این pipeline باید با objective واقعی ارزیابی شود.</p></div>
+
+        <h3>104. آیا PCA همیشه قبل از Clustering خوب است؟</h3>
+        <div class="inner-box" style="border-right-color:#f0883e;"><div class="inner-title">خیر.</div><p>ممکن است PCA variance بالا را نگه دارد ولی cluster signal را حذف کند. بنابراین: Raw → KMeans, Raw → HDBSCAN, PCA → KMeans, UMAP → HDBSCAN را می‌توان به عنوان candidate pipelines بررسی کرد.</p></div>
+
+        <h3>105. Leakage در Unsupervised Learning</h3>
+        <div class="inner-box" style="border-right-color:#f0883e;"><div class="inner-title">⚠️ فرض کن می‌خواهی clustering را برای production انجام دهی.</div><p>اگر <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">Train + Future data</span> را fit کنی، ممکن است اطلاعات آینده وارد representation شود. در time-dependent problems باید <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">temporal leakage</span> را جدی بگیری.</p></div>
+
+        <h3>106. Clustering و Time Series</h3>
+        <p>K-Means روی raw time series الزاماً انتخاب خوبی نیست. ممکن است نیاز داشته باشی: shape-based distance, DTW, temporal embeddings, feature extraction را بررسی کنی.</p>
+
+        <h3>107. Business Example: Customer Segmentation</h3>
+        <div class="chart">Customer
+        │
+        ├── monthly_spend
+        ├── transaction_frequency
+        ├── avg_transaction
+        ├── tenure
+        ├── product_count
+        └── digital_usage</div>
+        <div class="chart">Cleaning
+        │
+        ▼
+        Scaling
+        │
+        ▼
+        K-Means / GMM / HDBSCAN
+        │
+        ▼
+        Customer Segments
+        │
+        ▼
+        Profile each segment
+        │
+        ▼
+        Business actions</div>
+        <ul>
+            <li><strong>Segment A:</strong> High-value frequent customers</li>
+            <li><strong>Segment B:</strong> Low-frequency customers</li>
+            <li><strong>Segment C:</strong> High-value but declining activity</li>
+        </ul>
+        <div class="inner-box" style="border-right-color:#f0883e;"><div class="inner-title">⚠️ اما این نام‌گذاری را:</div><p><strong>بعد از clustering</strong> و با تحلیل clusterها انجام می‌دهی، نه قبل از آن.</p></div>
+
+        <h3>108. Anomaly Detection در Payment</h3>
+        <p>مثال: transaction_amount, velocity, merchant, country, hour, device, distance_from_usual_location</p>
+        <p>Isolation Forest می‌تواند baseline بسازد. اما Senior ML Engineer باید بداند: <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">anomaly ≠ fraud</span></p>
+        <p>ممکن است anomaly: legitimate unusual purchase, new customer behavior, seasonal behavior باشد. بنابراین anomaly detection می‌تواند <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">candidate generation</span> باشد، نه الزاماً final fraud classifier.</p>
+
+        <h3>109. Anomaly Detection و Threshold</h3>
+        <p>مدل anomaly score می‌دهد: 0.62, 0.12, 0.81, 0.95. اما business system نیاز دارد: <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">score > threshold</span></p>
+        <p>پس threshold باید بر اساس: false positives, false negatives, investigation capacity, business cost انتخاب شود.</p>
+
+        <h3>110. Cost-sensitive Anomaly Detection</h3>
+        <p>فرض کن: <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">Cost(FP) = $2</span> ولی <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">Cost(FN) = $1000</span></p>
+        <p>در این حالت threshold باید با توجه به asymmetry هزینه انتخاب شود. این همان اتصال مهم: <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; display:inline-block;">ML Metric → Business Objective</span> است.</p>
+
+        <h3>111. Unsupervised Learning و Drift</h3>
+        <div class="inner-box">2025: Normal behavior<br />2026: New behavior</div>
+        <p>مدل anomaly ممکن است رفتار جدید را anomaly تشخیص دهد. پس باید: retraining, threshold monitoring, drift detection, false positive monitoring داشته باشی.</p>
+
+        <h3>112. K-Means چه زمانی انتخاب خوبی است؟</h3>
+        <ul>
+            <li>K تقریبی را می‌دانی</li>
+            <li>clusters نسبتاً spherical هستند</li>
+            <li>داده numeric است</li>
+            <li>distance معنی‌دار است</li>
+            <li>dataset نسبتاً بزرگ است</li>
+            <li>speed مهم است</li>
+        </ul>
+
+        <h3>113. Hierarchical چه زمانی؟</h3>
+        <ul>
+            <li>hierarchy مهم است</li>
+            <li>dataset خیلی بزرگ نیست</li>
+            <li>می‌خواهی dendrogram ببینی</li>
+            <li>تعداد clusterها از ابتدا مشخص نیست</li>
+        </ul>
+
+        <h3>114. DBSCAN چه زمانی؟</h3>
+        <ul>
+            <li>noise مهم است</li>
+            <li>clusterها arbitrary shape دارند</li>
+            <li>density نسبتاً مشابه است</li>
+            <li>distance meaningful است</li>
+        </ul>
+
+        <h3>115. HDBSCAN چه زمانی؟</h3>
+        <ul>
+            <li>density متفاوت است</li>
+            <li>noise وجود دارد</li>
+            <li>cluster count را نمی‌خواهی مشخص کنی</li>
+            <li>hierarchical density structure مفید است</li>
+        </ul>
+
+        <h3>116. GMM چه زمانی؟</h3>
+        <ul>
+            <li>probabilistic membership می‌خواهی</li>
+            <li>clusterها Gaussian-like هستند</li>
+            <li>uncertainty مهم است</li>
+            <li>elliptical clusters داری</li>
+            <li>density estimation هم مهم است</li>
+        </ul>
+
+        <h3>117. Isolation Forest چه زمانی؟</h3>
+        <ul>
+            <li>anomaly detection می‌خواهی</li>
+            <li>dataset بزرگ است</li>
+            <li>distribution مشخصی نمی‌خواهی فرض کنی</li>
+            <li>scalability مهم است</li>
+        </ul>
+
+        <h3>118. One-Class SVM چه زمانی؟</h3>
+        <ul>
+            <li>normal data داری</li>
+            <li>dataset نسبتاً manageable است</li>
+            <li>nonlinear boundary لازم داری</li>
+            <li>kernel-based approach ارزش دارد</li>
+        </ul>
+
+        <h3>119. یک Decision Tree ذهنی برای انتخاب الگوریتم</h3>
+        <div class="chart">                 Unsupervised
+                    │
+           ┌────────┴────────┐
+           │                 │
+        Clustering          Anomaly
+           │                    │
+ ┌─────────┼─────────┐      ┌───┴────┐
+ │         │         │      │        │
+K-Means   DBSCAN   GMM  Isolation  OCSVM
+ │         │         │     Forest
+ │         │         │
+spherical density probabilistic</div>
+        <div class="inner-box">اگر <strong>Variable Density</strong> داری: <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; margin-top:4px; display:inline-block;">HDBSCAN</span></div>
+        <div class="inner-box">اگر <strong>Probabilistic Membership</strong> می‌خواهی: <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; margin-top:4px; display:inline-block;">GMM</span></div>
+        <div class="inner-box">اگر <strong>Large-scale anomaly detection</strong> می‌خواهی: <span style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; margin-top:4px; display:inline-block;">Isolation Forest</span></div>
+
+        <h3>120. مهم‌ترین تفاوت‌ها برای مصاحبه Senior</h3>
+        <ul>
+            <li><strong>K-Means</strong> → Minimize Within Cluster Squared Distance</li>
+            <li><strong>Hierarchical</strong> → Build Cluster Hierarchy</li>
+            <li><strong>DBSCAN</strong> → Clusters = Dense Regions</li>
+            <li><strong>HDBSCAN</strong> → Hierarchical Density + Variable Density</li>
+            <li><strong>GMM</strong> → Model p(x) as Gaussian Mixture</li>
+            <li><strong>Isolation Forest</strong> → Anomalies are easier to isolate</li>
+            <li><strong>One-Class SVM</strong> → Learn a boundary around normal data</li>
+        </ul>
+
+        <h3>121. مهم‌ترین نکته Senior-Level</h3>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">در Junior معمولاً می‌گویند:</div>
+            <p style="font-size:1.1rem;">«K-Means برای clustering است.»</p>
+            <p>اما Senior باید بگوید:</p>
+            <div style="background:#0d1117; padding:12px; border-radius:8px; margin:8px 0; border:1px solid #30363d;">
+                «قبل از انتخاب K-Means باید مشخص کنم مفهوم similarity چیست، آیا featureها scale مناسب دارند، آیا cluster structure واقعاً centroid-based است، آیا outlier داریم، آیا تعداد clusterها مشخص است، آیا data high-dimensional است و آیا business objective با internal clustering metrics هم‌راستا است.»
+            </div>
+            <p style="margin-top:8px;">یعنی الگوریتم را از روی structure مسئله انتخاب می‌کنی، نه از روی اسم dataset.</p>
+        </div>
+
+        <h3>122. خلاصه نهایی</h3>
+        <div style="overflow-x:auto;">
+            <table>
+                <thead><tr><th>مسئله</th><th>انتخاب مناسب</th></tr></thead>
+                <tbody>
+                    <tr><td>Spherical clusters</td><td>K-Means</td></tr>
+                    <tr><td>Robust representative</td><td>K-Medoids</td></tr>
+                    <tr><td>Hierarchy</td><td>Hierarchical</td></tr>
+                    <tr><td>Arbitrary shapes + noise</td><td>DBSCAN</td></tr>
+                    <tr><td>Variable density + noise</td><td>HDBSCAN</td></tr>
+                    <tr><td>Probabilistic clusters</td><td>GMM</td></tr>
+                    <tr><td>Density estimation</td><td>GMM / KDE</td></tr>
+                    <tr><td>Large-scale anomaly</td><td>Isolation Forest</td></tr>
+                    <tr><td>Nonlinear normal boundary</td><td>One-Class SVM</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div style="margin-top:30px; background:#161b22; border-radius:12px; border:1px solid #30363d; padding:20px;">
+            <p style="font-size:1.2rem; font-weight:700; color:#f0f6fc; text-align:center;">🔑 سه سؤال کلیدی در هر مسئله Unsupervised</p>
+            <div class="inner-box" style="border-right-color:#58a6ff;"><div style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; font-size:1.1rem; display:inline-block;">What is similarity?</div></div>
+            <div class="inner-box" style="border-right-color:#3fb950;"><div style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; font-size:1.1rem; display:inline-block;">What structure am I assuming?</div></div>
+            <div class="inner-box" style="border-right-color:#f0883e;"><div style="direction:ltr; background:#161b22; padding:2px 12px; border-radius:6px; border:1px solid #30363d; font-size:1.1rem; display:inline-block;">How will I validate the result?</div></div>
+            <div class="inner-box" style="border-right-color:#d2a8ff; background:#0d1117; margin-top:12px;">
+                <p style="font-size:1rem; text-align:center; color:#c9d1d9;">اگر این سه سؤال را درست جواب بدهی، از سطح «بلد بودن الگوریتم‌ها» وارد سطح <strong>Senior ML</strong> می‌شوی.</p>
+            </div>
+        </div>
+
+        <div style="margin-top:40px; padding:20px; background:#0d1f3c; border-radius:12px; border:1px solid #1f4a7a; text-align:center;">
+            <p style="font-size:1.1rem; color:#58a6ff;">🚀 در Junior معمولاً می‌گویند: «K-Means برای clustering است.»</p>
+            <p style="font-size:1.1rem; color:#e6edf3;">اما Senior باید بگوید:</p>
+            <p style="font-size:1rem; color:#c9d1d9; max-width:700px; margin:8px auto;">«قبل از انتخاب K-Means باید مشخص کنم مفهوم similarity چیست، آیا featureها scale مناسب دارند، آیا cluster structure واقعاً centroid-based است، آیا outlier داریم، آیا تعداد clusterها مشخص است، آیا data high-dimensional است و آیا business objective با internal clustering metrics هم‌راستا است.»</p>
+            <p style="font-size:0.95rem; color:#8b949e; margin-top:8px;">یعنی الگوریتم را از روی structure مسئله انتخاب می‌کنی، نه از روی اسم dataset.</p>
+        </div>
+
+        <hr style="border:1px solid #444; margin:50px 0;" />
+        <p style="text-align:center; color:#8b949e; font-size:0.85rem; padding:16px 0;">Unsupervised Learning · Senior ML · تمام نکات ریز 🧠</p>
+
+    </div>
+</body>
+</html>

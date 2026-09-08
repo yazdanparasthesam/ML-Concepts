@@ -1,0 +1,1815 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feature Engineering · Senior ML Level</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}]});"></script>
+    <style>
+        body {
+            background-color: #0d1117;
+            color: #e6edf3;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.8;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h1, h2, h3 {
+            color: #e6edf3;
+            text-align: right;
+            border-bottom: 1px solid #444;
+            padding-bottom: 15px;
+            margin-top: 50px;
+        }
+        p, li {
+            text-align: right;
+        }
+
+        .box {
+            background-color: #21262d;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            color: #e6edf3;
+        }
+        .inner-box {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 10px;
+            border-right: 4px solid #58a6ff;
+        }
+        .inner-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .formula {
+            direction: ltr;
+            background-color: #000;
+            border: 1px solid #fff;
+            border-radius: 0;
+            padding: 20px;
+            margin: 20px auto;
+            width: fit-content;
+            max-width: 100%;
+            overflow-x: auto;
+            text-align: center;
+            font-size: 1.2em;
+            font-family: "Times New Roman", Times, serif;
+            color: #fff;
+        }
+
+        .chart {
+            direction: ltr;
+            text-align: left;
+            font-family: monospace;
+            background-color: #21262d;
+            border-radius: 8px;
+            padding: 15px;
+            overflow-x: auto;
+            white-space: pre;
+            border: 1px solid #444;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            direction: rtl;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #444;
+            padding: 12px;
+            text-align: right;
+        }
+        th {
+            background-color: #21262d;
+        }
+
+        /* --- Interactive Standardization Styles --- */
+        .viz-box {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            direction: ltr;
+            color: #e6edf3;
+        }
+        .viz-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+        }
+        .viz-graph {
+            flex: 1;
+            min-width: 300px;
+            max-width: 450px;
+        }
+        .viz-controls {
+            flex: 1;
+            min-width: 300px;
+            max-width: 350px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            background-color: #21262d;
+            border-radius: 12px;
+            padding: 20px;
+        }
+        .viz-equations {
+            background-color: #161b22;
+            border-radius: 8px;
+            padding: 15px;
+            border: 1px solid #30363d;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .equation-box {
+            font-family: "Times New Roman", Times, serif;
+            font-size: 1.4em;
+            color: #fff;
+        }
+        .slider-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background-color: #161b22;
+            border-radius: 8px;
+            padding: 10px;
+            border: 1px solid #30363d;
+            direction: rtl; /* To put labels on the right */
+        }
+        .slider-row label {
+            width: 20px;
+            font-weight: bold;
+            color: #58a6ff;
+            font-size: 1.2em;
+        }
+        .slider-row input[type="range"] {
+            flex: 1;
+            accent-color: #58a6ff;
+            height: 8px;
+            background-color: #30363d;
+            border-radius: 4px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        .slider-row input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+            border: 2px solid #58a6ff;
+        }
+        .slider-row input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+            border: 2px solid #58a6ff;
+        }
+        .slider-row .value {
+            width: 50px;
+            text-align: center;
+            font-family: monospace;
+            font-size: 1.1em;
+            color: #c9d1d9;
+        }
+
+        /* Responsive */
+        @media (max-width: 700px) {
+            .viz-container {
+                flex-direction: column;
+            }
+            .viz-controls {
+                max-width: 100%;
+            }
+        }
+        .viz-footer {
+            text-align: left;
+            margin-top: 10px;
+            color: #8b949e;
+            font-size: 0.9em;
+        }
+        /* --- End Interactive Standardization Styles --- */
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 12. Feature Engineering</h1>
+
+        <p style="font-size:1.1rem;">حتماً. این بخش Feature Engineering یکی از مهم‌ترین تفاوت‌های بین یک ML Engineer معمولی و Senior ML Engineer است. در بسیاری از پروژه‌های tabular، کیفیت feature engineering حتی از انتخاب الگوریتم مهم‌تر است.</p>
+
+        <p style="font-size:1.1rem;">نکته‌ای که باید از ابتدا در ذهن داشته باشی:</p>
+
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <p style="font-size:1.1rem;">Feature Engineering یعنی تبدیل داده خام به representationای که یادگیری الگو برای مدل آسان‌تر، پایدارتر و قابل‌تعمیم‌تر شود.</p>
+        </div>
+
+        <p style="font-size:1.1rem;">و نکته Senior:</p>
+
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <p style="font-size:1rem;">Feature Engineering فقط «ساختن چند ستون جدید» نیست؛ شامل انتخاب، تبدیل، استخراج، کنترل leakage، مدیریت missing/outlier، encoding، scaling و در نهایت حفظ سازگاری دقیق train و inference است.</p>
+        </div>
+
+        <hr style="border:1px solid #444; margin:30px 0;" />
+
+        <h2>1. Feature چیست؟</h2>
+        <p>Feature همان متغیری است که مدل برای پیش‌بینی استفاده می‌کند.</p>
+        <p>فرض کن می‌خواهیم احتمال Fraud را پیش‌بینی کنیم:</p>
+        <div class="box" style="direction:ltr; text-align:left; overflow-x:auto;">
+            <table style="direction:ltr;">
+                <thead>
+                    <tr><th>amount</th><th>age</th><th>country</th><th>transactions_1h</th><th>device</th><th>fraud</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>120</td><td>32</td><td>TR</td><td>2</td><td>mobile</td><td>0</td></tr>
+                    <tr><td>5000</td><td>45</td><td>IR</td><td>18</td><td>web</td><td>1</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <p>اینجا:</p>
+        <div class="chart">amount
+age
+country
+transactions_1h
+device</div>
+        <p>feature هستند.</p>
+        <p>و:</p>
+        <div class="chart">fraud</div>
+        <p>target است.</p>
+
+        <h2>2. Feature Engineering دقیقاً چه کاری می‌کند؟</h2>
+        <p>فرض کن فقط این feature را داریم:</p>
+        <div class="chart">amount = 1000</div>
+        <p>مدل ممکن است اطلاعات محدودی از آن بگیرد.</p>
+        <p>اما می‌توانیم بسازیم:</p>
+        <div class="chart">log_amount
+amount / customer_avg_amount
+amount_zscore
+amount_last_24h
+transaction_velocity</div>
+        <p>حالا representation بسیار غنی‌تر شده است.</p>
+
+        <h2>3. Feature Engineering در یک Pipeline</h2>
+        <p>یک pipeline حرفه‌ای می‌تواند چیزی شبیه این باشد:</p>
+        <div class="chart">Raw Data
+   │
+   ├── Data Cleaning
+   │
+   ├── Missing Value Handling
+   │
+   ├── Outlier Handling
+   │
+   ├── Feature Construction
+   │
+   ├── Feature Transformation
+   │
+   ├── Encoding
+   │
+   ├── Feature Selection
+   │
+   ├── Scaling
+   │
+   ▼
+Model-ready Features</div>
+        <p>اما ترتیب دقیق همیشه ثابت نیست و به نوع feature و مدل بستگی دارد.</p>
+
+        <h2>4. چهار مفهوم مهم را از هم جدا کن</h2>
+        <p>این چهار مورد خیلی با هم اشتباه می‌شوند:</p>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">Feature Selection</div>
+            <p>از featureهای موجود، تعدادی را انتخاب می‌کنیم.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#3fb950;">
+            <div class="inner-title">Feature Extraction</div>
+            <p>اطلاعات جدید را از representation موجود استخراج می‌کنیم.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">Feature Construction</div>
+            <p>feature جدید بر اساس دانش مسئله می‌سازیم.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#d2a8ff;">
+            <div class="inner-title">Feature Transformation</div>
+            <p>شکل feature را تغییر می‌دهیم.</p>
+        </div>
+
+        <h2>5. Feature Selection</h2>
+        <p>یعنی:</p>
+        <p>انتخاب subset مناسبی از featureهای موجود.</p>
+        <p>مثلاً:</p>
+        <div class="chart">1000 features
+     ↓
+Feature Selection
+     ↓
+80 features</div>
+        <p>بدون اینکه الزاماً feature جدیدی بسازیم.</p>
+
+        <h2>6. چرا Feature Selection مهم است؟</h2>
+        <p>دلایل مختلف:</p>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">1. کاهش overfitting</div>
+            <p>Featureهای بی‌ربط می‌توانند noise اضافه کنند.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#3fb950;">
+            <div class="inner-title">2. کاهش computational cost</div>
+            <div class="chart">1000 features → 50 features</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">3. افزایش interpretability</div>
+            <p>مدل راحت‌تر توضیح داده می‌شود.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">4. کاهش inference latency</div>
+            <p>در production مهم است.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">5. کاهش مشکلات multicollinearity</div>
+            <p>خصوصاً در مدل‌های linear.</p>
+        </div>
+
+        <h2>7. روش‌های Feature Selection</h2>
+        <p>سه خانواده اصلی:</p>
+        <div class="chart">Filter Methods
+Wrapper Methods
+Embedded Methods</div>
+
+        <h2>8. Filter Methods</h2>
+        <p>قبل از training مدل، featureها را با یک معیار آماری بررسی می‌کنیم.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Correlation
+Mutual Information
+Chi-square
+ANOVA
+Variance Threshold</div>
+        <p>مثلاً:</p>
+        <div class="chart">Feature A → correlation = 0.82
+Feature B → correlation = 0.02</div>
+        <p>ممکن است A را نگه داریم.</p>
+
+        <h2>9. مشکل Correlation</h2>
+        <p>Correlation فقط رابطه خطی را خوب capture می‌کند.</p>
+        <p>ممکن است:</p>
+        <div class="formula">$$corr(X,Y) \approx 0$$</div>
+        <p>ولی رابطه بسیار قوی nonlinear باشد.</p>
+        <p>مثلاً:</p>
+        <div class="formula">$$Y = X^2$$</div>
+        <p>در برخی توزیع‌ها correlation می‌تواند نزدیک صفر باشد، در حالی که X اطلاعات زیادی درباره Y دارد.</p>
+        <p>پس:</p>
+        <div class="formula">$$Low\ correlation \neq useless\ feature$$</div>
+
+        <h2>10. Mutual Information</h2>
+        <p>Mutual Information می‌تواند dependencyهای غیرخطی را نیز capture کند.</p>
+        <p>به صورت مفهومی:</p>
+        <div class="formula">$$MI(X, Y)$$</div>
+        <p>اندازه می‌گیرد که دانستن X چقدر uncertainty درباره Y را کاهش می‌دهد.</p>
+        <p>مزیت:</p>
+        <p>محدود به رابطه خطی نیست.</p>
+
+        <h2>11. Wrapper Methods</h2>
+        <p>در این روش feature subset را با خود مدل ارزیابی می‌کنیم.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Features
+   ↓
+Train Model
+   ↓
+Evaluate
+   ↓
+Remove/Add Features
+   ↓
+Train Again</div>
+        <p>مثال:</p>
+        <div class="chart">Recursive Feature Elimination — RFE</div>
+
+        <h2>12. مشکل Wrapper Methods</h2>
+        <p>معمولاً:</p>
+        <div class="chart">computationally expensive</div>
+        <p>هستند.</p>
+        <p>اگر:</p>
+        <div class="chart">10,000 features</div>
+        <p>داشته باشی، اجرای مدل برای subsetهای مختلف بسیار گران می‌شود.</p>
+
+        <h2>13. Embedded Methods</h2>
+        <p>Feature selection هنگام training مدل انجام می‌شود.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Lasso</div>
+        <p>به دلیل L1 regularization می‌تواند بعضی ضرایب را دقیقاً صفر کند.</p>
+        <div class="chart">w1 = 0.82
+w2 = 0
+w3 = -0.41
+w4 = 0</div>
+        <p>در نتیجه featureهای مربوط به ضرایب صفر effectively حذف می‌شوند.</p>
+        <p>همچنین:</p>
+        <div class="chart">Tree Feature Importance
+XGBoost feature importance
+LightGBM feature importance</div>
+        <p>از روش‌های embedded هستند.</p>
+
+        <h2>14. نکته Senior: Feature Selection Leakage</h2>
+        <p>فرض کن کل dataset را:</p>
+        <div class="chart">Train + Validation + Test</div>
+        <p>برمی‌داری و correlation featureها را محاسبه می‌کنی.</p>
+        <p>بعد feature selection انجام می‌دهی.</p>
+        <p>این می‌تواند:</p>
+        <div class="chart">information leakage</div>
+        <p>ایجاد کند.</p>
+        <p>روش درست:</p>
+        <div class="chart">Train
+ ↓
+Fit feature selector
+ ↓
+Transform Train
+ ↓
+Transform Validation/Test</div>
+        <p>Selector باید فقط روی training data fit شود.</p>
+
+        <h2>15. Feature Extraction</h2>
+        <p>در Feature Extraction، representation جدیدی از داده استخراج می‌کنیم.</p>
+        <p>مثلاً:</p>
+        <div class="chart">1000-dimensional data
+       ↓
+PCA
+       ↓
+50 dimensions</div>
+        <p>مثال‌های مهم:</p>
+        <div class="chart">PCA
+SVD
+Autoencoder
+Embeddings
+TF-IDF
+CNN representations</div>
+
+        <h2>16. Feature Construction</h2>
+        <p>اینجا خودمان feature جدید می‌سازیم.</p>
+        <p>مثلاً:</p>
+        <div class="chart">income
+debt</div>
+        <p>می‌توانیم بسازیم:</p>
+        <div class="formula">$$DebtRatio = \frac{debt}{income}$$</div>
+        <p>این feature ممکن است از خود income و debt اطلاعات مفیدتری برای مدل ایجاد کند.</p>
+
+        <h2>17. Feature Construction و Domain Knowledge</h2>
+        <p>این بخش یکی از نقاط قوت Senior ML Engineer است.</p>
+        <p>مثلاً در پرداخت:</p>
+        <div class="chart">transaction_amount</div>
+        <p>به تنهایی شاید کافی نباشد.</p>
+        <p>ولی:</p>
+        <div class="chart">transactions_last_5min
+transactions_last_1h
+amount_last_24h
+unique_merchants_24h
+distance_from_previous_transaction</div>
+        <p>می‌توانند بسیار informative باشند.</p>
+        <p>این یعنی:</p>
+        <div class="formula">$$Domain\text{-}driven\ Feature\ Engineering$$</div>
+
+        <h2>18. Interaction Features</h2>
+        <p>گاهی اثر یک feature به feature دیگری وابسته است.</p>
+        <p>مثلاً:</p>
+        <div class="chart">age
+income</div>
+        <p>ممکن است به تنهایی کافی نباشند.</p>
+        <p>اما:</p>
+        <div class="chart">age × income</div>
+        <p>یک interaction ایجاد می‌کند.</p>
+
+        <h2>19. مثال Interaction</h2>
+        <p>فرض کن:</p>
+        <div class="formula">$$y = 3x_1 + 5x_2 + 10x_1x_2$$</div>
+        <p>اگر فقط:</p>
+        <div class="chart">x1
+x2</div>
+        <p>را به یک Linear Model بدهی، بخش:</p>
+        <div class="formula">$$10x_1x_2$$</div>
+        <p>را نمی‌تواند مستقیماً یاد بگیرد.</p>
+        <p>با interaction:</p>
+        <div class="chart">x1
+x2
+x1*x2</div>
+        <p>می‌تواند.</p>
+
+        <h2>20. Interaction در Tree Models</h2>
+        <p>درخت‌ها خودشان می‌توانند بسیاری از interactionها را یاد بگیرند.</p>
+        <p>مثلاً:</p>
+        <div class="chart">if income > X
+    AND age < Y
+        → ...</div>
+        <p>بنابراین ساخت دستی interaction همیشه لازم نیست.</p>
+        <p>برای Linear Models اهمیت بیشتری دارد.</p>
+
+        <h2>21. Polynomial Features</h2>
+        <p>می‌توانیم featureهای polynomial بسازیم.</p>
+        <p>مثلاً:</p>
+        <div class="chart">x</div>
+        <p>تبدیل شود به:</p>
+        <div class="chart">x
+x²
+x³</div>
+        <p>و برای دو feature:</p>
+        <div class="chart">x1
+x2</div>
+        <p>ممکن است داشته باشیم:</p>
+        <div class="chart">x1
+x2
+x1²
+x2²
+x1*x2</div>
+
+        <h2>22. Polynomial Regression</h2>
+        <p>مدل:</p>
+        <div class="formula">$$y = \beta_0 + \beta_1x + \beta_2x^2$$</div>
+        <p>هنوز از نظر پارامترها:</p>
+        <div class="chart">Linear in parameters</div>
+        <p>است.</p>
+        <p>یعنی Polynomial Regression الزاماً یک «مدل غیرخطی نسبت به ضرایب» نیست.</p>
+
+        <h2>23. مشکل Polynomial Features</h2>
+        <p>تعداد featureها می‌تواند بسیار سریع زیاد شود.</p>
+        <p>اگر:</p>
+        <div class="chart">n = number of features
+d = polynomial degree</div>
+        <p>باشد، تعداد ترکیب‌ها می‌تواند به‌شدت رشد کند.</p>
+        <p>در نتیجه:</p>
+        <div class="chart">Dimensionality ↑
+Overfitting risk ↑
+Memory ↑
+Computation ↑</div>
+
+        <h2>24. Binning</h2>
+        <p>Binning یعنی تبدیل continuous variable به intervalهای گسسته.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Age = 27</div>
+        <p>تبدیل شود به:</p>
+        <div class="chart">AgeGroup = 20-30</div>
+        <p>مثال:</p>
+        <div class="chart">0–18
+19–30
+31–45
+46–60
+60+</div>
+
+        <h2>25. چرا Binning؟</h2>
+        <p>می‌تواند:</p>
+        <div class="chart">noise را کاهش دهد
+nonlinear relationships را ساده کند
+interpretability را افزایش دهد
+اثر outlierها را محدود کند</div>
+        <p>اما:</p>
+        <div class="chart">اطلاعات دقیق را از دست می‌دهد.</div>
+
+        <h2>26. Equal-Width Binning</h2>
+        <p>مثلاً:</p>
+        <div class="chart">0–20
+20–40
+40–60
+60–80
+80–100</div>
+        <p>عرض intervalها برابر است.</p>
+
+        <h2>27. Equal-Frequency Binning</h2>
+        <p>هر bin تقریباً تعداد مشابهی sample دارد.</p>
+        <p>مثلاً:</p>
+        <div class="chart">20% samples → Bin 1
+20% samples → Bin 2
+...</div>
+        <p>این روش با:</p>
+        <div class="chart">Quantiles</div>
+        <p>مرتبط است.</p>
+
+        <h2>28. Binning و Tree Models</h2>
+        <p>Decision Tree خودش threshold ایجاد می‌کند.</p>
+        <p>بنابراین:</p>
+        <div class="chart">manual binning</div>
+        <p>برای tree-based models معمولاً ضرورت کمتری دارد.</p>
+        <p>برای مدل‌های linear یا business rules می‌تواند مفیدتر باشد.</p>
+
+        <h2>29. Log Transformation</h2>
+        <p>اگر feature strongly right-skewed باشد:</p>
+        <div class="chart">0
+1
+2
+3
+5
+10
+100
+10000</div>
+        <p>می‌توانیم:</p>
+        <div class="formula">$$x' = \log(x)$$</div>
+        <p>استفاده کنیم.</p>
+        <p>اگر صفر داریم:</p>
+        <div class="formula">$$x' = \log(1 + x)$$</div>
+        <p>که به آن:</p>
+        <div class="chart">log1p</div>
+        <p>می‌گوییم.</p>
+
+        <h2>30. Log Transformation چه کاری می‌کند؟</h2>
+        <p>معمولاً:</p>
+        <div class="chart">Large values → compressed
+Small values → relatively expanded</div>
+        <p>بنابراین skewness کاهش پیدا می‌کند.</p>
+        <p>مثلاً:</p>
+        <div class="chart">1000 → log ≈ 6.9
+100000 → log ≈ 11.5</div>
+        <p>فاصله 99,000 واحدی تبدیل به فاصله بسیار کوچک‌تری می‌شود.</p>
+
+        <h2>31. چه زمانی Log Transformation مفید است؟</h2>
+        <p>برای featureهایی مثل:</p>
+        <div class="chart">income
+transaction amount
+population
+count
+website visits
+wealth</div>
+        <p>که distribution آنها heavy/right-skewed است.</p>
+
+        <h2>32. Log Transformation و Zero/Negative Values</h2>
+        <p>Log معمولی برای:</p>
+        <div class="formula">$$x \leq 0$$</div>
+        <p>تعریف نمی‌شود.</p>
+        <p>پس نباید کورکورانه:</p>
+        <div class="chart">np.log(x)</div>
+        <p>روی feature دارای صفر یا مقدار منفی اجرا کنی.</p>
+        <p>راه‌حل بسته به domain:</p>
+        <div class="chart">log1p(x) برای non-negative data
+Yeo-Johnson برای مقادیر منفی/مثبت
+offset مناسب، فقط با توجیه domain</div>
+
+        <h2>33. Power Transformation</h2>
+        <p>هدف:</p>
+        <div class="chart">Stabilize variance + reduce skewness + make distribution more symmetric</div>
+        <p>است.</p>
+        <p>دو روش معروف:</p>
+        <div class="chart">Box-Cox
+Yeo-Johnson</div>
+
+        <h2>34. Box-Cox</h2>
+        <p>Box-Cox معمولاً برای:</p>
+        <div class="formula">$$x > 0$$</div>
+        <p>است.</p>
+        <p>به شکل کلی:</p>
+        <div class="formula">$$x^{(\lambda)}$$</div>
+        <p>با transformation مناسب بر اساس λ.</p>
+        <p>اگر:</p>
+        <div class="formula">$$\lambda = 1$$</div>
+        <p>تقریباً transformation خطی است.</p>
+        <p>اگر:</p>
+        <div class="formula">$$\lambda = 0$$</div>
+        <p>به log transformation مربوط می‌شود.</p>
+
+        <h2>35. Yeo-Johnson</h2>
+        <p>مزیت مهم:</p>
+        <p>می‌تواند مقادیر zero و negative را نیز handle کند.</p>
+        <p>پس:</p>
+        <div class="chart">-10
+-2
+0
+5
+100</div>
+        <p>هم می‌توانند وارد transformation شوند.</p>
+
+        <h2>36. Quantile Transformation</h2>
+        <p>در این روش feature را بر اساس رتبه/quantile آن تبدیل می‌کنیم.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Raw distribution
+      ↓
+Rank / Quantile
+      ↓
+Target distribution</div>
+        <p>Target distribution می‌تواند:</p>
+        <div class="chart">Uniform</div>
+        <p>یا:</p>
+        <div class="chart">Normal / Gaussian</div>
+        <p>باشد.</p>
+
+        <h2>37. چرا Quantile Transformation؟</h2>
+        <p>می‌تواند:</p>
+        <div class="chart">skewness را کاهش دهد
+outlier impact را کاهش دهد
+distribution را به شکل مطلوب‌تری تبدیل کند</div>
+        <p>اما:</p>
+        <div class="chart">relationship اصلی feature با target ممکن است تغییر کند.</div>
+
+        <h2>38. مشکل Quantile Transformation</h2>
+        <p>اگر روی کل dataset fit شود:</p>
+        <div class="chart">Train + Test</div>
+        <p>اطلاعات distribution test وارد transformation می‌شود.</p>
+        <p>این leakage است.</p>
+        <p>باید:</p>
+        <div class="chart">fit on train
+transform train
+transform validation
+transform test</div>
+        <p>باشد.</p>
+
+        <h2>39. Encoding چیست؟</h2>
+        <p>Encoding یعنی تبدیل categorical data به representation عددی.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Country
+
+Iran
+Turkey
+Azerbaijan</div>
+        <p>را به representation مناسب مدل تبدیل کنیم.</p>
+
+        <h2>40. One-Hot Encoding</h2>
+        <p>مثلاً:</p>
+        <div class="chart">Country
+Iran
+Turkey
+Azerbaijan</div>
+        <p>تبدیل:</p>
+        <div class="chart">Iran	Turkey	Azerbaijan
+1	0	0
+0	1	0
+0	0	1</div>
+        <p>مزیت:</p>
+        <div class="chart">ordering مصنوعی ایجاد نمی‌کند.</div>
+
+        <h2>41. مشکل One-Hot</h2>
+        <p>اگر:</p>
+        <div class="chart">10,000 unique categories</div>
+        <p>داشته باشی:</p>
+        <div class="chart">10,000 columns</div>
+        <p>ممکن است ایجاد شود.</p>
+        <p>در نتیجه:</p>
+        <div class="chart">memory ↑
+dimensionality ↑
+sparsity ↑</div>
+
+        <h2>42. Ordinal Encoding</h2>
+        <p>مثلاً:</p>
+        <div class="chart">Low → 0
+Medium → 1
+High → 2</div>
+        <p>برای featureهایی که واقعاً ترتیب دارند مناسب است.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Low < Medium < High</div>
+        <p>اما برای:</p>
+        <div class="chart">Tehran = 0
+Istanbul = 1
+Baku = 2</div>
+        <p>مناسب نیست؛ چون ordering واقعی وجود ندارد.</p>
+
+        <h2>43. Frequency Encoding</h2>
+        <p>هر category را با frequency آن جایگزین می‌کنیم.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Tehran → 0.50
+Istanbul → 0.30
+Baku → 0.20</div>
+        <p>مزیت:</p>
+        <div class="chart">dimensionality کم.</div>
+        <p>اما ممکن است categoryهای مختلف با frequency یکسان representation مشابه بگیرند.</p>
+
+        <h2>44. Target Encoding</h2>
+        <p>مثلاً برای binary target:</p>
+        <div class="chart">Tehran → fraud rate = 0.08
+Istanbul → fraud rate = 0.21
+Baku → fraud rate = 0.04</div>
+        <p>این روش بسیار قدرتمند است.</p>
+        <p>ولی:</p>
+        <div class="chart">بسیار مستعد target leakage است.</div>
+
+        <h2>45. Target Encoding Leakage</h2>
+        <p>غلط:</p>
+        <div class="chart">Whole Dataset
+     ↓
+Calculate target mean
+     ↓
+Encode
+     ↓
+Train/Test</div>
+        <p>چون target test وارد encoding شده است.</p>
+        <p>روش صحیح:</p>
+        <div class="chart">Train
+ ↓
+Fit target encoder
+ ↓
+Transform validation/test</div>
+        <p>و برای training predictionها، به‌خصوص در مدل‌سازی حساس، باید روش‌های cross-fitting / OOF مناسب استفاده شود.</p>
+
+        <h2>46. Scaling</h2>
+        <p>Scaling یعنی تغییر scale featureها.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Age:
+20–80
+
+Income:
+1,000–100,000,000</div>
+        <p>ممکن است optimizer یا distance metric تحت تأثیر قرار بگیرد.</p>
+
+        <h2>47. چرا Scaling مهم است؟</h2>
+        <p>برای مدل‌هایی مثل:</p>
+        <div class="chart">Logistic Regression
+Linear Regression با regularization
+SVM
+KNN
+K-Means
+PCA
+Neural Networks
+Gradient-based optimization</div>
+        <p>معمولاً مهم است.</p>
+        <p>اما برای:</p>
+        <div class="chart">Decision Tree
+Random Forest
+XGBoost
+LightGBM</div>
+        <p>معمولاً scaling ضروری نیست.</p>
+
+        <h2>48. Standardization</h2>
+        <p>استانداردسازی معمولاً:</p>
+        <div class="formula">$$z = \frac{x - \mu}{\sigma}$$</div>
+        <p>است.</p>
+        <p>یعنی:</p>
+        <div class="chart">Mean → 0
+Std → 1</div>
+        
+        <!-- Interactive Visualization -->
+        <div class="viz-box">
+            <div class="viz-container">
+                <div class="viz-graph">
+                    <svg id="bell-curve" width="100%" height="300" viewBox="0 0 450 300" style="background: #161b22; border-radius: 12px; border: 1px solid #30363d;"></svg>
+                </div>
+                <div class="viz-controls">
+                    <div class="viz-equations">
+                        <div class="equation-box" id="formula-z"></div>
+                        <div class="equation-box" id="calc-z"></div>
+                        <div class="equation-box" id="prob-z"></div>
+                    </div>
+                    <div class="viz-sliders">
+                        <div class="slider-row">
+                            <label>σ</label>
+                            <span class="value" id="sigma-value">1.0</span>
+                            <input type="range" id="sigma-slider" min="0.1" max="5" step="0.1" value="1">
+                        </div>
+                        <div class="slider-row">
+                            <label>μ</label>
+                            <span class="value" id="mu-value">0.0</span>
+                            <input type="range" id="mu-slider" min="-10" max="10" step="0.1" value="0">
+                        </div>
+                        <div class="slider-row">
+                            <label>x</label>
+                            <span class="value" id="x-value">1.2</span>
+                            <input type="range" id="x-slider" min="-10" max="10" step="0.1" value="1.2">
+                        </div>
+                    </div>
+                    <div class="viz-footer">بازخورد بدهید</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="chart">Original:
+
+Age = 50
+Mean = 40
+Std = 5
+
+z = (50-40)/5
+  = 2</div>
+        <p>یعنی این sample دو standard deviation بالاتر از mean قرار دارد.</p>
+
+        <h2>49. نکته مهم درباره Standardization</h2>
+        <p>Standardization:</p>
+        <div class="chart">الزاماً distribution را Normal نمی‌کند.</div>
+        <p>این اشتباه رایج است.</p>
+        <p>ممکن است بعد از standardization:</p>
+        <div class="chart">Mean = 0
+Std = 1</div>
+        <p>باشد، ولی distribution همچنان:</p>
+        <div class="chart">skewed
+heavy-tailed
+multimodal</div>
+        <p>باشد.</p>
+
+        <h2>50. Min-Max Normalization</h2>
+        <p>یکی از رایج‌ترین روش‌ها:</p>
+        <div class="formula">$$x' = \frac{x - x_{min}}{x_{max} - x_{min}}$$</div>
+        <p>در نتیجه معمولاً:</p>
+        <div class="formula">$$x' \in [0, 1]$$</div>
+        <p>قرار می‌گیرد.</p>
+
+        <h2>51. Standardization vs Normalization</h2>
+        <p>در بسیاری از منابع:</p>
+        <div class="chart">Standardization
+z = (x - μ) / σ</div>
+        <div class="chart">Min-Max Normalization
+(x - x_min) / (x_max - x_min)</div>
+        <p>نامیده می‌شود.</p>
+        <p>ولی terminology در منابع مختلف همیشه یکسان نیست.</p>
+        <p>پس در مصاحبه بهتر است:</p>
+        <div class="chart">فرمول را مشخص کنی، نه فقط اسم را.</div>
+
+        <h2>52. مشکل Min-Max با Outlier</h2>
+        <p>فرض کن:</p>
+        <div class="chart">99% data = 0–100
+1 outlier = 1,000,000</div>
+        <p>Min-Max:</p>
+        <div class="chart">0–100 → tiny interval</div>
+        <p>فشرده می‌شود.</p>
+        <p>پس برای outlier-heavy data باید با دقت استفاده شود.</p>
+
+        <h2>53. Robust Scaling</h2>
+        <p>برای داده‌های دارای outlier می‌توان از:</p>
+        <div class="formula">$$x' = \frac{x - Median}{IQR}$$</div>
+        <p>استفاده کرد.</p>
+        <p>که:</p>
+        <div class="formula">$$IQR = Q_3 - Q_1$$</div>
+        <p>است.</p>
+        <p>این روش نسبت به outlierها مقاوم‌تر است.</p>
+
+        <h2>54. Scaling و Train/Test Leakage</h2>
+        <p>یکی از اشتباهات بسیار رایج:</p>
+        <div class="chart">scaler.fit(X)</div>
+        <p>روی کل dataset.</p>
+        <p>غلط.</p>
+        <p>درست:</p>
+        <div class="chart">scaler.fit(X_train)
+
+X_train_scaled = scaler.transform(X_train)
+X_valid_scaled = scaler.transform(X_valid)
+X_test_scaled = scaler.transform(X_test)</div>
+        <p>چون mean/std/min/max test نباید وارد training شوند.</p>
+
+        <h2>55. Missing Value Handling</h2>
+        <p>واقعیت data:</p>
+        <div class="chart">Age = NaN
+Income = NaN
+Country = NaN</div>
+        <p>است.</p>
+        <p>مدل‌ها همه به شکل یکسان missing را handle نمی‌کنند.</p>
+
+        <h2>56. چرا Missing Value مهم است؟</h2>
+        <p>Missingness خودش ممکن است signal باشد.</p>
+        <p>مثلاً در یک سیستم مالی:</p>
+        <div class="chart">اگر مشتری income خود را وارد نکرده باشد، ممکن است این عدم‌ورود خودش اطلاعاتی درباره رفتار کاربر داشته باشد.</div>
+        <p>بنابراین:</p>
+        <div class="formula">$$Missing \neq Always\ Random\ Noise$$</div>
+
+        <h2>57. سه نوع Missingness</h2>
+        <p>این موضوع Senior بسیار مهم است.</p>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">MCAR</div>
+            <div class="chart">Missing Completely At Random</div>
+            <p>missing بودن مستقل از data است.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#3fb950;">
+            <div class="inner-title">MAR</div>
+            <div class="chart">Missing At Random</div>
+            <p>missing بودن به متغیرهای observed وابسته است.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">MNAR</div>
+            <div class="chart">Missing Not At Random</div>
+            <p>missing بودن به مقدار خود missing variable یا عامل مشاهده‌نشده مرتبط است.</p>
+        </div>
+
+        <h2>58. MCAR</h2>
+        <p>مثلاً:</p>
+        <div class="chart">Random database failure</div>
+        <p>باعث شده بعضی values تصادفی از بین بروند.</p>
+        <p>تقریباً:</p>
+        <div class="formula">$$P(Missing | X, Y) = P(Missing)$$</div>
+
+        <h2>59. MAR</h2>
+        <p>مثلاً income برای بعضی گروه‌های سنی بیشتر missing باشد.</p>
+        <p>یعنی:</p>
+        <div class="chart">Age
+ ↓
+Probability of missing income</div>
+
+        <h2>60. MNAR</h2>
+        <p>مثلاً:</p>
+        <div class="chart">افراد با درآمد بسیار بالا عمداً income را ثبت نمی‌کنند.</div>
+        <p>در این حالت missing بودن خودش به مقدار واقعی income وابسته است.</p>
+        <p>این مشکل بسیار سخت‌تر است.</p>
+
+        <h2>61. روش‌های ساده Imputation</h2>
+        <div class="chart">Mean
+x_missing = μ
+
+Median
+x_missing = median(X)
+
+Mode
+برای categorical.</div>
+
+        <h2>62. Mean vs Median</h2>
+        <p>اگر distribution تقریباً symmetric باشد:</p>
+        <div class="chart">Mean</div>
+        <p>ممکن است مناسب باشد.</p>
+        <p>اگر outlier/skewness داشته باشیم:</p>
+        <div class="chart">Median</div>
+        <p>اغلب robustتر است.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Income:
+
+20k
+22k
+25k
+30k
+5,000,000</div>
+        <p>Mean شدیداً تحت تأثیر outlier قرار می‌گیرد.</p>
+        <p>Median معمولاً بهتر است.</p>
+
+        <h2>63. Missing Indicator</h2>
+        <p>گاهی علاوه بر imputation یک feature دیگر می‌سازیم:</p>
+        <div class="chart">income_missing = 1</div>
+        <p>مثلاً:</p>
+        <div class="chart">income = median
+income_missing = 1</div>
+        <p>این اجازه می‌دهد model بفهمد:</p>
+        <p>این مقدار واقعی نیست؛ imputed شده.</p>
+
+        <h2>64. Advanced Imputation</h2>
+        <p>روش‌های پیشرفته‌تر:</p>
+        <div class="chart">KNN Imputation
+مقادیر مشابه را پیدا می‌کند.
+
+Iterative Imputation
+یک feature را با استفاده از سایر featureها پیش‌بینی می‌کند.
+
+MICE
+Multiple Imputation by Chained Equations.
+
+Model-based Imputation
+مثلاً با Random Forest یا regression.</div>
+
+        <h2>65. خطر Imputation</h2>
+        <p>اگر imputer روی کل data fit شود:</p>
+        <div class="chart">Train + Validation + Test</div>
+        <p>leakage ایجاد می‌شود.</p>
+        <p>همیشه:</p>
+        <div class="chart">fit on train
+transform others</div>
+
+        <h2>66. Outlier چیست؟</h2>
+        <p>Observationای که نسبت به distribution معمول data بسیار غیرعادی است.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Age:
+20
+22
+25
+27
+29
+200</div>
+        <p>200 یک outlier واضح است.</p>
+        <p>اما:</p>
+        <div class="chart">Outlier همیشه اشتباه نیست.</div>
+        <p>ممکن است:</p>
+        <div class="chart">Fraud transaction</div>
+        <p>واقعاً مقدار بسیار بزرگی داشته باشد.</p>
+
+        <h2>67. Outlier Detection با Z-score</h2>
+        <p>اگر:</p>
+        <div class="formula">$$|z| > 3$$</div>
+        <p>باشد، در برخی کاربردها observation را outlier در نظر می‌گیرند.</p>
+        <p>اما:</p>
+        <div class="chart">قانون z > 3 universal نیست.</div>
+        <p>به distribution و domain بستگی دارد.</p>
+
+        <h2>68. IQR Method</h2>
+        <p>می‌گوییم:</p>
+        <div class="formula">$$IQR = Q_3 - Q_1$$</div>
+        <p>و حدود معمول:</p>
+        <div class="formula">$$Lower = Q_1 - 1.5 IQR$$</div>
+        <div class="formula">$$Upper = Q_3 + 1.5 IQR$$</div>
+        <p>مشاهدات خارج از این محدوده:</p>
+        <div class="chart">potential outliers</div>
+        <p>هستند.</p>
+
+        <h2>69. Outlier Handling</h2>
+        <p>چند روش:</p>
+        <div class="chart">حذف
+Remove rows
+
+Capping / Winsorization
+
+مثلاً:
+x > P99
+را برابر P99 قرار دهیم.
+
+Transformation
+مثلاً:
+log(x)
+
+Robust Scaling
+مدل‌سازی با الگوریتم robust</div>
+
+        <h2>70. حذف Outlier همیشه درست نیست</h2>
+        <p>فرض کن Fraud Detection داری.</p>
+        <div class="chart">transaction = $100,000</div>
+        <p>ممکن است outlier باشد.</p>
+        <p>اگر آن را حذف کنی:</p>
+        <div class="chart">شاید دقیقاً مهم‌ترین نمونه business را حذف کرده باشی.</div>
+        <p>پس ابتدا سؤال:</p>
+        <div class="formula">$$Is\ it\ an\ error\ or\ a\ rare\ but\ valid\ observation?$$</div>
+
+        <h2>71. Outlier vs Anomaly</h2>
+        <p>این دو دقیقاً یکی نیستند.</p>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">Outlier</div>
+            <p>از نظر آماری غیرعادی است.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">Anomaly</div>
+            <p>از نظر behavior/domain غیرعادی است.</p>
+        </div>
+        <p>یک transaction ممکن است statistically extreme باشد ولی legitimate باشد.</p>
+
+        <h2>72. Feature Engineering و Leakage</h2>
+        <p>این یکی از مهم‌ترین نکات Senior است.</p>
+        <p>فرض کن می‌خواهی:</p>
+        <div class="chart">customer_avg_transaction</div>
+        <p>را بسازی.</p>
+        <p>اگر average را از:</p>
+        <div class="chart">کل transactionهای آینده</div>
+        <p>محاسبه کنی، اطلاعات آینده وارد feature می‌شود.</p>
+        <p>این:</p>
+        <div class="formula">$$Data\ Leakage$$</div>
+        <p>است.</p>
+
+        <h2>73. مثال Time Leakage</h2>
+        <p>فرض کن:</p>
+        <div class="chart">Transaction:
+2026-01-01</div>
+        <p>را پیش‌بینی می‌کنی.</p>
+        <p>Feature:</p>
+        <div class="chart">customer_total_transactions</div>
+        <p>را از کل سال 2026 حساب کردی.</p>
+        <p>در این صورت transactionهای:</p>
+        <div class="chart">2026-02
+2026-03
+...</div>
+        <p>در feature مربوط به January وارد شده‌اند.</p>
+        <p>مدل عملاً آینده را دیده است.</p>
+
+        <h2>74. Feature Engineering باید Time-Aware باشد</h2>
+        <p>در سیستم‌های temporal:</p>
+        <div class="chart">Feature at time T</div>
+        <p>باید فقط از اطلاعات:</p>
+        <div class="formula">$$t \leq T$$</div>
+        <p>استفاده کند.</p>
+        <p>و در بعضی کاربردها حتی باید:</p>
+        <div class="formula">$$t < T$$</div>
+        <p>باشد، بسته به اینکه timestamp همان event چه زمانی در دسترس بوده است.</p>
+        <p>این موضوع در:</p>
+        <div class="chart">Fraud
+Finance
+Forecasting
+Recommendation
+Predictive Maintenance</div>
+        <p>خیلی مهم است.</p>
+
+        <h2>75. Feature Engineering برای Different Models</h2>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">Linear Models</div>
+            <p>Feature engineering بسیار مهم.</p>
+            <p>مثلاً:</p>
+            <div class="chart">log
+polynomial
+interaction
+scaling
+encoding</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">Tree Models</div>
+            <p>نیاز کمتر به:</p>
+            <div class="chart">scaling
+polynomial
+manual nonlinear transformation</div>
+            <p>اما هنوز:</p>
+            <div class="chart">domain features
+aggregation
+temporal features
+categorical handling</div>
+            <p>بسیار مهم‌اند.</p>
+        </div>
+
+        <h2>76. چرا Tree به Scaling نیاز ندارد؟</h2>
+        <p>Decision Tree بر اساس threshold تصمیم می‌گیرد:</p>
+        <div class="chart">age < 30</div>
+        <p>اگر age را:</p>
+        <div class="chart">30</div>
+        <p>به:</p>
+        <div class="chart">0.3</div>
+        <p>تبدیل کنیم، ordering حفظ شده است.</p>
+        <p>بنابراین split تقریباً همان مفهوم را دارد.</p>
+        <p>اما KNN بر اساس distance کار می‌کند، پس scaling بسیار مهم‌تر است.</p>
+
+        <h2>77. Feature Engineering برای KNN</h2>
+        <p>فرض کن:</p>
+        <div class="chart">Age = 20–80
+Income = 10,000–100,000,000</div>
+        <p>بدون scaling:</p>
+        <div class="chart">Income</div>
+        <p>distance را dominant می‌کند.</p>
+        <p>پس:</p>
+        <div class="chart">Distance</div>
+        <p>به‌شدت تحت تأثیر scale قرار می‌گیرد.</p>
+
+        <h2>78. Feature Engineering برای Logistic Regression</h2>
+        <p>فرض کن:</p>
+        <div class="chart">income
+age</div>
+        <p>داریم.</p>
+        <p>اگر:</p>
+        <div class="chart">income = 1,000,000
+age = 30</div>
+        <p>باشد، scaling می‌تواند:</p>
+        <div class="chart">optimization را پایدارتر کند
+regularization را منصفانه‌تر کند
+convergence را بهتر کند</div>
+        <p>به خصوص وقتی L1/L2 داریم.</p>
+
+        <h2>79. Scaling و Regularization</h2>
+        <p>این نکته بسیار مهم است.</p>
+        <p>در L2:</p>
+        <div class="formula">$$\lambda \sum_j w_j^2$$</div>
+        <p>اگر featureها scaleهای بسیار متفاوت داشته باشند، ضرایب نیز scaleهای متفاوتی پیدا می‌کنند.</p>
+        <p>در نتیجه penalty روی coefficients می‌تواند عملاً رفتار نامتوازن داشته باشد.</p>
+        <p>پس:</p>
+        <div class="chart">Scaling قبل از regularized linear models معمولاً بسیار مهم است.</div>
+
+        <h2>80. Feature Engineering و Curse of Dimensionality</h2>
+        <p>Feature engineering ممکن است تعداد featureها را افزایش دهد.</p>
+        <p>مثلاً:</p>
+        <div class="chart">10 features</div>
+        <p>با polynomial degree 3 می‌شود:</p>
+        <div class="chart">ده‌ها / صدها feature</div>
+        <p>و این می‌تواند:</p>
+        <div class="chart">Dimensionality ↑</div>
+        <p>و:</p>
+        <div class="chart">Data Sparsity ↑</div>
+        <p>ایجاد کند.</p>
+        <p>پس:</p>
+        <div class="formula">$$Feature\ Engineering \neq Feature\ Explosion$$</div>
+
+        <h2>81. Feature Selection بعد از Feature Engineering</h2>
+        <p>یک pipeline حرفه‌ای می‌تواند:</p>
+        <div class="chart">Raw Features
+     ↓
+Feature Construction
+     ↓
+Feature Transformation
+     ↓
+Feature Expansion
+     ↓
+Feature Selection
+     ↓
+Model</div>
+        <p>باشد.</p>
+        <p>مثلاً:</p>
+        <div class="chart">100 raw features
+↓
+500 engineered features
+↓
+120 selected features
+↓
+Model</div>
+
+        <h2>82. Feature Importance</h2>
+        <p>بعد از feature engineering باید بدانیم کدام featureها مهم‌اند.</p>
+        <p>روش‌ها:</p>
+        <div class="chart">Linear coefficients
+Tree importance
+Permutation importance
+SHAP</div>
+        <p>اما:</p>
+        <div class="formula">$$Feature\ importance \neq causal\ importance$$</div>
+
+        <h2>83. Correlated Features و Feature Importance</h2>
+        <p>فرض کن:</p>
+        <div class="chart">age
+birth_year</div>
+        <p>هر دو اطلاعات تقریباً یکسان دارند.</p>
+        <p>ممکن است model importance را بین آنها تقسیم کند.</p>
+        <p>پس low importance یک feature لزوماً به معنی useless بودن آن نیست.</p>
+        <p>ممکن است:</p>
+        <div class="chart">اطلاعات آن توسط feature دیگری پوشش داده شده باشد.</div>
+
+        <h2>84. Feature Engineering و Multicollinearity</h2>
+        <p>در Linear Models:</p>
+        <div class="chart">income
+monthly_income
+annual_income</div>
+        <p>تقریباً اطلاعات یکسان دارند.</p>
+        <p>این می‌تواند:</p>
+        <div class="chart">Multicollinearity</div>
+        <p>ایجاد کند.</p>
+        <p>نتیجه:</p>
+        <div class="chart">coefficient instability
+standard errorهای بزرگ
+تفسیر دشوارتر</div>
+        <p>Regularization می‌تواند کمک کند.</p>
+
+        <h2>85. Feature Construction در سیستم‌های Real-Time</h2>
+        <p>در production باید به این سؤال جواب بدهی:</p>
+        <div class="chart">آیا این feature در لحظه inference قابل محاسبه است؟</div>
+        <p>مثلاً:</p>
+        <div class="chart">customer_transactions_last_1h</div>
+        <p>اگر نیاز به scan کردن 5 میلیارد رکورد داشته باشد:</p>
+        <div class="chart">feature خوب offline است ولی production feature بدی است.</div>
+
+        <h2>86. Training-Serving Skew</h2>
+        <p>یکی از مهم‌ترین مفاهیم Senior:</p>
+        <p>فرض کن training:</p>
+        <div class="chart">Python preprocessing</div>
+        <p>دارد.</p>
+        <p>اما production:</p>
+        <div class="chart">Java preprocessing</div>
+        <p>و منطق این دو کمی متفاوت است.</p>
+        <p>در نتیجه:</p>
+        <div class="chart">Training Feature Distribution
+          ≠
+Serving Feature Distribution</div>
+        <p>این:</p>
+        <div class="formula">$$Training-Serving\ Skew$$</div>
+        <p>است.</p>
+
+        <h2>87. راه‌حل Training-Serving Skew</h2>
+        <p>تا حد امکان:</p>
+        <div class="chart">Same transformation logic</div>
+        <p>را در train و inference استفاده کن.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Reusable preprocessing pipeline
+Feature Store
+Shared transformation code</div>
+
+        <h2>88. Feature Store</h2>
+        <p>در سیستم‌های بزرگ می‌توان featureها را در:</p>
+        <div class="chart">Feature Store</div>
+        <p>مدیریت کرد.</p>
+        <p>مثلاً:</p>
+        <div class="chart">customer_avg_amount_24h
+customer_transaction_count_1h
+customer_risk_score</div>
+        <p>و این featureها:</p>
+        <div class="chart">Offline Store
++
+Online Store</div>
+        <p>داشته باشند.</p>
+
+        <h2>89. Offline vs Online Features</h2>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">Offline</div>
+            <div class="chart">برای training:
+Historical data</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#3fb950;">
+            <div class="inner-title">Online</div>
+            <div class="chart">برای real-time inference:
+Low latency</div>
+        </div>
+        <p>مثلاً:</p>
+        <div class="chart">Fraud model</div>
+        <p>در لحظه transaction باید featureها را سریع دریافت کند.</p>
+
+        <h2>90. Feature Freshness</h2>
+        <p>Feature ممکن است:</p>
+        <div class="chart">5 seconds old</div>
+        <p>یا:</p>
+        <div class="chart">5 days old</div>
+        <p>باشد.</p>
+        <p>برای برخی سیستم‌ها freshness حیاتی است.</p>
+        <p>مثلاً:</p>
+        <div class="chart">transactions_last_5min</div>
+        <p>اگر 1 ساعت قدیمی باشد، feature دیگر ارزش زیادی ندارد.</p>
+
+        <h2>91. Feature Drift</h2>
+        <p>Feature distribution ممکن است با زمان تغییر کند.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Training:
+average transaction = $100
+
+Production:
+average transaction = $500</div>
+        <p>این:</p>
+        <div class="chart">Feature Drift</div>
+        <p>است.</p>
+
+        <h2>92. Feature Engineering و Data Drift</h2>
+        <p>در production باید monitoring داشته باشیم:</p>
+        <div class="chart">Feature Distribution
+       ↓
+Compare Train vs Production
+       ↓
+Drift?
+       ↓
+Alert</div>
+        <p>روش‌هایی مثل:</p>
+        <div class="chart">PSI
+KL divergence
+JS divergence
+Wasserstein distance
+statistical tests</div>
+        <p>می‌توانند استفاده شوند.</p>
+
+        <h2>93. Feature Engineering و Concept Drift</h2>
+        <p>تفاوت مهم:</p>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">Feature Drift</div>
+            <div class="formula">$$P(X)$$</div>
+            <p>تغییر کرده.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">Concept Drift</div>
+            <p>رابطه:</p>
+            <div class="formula">$$P(Y | X)$$</div>
+            <p>تغییر کرده.</p>
+        </div>
+        <p>مثلاً رفتار fraudsterها عوض شده است.</p>
+        <p>حتی اگر distribution featureها ثابت باشد، رابطه feature و target می‌تواند تغییر کند.</p>
+
+        <h2>94. یک مثال کامل Fraud Feature Engineering</h2>
+        <p>Raw:</p>
+        <div class="chart">amount
+timestamp
+customer_id
+merchant_id
+country
+device_id</div>
+        <p>می‌توانیم بسازیم:</p>
+        <div class="chart">Temporal
+hour
+day_of_week
+is_weekend
+
+Velocity
+tx_count_5m
+tx_count_1h
+tx_count_24h
+
+Amount
+log_amount
+amount_zscore_customer
+amount_vs_customer_avg
+
+Merchant
+merchant_tx_count
+merchant_fraud_rate
+
+Customer
+customer_avg_amount
+customer_unique_merchants
+customer_unique_devices
+
+Geographic
+distance_from_last_transaction
+country_change</div>
+        <p>این‌ها معمولاً از raw featureها ارزش بیشتری دارند.</p>
+
+        <h2>95. اما اینجا یک دام بزرگ داریم</h2>
+        <p>مثلاً:</p>
+        <div class="chart">merchant_fraud_rate</div>
+        <p>اگر fraud rate را از کل dataset حساب کنیم:</p>
+        <div class="chart">future transactions</div>
+        <p>و حتی target همان transaction وارد calculation شود، leakage داریم.</p>
+        <p>باید مثلاً:</p>
+        <div class="chart">historical fraud rate up to prediction time</div>
+        <p>محاسبه شود.</p>
+
+        <h2>96. Feature Engineering و Cross-Validation</h2>
+        <p>Feature engineering باید داخل CV pipeline قرار بگیرد.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Fold 1
+ ├── Fit Imputer
+ ├── Fit Scaler
+ ├── Fit Encoder
+ ├── Feature Selection
+ └── Train Model
+
+Fold 2
+ ├── Fit Imputer
+ ├── Fit Scaler
+ ├── Fit Encoder
+ ├── Feature Selection
+ └── Train Model</div>
+        <p>نه اینکه preprocessing یک بار روی کل dataset انجام شود و بعد CV کنیم.</p>
+
+        <h2>97. Feature Engineering و Test Set</h2>
+        <p>Test set را مثل:</p>
+        <div class="chart">یک محیط production ناشناخته</div>
+        <p>در نظر بگیر.</p>
+        <p>نباید:</p>
+        <div class="chart">Test
+ ↓
+Feature engineering decisions
+ ↓
+Model tuning</div>
+        <p>انجام شود.</p>
+
+        <h2>98. ترتیب فکری درست در یک پروژه واقعی</h2>
+        <p>به جای اینکه از ابتدا بگویی:</p>
+        <div class="chart">«باید log بگیرم، scaling کنم، PCA بزنم»</div>
+        <p>اول بپرس:</p>
+        <div class="chart">1. Business problem چیست؟
+2. Target چیست؟
+3. Prediction time چیست؟
+4. چه اطلاعاتی در prediction time واقعاً available است؟
+5. Data distribution چیست؟
+6. Missingness چگونه است؟
+7. Outlierها چه معنایی دارند؟
+8. Model چه assumptionsی دارد؟
+9. چه featureهایی signal دارند؟
+10. چه featureهایی leakage هستند؟</div>
+        <p>این دقیقاً mindset یک Senior ML Engineer است.</p>
+
+        <h2>99. جدول خلاصه Transformations</h2>
+        <div style="overflow-x:auto;">
+            <table>
+                <thead><tr><th>Technique</th><th>هدف اصلی</th><th>نکته</th></tr></thead>
+                <tbody>
+                    <tr><td>Feature Selection</td><td>کاهش featureها</td><td>کاهش complexity</td></tr>
+                    <tr><td>Feature Extraction</td><td>representation جدید</td><td>PCA/embedding</td></tr>
+                    <tr><td>Feature Construction</td><td>ساخت signal جدید</td><td>domain knowledge</td></tr>
+                    <tr><td>Interaction</td><td>capture وابستگی</td><td>مخصوصاً linear models</td></tr>
+                    <tr><td>Polynomial</td><td>nonlinear representation</td><td>dimensionality explosion</td></tr>
+                    <tr><td>Binning</td><td>discretization</td><td>loss of information</td></tr>
+                    <tr><td>Log</td><td>کاهش right skew</td><td>zero/negative مشکل</td></tr>
+                    <tr><td>Box-Cox</td><td>power transform</td><td>معمولاً positive</td></tr>
+                    <tr><td>Yeo-Johnson</td><td>power transform</td><td>negative را هم می‌پذیرد</td></tr>
+                    <tr><td>Quantile Transform</td><td>تغییر distribution</td><td>ممکن است رابطه را distort کند</td></tr>
+                    <tr><td>One-Hot</td><td>categorical encoding</td><td>high cardinality مشکل</td></tr>
+                    <tr><td>Target Encoding</td><td>category → target statistic</td><td>leakage risk بالا</td></tr>
+                    <tr><td>Standardization</td><td>mean 0/std 1</td><td>Normality ایجاد نمی‌کند</td></tr>
+                    <tr><td>Min-Max</td><td>معمولاً 0 تا 1</td><td>outlier-sensitive</td></tr>
+                    <tr><td>Robust Scaling</td><td>median/IQR</td><td>مقاوم‌تر به outlier</td></tr>
+                    <tr><td>Imputation</td><td>پرکردن missing</td><td>باید train-only fit شود</td></tr>
+                    <tr><td>Outlier Handling</td><td>کنترل extreme values</td><td>outlier لزوماً error نیست</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2>🧠 مهم‌ترین نکات Senior</h2>
+        <p>اگر بخواهم کل این فصل را به سطح مصاحبه Senior خلاصه کنم، این‌ها را باید خیلی خوب بلد باشی:</p>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">1. Feature Engineering بدون کنترل Leakage خطرناک است.</div>
+            <div class="chart">Fit preprocessing on TRAIN only</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">2. Feature خوب یعنی featureای که در inference قابل دسترس است.</div>
+            <div class="chart">نه featureای که فقط offline می‌توانی بسازی.</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">3. Tree Models به scaling معمولاً نیاز ندارند.</div>
+            <div class="chart">ولی:
+KNN
+SVM
+Logistic Regression
+Neural Networks
+PCA
+اغلب از scaling سود می‌برند.</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">4. Correlation پایین به معنی useless بودن نیست.</div>
+            <div class="chart">ممکن است رابطه nonlinear باشد.</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">5. Outlier را کورکورانه حذف نکن.</div>
+            <div class="chart">اول بپرس:
+Data error یا rare valid event؟</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">6. Target Encoding بسیار قدرتمند ولی بسیار خطرناک است.</div>
+            <div class="chart">چون:
+Target → Feature
+می‌تواند leakage ایجاد کند.</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">7. Feature Engineering برای time-series باید causal باشد.</div>
+            <div class="chart">یعنی:
+Features(t) فقط از information available by t
+استفاده کنند.</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">8. Scaling با Standardization به معنی Normal Distribution نیست.</div>
+            <div class="chart">فقط:
+Mean = 0, Std = 1
+را هدف می‌گیرد.</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">9. Feature Engineering می‌تواند dimensionality را منفجر کند.</div>
+            <div class="chart">خصوصاً:
+Polynomial Features
+One-Hot Encoding
+Interaction Features</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">10. بهترین Feature همیشه پیچیده‌ترین Feature نیست.</div>
+            <div class="chart">گاهی:
+customer_tx_count_1h
+از ده‌ها feature پیچیده بهتر است.</div>
+        </div>
+
+        <h2>🎯 یک نقشه ذهنی نهایی</h2>
+        <div class="chart">                         FEATURE ENGINEERING
+                                  │
+       ┌──────────────────────────┼─────────────────────────┐
+       │                          │                         │
+   SELECTION                  TRANSFORMATION            CONSTRUCTION
+       │                          │                         │
+       ├─ Filter                  ├─ Log                   ├─ Interaction
+       ├─ Wrapper                 ├─ Power                 ├─ Polynomial
+       └─ Embedded                ├─ Quantile               ├─ Ratios
+                                  ├─ Scaling                └─ Aggregation
+                                  └─ Encoding
+                                       │
+                          ┌────────────┴────────────┐
+                          │                         │
+                    Missing Values              Outliers
+                          │                         │
+                     Imputation                Detection
+                     Indicator                Capping
+                     MICE                      Transform
+                          │
+                          └────────────┬────────────┘
+                                       │
+                                 MODEL PIPELINE
+                                       │
+                          ┌────────────┴────────────┐
+                          │                         │
+                    TRAINING                     SERVING
+                          │                         │
+                    Fit Transform             Same Transform
+                          │                         │
+                          └────────────┬────────────┘
+                                       │
+                              MONITORING
+                                       │
+                         ┌─────────────┼─────────────┐
+                         │             │             │
+                     Data Drift   Feature Drift  Training-
+                                                   Serving Skew</div>
+
+        <p>و اگر بخواهی واقعاً Senior ML فکر کنی، Feature Engineering را فقط به این شکل نبین:</p>
+        <div class="chart">raw data → transform → model</div>
+        <p>بلکه این‌طور ببین:</p>
+        <div class="formula">$$Raw Data \rightarrow Valid Information \rightarrow Leakage Safe Features \rightarrow Model Representation \rightarrow Reliable Training \rightarrow Consistent Serving \rightarrow Feature Monitoring$$</div>
+        <p>این نگاه، Feature Engineering را از یک کار صرفاً preprocessing به یک end-to-end ML system design problem تبدیل می‌کند.</p>
+
+        <hr style="border:1px solid #444; margin:50px 0;" />
+        <p style="text-align:center; color:#8b949e; font-size:0.85rem; padding:16px 0;">Feature Engineering · Senior ML · تمام نکات ریز 🧠</p>
+
+    </div>
+
+    <script>
+        // JavaScript for Interactive Standardization Graph
+        const svg = document.getElementById('bell-curve');
+        const xSlider = document.getElementById('x-slider');
+        const muSlider = document.getElementById('mu-slider');
+        const sigmaSlider = document.getElementById('sigma-slider');
+        
+        const xValue = document.getElementById('x-value');
+        const muValue = document.getElementById('mu-value');
+        const sigmaValue = document.getElementById('sigma-value');
+        
+        const formulaZ = document.getElementById('formula-z');
+        const calcZ = document.getElementById('calc-z');
+        const probZ = document.getElementById('prob-z');
+        
+        // Approximate CDF using normal distribution
+        function normalCDF(z) {
+            const t = 1.0 / (1.0 + 0.2316419 * Math.abs(z));
+            const d = 0.3989423 * Math.exp(-z * z / 2.0);
+            let prob = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
+            if (z > 0) prob = 1 - prob;
+            return prob;
+        }
+        
+        function updateGraph() {
+            const x = parseFloat(xSlider.value);
+            const mu = parseFloat(muSlider.value);
+            const sigma = parseFloat(sigmaSlider.value);
+            
+            // Update Slider Value Texts
+            xValue.textContent = x.toFixed(1);
+            muValue.textContent = mu.toFixed(1);
+            sigmaValue.textContent = sigma.toFixed(1);
+            
+            // Calculate Z and Probability
+            const z = (x - mu) / sigma;
+            const phi = normalCDF(z);
+            
+            // Update Equations using KaTeX
+            katex.render(`z = \\frac{x - \\mu}{\\sigma}`, formulaZ, {throwOnError: false});
+            
+            const calcStr = `z = \\frac{x - \\mu}{\\sigma} = \\frac{${x.toFixed(1)} - ${mu.toFixed(1)}}{${sigma.toFixed(1)}} = ${z.toFixed(2)}`;
+            katex.render(calcStr, calcZ, {throwOnError: false});
+            
+            const probStr = `\\Phi(z) \\approx ${(phi * 100).toFixed(1)}\\%`;
+            katex.render(probStr, probZ, {throwOnError: false});
+            
+            // Draw Graph
+            const width = 450;
+            const height = 300;
+            const margin = 30;
+            const plotWidth = width - 2 * margin;
+            const plotHeight = height - 2 * margin;
+            
+            // Calculate dynamic x-axis range to keep graph visible
+            const xMin = Math.min(mu - 4 * sigma, x - 1);
+            const xMax = Math.max(mu + 4 * sigma, x + 1);
+            
+            const peak = 1 / (sigma * Math.sqrt(2 * Math.PI));
+            const yMax = Math.max(peak, 0.5); // Ensure min height
+            
+            function mapX(val) {
+                return margin + ((val - xMin) / (xMax - xMin)) * plotWidth;
+            }
+            
+            function mapY(val) {
+                return height - margin - (val / yMax) * plotHeight;
+            }
+            
+            let svgContent = '';
+            
+            // Draw Grid Lines
+            // Vertical Grid
+            const step = Math.ceil((xMax - xMin) / 5);
+            for (let i = Math.ceil(xMin); i <= Math.floor(xMax); i += step) {
+                const gx = mapX(i);
+                svgContent += `<line x1="${gx}" y1="${margin}" x2="${gx}" y2="${height - margin}" stroke="#30363d" stroke-width="1" />`;
+                svgContent += `<text x="${gx}" y="${height - margin + 15}" fill="#8b949e" font-size="12" text-anchor="middle">${i}</text>`;
+            }
+            
+            // Horizontal Grid
+            for (let i = 0; i <= 5; i++) {
+                const gy = mapY(i * 0.1);
+                if (gy >= margin && gy <= height - margin) {
+                    svgContent += `<line x1="${margin}" y1="${gy}" x2="${width - margin}" y2="${gy}" stroke="#30363d" stroke-width="1" />`;
+                    svgContent += `<text x="${margin - 10}" y="${gy + 4}" fill="#8b949e" font-size="12" text-anchor="end">${(i * 0.1).toFixed(1)}</text>`;
+                }
+            }
+            
+            // Shaded Area (Phi(z))
+            if (x >= xMin) {
+                let shadePath = `M ${mapX(xMin)} ${mapY(0)} `;
+                for (let i = 0; i <= 100; i++) {
+                    const xVal = xMin + (i / 100) * (x - xMin);
+                    const yVal = 1 / (sigma * Math.sqrt(2 * Math.PI)) * Math.exp(-((xVal - mu) ** 2) / (2 * sigma ** 2));
+                    shadePath += ` L ${mapX(xVal)} ${mapY(yVal)}`;
+                }
+                shadePath += ` L ${mapX(x)} ${mapY(0)} Z`;
+                svgContent += `<path d="${shadePath}" fill="#58a6ff" opacity="0.2" />`;
+            }
+            
+            // Bell Curve
+            let curvePath = `M ${mapX(xMin)} ${mapY(0)} `;
+            for (let i = 0; i <= 100; i++) {
+                const xVal = xMin + (i / 100) * (xMax - xMin);
+                const yVal = 1 / (sigma * Math.sqrt(2 * Math.PI)) * Math.exp(-((xVal - mu) ** 2) / (2 * sigma ** 2));
+                curvePath += ` L ${mapX(xVal)} ${mapY(yVal)}`;
+            }
+            curvePath += ` L ${mapX(xMax)} ${mapY(0)} Z`;
+            
+            svgContent += `<path d="${curvePath}" fill="none" stroke="#3fb950" stroke-width="3" />`;
+            
+            // Vertical lines for Mu and X
+            // Mu Line
+            const muLineX = mapX(mu);
+            const muPeakY = mapY(peak);
+            svgContent += `<line x1="${muLineX}" y1="${margin}" x2="${muLineX}" y2="${height - margin}" stroke="#3fb950" stroke-width="2" stroke-dasharray="4,4" />`;
+            svgContent += `<text x="${muLineX}" y="${muPeakY - 10}" fill="#3fb950" font-size="16" text-anchor="middle">μ</text>`;
+            
+            // X Line
+            const xLineX = mapX(x);
+            const xValY = mapY(1 / (sigma * Math.sqrt(2 * Math.PI)) * Math.exp(-((x - mu) ** 2) / (2 * sigma ** 2)));
+            svgContent += `<line x1="${xLineX}" y1="${margin}" x2="${xLineX}" y2="${height - margin}" stroke="#d2a8ff" stroke-width="2" stroke-dasharray="4,4" />`;
+            svgContent += `<text x="${xLineX}" y="${xValY - 15}" fill="#d2a8ff" font-size="16" text-anchor="middle">x</text>`;
+            
+            // Phi(z) Label
+            const phiX = (mapX(xMin) + mapX(x)) / 2;
+            const phiY = mapY(peak / 2);
+            svgContent += `<text x="${phiX}" y="${phiY}" fill="#d2a8ff" font-size="14" text-anchor="middle">Φ(z)</text>`;
+            
+            svg.innerHTML = svgContent;
+        }
+        
+        // Add Event Listeners
+        xSlider.addEventListener('input', updateGraph);
+        muSlider.addEventListener('input', updateGraph);
+        sigmaSlider.addEventListener('input', updateGraph);
+        
+        // Initialize
+        katex.render(`z = \\frac{x - \\mu}{\\sigma}`, formulaZ, {throwOnError: false});
+        updateGraph();
+    </script>
+</body>
+</html>

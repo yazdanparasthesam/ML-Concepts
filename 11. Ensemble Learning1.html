@@ -1,0 +1,1553 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ensemble Learning · Senior ML Level</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js">
+    </script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}]});">
+    </script>
+    <style>
+        body {
+            background-color: #0d1117;
+            color: #e6edf3;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.8;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h1,
+        h2,
+        h3 {
+            color: #e6edf3;
+            text-align: right;
+            border-bottom: 1px solid #444;
+            padding-bottom: 15px;
+            margin-top: 50px;
+        }
+        p,
+        li {
+            text-align: right;
+        }
+
+        .box {
+            background-color: #21262d;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            color: #e6edf3;
+        }
+        .inner-box {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 10px;
+            border-right: 4px solid #58a6ff;
+        }
+        .inner-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .formula {
+            direction: ltr;
+            background-color: #000;
+            border: 1px solid #fff;
+            border-radius: 0;
+            padding: 20px;
+            margin: 20px auto;
+            width: fit-content;
+            max-width: 100%;
+            overflow-x: auto;
+            text-align: center;
+            font-size: 1.2em;
+            font-family: "Times New Roman", Times, serif;
+            color: #fff;
+        }
+
+        .chart {
+            direction: ltr;
+            text-align: left;
+            font-family: monospace;
+            background-color: #21262d;
+            border-radius: 8px;
+            padding: 15px;
+            overflow-x: auto;
+            white-space: pre;
+            border: 1px solid #444;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            direction: rtl;
+            margin-bottom: 20px;
+        }
+        th,
+        td {
+            border: 1px solid #444;
+            padding: 12px;
+            text-align: right;
+        }
+        th {
+            background-color: #21262d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 11. Ensemble Learning</h1>
+
+        <p style="font-size:1.1rem;">حتماً. این بخش یعنی Ensemble Learning یکی از مهم‌ترین مباحث Senior ML است؛ چون تقریباً تمام خانواده‌های قدرتمند مدل‌های کلاسیک مثل Random Forest، XGBoost، LightGBM و CatBoost از همین ایده‌ها می‌آیند.</p>
+
+        <p style="font-size:1.1rem;">نکته کلیدی این فصل این است:</p>
+
+        <p style="font-size:1.1rem;">به‌جای اینکه روی یک مدل واحد تکیه کنیم، چند مدل را طوری ترکیب می‌کنیم که نقاط ضعف یکدیگر را جبران کنند.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;" />
+
+        <h2>1. Ensemble Learning چیست؟</h2>
+        <p>فرض کن یک مدل داریم:</p>
+        <div class="formula">$$Model A \rightarrow Prediction$$</div>
+        <p>به‌جای آن:</p>
+        <div class="chart">Model A ─┐
+Model B ─┤
+Model C ─┼──→ Ensemble → Final Prediction
+Model D ─┘</div>
+        <p>استفاده می‌کنیم.</p>
+        <p>ایده اصلی:</p>
+        <div class="formula">$$Multiple Models \rightarrow Combined Prediction$$</div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">⚠️ اما نکته مهم:</div>
+            <p>صرفاً زیاد کردن تعداد مدل‌ها Ensemble خوب نمی‌سازد.</p>
+            <p>دو چیز بسیار مهم‌اند:</p>
+            <ul>
+                <li>قدرت مدل‌ها</li>
+                <li>تنوع خطاهای مدل‌ها</li>
+            </ul>
+        </div>
+
+        <h2>2. چرا Ensemble کار می‌کند؟</h2>
+        <p>فرض کن سه classifier داریم. برای یک sample:</p>
+        <div class="chart">Model A → Fraud
+Model B → Legit
+Model C → Fraud</div>
+        <p>Voting می‌گوید:</p>
+        <div class="formula">$$Fraud$$</div>
+        <p>اما مسئله عمیق‌تر از majority vote است.</p>
+        <p>اگر مدل‌ها اشتباه‌های کاملاً مشابهی داشته باشند:</p>
+        <div class="chart">Model A → wrong
+Model B → wrong
+Model C → wrong</div>
+        <p>Ensemble فایده زیادی ندارد.</p>
+        <p>پس:</p>
+        <div class="formula">$$Good Ensemble = Strong Models + Diversity$$</div>
+
+        <h2>3. دو هدف اصلی Ensemble</h2>
+        <p>در لیست شما دو مفهوم بسیار مهم داریم:</p>
+        <p><code>Variance Reduction</code></p>
+        <p>و:</p>
+        <p><code>Bias Reduction</code></p>
+        <p>تقریباً تمام Ensemble methods را می‌توان با این دو مفهوم تحلیل کرد.</p>
+
+        <h2>4. Bias Reduction</h2>
+        <p>Bias یعنی مدل چقدر از الگوی واقعی ساده‌سازی شده فاصله دارد.</p>
+        <p>مدل high-bias معمولاً:</p>
+        <ul>
+            <li>بیش از حد ساده است.</li>
+        </ul>
+        <p>مثلاً:</p>
+        <div class="chart">Linear Model</div>
+        <p>برای یک رابطه کاملاً nonlinear.</p>
+        <p>در این حالت:</p>
+        <div class="chart">Training error ↑
+Validation error ↑</div>
+        <p>است.</p>
+
+        <h2>5. Variance Reduction</h2>
+        <p>Variance یعنی مدل چقدر به dataset خاص حساس است.</p>
+        <p>مدلی مثل:</p>
+        <div class="chart">Deep Decision Tree</div>
+        <p>ممکن است:</p>
+        <div class="chart">Training error ≈ 0</div>
+        <p>ولی با تغییر کوچک در training data، ساختارش کاملاً تغییر کند.</p>
+        <p>یعنی:</p>
+        <div class="chart">Variance ↑</div>
+
+        <h2>6. Ensemble و Bias-Variance</h2>
+        <p>این رابطه را خیلی خوب بلد باش:</p>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="chart">High Bias
+    ↓
+Underfitting
+    ↓
+Need more expressive model
+    ↓
+Bias Reduction</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#3fb950;">
+            <div class="chart">High Variance
+    ↓
+Overfitting
+    ↓
+Need averaging / regularization
+    ↓
+Variance Reduction</div>
+        </div>
+
+        <h2>7. Bagging</h2>
+        <p>Bagging مخفف:</p>
+        <div class="formula">$$Bootstrap Aggregating$$</div>
+        <p>ایده:</p>
+        <div class="chart">Original Dataset
+       │
+       ├── Bootstrap Sample 1 → Model 1
+       ├── Bootstrap Sample 2 → Model 2
+       ├── Bootstrap Sample 3 → Model 3
+       ├── Bootstrap Sample 4 → Model 4
+       └── Bootstrap Sample N → Model N
+                     │
+                     ▼
+                 Aggregate</div>
+
+        <h2>8. Bootstrap Sampling چیست؟</h2>
+        <p>فرض کن:</p>
+        <div class="chart">Dataset = 100 samples</div>
+        <p>یک bootstrap sample با:</p>
+        <div class="formula">$$Sampling\ with\ replacement$$</div>
+        <p>ساخته می‌شود.</p>
+        <p>یعنی ممکن است:</p>
+        <div class="chart">Sample 1
+Sample 5
+Sample 5
+Sample 17
+Sample 23
+Sample 23
+...</div>
+        <p>داشته باشیم.</p>
+
+        <h2>9. چرا Sampling With Replacement؟</h2>
+        <p>چون باعث می‌شود هر model dataset کمی متفاوتی ببیند.</p>
+        <p>در نتیجه:</p>
+        <div class="chart">Model 1 → slightly different
+Model 2 → slightly different
+Model 3 → slightly different</div>
+        <p>و این diversity ایجاد می‌کند.</p>
+
+        <h2>10. Aggregation در Bagging</h2>
+        <p>برای Regression:</p>
+        <div class="formula">$$\hat{y} = \frac{1}{B} \sum_{b=1}^B \hat{y}_b$$</div>
+        <p>یعنی:</p>
+        <p><code>Average predictions.</code></p>
+        <p>برای Classification معمولاً:</p>
+        <div class="formula">$$Majority\ voting$$</div>
+        <p>انجام می‌شود.</p>
+
+        <h2>11. چرا Bagging Variance را کم می‌کند؟</h2>
+        <p>فرض کن predictionهای چند model داریم.</p>
+        <p>اگر errorهای آنها تا حدی مستقل باشند، averaging باعث می‌شود خطاهای تصادفی یکدیگر را خنثی کنند.</p>
+        <p>برای مدل‌های با واریانس <code>σ²</code> و تقریباً independent:</p>
+        <div class="formula">$$Var(\bar{X}) = \frac{\sigma^2}{B}$$</div>
+        <p>پس:</p>
+        <div class="formula">$$B \uparrow \Rightarrow Variance \downarrow$$</div>
+        <p>البته در دنیای واقعی مدل‌ها کاملاً مستقل نیستند.</p>
+
+        <h2>12. Correlation بین Models</h2>
+        <p>اگر predictions مدل‌ها correlated باشند، کاهش variance کمتر می‌شود.</p>
+        <p>به‌صورت مفهومی:</p>
+        <div class="formula">$$Var(\bar{X})$$</div>
+        <p>به correlation بین modelها وابسته است.</p>
+        <p>پس:</p>
+        <div class="formula">$$Lower Correlation \rightarrow Better Variance Reduction$$</div>
+        <p>این یکی از مهم‌ترین مفاهیم Ensemble است.</p>
+
+        <h2>13. Bagging بیشتر برای چه چیزی خوب است؟</h2>
+        <p>Bagging مخصوصاً برای:</p>
+        <div class="formula">$$High-Variance Learners$$</div>
+        <p>خوب است.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Decision Tree</div>
+        <p>که variance بالایی دارد.</p>
+
+        <h2>14. Random Forest</h2>
+        <p>Random Forest را می‌توان تقریباً این‌طور دید:</p>
+        <div class="formula">$$Random Forest = Bagging + Random Feature Selection$$</div>
+        <p>یعنی دو نوع randomness داریم:</p>
+        <div class="chart">1. Random Samples
+Bootstrap sampling.
+
+2. Random Features
+در هر split فقط subsetی از features بررسی می‌شود.</div>
+
+        <h2>15. ساخت Random Forest</h2>
+        <p>فرض کن:</p>
+        <div class="chart">10,000 samples
+100 features</div>
+        <p>داریم.</p>
+        <p>Random Forest:</p>
+        <div class="chart">Bootstrap dataset
+        ↓
+Build Tree 1
+        ↓
+At each split:
+random subset of features</div>
+        <p>و همین برای Treeهای متعدد.</p>
+
+        <h2>16. چرا Random Feature Selection مهم است؟</h2>
+        <p>فرض کن:</p>
+        <div class="chart">X1</div>
+        <p>خیلی feature قوی‌ای است.</p>
+        <p>اگر همه treeها همیشه آن را ببینند:</p>
+        <div class="chart">Tree 1 → X1
+Tree 2 → X1
+Tree 3 → X1
+Tree 4 → X1</div>
+        <p>treeها شبیه هم می‌شوند.</p>
+        <p>پس:</p>
+        <div class="formula">$$Correlation \uparrow$$</div>
+        <p>و مزیت averaging کاهش می‌یابد.</p>
+
+        <h2>17. Random Forest چگونه Variance را کم می‌کند؟</h2>
+        <div class="chart">Deep Tree
+    ↓
+High Variance
+    ↓
+Many Trees
+    +
+Randomization
+    ↓
+Averaging
+    ↓
+Variance ↓</div>
+        <p>در حالت ایده‌آل:</p>
+        <div class="formula">$$Variance \downarrow$$</div>
+        <p>بدون اینکه bias به اندازه‌ای که یک درخت ساده‌تر ایجاد می‌کند افزایش پیدا کند.</p>
+
+        <h2>18. آیا Random Forest Bias را کاهش می‌دهد؟</h2>
+        <p>هدف اصلی Random Forest:</p>
+        <div class="formula">$$Variance Reduction$$</div>
+        <p>است.</p>
+        <p>ولی در عمل ممکن است با تنظیمات مناسب عملکرد کلی را بهتر کند.</p>
+        <p>پس در مصاحبه بهتر است بگویی:</p>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div style="direction:ltr; background:#0d1117; padding:2px 12px; border-radius:6px; border:1px solid #30363d; margin:4px 0; display:inline-block;">Random Forest primarily reduces variance by averaging decorrelated high-variance trees.</div>
+        </div>
+
+        <h2>19. Out-of-Bag Samples</h2>
+        <p>یک نکته Senior بسیار مهم:</p>
+        <p>در bootstrap sampling، همه samples وارد هر tree نمی‌شوند.</p>
+        <p>تقریباً:</p>
+        <div class="formula">$$63.2\%$$</div>
+        <p>از unique samples در هر bootstrap sample حضور دارند.</p>
+        <p>حدود:</p>
+        <div class="formula">$$36.8\%$$</div>
+        <p>برای آن tree خارج از bootstrap می‌مانند.</p>
+        <p>به این‌ها می‌گوییم:</p>
+        <div class="formula">$$Out-of-Bag samples — OOB$$</div>
+
+        <h2>20. OOB Evaluation</h2>
+        <p>می‌توان از OOB samples برای تخمین performance استفاده کرد.</p>
+        <p>یعنی:</p>
+        <div class="chart">Bootstrap sample
+      ↓
+Train Tree
+
+OOB samples
+      ↓
+Evaluate Tree</div>
+        <p>و aggregation روی predictionهای مربوطه انجام می‌شود.</p>
+        <p>مزیت:</p>
+        <p>در بعضی کاربردها بدون نیاز به validation set جداگانه می‌توان تخمین performance داشت.</p>
+        <p>اما OOB جایگزین validation/test برای همه سناریوها نیست.</p>
+
+        <h2>21. Bagging vs Random Forest</h2>
+        <div style="overflow-x:auto;">
+            <table>
+                <thead><tr><th>ویژگی</th><th>Bagging</th><th>Random Forest</th></tr></thead>
+                <tbody>
+                    <tr><td>Sample</td><td>Bootstrap samples</td><td>Bootstrap samples</td></tr>
+                    <tr><td>Learner</td><td>معمولاً base learnerهای مشابه</td><td>معمولاً Decision Trees</td></tr>
+                    <tr><td>Features</td><td>الزاماً feature randomness ندارد</td><td>Feature randomness دارد</td></tr>
+                    <tr><td>هدف</td><td>هدف اصلی variance reduction</td><td>variance reduction + decorrelation</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2>22. Boosting</h2>
+        <p>حالا به خانواده کاملاً متفاوتی می‌رسیم.</p>
+        <div class="chart">Bagging:
+Models → Parallel / Independent</div>
+        <p>اما Boosting:</p>
+        <div class="chart">Model 1
+   ↓
+Model 2
+   ↓
+Model 3
+   ↓
+Model 4</div>
+        <p>مدل‌ها:</p>
+        <div class="formula">$$Sequentially$$</div>
+        <p>ساخته می‌شوند.</p>
+
+        <h2>23. ایده اصلی Boosting</h2>
+        <p>هر model تلاش می‌کند:</p>
+        <p>اشتباهات قبلی را اصلاح کند.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Model 1
+  ↓
+Residuals / Errors
+  ↓
+Model 2 learns them
+  ↓
+Remaining errors
+  ↓
+Model 3</div>
+
+        <h2>24. Bagging vs Boosting</h2>
+        <p>این تفاوت را حتماً حفظ کن:</p>
+        <div style="overflow-x:auto;">
+            <table>
+                <thead><tr><th></th><th>Bagging</th><th>Boosting</th></tr></thead>
+                <tbody>
+                    <tr><td>Training</td><td>مستقل</td><td>Sequential</td></tr>
+                    <tr><td>هدف اصلی</td><td>Variance reduction</td><td>Bias reduction</td></tr>
+                    <tr><td>مثال</td><td>Random Forest</td><td>XGBoost</td></tr>
+                    <tr><td>Base learners</td><td>معمولاً strong/high variance</td><td>معمولاً weak learners</td></tr>
+                    <tr><td>Parallelization</td><td>آسان‌تر</td><td>ذاتاً sequential</td></tr>
+                    <tr><td>Overfitting</td><td>کمتر مستعد</td><td>نیازمند regularization</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2>25. AdaBoost</h2>
+        <p>AdaBoost یکی از اولین الگوریتم‌های مهم Boosting است.</p>
+        <p>ایده:</p>
+        <p>به نمونه‌هایی که اشتباه classify شده‌اند وزن بیشتری بده.</p>
+
+        <h2>26. AdaBoost</h2>
+        <p>ابتدا:</p>
+        <div class="chart">All samples
+    ↓
+Equal weights</div>
+        <p>بعد model اول ساخته می‌شود.</p>
+        <p>نمونه‌های اشتباه:</p>
+        <div class="chart">Wrong samples
+      ↓
+Higher weight</div>
+        <p>Model بعدی بیشتر روی آنها تمرکز می‌کند.</p>
+
+        <h2>27. ساختار AdaBoost</h2>
+        <div class="chart">Samples
+   ↓
+Equal weights
+   ↓
+Weak Learner 1
+   ↓
+Increase weight of mistakes
+   ↓
+Weak Learner 2
+   ↓
+Increase weight of mistakes
+   ↓
+Weak Learner 3
+   ↓
+Weighted combination</div>
+
+        <h2>28. Weak Learner چیست؟</h2>
+        <p>مدلی که:</p>
+        <p>کمی بهتر از random guessing</p>
+        <p>عمل کند.</p>
+        <p>در AdaBoost معمولاً:</p>
+        <div class="formula">$$Decision Stump$$</div>
+        <p>رایج است.</p>
+        <p>Decision Stump:</p>
+        <div class="chart">Tree depth = 1</div>
+
+        <h2>29. وزن Model در AdaBoost</h2>
+        <p>مدل‌هایی که error کمتری دارند:</p>
+        <p>وزن بیشتری</p>
+        <p>در ensemble می‌گیرند.</p>
+        <p>به صورت کلاسیک:</p>
+        <div class="formula">$$\alpha_t = \frac{1}{2} \ln \left( \frac{1 - \epsilon_t}{\epsilon_t} \right)$$</div>
+        <p>که:</p>
+        <div class="chart">ε_t</div>
+        <p>خطای model است.</p>
+
+        <h2>30. اگر Model خوب باشد؟</h2>
+        <p>اگر:</p>
+        <div class="chart">ε_t ↓</div>
+        <p>آنگاه:</p>
+        <div class="chart">α_t ↑</div>
+        <p>پس model وزن بیشتری می‌گیرد.</p>
+
+        <h2>31. اگر Error = 0.5 باشد؟</h2>
+        <p>برای binary classification:</p>
+        <div class="chart">ε = 0.5</div>
+        <p>پس:</p>
+        <div class="chart">α = 0</div>
+        <p>یعنی model اطلاعاتی بهتر از random guessing ندارد.</p>
+
+        <h2>32. اگر Error > 0.5 باشد؟</h2>
+        <p>در AdaBoost کلاسیک:</p>
+        <p>مدل بدتر از random guessing است.</p>
+        <p>روش‌های مختلف می‌توانند handling متفاوتی داشته باشند، اما به‌صورت کلاسیک چنین learnerی مناسب نیست.</p>
+
+        <h2>33. Gradient Boosting</h2>
+        <p>Gradient Boosting ایده Boosting را generalize می‌کند.</p>
+        <p>به جای اینکه فقط:</p>
+        <div class="chart">misclassified samples</div>
+        <p>را دنبال کند، مدل جدید را برای کاهش:</p>
+        <div class="formula">$$Loss Function$$</div>
+        <p>می‌سازد.</p>
+
+        <h2>34. ایده Gradient Boosting</h2>
+        <p>فرض کن prediction فعلی:</p>
+        <div class="chart">F(x)</div>
+        <p>است.</p>
+        <p>می‌خواهیم:</p>
+        <div class="chart">Loss(y, F(x))</div>
+        <p>را کاهش دهیم.</p>
+        <p>Model جدید:</p>
+        <div class="chart">h(x)</div>
+        <p>را در جهت:</p>
+        <div class="formula">$$-\nabla_F Loss$$</div>
+        <p>یاد می‌گیریم.</p>
+
+        <h2>35. چرا اسمش Gradient Boosting است؟</h2>
+        <p>چون مدل‌ها در جهت:</p>
+        <div class="formula">$$Negative Gradient$$</div>
+        <p>loss حرکت می‌کنند.</p>
+        <p>شبیه Gradient Descent، اما به جای اینکه مستقیماً parameters یک model را update کنیم، یک learner جدید به ensemble اضافه می‌کنیم.</p>
+
+        <h2>36. ساخت Gradient Boosting</h2>
+        <div class="chart">Initial prediction
+       ↓
+Calculate errors / negative gradients
+       ↓
+Train weak tree
+       ↓
+Add tree to ensemble
+       ↓
+Calculate new residuals
+       ↓
+Train next tree
+       ↓
+...</div>
+
+        <h2>37. فرمول Gradient Boosting</h2>
+        <p>به صورت مفهومی:</p>
+        <div class="formula">$$F_m(x) = F_{m-1}(x) + \eta h_m(x)$$</div>
+        <p>که:</p>
+        <div class="chart">• F_m : model فعلی
+• h_m : tree جدید
+• η : learning rate</div>
+        <p>است.</p>
+
+        <h2>38. Learning Rate در Boosting</h2>
+        <p>اگر:</p>
+        <div class="chart">η</div>
+        <p>کوچک باشد:</p>
+        <div class="chart">Each tree contributes little</div>
+        <p>پس معمولاً:</p>
+        <div class="chart">n_estimators ↑</div>
+        <p>نیاز داریم.</p>
+        <p>این یک tradeoff مهم است:</p>
+        <div class="formula">$$Learning Rate \downarrow \Rightarrow More Trees$$</div>
+
+        <h2>39. XGBoost</h2>
+        <p>XGBoost یعنی:</p>
+        <div class="formula">$$Extreme Gradient Boosting$$</div>
+        <p>یکی از معروف‌ترین implementationهای Gradient Boosting است.</p>
+        <p>اما فقط Gradient Boosting ساده نیست.</p>
+        <p>ویژگی‌های مهم:</p>
+        <div class="chart">• Regularization
+• Efficient tree construction
+• Second-order information
+• Shrinkage
+• Row subsampling
+• Column subsampling
+• Missing value handling
+• Parallelized operations
+• Tree pruning</div>
+
+        <h2>40. Objective در XGBoost</h2>
+        <p>به صورت کلی:</p>
+        <div class="formula">$$Obj = Loss + Regularization$$</div>
+        <p>یعنی:</p>
+        <div class="formula">$$Obj = \sum_i L(y_i, \hat{y}_i) + \Omega(model)$$</div>
+
+        <h2>41. Regularization در XGBoost</h2>
+        <p>XGBoost می‌تواند complexity tree را penalize کند.</p>
+        <p>مثلاً:</p>
+        <div class="chart">• number of leaves
+• leaf weights</div>
+        <p>را کنترل می‌کند.</p>
+        <p>این باعث کاهش:</p>
+        <div class="formula">$$Overfitting$$</div>
+        <p>می‌شود.</p>
+
+        <h2>42. First-Order و Second-Order Information</h2>
+        <p>Gradient Boosting ساده عمدتاً از:</p>
+        <div class="chart">g_i</div>
+        <p>gradient استفاده می‌کند.</p>
+        <p>XGBoost علاوه بر gradient از:</p>
+        <div class="chart">h_i</div>
+        <p>Hessian نیز استفاده می‌کند.</p>
+        <p>یعنی:</p>
+        <div class="formula">$$First Order + Second Order$$</div>
+
+        <h2>43. چرا Hessian مهم است؟</h2>
+        <p>Hessian اطلاعات curvature loss را می‌دهد.</p>
+        <p>در نتیجه optimization دقیق‌تر می‌شود.</p>
+        <p>این یکی از تفاوت‌های مهم نظری XGBoost با Gradient Boosting ساده است.</p>
+
+        <h2>44. XGBoost چرا محبوب شد؟</h2>
+        <p>چون ترکیبی از:</p>
+        <div class="chart">• Accuracy
++ Regularization
++ Speed
++ Engineering
++ Flexibility</div>
+        <p>ارائه می‌دهد.</p>
+        <p>برای tabular data هنوز یکی از baselineهای بسیار قدرتمند است.</p>
+
+        <h2>45. LightGBM</h2>
+        <p>LightGBM نیز Gradient Boosting Tree است.</p>
+        <p>اما architecture و tree-growing strategy متفاوتی دارد.</p>
+        <p>دو مفهوم مهم:</p>
+        <div class="chart">Histogram-based learning</div>
+        <p>و:</p>
+        <div class="chart">Leaf-wise tree growth</div>
+
+        <h2>46. Histogram-based Split</h2>
+        <p>به جای بررسی تمام thresholdهای دقیق، feature values را به bins تبدیل می‌کند.</p>
+        <p>مثلاً:</p>
+        <div class="chart">0–10
+10–20
+20–30
+30–40
+...</div>
+        <p>این کار:</p>
+        <div class="formula">$$computational cost$$</div>
+        <p>را کاهش می‌دهد.</p>
+
+        <h2>47. Leaf-wise Growth</h2>
+        <p>این تفاوت را خیلی خوب بلد باش.</p>
+        <p>روش معمول level-wise:</p>
+        <div class="chart">       Root
+      /    \
+     A      B
+    / \    / \</div>
+        <p>درخت را level به level رشد می‌دهد.</p>
+        <p>LightGBM معمولاً:</p>
+        <div class="formula">$$leaf-wise$$</div>
+        <p>رشد می‌کند.</p>
+        <p>یعنی:</p>
+        <div class="chart">leafای را split می‌کند که بیشترین gain را دارد.</div>
+
+        <h2>48. Leaf-wise چه مزیتی دارد؟</h2>
+        <p>می‌تواند سریع‌تر loss را کاهش دهد.</p>
+        <p>اما:</p>
+        <div class="formula">$$Overfitting risk$$</div>
+        <p>بیشتر می‌شود، مخصوصاً وقتی dataset کوچک باشد.</p>
+        <p>به همین دلیل hyperparameterهایی مثل:</p>
+        <div class="chart">• num_leaves
+• min_data_in_leaf
+• max_depth</div>
+        <p>مهم هستند.</p>
+
+        <h2>49. XGBoost vs LightGBM</h2>
+        <div style="overflow-x:auto;">
+            <table>
+                <thead><tr><th></th><th>XGBoost</th><th>LightGBM</th></tr></thead>
+                <tbody>
+                    <tr><td>Base</td><td>Gradient boosting</td><td>Gradient boosting</td></tr>
+                    <tr><td>Histogram</td><td>Histogram support</td><td>Histogram-based</td></tr>
+                    <tr><td>Regularization</td><td>Regularization قوی</td><td>Regularization</td></tr>
+                    <tr><td>Growth</td><td>Tree growth معمولاً level-wise</td><td>leaf-wise</td></tr>
+                    <tr><td>Use case</td><td>مناسب tabular</td><td>بسیار مناسب tabular</td></tr>
+                    <tr><td>Complexity</td><td>کنترل complexity</td><td>کنترل complexity</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <p>نکته:</p>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <p>«LightGBM همیشه سریع‌تر و XGBoost همیشه دقیق‌تر است» یک قانون قطعی نیست.</p>
+            <p>Dataset و hyperparameterها تعیین‌کننده‌اند.</p>
+        </div>
+
+        <h2>50. CatBoost</h2>
+        <p>CatBoost نیز Gradient Boosting است.</p>
+        <p>نقطه قوت معروف آن:</p>
+        <div class="formula">$$Categorical Features$$</div>
+        <p>است.</p>
+        <p>مثلاً:</p>
+        <div class="chart">city
+country
+merchant
+device_type
+product</div>
+
+        <h2>51. مشکل Encoding ساده</h2>
+        <p>فرض کن:</p>
+        <div class="chart">City:
+Tehran
+Istanbul
+Baku</div>
+        <p>One-hot encoding ممکن است تعداد featureها را زیاد کند.</p>
+        <p>Label Encoding:</p>
+        <div class="chart">Tehran = 0
+Istanbul = 1
+Baku = 2</div>
+        <p>ممکن است ordering مصنوعی ایجاد کند.</p>
+        <p>CatBoost روش‌های تخصصی‌تری برای categorical features دارد.</p>
+
+        <h2>52. Target Statistics</h2>
+        <p>CatBoost از ایده:</p>
+        <div class="formula">$$Ordered Target Statistics$$</div>
+        <p>استفاده می‌کند.</p>
+        <p>به جای اینکه category را صرفاً عددگذاری کنیم، از اطلاعات target برای representation استفاده می‌شود، اما با روش ordered برای کاهش:</p>
+        <div class="formula">$$Target Leakage$$</div>
+
+        <h2>53. چرا Ordered مهم است؟</h2>
+        <p>اگر برای یک row از target خودش برای ساخت feature استفاده کنیم:</p>
+        <div class="chart">Target
+  ↓
+Feature
+  ↓
+Same Target</div>
+        <p>leakage ایجاد می‌شود.</p>
+        <p>CatBoost با ordered scheme تلاش می‌کند این مشکل را کاهش دهد.</p>
+
+        <h2>54. CatBoost و Ordered Boosting</h2>
+        <p>CatBoost همچنین:</p>
+        <div class="formula">$$Ordered Boosting$$</div>
+        <p>را معرفی می‌کند تا برخی مشکلات prediction shift / leakage-like effects در boosting را کاهش دهد.</p>
+        <p>این یکی از دلایل robustness آن روی categorical data است.</p>
+
+        <h2>55. Voting</h2>
+        <p>حالا از Tree Ensembles فاصله بگیریم.</p>
+        <p>Voting یعنی چند مدل مختلف داریم:</p>
+        <div class="chart">Logistic Regression
+Random Forest
+SVM
+XGBoost</div>
+        <p>و prediction آنها را ترکیب می‌کنیم.</p>
+
+        <h2>56. Hard Voting</h2>
+        <p>هر model یک class می‌دهد:</p>
+        <div class="chart">LR       → Fraud
+RF       → Legit
+SVM      → Fraud
+XGBoost  → Fraud</div>
+        <p>Majority:</p>
+        <div class="chart">Fraud</div>
+        <p>پس:</p>
+        <div class="formula">$$Hard Voting = Majority Vote$$</div>
+
+        <h2>57. Soft Voting</h2>
+        <p>در Soft Voting به جای class نهایی، probability را ترکیب می‌کنیم.</p>
+        <p>مثلاً:</p>
+        <div class="chart">LR: Fraud = 0.7
+RF: Fraud = 0.8
+XGB: Fraud = 0.9</div>
+        <p>Average:</p>
+        <div class="formula">$$P(Fraud) = \frac{0.7 + 0.8 + 0.9}{3} = 0.8$$</div>
+        <p>پس:</p>
+        <div class="chart">Fraud</div>
+
+        <h2>58. Hard vs Soft Voting</h2>
+        <div style="overflow-x:auto;">
+            <table>
+                <thead><tr><th></th><th>Hard Voting</th><th>Soft Voting</th></tr></thead>
+                <tbody>
+                    <tr><td>Input</td><td>class labels</td><td>probabilities</td></tr>
+                    <tr><td>Simplicity</td><td>ساده</td><td>اطلاعات بیشتر</td></tr>
+                    <tr><td>Calibration</td><td>calibration لازم نیست</td><td>calibration مهم است</td></tr>
+                    <tr><td>Method</td><td>majority vote</td><td>weighted probability aggregation</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2>59. Weighted Voting</h2>
+        <p>لازم نیست همه models وزن یکسان داشته باشند.</p>
+        <p>مثلاً:</p>
+        <div class="chart">LR      weight = 1
+RF      weight = 2
+XGBoost weight = 3</div>
+        <p>پس:</p>
+        <div class="formula">$$P = \frac{1 \cdot P_{LR} + 2 \cdot P_{RF} + 3 \cdot P_{XGB}}{6}$$</div>
+        <p>این می‌تواند عملکرد را بهتر کند.</p>
+        <p>اما وزن‌ها باید:</p>
+        <p>روی validation data</p>
+        <p>تنظیم شوند، نه test set.</p>
+
+        <h2>60. Stacking</h2>
+        <p>Stacking یکی از مهم‌ترین Ensemble methods است.</p>
+        <p>ساختار:</p>
+        <div class="chart">              Model 1 ─┐
+              Model 2 ─┤
+Input Data ── Model 3 ─┼──→ Meta Model → Final
+              Model 4 ─┘</div>
+        <p>Modelهای اولیه:</p>
+        <div class="formula">$$Base Learners$$</div>
+        <p>و مدل نهایی:</p>
+        <div class="formula">$$Meta Learner$$</div>
+        <p>نام دارد.</p>
+
+        <h2>61. مثال Stacking</h2>
+        <p>Base models:</p>
+        <div class="chart">Random Forest
+XGBoost
+SVM
+Logistic Regression</div>
+        <p>predictionهای آنها:</p>
+        <div class="chart">0.8
+0.7
+0.6
+0.9</div>
+        <p>به Meta Model داده می‌شود.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Logistic Regression</div>
+        <p>یاد می‌گیرد:</p>
+        <p>چگونه predictionهای base models را ترکیب کند.</p>
+
+        <h2>62. مشکل مهم Stacking: Leakage</h2>
+        <p>فرض کن:</p>
+        <div class="chart">Model A</div>
+        <p>روی training data prediction می‌دهد.</p>
+        <p>اگر همان prediction را مستقیماً به meta-model بدهیم:</p>
+        <div class="chart">Training data
+   ↓
+Model A
+   ↓
+Prediction
+   ↓
+Meta Model</div>
+        <p>Model A ممکن است training data را overfit کرده باشد.</p>
+        <p>پس Meta Model اطلاعات بیش از حد خوش‌بینانه دریافت می‌کند.</p>
+
+        <h2>63. راه‌حل Stacking: Out-of-Fold Predictions</h2>
+        <p>روش درست:</p>
+        <div class="chart">Training Data
+      │
+      ├── Fold 1
+      │    Model trained on Fold 2-5
+      │    Predict Fold 1
+      │
+      ├── Fold 2
+      │    Model trained on Fold 1,3-5
+      │    Predict Fold 2
+      │
+      └── ...</div>
+        <p>در نهایت برای هر training sample:</p>
+        <p>predictionای داریم که از مدلی آمده که آن sample را در training ندیده است.</p>
+        <p>این:</p>
+        <div class="formula">$$Out-of-Fold Prediction$$</div>
+        <p>است.</p>
+
+        <h2>64. Stacking واقعی</h2>
+        <div class="chart">                  Training Data
+                       │
+          ┌────────────┼────────────┐
+          ▼            ▼            ▼
+        Model A      Model B      Model C
+          │            │            │
+          ▼            ▼            ▼
+       OOF Pred      OOF Pred      OOF Pred
+          │            │            │
+          └────────────┼────────────┘
+                       ▼
+                  Meta Learner
+                       │
+                       ▼
+                Final Prediction</div>
+        <p>این یکی از نکات بسیار مهم Senior ML است.</p>
+
+        <h2>65. Stacking در Test</h2>
+        <p>بعد از آموزش:</p>
+        <div class="chart">Base models
+    ↓
+Retrain on full training data
+    ↓
+Predict test
+    ↓
+Meta model
+    ↓
+Final prediction</div>
+        <p>اما باید pipeline کامل بدون leakage طراحی شود.</p>
+
+        <h2>66. Blending</h2>
+        <p>Blending شبیه Stacking است، اما ساده‌تر.</p>
+        <p>معمولاً:</p>
+        <div class="chart">Training set
+      │
+      ├── Train Base Models
+      │
+      ▼
+Holdout Validation Set
+      │
+      ├── Prediction Model A
+      ├── Prediction Model B
+      └── Prediction Model C
+                  │
+                  ▼
+             Meta Model</div>
+        <p>به جای K-fold OOF، از:</p>
+        <div class="formula">$$Holdout set$$</div>
+        <p>برای ساخت meta-features استفاده می‌شود.</p>
+
+        <h2>67. Stacking vs Blending</h2>
+        <div style="overflow-x:auto;">
+            <table>
+                <thead><tr><th></th><th>Stacking</th><th>Blending</th></tr></thead>
+                <tbody>
+                    <tr><td>Method</td><td>معمولاً K-fold OOF</td><td>Holdout validation</td></tr>
+                    <tr><td>Data usage</td><td>داده بهتر استفاده می‌شود</td><td>ساده‌تر</td></tr>
+                    <tr><td>Complexity</td><td>پیچیده‌تر</td><td>ساده‌تر</td></tr>
+                    <tr><td>Cost</td><td>computational cost بیشتر</td><td>سریع‌تر</td></tr>
+                    <tr><td>Leakage</td><td>leakage control دقیق‌تر</td><td>وابسته به holdout صحیح</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2>68. Bagging vs Boosting vs Stacking</h2>
+        <div class="chart">Bagging
+Parallel
+↓
+Variance Reduction
+
+Boosting
+Sequential
+↓
+Bias Reduction
+
+Stacking
+Different Models
+↓
+Meta Learner
+↓
+Learn how to combine</div>
+        <p>این سه خط را برای مصاحبه حفظ کن.</p>
+
+        <h2>69. Random Forest vs XGBoost</h2>
+        <p>یکی از سؤال‌های محبوب Senior Interview:</p>
+        <div class="chart">Random Forest
+Independent Trees
++
+Bootstrap
++
+Random Features
++
+Averaging
+
+هدف اصلی:
+Variance Reduction</div>
+        <div class="chart">XGBoost
+Sequential Trees
++
+Gradient
++
+Regularization
++
+Learning Rate
+
+هدف:
+Bias Reduction + Optimization</div>
+
+        <h2>70. چرا Boosting می‌تواند overfit کند؟</h2>
+        <p>چون sequentially می‌تواند بسیار قدرتمند شود.</p>
+        <p>اگر:</p>
+        <div class="chart">n_estimators ↑
+tree depth ↑
+learning rate ↑</div>
+        <p>باشد، model می‌تواند بیش از حد fit شود.</p>
+        <p>پس boosting نیز regularization می‌خواهد.</p>
+
+        <h2>71. مهم‌ترین Hyperparameterهای Boosting</h2>
+        <div class="chart">n_estimators
+تعداد trees.
+
+learning_rate
+Contribution هر tree.
+
+max_depth
+پیچیدگی tree.
+
+min_child_weight / min_data_in_leaf
+کنترل leafها.
+
+subsample
+درصد samples.
+
+colsample
+درصد features.</div>
+
+        <h2>72. Learning Rate و Number of Trees</h2>
+        <p>یکی از tradeoffهای مهم:</p>
+        <div class="chart">learning_rate = 0.3
+n_estimators = 100</div>
+        <p>در مقابل:</p>
+        <div class="chart">learning_rate = 0.03
+n_estimators = 1000</div>
+        <p>ممکن است دومی generalization بهتری داشته باشد، ولی:</p>
+        <div class="formula">$$computational cost$$</div>
+        <p>بیشتری دارد.</p>
+
+        <h2>73. Early Stopping در Boosting</h2>
+        <p>یکی از بهترین ابزارهای کنترل overfitting:</p>
+        <div class="chart">Train
+ ↓
+Monitor validation loss
+ ↓
+Improving?
+ ↓
+Yes → Continue
+No → Stop</div>
+        <p>مثلاً:</p>
+        <div class="chart">Best iteration = 427</div>
+        <p>اگر treeها تا 2000 ادامه پیدا کنند، ممکن است overfit شوند.</p>
+
+        <h2>74. Subsampling در Gradient Boosting</h2>
+        <p>می‌توان در هر iteration فقط بخشی از data را استفاده کرد.</p>
+        <p>مثلاً:</p>
+        <div class="chart">subsample = 0.8</div>
+        <p>یعنی حدود 80٪ samples.</p>
+        <p>این می‌تواند:</p>
+        <div class="formula">$$randomness$$</div>
+        <p>ایجاد کرده و overfitting را کاهش دهد.</p>
+
+        <h2>75. Column Subsampling</h2>
+        <p>مشابه Random Forest:</p>
+        <div class="chart">colsample = 0.8</div>
+        <p>یعنی در هر مرحله فقط subsetی از features استفاده شود.</p>
+        <p>مزایا:</p>
+        <div class="chart">• diversity
+• speed
+• regularization</div>
+
+        <h2>76. Ensemble Diversity</h2>
+        <p>این موضوع آنقدر مهم است که جداگانه باید حفظ شود.</p>
+        <p>فرض کن:</p>
+        <div class="chart">Model A accuracy = 90%
+Model B accuracy = 90%
+Model C accuracy = 90%</div>
+        <p>این به تنهایی کافی نیست.</p>
+        <p>اگر هر سه دقیقاً روی همان samples اشتباه کنند:</p>
+        <div class="chart">A error = E
+B error = E
+C error = E</div>
+        <p>ensemble احتمالاً سود کمی دارد.</p>
+
+        <h2>77. Diversity چگونه ایجاد می‌شود؟</h2>
+        <p>روش‌های مختلف:</p>
+        <div class="chart">Bagging
+داده‌های مختلف.
+
+Random Forest
+داده + feature randomness.
+
+Boosting
+focus متفاوت روی errors.
+
+Stacking
+مدل‌های با inductive bias متفاوت.</div>
+        <p>مثلاً:</p>
+        <div class="chart">Linear
++
+Tree
++
+Kernel
++
+Neural Network</div>
+
+        <h2>78. Inductive Bias</h2>
+        <p>هر مدل فرض متفاوتی درباره data دارد.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Linear Regression
+فرض رابطه تقریباً linear.
+
+Decision Tree
+فرض می‌کند partitionهای feature space مفیدند.
+
+KNN
+فرض می‌کند نمونه‌های نزدیک رفتار مشابه دارند.
+
+SVM
+به margin اهمیت می‌دهد.</div>
+        <p>وقتی مدل‌های با inductive bias متفاوت را ensemble کنیم:</p>
+        <p>امکان complementary errors بیشتر می‌شود.</p>
+
+        <h2>79. چرا Stacking قدرتمند است؟</h2>
+        <p>فرض کن:</p>
+        <div class="chart">Linear Model</div>
+        <p>در روابط linear خوب است.</p>
+        <p>و:</p>
+        <div class="chart">Tree Model</div>
+        <p>در interactions و nonlinear patterns خوب است.</p>
+        <p>Meta learner می‌تواند یاد بگیرد:</p>
+        <div class="chart">اگر pattern شبیه X بود
+→ به Tree بیشتر اعتماد کن
+
+اگر pattern شبیه Y بود
+→ به Linear Model بیشتر اعتماد کن</div>
+        <p>این یکی از دلایل قدرت Stacking است.</p>
+
+        <h2>80. Bias Reduction در Boosting</h2>
+        <p>Boosting معمولاً با:</p>
+        <div class="formula">$$Weak Learners$$</div>
+        <p>شروع می‌کند.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Tree depth = 1</div>
+        <p>یک stump به تنهایی bias بالایی دارد.</p>
+        <p>اما:</p>
+        <div class="chart">Stump 1
++
+Stump 2
++
+Stump 3
++
+...</div>
+        <p>می‌تواند function پیچیده‌ای بسازد.</p>
+        <p>پس:</p>
+        <div class="formula">$$Bias \downarrow$$</div>
+
+        <h2>81. Variance Reduction در Bagging</h2>
+        <p>درخت‌های deep:</p>
+        <div class="formula">$$Variance \uparrow$$</div>
+        <p>دارند.</p>
+        <p>Bagging:</p>
+        <div class="chart">Tree 1
+Tree 2
+Tree 3
+...
+Tree N</div>
+        <p>و averaging:</p>
+        <div class="formula">$$Variance \downarrow$$</div>
+
+        <h2>82. آیا Boosting فقط Bias را کم می‌کند؟</h2>
+        <p>نه.</p>
+        <p>این یک simplification است.</p>
+        <p>Boosting می‌تواند:</p>
+        <p>Bias را کم کند</p>
+        <p>اما با افزایش complexity می‌تواند:</p>
+        <p>Variance را هم افزایش دهد.</p>
+        <p>بنابراین:</p>
+        <div class="formula">$$Boosting \neq "Never Overfits"$$</div>
+
+        <h2>83. آیا Bagging فقط Variance را کم می‌کند؟</h2>
+        <p>هدف اصلی بله.</p>
+        <p>ولی ensemble می‌تواند bias را نیز به شکل غیرمستقیم تغییر دهد.</p>
+        <p>بنابراین:</p>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <p>Bias/variance labels ابزار مفهومی‌اند، نه قوانین مطلق.</p>
+        </div>
+
+        <h2>84. Voting vs Stacking</h2>
+        <div class="chart">Voting
+ترکیب از پیش تعریف شده:
+Average
+or
+Majority Vote
+
+Stacking
+ترکیب:
+Learned by Meta Model</div>
+        <p>پس:</p>
+        <div class="formula">$$Voting = Fixed Combination$$</div>
+        <p>و:</p>
+        <div class="formula">$$Stacking = Learned Combination$$</div>
+
+        <h2>85. Blending vs Weighted Voting</h2>
+        <p>هر دو می‌توانند weighted combination داشته باشند.</p>
+        <p>اما تفاوت مهم:</p>
+        <div class="chart">Weighted Voting
+وزن‌ها مستقیماً برای ترکیب predictionها استفاده می‌شوند.
+
+Blending
+یک validation set برای یادگیری combination استفاده می‌شود.</div>
+        <p>مثلاً:</p>
+        <div class="chart">Model A = 0.2
+Model B = 0.5
+Model C = 0.3</div>
+        <p>این weights می‌توانند از یک meta-model یاد گرفته شوند.</p>
+
+        <h2>86. Classification و Regression</h2>
+        <p>Ensemble در هر دو قابل استفاده است.</p>
+        <div class="chart">Classification
+Majority Vote
+Probability Average
+Meta Classifier
+
+Regression
+Mean
+Weighted Mean
+Meta Regressor</div>
+
+        <h2>87. Ensemble و Probability Calibration</h2>
+        <p>برای:</p>
+        <div class="formula">$$Soft Voting$$</div>
+        <p>و:</p>
+        <div class="formula">$$Stacking$$</div>
+        <p>probability quality مهم است.</p>
+        <p>فرض کن:</p>
+        <div class="chart">Model A → 0.99
+Model B → 0.60
+Model C → 0.55</div>
+        <p>اگر A شدیداً overconfident باشد، average ممکن است تحت تأثیر قرار گیرد.</p>
+        <p>پس:</p>
+        <div class="formula">$$Calibration matters$$</div>
+
+        <h2>88. Data Leakage در Ensemble</h2>
+        <p>یکی از خطرناک‌ترین مشکلات:</p>
+        <p>Training meta-model روی predictionهای in-sample.</p>
+        <p>غلط:</p>
+        <div class="chart">Train Base Model
+      ↓
+Predict same training data
+      ↓
+Meta Model</div>
+        <p>درست:</p>
+        <div class="chart">K-Fold
+ ↓
+OOF Predictions
+ ↓
+Meta Model</div>
+        <p>این را در مصاحبه حتماً بگو.</p>
+
+        <h2>89. Test Set در Ensemble</h2>
+        <p>Test set باید:</p>
+        <p>فقط برای final evaluation</p>
+        <p>باشد.</p>
+        <p>نباید:</p>
+        <div class="chart">Test performance
+ ↓
+Tune weights
+ ↓
+Retrain
+ ↓
+Test again</div>
+        <p>انجام دهی.</p>
+        <p>چون test set تبدیل می‌شود به:</p>
+        <div class="formula">$$Validation set$$</div>
+        <p>و estimate نهایی دیگر unbiased نیست.</p>
+
+        <h2>90. Ensemble و Cross-Validation</h2>
+        <p>برای انتخاب:</p>
+        <div class="chart">• number of trees
+• depth
+• learning rate
+• weights
+• meta model</div>
+        <p>از:</p>
+        <div class="formula">$$Cross-Validation$$</div>
+        <p>استفاده کن.</p>
+        <p>اما مراقب باش:</p>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <p>CV داخل pipeline انجام شود.</p>
+            <p>به خصوص preprocessingهایی مثل:</p>
+            <div class="chart">• imputation
+• scaling
+• feature selection
+• target encoding</div>
+            <p>نباید قبل از CV روی کل data fit شوند.</p>
+        </div>
+
+        <h2>91. XGBoost vs LightGBM vs CatBoost</h2>
+        <p>یک نگاه Senior:</p>
+        <div style="overflow-x:auto;">
+            <table>
+                <thead><tr><th>ویژگی</th><th>XGBoost</th><th>LightGBM</th><th>CatBoost</th></tr></thead>
+                <tbody>
+                    <tr><td>Gradient Boosting</td><td>✅</td><td>✅</td><td>✅</td></tr>
+                    <tr><td>Regularization</td><td>قوی</td><td>قوی</td><td>قوی</td></tr>
+                    <tr><td>Histogram</td><td>✅</td><td>✅</td><td>✅</td></tr>
+                    <tr><td>Categorical handling</td><td>نیازمند preprocessing مناسب در بسیاری از setupها</td><td>پشتیبانی دارد، بسته به API/تنظیمات</td><td>⭐ بسیار قوی</td></tr>
+                    <tr><td>Tree growth</td><td>معمولاً level-wise</td><td>leaf-wise</td><td>ordered boosting + tree growth</td></tr>
+                    <tr><td>Small data</td><td>معمولاً خوب</td><td>می‌تواند overfit کند</td><td>اغلب خوب</td></tr>
+                    <tr><td>Large data</td><td>خوب</td><td>⭐ بسیار سریع</td><td>خوب</td></tr>
+                    <tr><td>Category-heavy data</td><td>خوب با preprocessing</td><td>خوب</td><td>⭐ عالی</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <p>اما:</p>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <p>هیچ‌کدام universally بهترین نیست.</p>
+        </div>
+
+        <h2>92. چه زمانی Random Forest انتخاب خوبی است؟</h2>
+        <p>وقتی:</p>
+        <div class="chart">• baseline سریع می‌خواهی
+• nonlinear relationships داری
+• preprocessing کم می‌خواهی
+• interpretability نسبی لازم داری
+• robustness می‌خواهی
+• tuning شدید نمی‌خواهی</div>
+        <p>Random Forest معمولاً baseline بسیار خوبی است.</p>
+
+        <h2>93. چه زمانی XGBoost / LightGBM؟</h2>
+        <p>برای:</p>
+        <div class="formula">$$Structured / Tabular Data$$</div>
+        <p>اغلب انتخاب‌های بسیار قوی هستند.</p>
+        <p>خصوصاً:</p>
+        <div class="chart">Fraud Detection
+Credit Risk
+Churn
+Ranking
+Marketing
+Pricing
+Risk Modeling</div>
+
+        <h2>94. چه زمانی CatBoost؟</h2>
+        <p>اگر categorical features زیادی داری:</p>
+        <div class="chart">merchant
+city
+country
+product
+device
+campaign</div>
+        <p>CatBoost گزینه بسیار جذابی است.</p>
+
+        <h2>95. مثال Fraud Detection</h2>
+        <p>فرض کن:</p>
+        <div class="chart">10M transactions</div>
+        <p>داریم.</p>
+        <p>Features:</p>
+        <div class="chart">amount
+merchant
+country
+device
+hour
+velocity
+customer_age</div>
+        <p>می‌توانیم:</p>
+        <div class="chart">Model 1
+Logistic Regression
+
+Model 2
+Random Forest
+
+Model 3
+XGBoost
+
+Model 4
+CatBoost</div>
+        <p>بسازیم.</p>
+        <p>بعد:</p>
+        <div class="chart">              LR ──────┐
+              RF ──────┤
+              XGB ─────┼──→ Stacking → Fraud Probability
+              CatBoost ┘</div>
+        <p>این ممکن است نسبت به یک model منفرد بهتر باشد، به شرط اینکه:</p>
+        <div class="chart">• leakage نداشته باشیم
+• models complementary باشند
+• validation درست انجام شود
+• calibration مناسب باشد</div>
+
+        <h2>96. Ensemble چه زمانی بد است؟</h2>
+        <p>Ensemble همیشه جواب بهتر نمی‌دهد.</p>
+        <p>ممکن است:</p>
+        <div class="chart">1. Models highly correlated باشند
+A ≈ B ≈ C
+
+2. Dataset کوچک باشد
+Stacking ممکن است overfit کند.
+
+3. Computational budget محدود باشد
+10 مدل به جای یک مدل ساده.
+
+4. Latency مهم باشد
+مثلاً real-time fraud scoring.
+
+5. Explainability بسیار مهم باشد
+یک Logistic Regression ساده ممکن است بهتر باشد.</div>
+
+        <h2>97. Ensemble و Latency</h2>
+        <p>فرض کن:</p>
+        <div class="chart">1 model → 5 ms
+10 models → 50 ms</div>
+        <p>اگر production SLA:</p>
+        <div class="formula">$$< 10 ms$$</div>
+        <p>باشد، ensemble بزرگ مشکل ایجاد می‌کند.</p>
+        <p>پس:</p>
+        <div class="formula">$$Offline Accuracy \neq Production Utility$$</div>
+
+        <h2>98. Ensemble و Interpretability</h2>
+        <p>یک Decision Tree:</p>
+        <div class="chart">if amount > X
+and velocity > Y
+→ Fraud</div>
+        <p>قابل توضیح است.</p>
+        <p>اما:</p>
+        <div class="chart">500 trees
++
+meta learner</div>
+        <p>خیلی پیچیده‌تر است.</p>
+        <p>در محیط‌های regulated مثل:</p>
+        <div class="chart">Financial / Banking / Payment</div>
+        <p>این tradeoff مهم است.</p>
+
+        <h2>99. مهم‌ترین تفاوت‌ها در یک جدول</h2>
+        <div style="overflow-x:auto;">
+            <table>
+                <thead><tr><th>Method</th><th>ایده اصلی</th><th>هدف غالب</th></tr></thead>
+                <tbody>
+                    <tr><td>Bagging</td><td>Bootstrap + aggregation</td><td>Variance ↓</td></tr>
+                    <tr><td>Random Forest</td><td>Bagging + random features</td><td>Variance ↓</td></tr>
+                    <tr><td>AdaBoost</td><td>Focus on mistakes</td><td>Bias ↓</td></tr>
+                    <tr><td>Gradient Boosting</td><td>Fit negative gradients</td><td>Bias ↓</td></tr>
+                    <tr><td>XGBoost</td><td>Regularized optimized GB</td><td>Bias ↓ + generalization</td></tr>
+                    <tr><td>LightGBM</td><td>Efficient leaf-wise GB</td><td>Performance + speed</td></tr>
+                    <tr><td>CatBoost</td><td>Categorical + ordered boosting</td><td>Robust categorical learning</td></tr>
+                    <tr><td>Voting</td><td>Fixed combination</td><td>Ensemble</td></tr>
+                    <tr><td>Stacking</td><td>Meta learner</td><td>Learn combination</td></tr>
+                    <tr><td>Blending</td><td>Holdout-based combination</td><td>Learn combination</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2>100. نقشه ذهنی کل Ensemble Learning</h2>
+        <p>این ساختار را برای مصاحبه در ذهن داشته باش:</p>
+        <div class="chart">                         ENSEMBLE LEARNING
+                                │
+              ┌─────────────────┼──────────────────┐
+              │                 │                  │
+           BAGGING           BOOSTING           META ENSEMBLE
+              │                 │                  │
+              │                 │          ┌───────┴───────┐
+              │                 │          │               │
+        Random Forest       AdaBoost     Voting          Stacking
+                              │             │               │
+                       Gradient Boosting    │          Blending
+                              │             │
+                    ┌─────────┼─────────┐   │
+                    │         │         │   │
+                 XGBoost   LightGBM  CatBoost</div>
+        <p>و از نظر Bias/Variance:</p>
+        <div class="chart">                 Ensemble
+                    │
+          ┌─────────┴─────────┐
+          │                   │
+       Bagging             Boosting
+          │                   │
+          ▼                   ▼
+   Variance Reduction    Bias Reduction
+          │                   │
+          ▼                   ▼
+ Random Forest        Gradient Boosting
+                           │
+                 ┌─────────┼─────────┐
+                 ▼         ▼         ▼
+              XGBoost   LightGBM  CatBoost</div>
+
+        <hr style="border:1px solid #444; margin:30px 0;" />
+
+        <h2>🎯 Senior Interview Questions</h2>
+        
+        <h3>سؤال 1</h3>
+        <p>Why does Random Forest reduce variance?</p>
+        <p>جواب:</p>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div style="direction:ltr; background:#0d1117; padding:2px 12px; border-radius:6px; border:1px solid #30363d; margin:4px 0; display:inline-block;">It averages predictions from many randomized, decorrelated trees. Bootstrap sampling and random feature selection increase diversity and reduce correlation between trees, making averaging effective at reducing variance.</div>
+        </div>
+
+        <h3>سؤال 2</h3>
+        <p>Why is Boosting sequential?</p>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <p>چون هر learner جدید از وضعیت فعلی ensemble استفاده می‌کند و تلاش می‌کند error یا negative gradient باقی‌مانده را کاهش دهد.</p>
+        </div>
+
+        <h3>سؤال 3</h3>
+        <p>Bagging vs Boosting؟</p>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div style="direction:ltr; background:#0d1117; padding:2px 12px; border-radius:6px; border:1px solid #30363d; margin:4px 0; display:inline-block;">Bagging trains models independently and primarily reduces variance, while boosting trains models sequentially to correct previous errors and primarily targets bias reduction.</div>
+        </div>
+
+        <h3>سؤال 4</h3>
+        <p>Why can Random Forest overfit less than a single deep tree?</p>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <p>چون averaging تعداد زیادی tree و decorrelation بین آنها variance را کاهش می‌دهد.</p>
+        </div>
+
+        <h3>سؤال 5</h3>
+        <p>Why does Random Feature Selection help?</p>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <p>چون correlation بین trees را کاهش می‌دهد و در نتیجه averaging مؤثرتر می‌شود.</p>
+        </div>
+
+        <h3>سؤال 6</h3>
+        <p>XGBoost vs Random Forest؟</p>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div style="direction:ltr; background:#0d1117; padding:2px 12px; border-radius:6px; border:1px solid #30363d; margin:4px 0; display:inline-block;">Random Forest is a bagging-based ensemble of randomized trees, while XGBoost is a sequential gradient boosting framework that adds trees to minimize a regularized objective.</div>
+        </div>
+
+        <h3>سؤال 7</h3>
+        <p>Stacking leakage را چگونه جلوگیری می‌کنی؟</p>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <p>با استفاده از out-of-fold predictions برای training meta-model، نه in-sample predictions.</p>
+        </div>
+
+        <h3>سؤال 8</h3>
+        <p>Stacking vs Voting؟</p>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div style="direction:ltr; background:#0d1117; padding:2px 12px; border-radius:6px; border:1px solid #30363d; margin:4px 0; display:inline-block;">Voting uses a predefined aggregation rule, while stacking learns how to combine base model predictions using a meta-learner.</div>
+        </div>
+
+        <h3>سؤال 9</h3>
+        <p>آیا افزایش تعداد trees همیشه performance را بهتر می‌کند؟</p>
+        <p>نه.</p>
+        <p>در Random Forest معمولاً بعد از نقطه‌ای:</p>
+        <div class="chart">Performance → plateau</div>
+        <p>می‌شود.</p>
+        <p>در Boosting افزایش بیش از حد می‌تواند:</p>
+        <div class="chart">Overfitting</div>
+        <p>ایجاد کند.</p>
+
+        <h3>سؤال 10</h3>
+        <p>آیا Boosting همیشه بهتر از Bagging است؟</p>
+        <p>خیر.</p>
+        <p>به:</p>
+        <div class="chart">• dataset
+• noise
+• sample size
+• feature types
+• computational constraints
+• hyperparameters
+• objective</div>
+        <p>وابسته است.</p>
+
+        <hr style="border:1px solid #444; margin:30px 0;" />
+
+        <h2>🧠 سه جمله‌ای که باید واقعاً حفظ باشی</h2>
+        <p>اگر در مصاحبه فقط سه نکته از این فصل را بتوانی بگویی:</p>
+        
+        <p><strong>1️⃣ Bagging</strong></p>
+        <div class="formula">$$Bootstrap + Aggregation \rightarrow Variance Reduction$$</div>
+        
+        <p><strong>2️⃣ Boosting</strong></p>
+        <div class="formula">$$Sequential Error Correction \rightarrow Bias Reduction$$</div>
+        
+        <p><strong>3️⃣ Stacking</strong></p>
+        <div class="formula">$$Different Models + OOF Predictions + Meta Learner \rightarrow Learned Combination$$</div>
+
+        <p>و مهم‌تر از همه:</p>
+        <div class="formula" style="font-size: 1.5em;">
+            $$Ensemble Performance \approx Model Quality + Error Diversity$$
+        </div>
+        <p>یعنی Ensemble قوی الزاماً مجموعه‌ای از بهترین مدل‌ها نیست؛ مجموعه‌ای از مدل‌هایی است که هم خوب‌اند و هم خطاهایشان تا حد ممکن مکمل یکدیگر است.</p>
+
+        <hr style="border:1px solid #444; margin:50px 0;" />
+        <p style="text-align:center; color:#8b949e; font-size:0.85rem; padding:16px 0;">Ensemble Learning · Senior ML · تمام نکات ریز 🧠</p>
+
+    </div>
+</body>
+</html>

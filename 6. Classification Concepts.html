@@ -1,0 +1,1734 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classification Concepts - Senior ML Level</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}]});"></script>
+    <style>
+        body { background-color: #0d1117; color: #e6edf3; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.8; margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1, h2, h3 { color: #e6edf3; text-align: right; border-bottom: 1px solid #444; padding-bottom: 15px; margin-top: 50px; }
+        p, li { text-align: right; }
+        
+        /* Boxes */
+        .box { background-color: #21262d; border: 1px solid #30363d; border-radius: 8px; padding: 15px; margin: 15px 0; color: #e6edf3; }
+        .inner-box { background-color: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 15px; margin: 10px; }
+        .inner-title { font-weight: bold; margin-bottom: 5px; }
+
+        /* Formula Box */
+        .formula {
+            direction: ltr;
+            background-color: #000;
+            border: 1px solid #fff;
+            border-radius: 0;
+            padding: 15px;
+            margin: 20px auto;
+            width: fit-content;
+            max-width: 100%;
+            overflow-x: auto;
+            text-align: center;
+            font-size: 1.2em;
+            font-family: "Times New Roman", Times, serif;
+            color: #fff;
+        }
+
+        /* Charts / Flowcharts / ASCII Art */
+        .chart { direction: ltr; text-align: left; font-family: monospace; background-color: #21262d; border-radius: 8px; padding: 15px; overflow-x: auto; white-space: pre; border: 1px solid #444; }
+
+        /* Tables */
+        table { width: 100%; border-collapse: collapse; direction: rtl; }
+        th, td { border: 1px solid #444; padding: 12px; text-align: right; }
+        th { background-color: #21262d; }
+
+        /* Highlight */
+        .highlight { color: #58a6ff; }
+
+        /* --- Part 4: Threshold Visualization Styles --- */
+        .viz-box { background-color: #1c2128; border: 1px solid #30363d; border-radius: 12px; padding: 20px; margin: 20px 0; position: relative; }
+        .viz-head { text-align: center; margin-bottom: 20px; font-size: 1.1em; color: #aaa; }
+        .viz-visual-area { position: relative; height: 120px; margin-bottom: 20px; border-bottom: 1px solid #30363d; }
+        .viz-row { position: absolute; width: 100%; display: flex; justify-content: center; align-items: center; gap: 15px; }
+        .viz-row.top { top: 10px; }
+        .viz-row.bottom { top: 70px; }
+        .viz-label { position: absolute; left: 0; font-size: 0.8em; color: #aaa; }
+        .viz-circles { display: flex; gap: 10px; }
+        .viz-c { width: 24px; height: 24px; border-radius: 50%; border: 1px solid #fff; }
+        .viz-c.blue { background-color: #3b82f6; }
+        .viz-c.purple { background-color: #a371f7; }
+        .viz-threshold-line { position: absolute; top: 0; bottom: 0; width: 2px; background-color: #3fb950; }
+        .viz-slider-wrap { position: relative; height: 40px; margin-top: 20px; }
+        .viz-slider { width: 100%; position: absolute; top: 10px; left: 0; background: transparent; accent-color: #fff; }
+        .viz-slider-num { position: absolute; top: 0; left: 50%; transform: translateX(-50%); font-size: 0.8em; color: #aaa; }
+        .viz-matrix { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 20px 0; padding: 10px; border: 1px solid #30363d; border-radius: 8px; }
+        .viz-m { display: flex; justify-content: space-between; align-items: center; padding: 5px 10px; border: 1px solid #30363d; border-radius: 4px; font-size: 0.9em; }
+        .viz-m span { color: #aaa; }
+        .viz-m strong { color: #fff; }
+        .viz-eq { direction: ltr; text-align: center; font-family: monospace; margin: 10px 0; border-top: 1px solid #30363d; padding-top: 10px; }
+        .viz-feedback { display: block; width: 100%; text-align: center; color: #aaa; font-size: 0.8em; margin-top: 10px; }
+        
+        /* --- Part 23: ROC Visualization Styles (Updated) --- */
+        .roc-container { background-color: #1c2128; border: 1px solid #30363d; border-radius: 12px; padding: 20px; margin: 20px 0; position: relative; }
+        .roc-legend { display: flex; justify-content: center; gap: 20px; margin-bottom: 15px; font-size: 0.9em; color: #aaa; }
+        .roc-legend span { display: flex; align-items: center; gap: 5px; }
+        .roc-legend .dash { width: 20px; height: 1px; border-top: 1px dashed #777; }
+        .roc-legend .solid { width: 20px; height: 2px; background-color: #3fb950; }
+        .roc-graph-area { position: relative; height: 350px; background-color: #161b22; border: 1px solid #30363d; border-radius: 8px; overflow: hidden; }
+        .roc-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        .roc-controls { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; }
+        .roc-control { display: flex; flex-direction: column; align-items: center; width: 45%; }
+        .roc-control span { margin-bottom: 10px; font-size: 0.9em; color: #aaa; }
+        .roc-control input { width: 100%; accent-color: #fff; }
+        .roc-footer { text-align: center; margin-top: 15px; padding-top: 10px; border-top: 1px solid #30363d; color: #aaa; font-size: 0.9em; }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚖️ 6. Classification Concepts</h1>
+        <ul>
+            <li>Confusion Matrix</li>
+            <li>Decision Boundary</li>
+            <li>Probability Output</li>
+            <li>Classification Threshold</li>
+            <li>Threshold Tuning</li>
+            <li>Cost-Sensitive Classification</li>
+            <li>Class Imbalance</li>
+            <li>Class Weight</li>
+            <li>Oversampling</li>
+            <li>Undersampling</li>
+            <li>SMOTE</li>
+            <li>ADASYN</li>
+            <li>Precision-Recall Tradeoff</li>
+            <li>ROC Curve</li>
+            <li>PR Curve</li>
+            <li>Calibration</li>
+            <li>Probability Calibration</li>
+            <li>Platt Scaling</li>
+            <li>Isotonic Regression</li>
+        </ul>
+
+        <p>حتماً. این بخش از مهم‌ترین قسمت‌های Classification در سطح Senior ML است، چون اینجا از «مدل چه چیزی یاد گرفته؟» وارد این می‌شویم که مدل چگونه از Score/Probability به یک تصمیم واقعی تبدیل می‌شود و چگونه با imbalance، هزینه خطا و calibration برخورد کنیم.</p>
+
+        <h2>⚖️ 6. Classification Concepts — Senior ML</h2>
+        <p>ابتدا کل زنجیره را ببین:</p>
+        <div class="box">
+            <div class="chart">
+Raw Features
+     │
+     ▼
+ ML Model
+     │
+     ▼
+Score / Probability
+     │
+     ▼
+Classification Threshold
+     │
+     ▼
+Predicted Class
+     │
+     ▼
+Confusion Matrix
+     │
+     ├── TP
+     ├── TN
+     ├── FP
+     └── FN
+     │
+     ▼
+Business Decision
+            </div>
+        </div>
+        <p>و در مسائل واقعی:</p>
+        <div class="box">
+            <div class="chart">
+Class Imbalance
+      │
+      ├── Class Weight
+      ├── Oversampling
+      ├── Undersampling
+      ├── SMOTE
+      └── ADASYN
+
+Probability Quality
+      │
+      ├── Calibration
+      ├── Platt Scaling
+      └── Isotonic Regression
+            </div>
+        </div>
+
+        <h3>1. Confusion Matrix</h3>
+        <p>Confusion Matrix پایه‌ی تقریباً تمام Classification Metrics است.</p>
+        <p>فرض کنیم:</p>
+        <div class="box"><div class="chart">Positive = Fraud
+Negative = Legitimate</div></div>
+        <p>چهار حالت داریم:</p>
+        <table>
+            <thead><tr><th>Actual</th><th>Predicted</th><th>نتیجه</th></tr></thead>
+            <tbody>
+                <tr><td>Positive</td><td>Positive</td><td>TP</td></tr>
+                <tr><td>Positive</td><td>Negative</td><td>FN</td></tr>
+                <tr><td>Negative</td><td>Positive</td><td>FP</td></tr>
+                <tr><td>Negative</td><td>Negative</td><td>TN</td></tr>
+            </tbody>
+        </table>
+        
+        <div class="inner-box"><div class="inner-title">TP — True Positive</div></div>
+        <p>مدل Positive گفته و واقعاً Positive بوده.</p>
+        <div class="box"><div class="chart">Actual: Fraud
+Predicted: Fraud</div></div>
+        
+        <div class="inner-box"><div class="inner-title">TN — True Negative</div></div>
+        <p>مدل Negative گفته و واقعاً Negative بوده.</p>
+        <div class="box"><div class="chart">Actual: Legitimate
+Predicted: Legitimate</div></div>
+        
+        <div class="inner-box"><div class="inner-title">FP — False Positive</div></div>
+        <p>مدل Positive گفته ولی واقعاً Negative بوده.</p>
+        <div class="box"><div class="chart">Actual: Legitimate
+Predicted: Fraud</div></div>
+        <p>این همان:</p>
+        <div class="inner-box">Type I Error</div>
+        <p>است.</p>
+
+        <div class="inner-box"><div class="inner-title">FN — False Negative</div></div>
+        <p>مدل Negative گفته ولی واقعاً Positive بوده.</p>
+        <div class="box"><div class="chart">Actual: Fraud
+Predicted: Legitimate</div></div>
+        <p>این:</p>
+        <div class="inner-box">Type II Error</div>
+        <p>است.</p>
+
+        <div class="inner-box"><div class="inner-title">یک مثال واقعی</div></div>
+        <p>فرض کن 1000 تراکنش داریم:</p>
+        <div class="box"><div class="chart">TP = 80
+FP = 20
+TN = 880
+FN = 20</div></div>
+        <p>آنگاه:</p>
+        <div class="box"><div class="chart">Actual Fraud      = 100
+Actual Legitimate = 900
+
+Predicted Fraud   = 100
+Predicted Normal  = 900</div></div>
+        <p>از این چهار عدد می‌توانیم تقریباً تمام Classification Metrics پایه را بسازیم.</p>
+
+        <h3>2. Decision Boundary</h3>
+        <p>حالا سؤال مهم:</p>
+        <div class="inner-box">مدل چگونه تصمیم می‌گیرد یک نمونه متعلق به Class 0 یا Class 1 است؟</div>
+        <p>فرض کن دو Feature داریم:</p>
+        <div class="box"><div class="chart">x1 = income
+x2 = age</div></div>
+        <p>مدل یک تابع یاد می‌گیرد:</p>
+        <div class="formula">$$f(x)$$</div>
+        <p>که Score تولید می‌کند.</p>
+        <p>مثلاً:</p>
+        <div class="formula">$$P(Y=1|X=x)$$</div>
+        <p>اگر:</p>
+        <div class="formula">$$P(Y=1|X) \ge 0.5$$</div>
+        <p>بگوییم:</p>
+        <div class="box"><div class="chart">Class 1</div></div>
+        <p>و اگر:</p>
+        <div class="formula">$$P(Y=1|X) < 0.5$$</div>
+        <p>بگوییم:</p>
+        <div class="box"><div class="chart">Class 0</div></div>
+        <p>مرزی که این دو ناحیه را جدا می‌کند:</p>
+        <div class="inner-box"><div class="inner-title">Decision Boundary</div></div>
+        <p>است.</p>
+
+        <div class="inner-box"><div class="inner-title">Decision Boundary در Logistic Regression</div></div>
+        <p>در Logistic Regression:</p>
+        <div class="formula">$$z = w^T x + b$$</div>
+        <p>و:</p>
+        <div class="formula">$$p = \sigma(z)$$</div>
+        <p>که:</p>
+        <div class="formula">$$\sigma(z) = \frac{1}{1 + e^{-z}}$$</div>
+        <p>است.</p>
+        <p>اگر Threshold = 0.5 باشد:</p>
+        <div class="formula">$$p = 0.5$$</div>
+        <p>زمانی رخ می‌دهد که:</p>
+        <div class="formula">$$z = 0$$</div>
+        <p>پس:</p>
+        <div class="formula">$$w^T x + b = 0$$</div>
+        <p>این همان Decision Boundary است.</p>
+
+        <div class="inner-box"><div class="inner-title">نکته Senior</div></div>
+        <p>Decision Boundary الزاماً همیشه خطی نیست.</p>
+        <div class="inner-box"><div class="inner-title">Logistic Regression</div></div>
+        <p>معمولاً:</p>
+        <div class="box"><div class="chart">Linear Boundary</div></div>
+        <div class="inner-box"><div class="inner-title">Decision Tree</div></div>
+        <div class="box"><div class="chart">Axis-aligned regions</div></div>
+        <div class="inner-box"><div class="inner-title">Kernel SVM</div></div>
+        <p>می‌تواند:</p>
+        <div class="box"><div class="chart">Non-linear</div></div>
+        <p>باشد.</p>
+        <div class="inner-box"><div class="inner-title">Neural Network</div></div>
+        <p>می‌تواند:</p>
+        <div class="box"><div class="chart">Highly Non-linear</div></div>
+        <p>باشد.</p>
+
+        <h3>3. Probability Output</h3>
+        <p>یک Classification Model ممکن است به جای:</p>
+        <div class="box"><div class="chart">0 / 1</div></div>
+        <p>خروجی:</p>
+        <div class="box"><div class="chart">0.73</div></div>
+        <p>بدهد.</p>
+        <p>این عدد معمولاً به عنوان:</p>
+        <div class="formula">$$P(Y=1|X)$$</div>
+        <p>تفسیر می‌شود.</p>
+        <p>اما یک نکته بسیار مهم:</p>
+        <div class="inner-box">هر Scoreای Probability معتبر نیست.</div>
+
+        <div class="inner-box"><div class="inner-title">Score vs Probability</div></div>
+        <p>مثلاً بعضی مدل‌ها:</p>
+        <div class="box"><div class="chart">SVM
+Gradient Boosting
+Tree ensembles</div></div>
+        <p>ممکن است یک Score تولید کنند که الزاماً probability calibrated نیست.</p>
+        <p>پس:</p>
+        <div class="box"><div class="chart">Score = 0.8</div></div>
+        <p>لزومی ندارد یعنی:</p>
+        <div class="inner-box">احتمال واقعی Positive بودن 80٪ است.</div>
+
+        <h3>4. Classification Threshold</h3>
+        <p>مدل احتمال می‌دهد:</p>
+        <div class="box"><div class="chart">0.91
+0.72
+0.63
+0.48
+0.12</div></div>
+        <p>ولی سیستم باید تصمیم binary بگیرد.</p>
+        <p>Threshold این تبدیل را انجام می‌دهد:</p>
+        <div class="formula">$$\hat{y} = \begin{cases} 1 & p \ge t \\ 0 & p < t \end{cases}$$</div>
+        <p>مثلاً:</p>
+        <div class="formula">$$t = 0.5$$</div>
+
+        <div class="inner-box"><div class="inner-title">Threshold = 0.5 یک قانون طبیعی نیست!</div></div>
+        <p>این یکی از نکات بسیار مهم Senior است.</p>
+        <p>بسیاری فکر می‌کنند:</p>
+        <div class="inner-box">Binary Classification یعنی Threshold = 0.5.</div>
+        <p>نه.</p>
+        <p>Threshold=0.5 فقط یک convention رایج است.</p>
+        <p>Threshold باید بر اساس:</p>
+        <ul>
+            <li>Cost</li>
+            <li>Precision</li>
+            <li>Recall</li>
+            <li>Business constraints</li>
+            <li>Capacity</li>
+            <li>Risk</li>
+            <li>Calibration</li>
+        </ul>
+        <p>انتخاب شود.</p>
+
+        <div class="inner-box"><div class="inner-title">Visualization — Threshold</div></div>
+        <div class="viz-box">
+            <div class="viz-head">آستانه <span id="th-val">۰٫۵۰</span></div>
+            
+            <div class="viz-visual-area">
+                <div class="viz-row top">
+                    <div class="viz-label">مثبت واقعی</div>
+                    <div class="viz-circles" id="circle-tp"></div>
+                </div>
+                <div class="viz-row bottom">
+                    <div class="viz-label">منفی واقعی</div>
+                    <div class="viz-circles" id="circle-tn"></div>
+                </div>
+                <div class="viz-threshold-line" id="th-line" style="left: 50%;"></div>
+            </div>
+
+            <div class="viz-slider-wrap">
+                <div class="viz-slider-num">0</div>
+                <input type="range" class="viz-slider" id="th-slider" min="0" max="1" step="0.01" value="0.5">
+                <div class="viz-slider-num" style="left: 100%; transform: translateX(-100%);">1</div>
+            </div>
+
+            <div class="viz-matrix">
+                <div class="viz-m"><span>TP</span><span>مثبت واقعی</span><strong id="tp-cnt">۳</strong></div>
+                <div class="viz-m"><span>FP</span><span>مثبت کاذب</span><strong id="fp-cnt">۳</strong></div>
+                <div class="viz-m"><span>TN</span><span>منفی واقعی</span><strong id="tn-cnt">۲</strong></div>
+                <div class="viz-m"><span>FN</span><span>منفی کاذب</span><strong id="fn-cnt">۲</strong></div>
+            </div>
+
+            <div class="viz-eq" id="th-eq">در آستانهٔ ۰٫۵۰:
+دقت = TP/(TP+FP) = 3/(3+3) = ۵۰٪
+یادآوری = TP/(TP+FN) = 3/(3+2) = ۶۰٪</div>
+
+            <div class="viz-feedback">بازخورد بدهید</div>
+        </div>
+        <p>این Visualization دقیقاً نشان می‌دهد با جابه‌جا کردن Threshold، نمونه‌ها بین TP/FP/TN/FN جابه‌جا می‌شوند و Precision و Recall تغییر می‌کنند.</p>
+
+        <h3>5. Threshold Tuning</h3>
+        <p>فرض کن مدل این Probabilityها را می‌دهد:</p>
+        <div class="box"><div class="chart">0.99
+0.92
+0.87
+0.73
+0.61
+0.48
+0.31
+0.12</div></div>
+        <p>اگر:</p>
+        <div class="box"><div class="chart">Threshold = 0.5</div></div>
+        <p>پنج نمونه Positive می‌شوند.</p>
+        <p>ولی اگر:</p>
+        <div class="box"><div class="chart">Threshold = 0.8</div></div>
+        <p>فقط سه نمونه Positive می‌شوند.</p>
+        <p>بنابراین Threshold مستقیماً روی:</p>
+        <div class="box"><div class="chart">TP
+FP
+TN
+FN</div></div>
+        <p>اثر دارد.</p>
+
+        <div class="inner-box"><div class="inner-title">Threshold پایین</div></div>
+        <p>اگر Threshold را پایین بیاوری:</p>
+        <div class="box"><div class="chart">More samples → Positive</div></div>
+        <p>معمولاً:</p>
+        <div class="box"><div class="chart">Recall ↑
+FP ↑
+Precision ممکن است ↓</div></div>
+        
+        <div class="inner-box"><div class="inner-title">Threshold بالا</div></div>
+        <p>اگر Threshold را بالا ببری:</p>
+        <div class="box"><div class="chart">Fewer samples → Positive</div></div>
+        <p>معمولاً:</p>
+        <div class="box"><div class="chart">Precision ↑
+Recall ↓
+FP ↓
+FN ↑</div></div>
+        <p>البته رفتار دقیق به توزیع Scoreها وابسته است و نباید آن را یک قانون ریاضی مطلق برای هر دیتاست دانست.</p>
+
+        <h3>6. Precision-Recall Tradeoff</h3>
+        <p>فرض کن:</p>
+        <div class="box"><div class="chart">Threshold = 0.9</div></div>
+        <p>فقط نمونه‌هایی که خیلی مطمئن هستیم Positive هستند Positive می‌شوند.</p>
+        <p>پس احتمالاً:</p>
+        <div class="box"><div class="chart">Precision بالا
+Recall پایین</div></div>
+        <p>است.</p>
+        <p>اگر Threshold را کاهش دهیم:</p>
+        <div class="box"><div class="chart">Threshold = 0.3</div></div>
+        <p>نمونه‌های بیشتری Positive می‌شوند.</p>
+        <p>پس:</p>
+        <div class="box"><div class="chart">Recall بالا
+Precision ممکن است پایین‌تر</div></div>
+        <p>شود.</p>
+        <p>این Tradeoff بسیار مهم است.</p>
+        <p>در واقع در بسیاری از سیستم‌های Classification، مسئله واقعی این نیست:</p>
+        <div class="inner-box">«بهترین مدل کدام است؟»</div>
+        <p>بلکه:</p>
+        <div class="inner-box">«در چه Operating Pointای باید مدل را اجرا کنیم؟»</div>
+
+        <h3>7. Cost-Sensitive Classification</h3>
+        <p>حالا وارد بخش خیلی مهم Senior می‌شویم.</p>
+        <p>فرض کن:</p>
+        <div class="box"><div class="chart">False Positive cost = $5
+False Negative cost = $500</div></div>
+        <p>یعنی:</p>
+        <div class="inner-box">از دست دادن Fraud صد برابر گران‌تر از False Alarm است.</div>
+        <p>پس نمی‌توانیم بگوییم:</p>
+        <div class="box"><div class="chart">FP = FN</div></div>
+        <p>چون Business چنین چیزی نمی‌گوید.</p>
+
+        <div class="inner-box"><div class="inner-title">Cost Matrix</div></div>
+        <p>مثلاً:</p>
+        <table>
+            <thead><tr><th>Actual / Prediction</th><th>Negative</th><th>Positive</th></tr></thead>
+            <tbody>
+                <tr><td>Negative</td><td>0</td><td>5</td></tr>
+                <tr><td>Positive</td><td>500</td><td>0</td></tr>
+            </tbody>
+        </table>
+        <p>پس:</p>
+        <div class="formula">$$Cost(FP) = 5$$</div>
+        <p>و:</p>
+        <div class="formula">$$Cost(FN) = 500$$</div>
+
+        <div class="inner-box"><div class="inner-title">Expected Cost</div></div>
+        <p>می‌توانیم هزینه را به شکل:</p>
+        <div class="formula">$$TotalCost = C_{FP} FP + C_{FN} FN$$</div>
+        <p>محاسبه کنیم.</p>
+        <p>و Threshold را طوری انتخاب کنیم که:</p>
+        <div class="formula">$$Threshold^* = \arg\min_{t} TotalCost(t)$$</div>
+        <p>شود.</p>
+        <p>این یک روش بسیار Business-oriented است.</p>
+
+        <h3>8. Threshold به Cost وابسته است</h3>
+        <p>اگر:</p>
+        <div class="formula">$$C_{FN} \gg C_{FP}$$</div>
+        <p>باشد، معمولاً می‌خواهیم:</p>
+        <div class="box"><div class="chart">Recall بالا</div></div>
+        <p>داشته باشیم.</p>
+        <p>در نتیجه Threshold پایین‌تر می‌تواند منطقی باشد.</p>
+        <p>اگر:</p>
+        <div class="formula">$$C_{FP} \gg C_{FN}$$</div>
+        <p>باشد:</p>
+        <div class="box"><div class="chart">Precision بالا</div></div>
+        <p>مهم‌تر می‌شود و Threshold بالاتر می‌تواند مناسب‌تر باشد.</p>
+
+        <h3>9. یک نکته بسیار مهم درباره Threshold و Probability</h3>
+        <p>اگر Probabilityها واقعاً calibrated باشند، در حالت ساده‌ی Binary Classification و با فرض هزینه‌های مشخص، threshold به Costها مرتبط می‌شود.</p>
+        <p>اگر:</p>
+        <ul>
+            <li>\(C_{FP}\) = هزینه FP</li>
+            <li>\(C_{FN}\) = هزینه FN</li>
+        </ul>
+        <p>و هزینه درست بودن صفر باشد، threshold تصمیم Bayes به شکل:</p>
+        <div class="formula">$$t^* = \frac{C_{FP}}{C_{FP} + C_{FN}}$$</div>
+        <p>درمی‌آید.</p>
+        <p>مثلاً:</p>
+        <div class="formula">$$C_{FP} = 5$$</div>
+        <p>و:</p>
+        <div class="formula">$$C_{FN} = 500$$</div>
+        <p>پس:</p>
+        <div class="formula">$$t^* = \frac{5}{505} \approx 0.0099$$</div>
+        <p>یعنی اگر Probability واقعاً calibrated باشد، حتی احتمال حدود 1٪ هم ممکن است برای اقدام Positive توجیه اقتصادی داشته باشد.</p>
+        <p>اما این فرمول ساده همیشه مستقیماً قابل استفاده نیست؛ چون در دنیای واقعی:</p>
+        <ul>
+            <li>هزینه‌ها ممکن است context-dependent باشند.</li>
+            <li>ظرفیت بررسی انسانی محدود باشد.</li>
+            <li>هزینه TP/TN صفر نباشد.</li>
+            <li>Probabilityها calibrated نباشند.</li>
+            <li>چند نوع action داشته باشیم.</li>
+            <li>Base rate و sampling scheme متفاوت باشد.</li>
+        </ul>
+        <p>برای همین در Production معمولاً threshold را با Validation Data و Cost/Constraint واقعی انتخاب می‌کنیم.</p>
+
+        <h3>10. Class Imbalance</h3>
+        <p>فرض کن:</p>
+        <div class="box"><div class="chart">Normal = 99.9%
+Fraud  = 0.1%</div></div>
+        <p>این:</p>
+        <div class="inner-box">Class Imbalance</div>
+        <p>است.</p>
+
+        <div class="inner-box"><div class="inner-title">چرا مشکل‌ساز است؟</div></div>
+        <p>مدل می‌تواند:</p>
+        <div class="box"><div class="chart">Always predict Normal</div></div>
+        <p>کند.</p>
+        <p>و Accuracy:</p>
+        <div class="formula">$$99.9\%$$</div>
+        <p>شود.</p>
+        <p>ولی:</p>
+        <div class="formula">$$Recall_{Fraud} = 0$$</div>
+        <p>است.</p>
+
+        <div class="inner-box"><div class="inner-title">Class Imbalance دو نوع مهم دارد</div></div>
+        <div class="inner-box"><div class="inner-title">Mild imbalance</div></div>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">70 / 30</div></div>
+        <p>معمولاً قابل مدیریت است.</p>
+        <div class="inner-box"><div class="inner-title">Severe imbalance</div></div>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">99.9 / 0.1</div></div>
+        <p>نیاز به طراحی جدی‌تر دارد.</p>
+
+        <h3>11. Class Weight</h3>
+        <p>به جای تغییر داده‌ها، به خطاهای یک Class وزن بیشتری می‌دهیم.</p>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">class_weight = {
+    0: 1,
+    1: 10
+}</div>
+        </div>
+        <p>یعنی اشتباه روی Class 1 ده برابر مهم‌تر است.</p>
+
+        <div class="inner-box"><div class="inner-title">در Loss چه اتفاقی می‌افتد؟</div></div>
+        <p>فرض کن Binary Cross Entropy داریم:</p>
+        <div class="formula">$$L = -[y \log p + (1-y) \log(1-p)]$$</div>
+        <p>با Class Weight:</p>
+        <div class="formula">$$L = -w_y [y \log p + (1-y) \log(1-p)]$$</div>
+        <p>در نتیجه خطاهای Class اقلیت بیشتر روی Gradient اثر می‌گذارند.</p>
+
+        <div class="inner-box"><div class="inner-title">مثال</div></div>
+        <div class="box"><div class="chart">Class 0 → weight = 1
+Class 1 → weight = 20</div></div>
+        <p>مدل بیشتر تلاش می‌کند:</p>
+        <div class="inner-box">Class 1 را درست یاد بگیرد.</div>
+
+        <div class="inner-box"><div class="inner-title">مزیت Class Weight</div></div>
+        <p>نیازی نیست:</p>
+        <div class="box"><div class="chart">Dataset را Duplicate کنیم</div></div>
+        <p>پس:</p>
+        <ul>
+            <li>داده جدید مصنوعی تولید نمی‌کنیم.</li>
+            <li>حجم Dataset تغییر نمی‌کند.</li>
+            <li>معمولاً ساده و پایدار است.</li>
+        </ul>
+
+        <div class="inner-box"><div class="inner-title">محدودیت Class Weight</div></div>
+        <p>Class Weight:</p>
+        <div class="inner-box">مشکل Overlap واقعی بین کلاس‌ها را حل نمی‌کند.</div>
+        <p>اگر دو Class واقعاً از نظر Featureها بسیار مشابه باشند، وزن بیشتر معجزه نمی‌کند.</p>
+        <p>همچنین weighting می‌تواند Probability calibration را تغییر دهد؛ پس اگر Probability واقعی نیاز داری، بعد از weighting باید Calibration را بررسی کنی.</p>
+
+        <h3>12. Oversampling</h3>
+        <p>فرض کن:</p>
+        <div class="box"><div class="chart">Class 0 = 90,000
+Class 1 = 10,000</div></div>
+        <p>Oversampling یعنی:</p>
+        <div class="inner-box">نمونه‌های Class اقلیت را بیشتر کنیم.</div>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Class 0 = 90,000
+Class 1 = 50,000</div></div>
+
+        <div class="inner-box"><div class="inner-title">ساده‌ترین Oversampling</div></div>
+        <p>Random Oversampling:</p>
+        <div class="box"><div class="chart">Minority samples
+       ↓
+Randomly duplicate
+       ↓
+Larger minority set</div></div>
+
+        <div class="inner-box"><div class="inner-title">مشکل Random Oversampling</div></div>
+        <p>ممکن است همان نمونه‌ها بارها تکرار شوند.</p>
+        <p>در نتیجه:</p>
+        <div class="inner-box">Overfitting به Minority Samples</div>
+        <p>ممکن است رخ دهد.</p>
+
+        <h3>13. Undersampling</h3>
+        <p>برعکس Oversampling:</p>
+        <p>نمونه‌های Majority را کم می‌کنیم.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Before:
+90000 / 10000
+
+After:
+30000 / 10000</div></div>
+
+        <div class="inner-box"><div class="inner-title">مزیت</div></div>
+        <ul>
+            <li>Training سریع‌تر می‌شود.</li>
+            <li>Dataset کوچک‌تر می‌شود.</li>
+        </ul>
+        <div class="inner-box"><div class="inner-title">مشکل</div></div>
+        <p>ممکن است:</p>
+        <div class="inner-box">Information valuable from Majority Class</div>
+        <p>را حذف کنیم.</p>
+        <p>پس Undersampling یک tradeoff دارد:</p>
+        <div class="box"><div class="chart">Less computation
+       vs
+Less information</div></div>
+
+        <h3>14. SMOTE</h3>
+        <p>SMOTE:</p>
+        <div class="inner-box"><div class="inner-title">Synthetic Minority Over-sampling Technique</div></div>
+        <p>است.</p>
+        <p>به جای Duplicate کردن دقیق نمونه‌ها، نمونه Synthetic تولید می‌کند.</p>
+
+        <div class="inner-box"><div class="inner-title">ایده SMOTE</div></div>
+        <p>فرض کن یک Minority sample داریم:</p>
+        <div class="formula">$$x_i$$</div>
+        <p>و یکی از Neighborهایش:</p>
+        <div class="formula">$$x_j$$</div>
+        <p>SMOTE نمونه جدید را تقریباً به شکل:</p>
+        <div class="formula">$$x_{new} = x_i + \lambda(x_j - x_i)$$</div>
+        <p>می‌سازد.</p>
+        <p>که:</p>
+        <div class="formula">$$\lambda \in [0, 1]$$</div>
+        <p>است.</p>
+
+        <div class="inner-box"><div class="inner-title">مثال ساده</div></div>
+        <p>فرض کن:</p>
+        <div class="box"><div class="chart">x_i = (2, 4)
+x_j = (4, 8)</div></div>
+        <p>اگر:</p>
+        <div class="formula">$$\lambda = 0.5$$</div>
+        <p>آنگاه:</p>
+        <div class="formula">$$x_{new} = (2,4) + 0.5[(4,8) - (2,4)]$$</div>
+        <p>می‌شود:</p>
+        <div class="formula">$$(3,6)$$</div>
+        <p>یعنی یک نمونه جدید در فضای Feature ساخته می‌شود.</p>
+
+        <div class="inner-box"><div class="inner-title">چرا SMOTE بهتر از Duplicate است؟</div></div>
+        <p>چون:</p>
+        <div class="box"><div class="chart">Duplicate:
+A
+A
+A
+A</div></div>
+        <p>ولی SMOTE:</p>
+        <div class="box"><div class="chart">A
+A'
+A''
+A'''</div></div>
+        <p>نمونه‌های جدیدی در اطراف Minority ایجاد می‌کند.</p>
+
+        <h3>15. مشکل مهم SMOTE</h3>
+        <p>SMOTE فرض می‌کند:</p>
+        <div class="inner-box">Interpolation بین Minority samples منطقی است.</div>
+        <p>اما همیشه درست نیست.</p>
+        <p>اگر:</p>
+        <div class="box"><div class="chart">Minority
++
+Majority</div></div>
+        <p>شدیداً overlap داشته باشند، SMOTE ممکن است:</p>
+        <div class="inner-box">Synthetic samples را در ناحیه Majority ایجاد کند.</div>
+        <p>در نتیجه Classification سخت‌تر می‌شود.</p>
+
+        <h3>16. SMOTE روی چه داده‌ای مناسب است؟</h3>
+        <p>SMOTE اساساً برای:</p>
+        <div class="inner-box">Feature space عددی</div>
+        <p>طراحی شده است.</p>
+        <p>برای Categorical Features ساده نمی‌توانی کورکورانه interpolation انجام دهی.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Gender = Male
+Gender = Female</div></div>
+        <p>میانگین گرفتن معنی ندارد.</p>
+        <p>برای داده‌های mixed-type، روش‌هایی مانند:</p>
+        <div class="inner-box">SMOTENC</div>
+        <p>وجود دارند.</p>
+
+        <h3>17. ADASYN</h3>
+        <p>ADASYN:</p>
+        <div class="inner-box"><div class="inner-title">Adaptive Synthetic Sampling</div></div>
+        <p>است.</p>
+        <p>ایده:</p>
+        <div class="inner-box">در نقاطی که Minority classification سخت‌تر است، Synthetic Samples بیشتری ایجاد کن.</div>
+
+        <div class="inner-box"><div class="inner-title">تفاوت SMOTE و ADASYN</div></div>
+        <div class="inner-box"><div class="inner-title">SMOTE</div></div>
+        <p>تقریباً:</p>
+        <div class="box"><div class="chart">Generate around minority manifold</div></div>
+        <div class="inner-box"><div class="inner-title">ADASYN</div></div>
+        <p>تمرکز بیشتر:</p>
+        <div class="box"><div class="chart">Hard-to-learn minority samples</div></div>
+        <p>دارد.</p>
+
+        <div class="inner-box"><div class="inner-title">مثال</div></div>
+        <p>فرض کن Minority samples:</p>
+        <div class="box"><div class="chart">A → آسان
+B → آسان
+C → سخت
+D → سخت
+E → بسیار سخت</div></div>
+        <p>ADASYN تمایل دارد اطراف:</p>
+        <div class="box"><div class="chart">C
+D
+E</div></div>
+        <p>نمونه بیشتری تولید کند.</p>
+
+        <div class="inner-box"><div class="inner-title">مزیت ADASYN</div></div>
+        <p>مدل را به سمت:</p>
+        <div class="inner-box">Decision Boundaryهای دشوار</div>
+        <p>بیشتر هل می‌دهد.</p>
+
+        <div class="inner-box"><div class="inner-title">مشکل ADASYN</div></div>
+        <p>اگر نقاط سخت واقعاً:</p>
+        <div class="inner-box">Noise / mislabeled data</div>
+        <p>باشند، ADASYN ممکن است روی Noise بیش از حد تمرکز کند.</p>
+        <p>در نتیجه:</p>
+        <div class="box"><div class="chart">Noise
+ ↓
+Synthetic samples
+ ↓
+More noise
+ ↓
+Overfitting</div></div>
+        <p>ممکن است رخ دهد.</p>
+
+        <h3>18. Oversampling vs Class Weight</h3>
+        <p>دو روش مهم:</p>
+        <div class="box">
+            <div class="inner-title">Class Weight</div>
+            <div class="chart">Data ثابت
+Loss تغییر می‌کند</div>
+        </div>
+        <div class="box">
+            <div class="inner-title">Oversampling</div>
+            <div class="chart">Loss ثابت
+Data distribution در training تغییر می‌کند</div>
+        </div>
+        
+        <div class="inner-box"><div class="inner-title">آیا این دو معادل‌اند؟</div></div>
+        <p>در بعضی مدل‌ها و شرایط، weighting و resampling می‌توانند اثر مشابهی روی optimization داشته باشند.</p>
+        <p>اما:</p>
+        <div class="inner-box">کاملاً معادل نیستند.</div>
+        <p>چون Sampling روی:</p>
+        <ul>
+            <li>minibatch composition</li>
+            <li>gradient variance</li>
+            <li>duplicate samples</li>
+            <li>optimization dynamics</li>
+        </ul>
+        <p>اثر می‌گذارد.</p>
+
+        <h3>19. Data Leakage در Oversampling</h3>
+        <p>یکی از مهم‌ترین نکات Senior:</p>
+        <p>فرض کن:</p>
+        <div class="box"><div class="chart">Full Dataset
+    ↓
+SMOTE
+    ↓
+Train/Test Split</div></div>
+        <p>این اشتباه است.</p>
+        <p>چرا؟</p>
+        <p>چون SMOTE قبل از Split از کل Dataset استفاده کرده است.</p>
+        <p>ممکن است اطلاعات Distribution/Neighborhoodهای Test وارد Training شود.</p>
+
+        <div class="inner-box"><div class="inner-title">روش صحیح</div></div>
+        <div class="box"><div class="chart">Full Dataset
+      │
+      ▼
+Train / Validation / Test Split
+      │
+      ├── Train
+      │     ↓
+      │   SMOTE
+      │     ↓
+      │   Model
+      │
+      ├── Validation
+      │     ↓
+      │   Original distribution
+      │
+      └── Test
+            ↓
+       Original distribution</div></div>
+
+        <h3>20. Cross-Validation و SMOTE</h3>
+        <p>این نکته حتی مهم‌تر است.</p>
+        <p>اشتباه:</p>
+        <div class="box"><div class="chart">SMOTE
+  ↓
+K-Fold CV</div></div>
+        <p>روش صحیح:</p>
+        <div class="box"><div class="chart">Fold 1:
+Train Fold
+   ↓
+SMOTE
+   ↓
+Fit
+
+Validation Fold
+   ↓
+Evaluate</div></div>
+        <p>و همین برای هر Fold.</p>
+        <p>یعنی:</p>
+        <div class="inner-box">Sampling باید داخل Training Fold انجام شود، نه قبل از CV.</div>
+        <p>در ابزارهایی مثل imblearn.pipeline.Pipeline می‌توان این workflow را درست پیاده کرد.</p>
+
+        <h3>21. چرا Validation/Test نباید SMOTE شوند؟</h3>
+        <p>چون می‌خواهیم بفهمیم:</p>
+        <div class="inner-box">مدل روی Distribution واقعی Production چگونه رفتار می‌کند؟</div>
+        <p>اگر Test را هم SMOTE کنیم، Metric دیگر نماینده عملکرد واقعی سیستم نیست.</p>
+
+        <h3>22. Precision-Recall Tradeoff</h3>
+        <p>رابطه:</p>
+        <div class="formula">$$Precision = \frac{TP}{TP + FP}$$</div>
+        <p>و:</p>
+        <div class="formula">$$Recall = \frac{TP}{TP + FN}$$</div>
+        <p>وقتی Threshold را پایین می‌آوری:</p>
+        <div class="box"><div class="chart">More Positive predictions</div></div>
+        <p>معمولاً:</p>
+        <div class="box"><div class="chart">Recall ↑
+FP ↑
+Precision ↓</div></div>
+        <p>وقتی Threshold را بالا می‌بری:</p>
+        <div class="box"><div class="chart">Fewer Positive predictions</div></div>
+        <p>معمولاً:</p>
+        <div class="box"><div class="chart">Precision ↑
+Recall ↓</div></div>
+
+        <h3>23. ROC Curve</h3>
+        <p>ROC:</p>
+        <p>TPR</p>
+        <p>را مقابل:</p>
+        <p>FPR</p>
+        <p>برای Thresholdهای مختلف رسم می‌کند.</p>
+        <div class="formula">$$TPR = \frac{TP}{TP + FN}$$</div>
+        <div class="formula">$$FPR = \frac{FP}{FP + TN}$$</div>
+
+        <div class="inner-box"><div class="inner-title">Visualization — ROC</div></div>
+        <div class="roc-container">
+            <div class="roc-legend">
+                <span><span class="dash"></span> بدون مهارت</span>
+                <span><span class="solid"></span> ROC</span>
+            </div>
+
+            <div class="roc-graph-area">
+                <svg class="roc-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
+                    <!-- Grid Lines -->
+                    <line x1="15" y1="15" x2="95" y2="15" stroke="#333" stroke-width="0.5" />
+                    <line x1="15" y1="35" x2="95" y2="35" stroke="#333" stroke-width="0.5" />
+                    <line x1="15" y1="55" x2="95" y2="55" stroke="#333" stroke-width="0.5" />
+                    <line x1="15" y1="75" x2="95" y2="75" stroke="#333" stroke-width="0.5" />
+                    
+                    <line x1="35" y1="15" x2="35" y2="95" stroke="#333" stroke-width="0.5" />
+                    <line x1="55" y1="15" x2="55" y2="95" stroke="#333" stroke-width="0.5" />
+                    <line x1="75" y1="15" x2="75" y2="95" stroke="#333" stroke-width="0.5" />
+                    
+                    <!-- Axis Lines -->
+                    <line x1="15" y1="95" x2="95" y2="95" stroke="#666" stroke-width="0.8" />
+                    <line x1="15" y1="15" x2="15" y2="95" stroke="#666" stroke-width="0.8" />
+
+                    <!-- Axis Labels -->
+                    <text x="5" y="20" fill="#aaa" font-size="3" font-weight="bold">TPR</text>
+                    <text x="50" y="99" fill="#aaa" font-size="3" font-weight="bold" text-anchor="middle">FPR</text>
+
+                    <text x="15" y="94" fill="#aaa" font-size="2" text-anchor="middle">0</text>
+                    <text x="35" y="94" fill="#aaa" font-size="2" text-anchor="middle">0.2</text>
+                    <text x="55" y="94" fill="#aaa" font-size="2" text-anchor="middle">0.4</text>
+                    <text x="75" y="94" fill="#aaa" font-size="2" text-anchor="middle">0.6</text>
+                    <text x="95" y="94" fill="#aaa" font-size="2" text-anchor="middle">1</text>
+                    
+                    <text x="13" y="35" fill="#aaa" font-size="2" text-anchor="end">0.8</text>
+                    <text x="13" y="55" fill="#aaa" font-size="2" text-anchor="end">0.6</text>
+                    <text x="13" y="75" fill="#aaa" font-size="2" text-anchor="end">0.4</text>
+                    <text x="13" y="94" fill="#aaa" font-size="2" text-anchor="end">0.2</text>
+
+                    <!-- Dashed Random Line -->
+                    <line id="roc-dash" x1="15" y1="95" x2="95" y2="15" stroke="#777" stroke-width="0.8" stroke-dasharray="3,3" />
+                    
+                    <!-- ROC Curve -->
+                    <path id="roc-curve" d="" fill="none" stroke="#3fb950" stroke-width="1.5" />
+
+                    <!-- Vertical Dotted Line -->
+                    <line id="roc-vline" x1="15" y1="95" x2="15" y2="15" stroke="#3fb950" stroke-width="0.5" stroke-dasharray="1,2" opacity="0" />
+
+                    <!-- Threshold Point -->
+                    <circle id="roc-point" cx="15" cy="95" r="1.5" fill="#3fb950" stroke="#fff" stroke-width="0.5" opacity="0" />
+                    
+                    <!-- Threshold Tooltip Box -->
+                    <g id="roc-tooltip" opacity="0">
+                        <rect id="roc-tooltip-bg" x="0" y="0" width="20" height="5" fill="#3fb950" rx="1.5" />
+                        <text id="roc-tooltip-text" x="0" y="0" fill="#000" font-size="2.5" font-weight="bold" text-anchor="middle">t = ۰٫۵۰</text>
+                    </g>
+                </svg>
+            </div>
+
+            <div class="roc-controls">
+                <div class="roc-control">
+                    <span>AUROC: <span id="auroc-val">۰٫۷۵</span></span>
+                    <input type="range" id="auroc-slider" min="0.5" max="1" step="0.01" value="0.75">
+                </div>
+                <div class="roc-control">
+                    <span>آستانه: <span id="t-val">۰٫۵۰</span></span>
+                    <input type="range" id="threshold-roc-slider" min="0" max="1" step="0.01" value="0.5">
+                </div>
+            </div>
+
+            <div class="roc-footer" id="roc-footer">در آستانهٔ ۰٫۵۰، نرخ مثبت واقعی ۸۷٫۵٪ و نرخ مثبت کاذب ۵۰٪ است؛ AUROC ۰٫۷۵ نشان‌دهندهٔ جداسازی مفید است</div>
+        </div>
+        <p>در این نمودار می‌بینی که با تغییر Threshold، Operating Point روی ROC Curve حرکت می‌کند و رابطه TPR/FPR تغییر می‌کند.</p>
+
+        <h3>24. PR Curve</h3>
+        <p>PR Curve:</p>
+        <div class="box"><div class="chart">Precision
+    ↑
+    │
+    │      ●
+    │    ●
+    │  ●
+    │ ●
+    └────────────→ Recall</div></div>
+        <p>است.</p>
+        <p>در مسائل:</p>
+        <div class="inner-box">Rare Positive</div>
+        <p>اغلب بسیار informative است.</p>
+
+        <div class="inner-box"><div class="inner-title">ROC vs PR</div></div>
+        <table>
+            <thead><tr><th></th><th>ROC</th><th>PR</th></tr></thead>
+            <tbody>
+                <tr><td>محور X</td><td>FPR</td><td>Recall</td></tr>
+                <tr><td>محور Y</td><td>TPR</td><td>Precision</td></tr>
+                <tr><td>تمرکز</td><td>Positive + Negative</td><td>Positive</td></tr>
+                <tr><td>Imbalance</td><td>ممکن است گمراه‌کننده شود</td><td>اغلب informativeتر</td></tr>
+                <tr><td>Rare events</td><td>معمولاً کمتر informative</td><td>معمولاً مناسب‌تر</td></tr>
+            </tbody>
+        </table>
+
+        <h3>25. Calibration</h3>
+        <p>حالا می‌رسیم به یکی از مهم‌ترین مفاهیم Senior.</p>
+        <p>فرض کن مدل می‌گوید:</p>
+        <div class="box"><div class="chart">P = 0.8</div></div>
+        <p>این باید چه معنی داشته باشد؟</p>
+        <p>اگر مدل calibrated باشد:</p>
+        <div class="inner-box">بین تمام نمونه‌هایی که مدل برایشان P≈0.8 داده، تقریباً 80٪ باید واقعاً Positive باشند.</div>
+        <p>این یعنی:</p>
+        <div class="formula">$$P(Y=1|P(X)\approx0.8) \approx 0.8$$</div>
+
+        <div class="inner-box"><div class="inner-title">مثال</div></div>
+        <p>فرض کن 1000 تراکنش داریم که مدل برای همه:</p>
+        <div class="box"><div class="chart">P(Fraud) ≈ 0.7</div></div>
+        <p>گفته.</p>
+        <p>اگر مدل calibrated باشد:</p>
+        <p>تقریباً:</p>
+        <div class="box"><div class="chart">700 Fraud
+300 Normal</div></div>
+        <p>باید ببینیم.</p>
+
+        <h3>26. Calibration با Discrimination فرق دارد</h3>
+        <p>این دو را قاطی نکن.</p>
+        <div class="inner-box"><div class="inner-title">Discrimination</div></div>
+        <p>می‌پرسد:</p>
+        <div class="inner-box">آیا مدل Positiveها را بالاتر از Negativeها Rank می‌کند؟</div>
+        <p>Metrics:</p>
+        <div class="box"><div class="chart">ROC-AUC
+PR-AUC</div></div>
+        <div class="inner-box"><div class="inner-title">Calibration</div></div>
+        <p>می‌پرسد:</p>
+        <div class="inner-box">آیا Probabilityها واقعاً Probabilityهای قابل اعتماد هستند؟</div>
+        <p>یک مدل می‌تواند:</p>
+        <div class="box"><div class="chart">Excellent AUC
+Poor Calibration</div></div>
+        <p>داشته باشد.</p>
+        <p>و برعکس.</p>
+
+        <h3>27. مثال بسیار مهم</h3>
+        <div class="inner-box"><div class="inner-title">Model A:</div></div>
+        <div class="box"><div class="chart">Actual:
+Positive = 70%
+
+Predicted:
+0.99 برای تقریباً همه</div></div>
+        <p>ممکن است Ranking خوبی داشته باشد.</p>
+        <p>اما Probabilityهایش overconfident هستند.</p>
+        
+        <div class="inner-box"><div class="inner-title">Model B</div></div>
+        <div class="box"><div class="chart">0.7
+0.8
+0.6
+...</div></div>
+        <p>ممکن است AUC کمی پایین‌تر داشته باشد ولی Probabilityهای بسیار قابل اعتمادتری تولید کند.</p>
+        <p>اگر برای:</p>
+        <div class="box"><div class="chart">Risk
+Credit
+Pricing
+Medical probability
+Expected loss</div></div>
+        <p>کار می‌کنی، Calibration بسیار مهم است.</p>
+
+        <h3>28. Probability Calibration</h3>
+        <p>اگر مدل calibrated نیست، می‌توانیم یک مدل Calibration روی خروجی آن یاد بگیریم.</p>
+        <p>ساختار:</p>
+        <div class="box"><div class="chart">Features
+   ↓
+Base Model
+   ↓
+Raw Score / Probability
+   ↓
+Calibration Model
+   ↓
+Calibrated Probability</div></div>
+
+        <div class="inner-box"><div class="inner-title">نکته مهم</div></div>
+        <p>Calibration باید روی داده‌ای انجام شود که برای Fitting مدل اصلی استفاده نشده است، یا با روش‌های cross-validation مناسب انجام شود.</p>
+        <p>اگر:</p>
+        <div class="box"><div class="chart">Train Base Model
+↓
+Calibrate on same Train predictions</div></div>
+        <p>کنی، calibration ممکن است optimistic/overfit شود.</p>
+
+        <h3>29. Platt Scaling</h3>
+        <p>Platt Scaling یک روش معروف Calibration است.</p>
+        <p>معمولاً Logistic Regression را روی Score مدل اصلی Fit می‌کنیم:</p>
+        <div class="formula">$$P(y=1|s) = \sigma(As + B)$$</div>
+        <p>که:</p>
+        <ul>
+            <li>s = raw model score</li>
+            <li>A,B = پارامترهای calibration</li>
+        </ul>
+        <p>است.</p>
+
+        <div class="inner-box"><div class="inner-title">ایده Platt</div></div>
+        <p>مدل اصلی می‌گوید:</p>
+        <div class="box"><div class="chart">Score = 2.7</div></div>
+        <p>Platt Scaling یاد می‌گیرد:</p>
+        <div class="box"><div class="chart">Score 2.7
+      ↓
+Probability ≈ 0.82</div></div>
+
+        <div class="inner-box"><div class="inner-title">Platt Scaling چه زمانی خوب است؟</div></div>
+        <p>وقتی رابطه:</p>
+        <div class="box"><div class="chart">Score → Probability</div></div>
+        <p>تقریباً smooth و sigmoid-like باشد.</p>
+
+        <div class="inner-box"><div class="inner-title">مزیت</div></div>
+        <p>تعداد پارامترهای بسیار کمی دارد:</p>
+        <div class="box"><div class="chart">A
+B</div></div>
+        <p>پس نسبتاً:</p>
+        <div class="inner-box">Low variance</div>
+        <p>است.</p>
+
+        <div class="inner-box"><div class="inner-title">محدودیت</div></div>
+        <p>اگر calibration relationship پیچیده باشد:</p>
+        <div class="inner-box">Logistic sigmoid ممکن است کافی نباشد.</div>
+
+        <h3>30. Isotonic Regression</h3>
+        <p>روش دیگر:</p>
+        <div class="inner-box">Isotonic Regression</div>
+        <p>است.</p>
+        <p>به جای فرض sigmoid، یک تابع:</p>
+        <div class="inner-box">Monotonic non-decreasing</div>
+        <p>یاد می‌گیرد.</p>
+        <p>یعنی اگر:</p>
+        <div class="formula">$$s_1 < s_2$$</div>
+        <p>نباید Probability calibrated برعکس شود.</p>
+
+        <div class="inner-box"><div class="inner-title">ساختار</div></div>
+        <div class="box"><div class="chart">Raw Score
+   │
+   ▼
+Isotonic Function
+   │
+   ▼
+Calibrated Probability</div></div>
+        <p>تابع می‌تواند شکل انعطاف‌پذیرتری نسبت به sigmoid داشته باشد.</p>
+
+        <h3>31. Platt vs Isotonic</h3>
+        <table>
+            <thead><tr><th></th><th>Platt Scaling</th><th>Isotonic</th></tr></thead>
+            <tbody>
+                <tr><td>شکل</td><td>Sigmoid</td><td>Monotonic flexible</td></tr>
+                <tr><td>پارامتر</td><td>کم</td><td>انعطاف‌پذیر</td></tr>
+                <tr><td>Data requirement</td><td>کمتر</td><td>بیشتر</td></tr>
+                <tr><td>Overfitting risk</td><td>کمتر</td><td>بیشتر</td></tr>
+                <tr><td>Flexibility</td><td>کمتر</td><td>بیشتر</td></tr>
+                <tr><td>مناسب Dataset کوچک</td><td>معمولاً بهتر</td><td>احتیاط</td></tr>
+                <tr><td>Dataset بزرگ</td><td>خوب</td><td>بسیار مناسب‌تر</td></tr>
+            </tbody>
+        </table>
+
+        <h3>32. چرا Isotonic به داده بیشتر نیاز دارد؟</h3>
+        <p>چون برخلاف Platt:</p>
+        <div class="box"><div class="chart">فقط A و B</div></div>
+        <p>یاد نمی‌گیرد.</p>
+        <p>می‌تواند یک تابع نسبتاً پیچیده‌تر بسازد.</p>
+        <p>پس اگر Calibration Dataset کوچک باشد:</p>
+        <div class="box"><div class="chart">High flexibility
+       ↓
+High variance
+       ↓
+Overfitting</div></div>
+        <p>ممکن است.</p>
+
+        <h3>33. Calibration Curve / Reliability Diagram</h3>
+        <p>برای بررسی Calibration معمولاً:</p>
+        <p>Probabilityها را Bin می‌کنیم.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">0.0–0.1
+0.1–0.2
+...
+0.9–1.0</div></div>
+        <p>برای هر Bin:</p>
+        <div class="box"><div class="chart">Mean predicted probability
+vs
+Observed fraction positive</div></div>
+        <p>را رسم می‌کنیم.</p>
+
+        <div class="inner-box"><div class="inner-title">مدل Perfectly Calibrated</div></div>
+        <p>باید تقریباً روی:</p>
+        <div class="formula">$$y = x$$</div>
+        <p>باشد.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Predicted 0.8
+Observed 0.8</div></div>
+
+        <h3>34. Overconfidence</h3>
+        <p>اگر:</p>
+        <div class="box"><div class="chart">Predicted = 0.9
+Observed = 0.7</div></div>
+        <p>مدل:</p>
+        <div class="inner-box">Overconfident</div>
+        <p>است.</p>
+
+        <h3>35. Underconfidence</h3>
+        <p>اگر:</p>
+        <div class="box"><div class="chart">Predicted = 0.6
+Observed = 0.8</div></div>
+        <p>مدل:</p>
+        <div class="inner-box">Underconfident</div>
+        <p>است.</p>
+
+        <h3>36. Calibration در Imbalanced Data</h3>
+        <p>یک نکته بسیار مهم:</p>
+        <p>اگر Training Distribution را با:</p>
+        <div class="box"><div class="chart">Oversampling
+SMOTE
+Class Weight</div></div>
+        <p>تغییر داده‌ای، Probability خروجی مدل ممکن است دیگر probability مناسب برای Production Prevalence نباشد.</p>
+        <p>مثلاً Production:</p>
+        <div class="box"><div class="chart">Fraud = 1%</div></div>
+        <p>ولی Training بعد از oversampling:</p>
+        <div class="box"><div class="chart">Fraud = 30%</div></div>
+        <p>شده است.</p>
+        <p>پس:</p>
+        <div class="inner-box">Probability مدل ممکن است نسبت به Distribution واقعی biased باشد.</div>
+        <p>به همین دلیل اگر Probability واقعی مهم است:</p>
+        <div class="box"><div class="chart">Calibration
++
+Representative calibration set</div></div>
+        <p>اهمیت زیادی پیدا می‌کند.</p>
+
+        <h3>37. Class Weight و Calibration</h3>
+        <p>Class Weight هم می‌تواند خروجی probability را تحت تأثیر قرار دهد.</p>
+        <p>چون Objective مدل را تغییر می‌دهی.</p>
+        <p>پس:</p>
+        <div class="box"><div class="chart">Good classification performance</div></div>
+        <p>الزاماً مساوی:</p>
+        <div class="box"><div class="chart">Well-calibrated probabilities</div></div>
+        <p>نیست.</p>
+
+        <h3>38. Sampling و Probability</h3>
+        <p>این Mental Model را حفظ کن:</p>
+        <div class="box"><div class="chart">Production Distribution
+        │
+        ▼
+    True Prior
+        │
+        ▼
+ Training Distribution
+        │
+        ├── Original
+        ├── Oversampled
+        ├── Undersampled
+        └── SMOTE</div></div>
+        <p>اگر Training Distribution با Production فرق کند:</p>
+        <div class="inner-box">Probability interpretation باید با احتیاط بررسی شود.</div>
+
+        <h3>39. آیا SMOTE همیشه بهترین راه Imbalance است؟</h3>
+        <p>نه.</p>
+        <p>یک Senior باید بگوید:</p>
+        <div class="inner-box">Sampling is one tool, not a default solution.</div>
+        <p>گزینه‌ها:</p>
+        <div class="box"><div class="chart">Class Weight
+Threshold Tuning
+Oversampling
+Undersampling
+SMOTE
+ADASYN
+Focal Loss
+Ensemble methods
+Anomaly detection
+Cost-sensitive learning</div></div>
+        <p>بسته به مسئله.</p>
+
+        <h3>40. Focal Loss</h3>
+        <p>در لیست فعلی نیست ولی ارتباط مستقیم دارد.</p>
+        <p>Focal Loss مخصوصاً برای:</p>
+        <div class="inner-box">Severe Class Imbalance</div>
+        <p>مفید است.</p>
+        <p>ایده:</p>
+        <div class="inner-box">نمونه‌های آسان را کمتر وزن بده و روی نمونه‌های سخت تمرکز کن.</div>
+        <p>فرمول Binary:</p>
+        <div class="formula">$$FL(p_t) = -\alpha_t (1 - p_t)^\gamma \log(p_t)$$</div>
+        <p>که:</p>
+        <div class="formula">$$\gamma$$</div>
+        <p>کنترل می‌کند نمونه‌های Easy چقدر down-weight شوند.</p>
+
+        <h3>41. یک مثال Senior: Fraud</h3>
+        <p>فرض کن:</p>
+        <div class="box"><div class="chart">99.5% Normal
+0.5% Fraud</div></div>
+        <p>یک Pipeline حرفه‌ای می‌تواند:</p>
+        <div class="box"><div class="chart">              Training
+                 │
+                 ▼
+          Stratified Split
+                 │
+                 ▼
+        Class Weight / SMOTE
+                 │
+                 ▼
+             Model
+                 │
+                 ▼
+       Validation Predictions
+                 │
+                 ▼
+       Threshold Optimization
+                 │
+                 ▼
+   Precision / Recall / PR-AUC
+                 │
+                 ▼
+         Cost Optimization
+                 │
+                 ▼
+         Production Threshold</div></div>
+        <p>و Test:</p>
+        <div class="box"><div class="chart">Original untouched distribution</div></div>
+        <p>باقی می‌ماند.</p>
+
+        <h3>42. یک نکته خیلی مهم: Threshold Tuning روی Test ممنوع</h3>
+        <p>اشتباه:</p>
+        <div class="box"><div class="chart">Train
+ ↓
+Test
+ ↓
+Try 100 thresholds
+ ↓
+Choose best
+ ↓
+Report Test score</div></div>
+        <p>چرا؟</p>
+        <p>چون Test را برای تصمیم‌گیری استفاده کردی.</p>
+        <p>در نتیجه:</p>
+        <div class="inner-box">Test دیگر unbiased final estimate نیست.</div>
+        <p>روش صحیح:</p>
+        <div class="box"><div class="chart">Train
+ ↓
+Validation
+ ↓
+Threshold tuning
+ ↓
+Freeze threshold
+ ↓
+Final Test</div></div>
+        <p>یا با Cross-Validation و سپس یک Test نهایی untouched.</p>
+
+        <h3>43. Threshold Tuning vs Model Training</h3>
+        <p>این دو را جدا کن.</p>
+        <div class="inner-box">Model Training</div>
+        <p>یادگیری:</p>
+        <div class="formula">$$f(X) \rightarrow Score$$</div>
+        <div class="inner-box">Threshold Tuning</div>
+        <p>انتخاب:</p>
+        <div class="formula">$$Score \rightarrow Class$$</div>
+        <p>بنابراین:</p>
+        <p>Threshold tuning معمولاً مدل را تغییر نمی‌دهد؛ Operating Point آن را تغییر می‌دهد.</p>
+
+        <h3>44. Decision Boundary vs Threshold</h3>
+        <p>این دو شبیه‌اند ولی یکی نیستند.</p>
+        <div class="inner-box">Decision Boundary</div>
+        <p>مرز در:</p>
+        <div class="inner-box">Feature Space</div>
+        <p>است.</p>
+        <div class="inner-box">Threshold</div>
+        <p>مرز در:</p>
+        <div class="inner-box">Model Score / Probability Space</div>
+        <p>است.</p>
+
+        <h3>45. آیا تغییر Threshold Decision Boundary را تغییر می‌دهد؟</h3>
+        <p>در بسیاری از مدل‌ها بله، مرز نهایی Classification در Feature Space جابه‌جا می‌شود، حتی اگر پارامترهای مدل تغییر نکرده باشند.</p>
+        <p>مثلاً Logistic Regression:</p>
+        <div class="formula">$$P(Y=1|X) = \sigma(w^T x + b)$$</div>
+        <p>برای Threshold t:</p>
+        <div class="formula">$$\sigma(w^T x + b) = t$$</div>
+        <p>و بنابراین:</p>
+        <div class="formula">$$w^T x + b = \log \frac{t}{1-t}$$</div>
+        <p>پس تغییر Threshold، موقعیت مرز تصمیم را تغییر می‌دهد.</p>
+        <p>اما:</p>
+        <div class="inner-box">w,b مدل ثابت می‌مانند.</div>
+
+        <h3>46. یک تفاوت خیلی مهم</h3>
+        <div class="inner-box">Training</div>
+        <p>پارامترهای Model را تغییر می‌دهد.</p>
+        <div class="inner-box">Threshold tuning</div>
+        <p>قانون Decision را تغییر می‌دهد.</p>
+        <div class="inner-box">Calibration</div>
+        <p>تفسیر Score به Probability را تغییر می‌دهد.</p>
+        <p>این سه را نباید با هم قاطی کرد.</p>
+
+        <h3>47. Pipeline کامل Senior</h3>
+        <div class="box"><div class="chart">                   Raw Data
+                      │
+                      ▼
+                Train / Test
+                      │
+          ┌───────────┴───────────┐
+          │                       │
+       Training                  Test
+          │                       │
+          ▼                       │
+   Preprocessing                  │
+          │                       │
+          ▼                       │
+   Imbalance Strategy             │
+   ┌────────┼─────────┐           │
+   │        │         │           │
+Weight  SMOTE   UnderSampling     │
+   │        │         │           │
+   └────────┼─────────┘           │
+            ▼                     │
+         Training                 │
+            │                     │
+            ▼                     │
+        Base Model                │
+            │                     │
+            ▼                     │
+      Validation Scores          │
+            │                     │
+      ┌─────┴──────┐              │
+      │            │              │
+ Calibration  Threshold           │
+      │        Tuning             │
+      └─────┬──────┘              │
+            ▼                     │
+       Final Pipeline             │
+            │                     │
+            ▼                     │
+       Untouched Test ◄───────────┘
+            │
+            ▼
+   Final Evaluation</div></div>
+
+        <h3>48. یک نکته مهم درباره Calibration و Threshold</h3>
+        <p>اگر هدف تو فقط:</p>
+        <div class="inner-box">F1 maximization</div>
+        <p>باشد، Calibration لزوماً ضروری نیست.</p>
+        <p>چون F1 بیشتر به:</p>
+        <div class="inner-box">Ranking + Threshold</div>
+        <p>وابسته است.</p>
+        <p>ولی اگر می‌خواهی:</p>
+        <div class="inner-box">P(Fraud)=0.73</div>
+        <p>واقعاً قابل تفسیر باشد، Calibration اهمیت زیادی پیدا می‌کند.</p>
+
+        <h3>49. اگر فقط Ranking مهم باشد</h3>
+        <p>مثلاً:</p>
+        <div class="inner-box">Fraud investigation queue</div>
+        <p>می‌خواهی:</p>
+        <div class="inner-box">Fraudهای پرریسک را بالاتر قرار بدهی.</div>
+        <p>در این حالت:</p>
+        <div class="box"><div class="chart">ROC-AUC
+PR-AUC
+Precision@K
+Recall@K</div></div>
+        <p>مهم‌تر می‌شوند.</p>
+        <p>Probability calibration ممکن است secondary باشد.</p>
+
+        <h3>50. اگر Decision Cost مهم باشد</h3>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Auto-block
+Manual review
+Allow</div></div>
+        <p>سه Action داری.</p>
+        <p>دیگر فقط Binary Threshold کافی نیست.</p>
+        <p>ممکن است:</p>
+        <div class="box"><div class="chart">P(Fraud) < 0.01
+     → Allow
+
+0.01 ≤ P < 0.20
+     → Manual Review
+
+P ≥ 0.20
+     → Block</div></div>
+        <p>داشته باشی.</p>
+        <p>اینجا:</p>
+        <div class="inner-box">Decision policy</div>
+        <p>از صرفاً Classification مهم‌تر می‌شود.</p>
+
+        <h3>51. نکته Senior: Model Probability ≠ Business Probability</h3>
+        <p>حتی اگر:</p>
+        <div class="inner-box">Model output = 0.8</div>
+        <p>باشد، قبل از اینکه بگویی:</p>
+        <div class="inner-box">80% احتمال Fraud است</div>
+        <p>باید بررسی کنی:</p>
+        <ul>
+            <li>Calibration</li>
+            <li>Sampling</li>
+            <li>Class prior</li>
+            <li>Dataset shift</li>
+            <li>Label quality</li>
+        </ul>
+
+        <h3>52. نکته Senior: Production Drift</h3>
+        <p>فرض کن امروز:</p>
+        <div class="inner-box">Fraud prevalence = 1%</div>
+        <p>ولی شش ماه بعد:</p>
+        <div class="inner-box">Fraud prevalence = 5%</div>
+        <p>حتی اگر:</p>
+        <div class="formula">$$P(X|Y)$$</div>
+        <p>تقریباً ثابت مانده باشد، تغییر Prior می‌تواند Probabilityهای مورد انتظار را تحت تأثیر قرار دهد.</p>
+        <p>پس باید:</p>
+        <ul>
+            <li>Calibration</li>
+            <li>Prevalence monitoring</li>
+            <li>Threshold monitoring</li>
+        </ul>
+        <p>را در Production در نظر بگیری.</p>
+
+        <h3>53. جمع‌بندی مفاهیم</h3>
+        <div class="inner-box">Confusion Matrix</div>
+        <p>TP FP FN TN</p>
+        <p>پایه‌ی Evaluation.</p>
+        <div class="inner-box">Decision Boundary</div>
+        <p>مرز جداکننده کلاس‌ها در Feature Space.</p>
+        <div class="inner-box">Probability Output</div>
+        <p>خروجی عددی مدل؛ اما هر Score الزاماً Probability calibrated نیست.</p>
+        <div class="inner-box">Classification Threshold</div>
+        <p>تبدیل Score / Probability به Class</p>
+        <div class="inner-box">Threshold Tuning</div>
+        <p>انتخاب Threshold بر اساس F1, Recall, Precision, Cost, Business constraint</p>
+        <div class="inner-box">Cost-Sensitive Classification</div>
+        <p>خطاهای مختلف را با Cost متفاوت مدل می‌کنیم.</p>
+        <div class="inner-box">Class Imbalance</div>
+        <p>یک Class بسیار بیشتر از Class دیگر است.</p>
+        <div class="inner-box">Class Weight</div>
+        <p>وزن خطاهای یک Class را در Loss افزایش می‌دهیم.</p>
+        <div class="inner-box">Oversampling</div>
+        <p>Minority را بیشتر Sample می‌کنیم.</p>
+        <div class="inner-box">Undersampling</div>
+        <p>Majority را کمتر Sample می‌کنیم.</p>
+        <div class="inner-box">SMOTE</div>
+        <p>Synthetic Minority samples با interpolation ایجاد می‌کند.</p>
+        <div class="inner-box">ADASYN</div>
+        <p>Synthetic samples را بیشتر روی نمونه‌های سخت تولید می‌کند.</p>
+        <div class="inner-box">Precision-Recall Tradeoff</div>
+        <p>با تغییر Threshold معمولاً بین Precision و Recall Tradeoff داریم.</p>
+        <div class="inner-box">ROC Curve</div>
+        <p>TPR vs FPR</p>
+        <div class="inner-box">PR Curve</div>
+        <p>Precision vs Recall</p>
+        <div class="inner-box">Calibration</div>
+        <p>آیا Predicted Probability با Observed Frequency مطابقت دارد؟</p>
+        <div class="inner-box">Platt Scaling</div>
+        <p>Calibration با یک sigmoid/logistic mapping: P=σ(As+B)</p>
+        <div class="inner-box">Isotonic Regression</div>
+        <p>Calibration انعطاف‌پذیرتر با یک mapping monotonic.</p>
+
+        <h2>🧠 Mental Model نهایی Senior</h2>
+        <p>این را اگر واقعاً درک کنی، بخش Classification را خیلی خوب فهمیده‌ای:</p>
+        <div class="box"><div class="chart">                     MODEL
+                       │
+                       ▼
+                Raw Score / P
+                       │
+            ┌──────────┴──────────┐
+            │                     │
+       Calibration           No Calibration
+            │
+            ▼
+    Calibrated Probability
+            │
+            ▼
+       Threshold Tuning
+            │
+       ┌────┴─────┐
+       │          │
+    Business    Cost
+    Objective   Matrix
+       │          │
+       └────┬─────┘
+            ▼
+       Final Decision
+            │
+            ▼
+       TP / FP / TN / FN
+            │
+      ┌─────┼──────┐
+      │     │      │
+ Precision Recall  Specificity
+      │     │      │
+      └─────┼──────┘
+            ▼
+     Business Metric</div></div>
+
+        <p>و برای Imbalanced Data:</p>
+        <div class="box"><div class="chart">              CLASS IMBALANCE
+                     │
+       ┌─────────────┼─────────────┐
+       │             │             │
+ Class Weight   Resampling     Threshold
+       │             │             │
+       │        ┌────┴────┐        │
+       │        │         │        │
+       │     SMOTE     ADASYN      │
+       │        │         │        │
+       └────────┴────┬────┴────────┘
+                     │
+                     ▼
+                  MODEL
+                     │
+                     ▼
+              Validation / CV
+                     │
+                     ▼
+             PR-AUC / Recall /
+             Precision / MCC
+                     │
+                     ▼
+              Cost / Business
+                     │
+                     ▼
+             Final Threshold</div></div>
+
+        <div class="inner-box">یک نکته کلیدی برای سطح Senior:</div>
+        <p>اگر در مصاحبه از تو بپرسند «برای Class Imbalance چه کار می‌کنی؟» جواب خوب این نیست که فقط بگویی SMOTE. جواب Senior این است که ابتدا Business cost، prevalence، evaluation metric و operating point را مشخص می‌کنی؛ بعد بسته به مسئله بین class weighting، threshold tuning، resampling، SMOTE/ADASYN، lossهای مناسب و در صورت نیاز calibration انتخاب می‌کنی و تمام sampling را فقط داخل training fold انجام می‌دهی تا leakage ایجاد نشود</p>
+    </div>
+
+    <!-- Interactive Visualization JavaScript -->
+    <script>
+        // ==========================================
+        // Part 4: Threshold Visualization (Kept as working)
+        // ==========================================
+        const thSlider = document.getElementById('th-slider');
+        const thLine = document.getElementById('th-line');
+        const thVal = document.getElementById('th-val');
+        
+        const tpCnt = document.getElementById('tp-cnt');
+        const fpCnt = document.getElementById('fp-cnt');
+        const tnCnt = document.getElementById('tn-cnt');
+        const fnCnt = document.getElementById('fn-cnt');
+        
+        const circleTP = document.getElementById('circle-tp');
+        const circleTN = document.getElementById('circle-tn');
+        const thEq = document.getElementById('th-eq');
+
+        const samples = [
+            [0.91, 1], [0.72, 0], [0.63, 1], [0.48, 0], [0.12, 0],
+            [0.99, 1], [0.87, 1], [0.73, 0], [0.61, 1], [0.31, 0]
+        ];
+
+        function updateThresholdViz() {
+            const t = parseFloat(thSlider.value);
+            thVal.innerText = t.toFixed(2).replace('.', '٫');
+            thLine.style.left = `${t * 100}%`;
+
+            let tp = 0, fp = 0, tn = 0, fn = 0;
+            let tpHTML = '', tnHTML = '';
+
+            samples.forEach(([score, label]) => {
+                const predicted = score >= t ? 1 : 0;
+                
+                if (label === 1 && predicted === 1) {
+                    tp++;
+                    tpHTML += `<div class="viz-c blue"></div>`;
+                } else if (label === 0 && predicted === 0) {
+                    tn++;
+                    tnHTML += `<div class="viz-c purple"></div>`;
+                } else if (label === 1 && predicted === 0) {
+                    fn++;
+                } else if (label === 0 && predicted === 1) {
+                    fp++;
+                }
+            });
+
+            circleTP.innerHTML = tpHTML;
+            circleTN.innerHTML = tnHTML;
+
+            tpCnt.innerText = tp;
+            fpCnt.innerText = fp;
+            tnCnt.innerText = tn;
+            fnCnt.innerText = fn;
+
+            const precision = tp + fp > 0 ? (tp / (tp + fp)) * 100 : 0;
+            const recall = tp + fn > 0 ? (tp / (tp + fn)) * 100 : 0;
+
+            thEq.innerText = `در آستانهٔ ${t.toFixed(2).replace('.', '٫')}:\nدقت = TP/(TP+FP) = ${tp}/(${tp}+${fp}) = ${precision.toFixed(0)}٪\nیادآوری = TP/(TP+FN) = ${tp}/(${tp}+${fn}) = ${recall.toFixed(0)}٪`;
+        }
+
+        thSlider.addEventListener('input', updateThresholdViz);
+        updateThresholdViz();
+
+        // ==========================================
+        // Part 23: ROC Curve Visualization (Fixed using Pure SVG)
+        // ==========================================
+        
+        // SVGs and Elements
+        const rocCurve = document.getElementById('roc-curve');
+        const rocDash = document.getElementById('roc-dash');
+        const rocVline = document.getElementById('roc-vline');
+        const rocPoint = document.getElementById('roc-point');
+        const rocTooltip = document.getElementById('roc-tooltip');
+        const rocTooltipBg = document.getElementById('roc-tooltip-bg');
+        const rocTooltipText = document.getElementById('roc-tooltip-text');
+        
+        const rocSlider = document.getElementById('threshold-roc-slider');
+        const aurocSlider = document.getElementById('auroc-slider');
+        const rocFooter = document.getElementById('roc-footer');
+        const aurocVal = document.getElementById('auroc-val');
+        const tVal = document.getElementById('t-val');
+
+        // Mock Model Data
+        const scoresROC = [0.91, 0.72, 0.63, 0.48, 0.12, 0.99, 0.87, 0.73, 0.61, 0.31];
+        const labelsROC = [1, 0, 1, 0, 0, 1, 1, 0, 1, 0];
+        
+        // Helper to calculate TPR and FPR for a given threshold
+        function calculateMetrics(t) {
+            let tp = 0, fp = 0, tn = 0, fn = 0;
+            for (let i = 0; i < scoresROC.length; i++) {
+                const pred = scoresROC[i] >= t ? 1 : 0;
+                const act = labelsROC[i];
+                if (act === 1 && pred === 1) tp++;
+                else if (act === 0 && pred === 1) fp++;
+                else if (act === 0 && pred === 0) tn++;
+                else fn++;
+            }
+            const tpr = (tp + fn) > 0 ? tp / (tp + fn) : 0;
+            const fpr = (fp + tn) > 0 ? fp / (fp + tn) : 0;
+            return { tpr, fpr };
+        }
+
+        function updateROC() {
+            const t = parseFloat(rocSlider.value);
+            const auroc = parseFloat(aurocSlider.value);
+
+            // Update UI Text
+            tVal.innerText = t.toFixed(2).replace('.', '٫');
+            aurocVal.innerText = auroc.toFixed(2).replace('.', '٫');
+
+            // Get current metrics
+            const { tpr, fpr } = calculateMetrics(t);
+            
+            // SVG ViewBox is 100x100, with padding 15 for graph lines
+            // Graph area: X: 15 to 95, Y: 15 to 95
+            
+            // Draw the smooth ROC Curve based on AUROC
+            // Using simple exponential model: TPR = FPR^(alpha), where alpha depends on AUROC
+            // alpha = (1 - AUROC) / AUROC
+            const alpha = (1 - auroc) / auroc;
+            
+            let d = '';
+            for (let i = 0; i <= 100; i++) {
+                const fprX = i / 100;
+                const tprY = Math.pow(fprX, alpha);
+                const x = 15 + (fprX * 80);
+                const y = 95 - (tprY * 80);
+                if (i === 0) d += `M ${x},${y}`;
+                else d += ` L ${x},${y}`;
+            }
+            rocCurve.setAttribute('d', d);
+
+            // Position the current point
+            const px = 15 + (fpr * 80);
+            const py = 95 - (tpr * 80);
+
+            // Update Point
+            rocPoint.setAttribute('cx', px);
+            rocPoint.setAttribute('cy', py);
+            rocPoint.style.opacity = '1';
+            rocPoint.style.fill = '#3fb950';
+            rocPoint.style.stroke = '#fff';
+
+            // Update Vertical Line
+            rocVline.setAttribute('x1', px);
+            rocVline.setAttribute('x2', px);
+            rocVline.setAttribute('y2', py);
+            rocVline.style.opacity = '1';
+
+            // Update Tooltip
+            rocTooltip.style.opacity = '1';
+            rocTooltipText.textContent = `t = ${t.toFixed(2).replace('.', '٫')}`;
+            rocTooltipText.setAttribute('x', px);
+            rocTooltipText.setAttribute('y', py - 4);
+            
+            // Center the background box behind text (approx)
+            rocTooltipBg.setAttribute('x', px - 10);
+            rocTooltipBg.setAttribute('y', py - 7);
+            rocTooltipBg.setAttribute('width', '20');
+            rocTooltipBg.setAttribute('height', '5');
+
+            // Update Footer Text
+            const tprPct = (tpr * 100).toFixed(1);
+            const fprPct = (fpr * 100).toFixed(1);
+            rocFooter.innerText = `در آستانهٔ ${t.toFixed(2).replace('.', '٫')}، نرخ مثبت واقعی ${tprPct}٪ و نرخ مثبت کاذب ${fprPct}٪ است؛ AUROC ${auroc.toFixed(2).replace('.', '٫')} نشان‌دهندهٔ جداسازی ${auroc > 0.7 ? 'مفید' : 'ضعیف'} است`;
+        }
+
+        rocSlider.addEventListener('input', updateROC);
+        aurocSlider.addEventListener('input', updateROC);
+        updateROC();
+    </script>
+</body>
+</html>

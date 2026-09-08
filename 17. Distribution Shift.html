@@ -1,0 +1,1447 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Distribution Shift - Senior ML Level</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}]});"></script>
+    <style>
+        body { background-color: #0d1117; color: #e6edf3; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.8; margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1, h2, h3 { color: #e6edf3; text-align: right; border-bottom: 1px solid #444; padding-bottom: 15px; margin-top: 50px; }
+        p, li { text-align: right; }
+        
+        /* Boxes */
+        .box { background-color: #21262d; border: 1px solid #30363d; border-radius: 8px; padding: 15px; margin: 15px 0; color: #e6edf3; }
+        .inner-box { background-color: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 15px; margin: 10px; }
+        .inner-title { font-weight: bold; margin-bottom: 5px; }
+
+        /* Formula Box */
+        .formula {
+            direction: ltr;
+            background-color: #000;
+            border: 1px solid #fff;
+            border-radius: 0;
+            padding: 20px;
+            margin: 20px auto;
+            width: fit-content;
+            max-width: 100%;
+            overflow-x: auto;
+            text-align: center;
+            font-size: 1.2em;
+            font-family: "Times New Roman", Times, serif;
+            color: #fff;
+        }
+
+        /* Charts / Flowcharts / ASCII Art */
+        .chart { direction: ltr; text-align: left; font-family: monospace; background-color: #21262d; border-radius: 8px; padding: 15px; overflow-x: auto; white-space: pre; border: 1px solid #444; }
+
+        /* Tables */
+        table { width: 100%; border-collapse: collapse; direction: rtl; margin-bottom: 20px; }
+        th, td { border: 1px solid #444; padding: 12px; text-align: right; }
+        th { background-color: #21262d; }
+        
+        .highlight { color: #58a6ff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔄 17. Distribution Shift</h1>
+        
+        <p>حتماً. این بخش را این بار کامل و از پایه تا سطح Senior ML می‌گویم، چون Distribution Shift یکی از مباحثی است که در مصاحبه‌های Senior خیلی راحت می‌توانند از چند زاویه مختلف سؤال بپرسند.</p>
+        
+        <p>نکته کلیدی از همان ابتدا:</p>
+        <div class="inner-box">Distribution Shift = تغییر در توزیع داده بین زمان/محیط آموزش و زمان/محیط استفاده</div>
+        <p>اما باید دقیقاً مشخص کنیم کدام توزیع تغییر کرده است:</p>
+        <div class="formula">$$P(X)$$</div>
+        <p>یا:</p>
+        <div class="formula">$$P(Y)$$</div>
+        <p>یا:</p>
+        <div class="formula">$$P(Y|X)$$</div>
+        <p>یا در حالت کلی:</p>
+        <div class="formula">$$P(X,Y)$$</div>
+
+        <h2>1. Distribution Shift چیست؟</h2>
+        <p>فرض کنید مدل را روی dataset آموزش داده‌ایم:</p>
+        <div class="formula">$$D_{train}$$</div>
+        <p>و توزیع داده‌های training این است:</p>
+        <div class="formula">$$P_{train}(X,Y)$$</div>
+        <p>بعد مدل را در production deploy می‌کنیم و داده‌های جدید از این توزیع می‌آیند:</p>
+        <div class="formula">$$P_{prod}(X,Y)$$</div>
+        <p>اگر:</p>
+        <div class="formula">$$P_{train}(X,Y) \neq P_{prod}(X,Y)$$</div>
+        <p>داشته باشیم، می‌گوییم:</p>
+        <div class="inner-box">Distribution Shift</div>
+        <p>رخ داده است.</p>
+
+        <h2>2. چرا Distribution Shift مهم است؟</h2>
+        <p>فرض کن یک مدل fraud detection ساخته‌ایم.</p>
+        <p>در training:</p>
+        <div class="box">
+            <div class="chart">
+Fraudulent Transactions
+        ↓
+Mostly foreign cards
+Mostly night
+Mostly new devices
+            </div>
+        </div>
+        <p>مدل این relationship را یاد گرفته است.</p>
+        <p>اما بعد از چند ماه fraudsterها strategy خود را تغییر می‌دهند:</p>
+        <div class="box">
+            <div class="chart">
+Fraudulent Transactions
+        ↓
+Mostly domestic cards
+Mostly daytime
+Mostly known devices
+            </div>
+        </div>
+        <p>در نتیجه ممکن است:</p>
+        <div class="formula">$$P_{train}(X,Y) \neq P_{prod}(X,Y)$$</div>
+        <p>و performance مدل کاهش پیدا کند.</p>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">
+Training
+AUC = 0.98
+
+Production
+AUC = 0.84
+            </div>
+        </div>
+        <p>مدل خراب نشده است؛</p>
+        <p>دنیایی که مدل در آن کار می‌کند تغییر کرده است.</p>
+
+        <h2>3. سه توزیع اصلی که باید بلد باشی</h2>
+        <p>تقریباً تمام مفاهیم این بخش حول این سه مورد می‌چرخند:</p>
+        
+        <div class="inner-box"><div class="inner-title">Feature Distribution</div></div>
+        <div class="formula">$$P(X)$$</div>
+        <p>یعنی:</p>
+        <div class="inner-box">ویژگی‌ها چگونه توزیع شده‌اند؟</div>
+
+        <div class="inner-box"><div class="inner-title">Label Distribution</div></div>
+        <div class="formula">$$P(Y)$$</div>
+        <p>یعنی:</p>
+        <div class="inner-box">کلاس‌ها با چه احتمالی رخ می‌دهند؟</div>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">
+Training:
+Fraud = 1%
+Legitimate = 99%
+
+Production:
+Fraud = 5%
+Legitimate = 95%
+            </div>
+        </div>
+
+        <div class="inner-box"><div class="inner-title">Conditional Distribution</div></div>
+        <div class="formula">$$P(Y|X)$$</div>
+        <p>یعنی:</p>
+        <div class="inner-box">با داشتن featureها، احتمال label چیست؟</div>
+        <p>این یکی بسیار مهم است.</p>
+
+        <h2>4. چهار حالت بنیادی</h2>
+        <table>
+            <thead><tr><th>وضعیت</th><th>چه چیزی تغییر کرده؟</th></tr></thead>
+            <tbody>
+                <tr><td>Covariate Shift</td><td>P(X)</td></tr>
+                <tr><td>Label Shift</td><td>P(Y)</td></tr>
+                <tr><td>Concept Shift</td><td>P(Y|X)</td></tr>
+                <tr><td>Dataset Shift</td><td>P(X,Y)</td></tr>
+            </tbody>
+        </table>
+        <p>این جدول را باید کاملاً مسلط باشی.</p>
+
+        <h2>5. Covariate Shift</h2>
+        <p>تعریف:</p>
+        <div class="formula">$$P_{train}(X) \neq P_{prod}(X)$$</div>
+        <p>ولی فرض می‌کنیم:</p>
+        <div class="formula">$$P_{train}(Y|X) = P_{prod}(Y|X)$$</div>
+        <p>یعنی:</p>
+        <div class="inner-box">distribution featureها تغییر کرده ولی relationship بین X و Y تغییر نکرده است.</div>
+
+        <h2>6. مثال Covariate Shift</h2>
+        <p>فرض کن مدل تشخیص بیماری داریم.</p>
+        <p>Training:</p>
+        <div class="box">
+            <div class="chart">
+Age
+20 → 30%
+30 → 30%
+40 → 25%
+50 → 15%
+            </div>
+        </div>
+        <p>Production:</p>
+        <div class="box">
+            <div class="chart">
+Age
+20 → 5%
+30 → 10%
+40 → 30%
+50 → 55%
+            </div>
+        </div>
+        <p>پس:</p>
+        <div class="formula">$$P(X)$$</div>
+        <p>تغییر کرده است.</p>
+        <p>اما فرض می‌کنیم:</p>
+        <div class="formula">$$P(Disease|Age)$$</div>
+        <p>تغییر نکرده.</p>
+
+        <h2>7. نکته مهم Covariate Shift</h2>
+        <p>Covariate Shift الزاماً به این معنی نیست که مدل فوراً خراب می‌شود.</p>
+        <p>اگر:</p>
+        <div class="formula">$$P(Y|X)$$</div>
+        <p>ثابت بماند و production همچنان داخل regionهای خوب دیده‌شده training باشد، مدل ممکن است همچنان عملکرد خوبی داشته باشد.</p>
+        <p>مشکل زمانی جدی‌تر می‌شود که:</p>
+        <div class="inner-box">مدل مجبور شود روی بخش‌هایی از feature space پیش‌بینی کند که در training خوب پوشش داده نشده‌اند.</div>
+
+        <h2>8. Covariate Shift و Importance Weighting</h2>
+        <p>یکی از روش‌های مقابله با Covariate Shift:</p>
+        <div class="formula">$$w(x) = \frac{P_{prod}(x)}{P_{train}(x)}$$</div>
+        <p>است.</p>
+        <p>یعنی نمونه‌هایی که در production بیشتر اهمیت دارند، وزن بیشتری می‌گیرند.</p>
+        <p>Training objective تبدیل می‌شود به چیزی شبیه:</p>
+        <div class="formula">$$\min_f E_{train}[w(X)L(Y,f(X))]$$</div>
+        <p>این مفهوم در سطح Senior بسیار مهم است.</p>
+
+        <h2>9. چگونه Covariate Shift را تشخیص دهیم؟</h2>
+        <p>برای featureهای numerical:</p>
+        <div class="box">
+            <div class="chart">KS Test
+Wasserstein Distance
+PSI
+Jensen-Shannon Divergence
+Population statistics
+            </div>
+        </div>
+        <p>برای categorical:</p>
+        <div class="box">
+            <div class="chart">Chi-Square
+PSI
+distribution comparison
+            </div>
+        </div>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">
+Feature: transaction_amount
+
+Train:
+mean = 120
+median = 80
+
+Production:
+mean = 240
+median = 160
+            </div>
+        </div>
+        <p>این یک signal برای shift است.</p>
+
+        <h2>10. Label Shift</h2>
+        <p>Label Shift را می‌توان به شکل زیر نوشت:</p>
+        <div class="formula">$$P_{train}(Y) \neq P_{prod}(Y)$$</div>
+        <p>ولی معمولاً فرض می‌کنیم:</p>
+        <div class="formula">$$P_{train}(X|Y) = P_{prod}(X|Y)$$</div>
+        <p>یعنی:</p>
+        <div class="inner-box">نسبت کلاس‌ها تغییر کرده، اما distribution featureها داخل هر class تقریباً ثابت مانده است.</div>
+
+        <h2>11. مثال Label Shift</h2>
+        <p>فرض کن مدل تشخیص spam داریم.</p>
+        <p>Training:</p>
+        <div class="box">
+            <div class="chart">
+Spam       = 20%
+Not Spam   = 80%
+            </div>
+        </div>
+        <p>Production:</p>
+        <div class="box">
+            <div class="chart">
+Spam       = 50%
+Not Spam   = 50%
+            </div>
+        </div>
+        <p>پس:</p>
+        <div class="formula">$$P(Y)$$</div>
+        <p>تغییر کرده است.</p>
+        <p>اما فرض می‌کنیم:</p>
+        <div class="formula">$$P(X|Spam)$$</div>
+        <p>و:</p>
+        <div class="formula">$$P(X|NotSpam)$$</div>
+        <p>تقریباً ثابت‌اند.</p>
+
+        <h2>12. Label Shift و Prior Probability Shift</h2>
+        <p>این دو اصطلاح در بسیاری از منابع تقریباً به جای هم استفاده می‌شوند.</p>
+        <p>اگر:</p>
+        <div class="formula">$$P(Y)$$</div>
+        <p>تغییر کند، می‌توان گفت:</p>
+        <div class="inner-box">Prior Probability Shift</div>
+        <p>رخ داده است.</p>
+        <p>و در چارچوب رایج:</p>
+        <div class="formula">$$Label Shift \approx Prior Probability Shift$$</div>
+
+        <h2>13. Prior چیست؟</h2>
+        <p>Prior probability یعنی احتمال کلاس قبل از مشاهده featureها.</p>
+        <p>مثلاً:</p>
+        <div class="formula">$$P(Fraud) = 0.01$$</div>
+        <p>یعنی:</p>
+        <div class="inner-box">قبل از دیدن transaction، احتمال fraud یک درصد است.</div>
+        <p>اگر در production:</p>
+        <div class="formula">$$P(Fraud) = 0.05$$</div>
+        <p>شود، prior تغییر کرده است.</p>
+
+        <h2>14. تفاوت Covariate Shift و Label Shift</h2>
+        <div class="inner-box"><div class="inner-title">Covariate Shift</div></div>
+        <div class="formula">$$P(X) \uparrow / \downarrow$$</div>
+        <div class="inner-box"><div class="inner-title">Label Shift</div></div>
+        <div class="formula">$$P(Y) \uparrow / \downarrow$$</div>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">
+Covariate:
+Training: young users → 80%
+Production: young users → 30%
+در حالی که relationship با target ثابت است.
+
+Label Shift:
+Training: Fraud → 1%
+Production: Fraud → 5%
+            </div>
+        </div>
+
+        <h2>15. Concept Shift</h2>
+        <p>این یکی از مهم‌ترین انواع shift است.</p>
+        <p>Concept Shift یعنی:</p>
+        <div class="formula">$$P_{train}(Y|X) \neq P_{prod}(Y|X)$$</div>
+        <p>یعنی:</p>
+        <div class="inner-box">رابطه بین featureها و target تغییر کرده است.</div>
+
+        <h2>16. مثال Concept Shift</h2>
+        <p>فرض کن مدل برای تشخیص spam ساخته‌ای.</p>
+        <p>در سال 2025:</p>
+        <div class="box">
+            <div class="chart">
+Email contains:
+"FREE"
+"WIN"
+"PRIZE"
+احتمال spam بالا است.
+            </div>
+        </div>
+        <p>اما در 2026 spammerها روششان را تغییر می‌دهند.</p>
+        <p>حالا:</p>
+        <div class="box"><div class="chart">"FREE"</div></div>
+        <p>دیگر signal قوی نیست.</p>
+        <p>یعنی:</p>
+        <div class="formula">$$P(Spam|X)$$</div>
+        <p>تغییر کرده است.</p>
+        <p>این:</p>
+        <div class="inner-box">Concept Shift</div>
+        <p>است.</p>
+
+        <h2>17. Concept Shift از Covariate Shift خطرناک‌تر است</h2>
+        <p>در Covariate Shift:</p>
+        <div class="formula">$$P(Y|X)$$</div>
+        <p>تقریباً ثابت است.</p>
+        <p>پس relationship هنوز معتبر است.</p>
+        <p>اما در Concept Shift:</p>
+        <div class="formula">$$P(Y|X)$$</div>
+        <p>تغییر کرده.</p>
+        <p>یعنی:</p>
+        <div class="inner-box">چیزی که مدل یاد گرفته دیگر درست نیست.</div>
+
+        <h2>18. مثال بسیار مهم در Fraud</h2>
+        <p>فرض کن مدل یاد گرفته:</p>
+        <div class="box">
+            <div class="chart">
+New Device
++
+Foreign Country
++
+Night
+→
+High Fraud Probability
+            </div>
+        </div>
+        <p>بعد fraudsterها رفتارشان را تغییر می‌دهند:</p>
+        <div class="box">
+            <div class="chart">
+Known Device
++
+Domestic Country
++
+Day
+→
+Fraud
+            </div>
+        </div>
+        <p>Relationship قبلی دیگر درست نیست.</p>
+        <p>این:</p>
+        <div class="inner-box">Concept Shift</div>
+        <p>است.</p>
+
+        <h2>19. Concept Drift</h2>
+        <p>Concept Drift تقریباً همان Concept Shift است، اما تأکید آن روی تغییر در طول زمان است.</p>
+        <p>یعنی:</p>
+        <div class="formula">$$P_t(Y|X)$$</div>
+        <p>در طول زمان تغییر می‌کند.</p>
+        <p>مثلاً:</p>
+        <div class="formula">$$P_{2025}(Y|X) \neq P_{2026}(Y|X)$$</div>
+
+        <h2>20. Shift vs Drift</h2>
+        <p>این تفاوت را خیلی خوب بلد باش.</p>
+        <div class="inner-box"><div class="inner-title">Shift</div></div>
+        <p>اصطلاح عمومی‌تر است.</p>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">
+Training Domain
+      ↓
+Production Domain
+            </div>
+        </div>
+        <div class="inner-box"><div class="inner-title">Drift</div></div>
+        <p>معمولاً وقتی درباره:</p>
+        <div class="formula">$$Time$$</div>
+        <p>صحبت می‌کنیم.</p>
+        <p>یعنی:</p>
+        <div class="box"><div class="chart">t1 → t2 → t3 → t4</div></div>
+        <p>و distribution به تدریج یا ناگهانی تغییر می‌کند.</p>
+
+        <h2>21. Concept Drift Types</h2>
+        <p>Concept Drift خودش می‌تواند چند شکل داشته باشد.</p>
+        
+        <div class="inner-box"><div class="inner-title">Sudden Drift</div></div>
+        <p>ناگهان تغییر می‌کند:</p>
+        <div class="box">
+            <div class="chart">
+──────────────┐
+              │
+              └────────────
+            </div>
+        </div>
+        <p>مثلاً:</p>
+        <div class="inner-box">تغییر ناگهانی قوانین بازار.</div>
+        
+        <div class="inner-box"><div class="inner-title">Gradual Drift</div></div>
+        <p>به تدریج تغییر می‌کند:</p>
+        <div class="box">
+            <div class="chart">
+──────────────
+            /
+          /
+        /
+      /
+            </div>
+        </div>
+        <p>مثلاً رفتار مشتریان به تدریج تغییر کند.</p>
+        
+        <div class="inner-box"><div class="inner-title">Incremental Drift</div></div>
+        <p>مقدار concept به صورت مرحله‌ای تغییر می‌کند.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">2024 → 2025 → 2026</div></div>
+        
+        <div class="inner-box"><div class="inner-title">Recurring / Seasonal Drift</div></div>
+        <p>الگو دوباره برمی‌گردد.</p>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">
+Summer
+Winter
+Summer
+Winter
+            </div>
+        </div>
+        <p>یا:</p>
+        <div class="box">
+            <div class="chart">
+Monday
+Tuesday
+...
+Monday
+Tuesday
+            </div>
+        </div>
+        <p>این نکته مهم است چون اگر مدل را صرفاً بر اساس آخرین window retrain کنی، ممکن است patternهای recurring را از دست بدهی.</p>
+
+        <h2>22. Dataset Shift</h2>
+        <p>Dataset Shift اصطلاح کلی‌تری است.</p>
+        <p>اگر:</p>
+        <div class="formula">$$P_{train}(X,Y) \neq P_{prod}(X,Y)$$</div>
+        <p>باشد، dataset shift داریم.</p>
+        <p>این shift می‌تواند ناشی از:</p>
+        <div class="box">
+            <div class="chart">
+Covariate Shift
+Label Shift
+Concept Shift
+ترکیبی از آنها
+            </div>
+        </div>
+        <p>باشد.</p>
+        <p>بنابراین:</p>
+        <div class="inner-box">Dataset Shift</div>
+        <p>یک مفهوم umbrella است.</p>
+
+        <h2>23. Domain Shift</h2>
+        <p>Domain Shift زمانی رخ می‌دهد که:</p>
+        <div class="inner-box">data از یک domain/environment به domain دیگری منتقل شود.</div>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">
+Training: Hospital A
+Production: Hospital B
+            </div>
+        </div>
+        <p>یا:</p>
+        <div class="box">
+            <div class="chart">
+Training: Camera A
+Production: Camera B
+            </div>
+        </div>
+        <p>یا:</p>
+        <div class="box">
+            <div class="chart">
+Training: Iranian customers
+Production: Turkish customers
+            </div>
+        </div>
+
+        <h2>24. Domain Shift لزوماً فقط Feature Shift نیست</h2>
+        <p>Domain شامل چیزهایی مثل:</p>
+        <div class="box">
+            <div class="chart">
+population
+environment
+sensor
+geography
+language
+acquisition process
+behavior
+            </div>
+        </div>
+        <p>است.</p>
+        <p>پس Domain Shift می‌تواند ترکیبی از:</p>
+        <div class="formula">$$P(X)$$</div>
+        <p>و:</p>
+        <div class="formula">$$P(Y)$$</div>
+        <p>و حتی:</p>
+        <div class="formula">$$P(Y|X)$$</div>
+        <p>باشد.</p>
+
+        <h2>25. مثال Computer Vision</h2>
+        <p>مدل را روی:</p>
+        <div class="box"><div class="chart">Daytime images</div></div>
+        <p>آموزش داده‌ایم.</p>
+        <p>اما production:</p>
+        <div class="box"><div class="chart">Night images</div></div>
+        <p>است.</p>
+        <p>حتی اگر label semantics تغییر نکرده باشد:</p>
+        <div class="formula">$$P_{train}(X) \neq P_{prod}(X)$$</div>
+        <p>پس domain shift / covariate shift داریم.</p>
+
+        <h2>26. مثال NLP</h2>
+        <p>مدل sentiment را روی:</p>
+        <div class="box"><div class="chart">Formal Reviews</div></div>
+        <p>آموزش داده‌ایم.</p>
+        <p>اما production:</p>
+        <div class="box"><div class="chart">Twitter / Telegram / Chat</div></div>
+        <p>است.</p>
+        <p>زبان، slang، طول جملات و vocabulary تغییر می‌کند.</p>
+        <p>این یک:</p>
+        <div class="inner-box">Domain Shift</div>
+        <p>است.</p>
+
+        <h2>27. Temporal Drift</h2>
+        <p>وقتی distribution در طول زمان تغییر می‌کند:</p>
+        <div class="formula">$$P_t(X,Y)$$</div>
+        <p>وابسته به زمان می‌شود.</p>
+        <p>یعنی:</p>
+        <div class="formula">$$P_{t1}(X,Y) \neq P_{t2}(X,Y)$$</div>
+
+        <h2>28. مثال Temporal Drift</h2>
+        <p>در payment:</p>
+        <div class="box">
+            <div class="chart">
+January: average transaction = 100
+June: average transaction = 160
+December: average transaction = 300
+            </div>
+        </div>
+        <p>ممکن است seasonal pattern باشد.</p>
+
+        <h2>29. Temporal Drift vs Concept Drift</h2>
+        <p>Temporal Drift می‌تواند فقط feature distribution باشد.</p>
+        <p>مثلاً:</p>
+        <div class="formula">$$P_t(X)$$</div>
+        <p>تغییر کند.</p>
+        <p>اما:</p>
+        <div class="formula">$$P_t(Y|X)$$</div>
+        <p>ثابت بماند.</p>
+        <p>در این حالت:</p>
+        <div class="inner-box">Temporal Covariate Drift</div>
+        <p>داریم.</p>
+        <p>اما اگر:</p>
+        <div class="formula">$$P_t(Y|X)$$</div>
+        <p>هم تغییر کند:</p>
+        <div class="inner-box">Temporal Concept Drift</div>
+        <p>داریم.</p>
+        <p>پس:</p>
+        <div class="inner-box">Temporal Drift</div>
+        <p>لزوماً:</p>
+        <div class="inner-box">Concept Drift</div>
+        <p>نیست.</p>
+
+        <h2>30. Data Drift</h2>
+        <p>Data Drift معمولاً به تغییر در observed data distribution اشاره دارد.</p>
+        <p>اغلب منظور:</p>
+        <div class="formula">$$P_{train}(X) \neq P_{prod}(X)$$</div>
+        <p>است.</p>
+        <p>بنابراین در بسیاری از سیستم‌های ML:</p>
+        <div class="inner-box">Data Drift ≈ Feature Distribution Drift</div>
+        <p>اما اصطلاحات در منابع مختلف کمی متفاوت استفاده می‌شوند.</p>
+
+        <h2>31. Feature Drift</h2>
+        <p>Feature Drift مشخص‌تر است:</p>
+        <div class="formula">$$P_{train}(X_j) \neq P_{prod}(X_j)$$</div>
+        <p>برای feature خاص X_j.</p>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">
+Feature: transaction_amount
+
+Training: Median = 50
+Production: Median = 180
+            </div>
+        </div>
+        <p>پس:</p>
+        <div class="inner-box">transaction_amount drift</div>
+        <p>داریم.</p>
+
+        <h2>32. Feature Drift vs Data Drift</h2>
+        <p>می‌توانی این hierarchy را در ذهن داشته باشی:</p>
+        <div class="box">
+            <div class="chart">
+Data Drift
+│
+├── Feature 1 Drift
+├── Feature 2 Drift
+├── Feature 3 Drift
+└── Feature 4 Drift
+            </div>
+        </div>
+        <p>Feature Drift معمولاً granularتر است.</p>
+
+        <h2>33. یک نکته خیلی مهم</h2>
+        <p>ممکن است feature drift داشته باشیم ولی performance مدل اصلاً خراب نشود.</p>
+        <p>مثلاً:</p>
+        <div class="formula">$$P(X) \neq Q(X)$$</div>
+        <p>اما feature مربوطه:</p>
+        <div class="inner-box">برای prediction اهمیت بسیار کمی داشته باشد.</div>
+        <p>پس:</p>
+        <div class="inner-box">Drift ≠ Performance Degradation</div>
+
+        <h2>34. Drift Detection به تنهایی کافی نیست</h2>
+        <p>فرض کن:</p>
+        <div class="box"><div class="chart">Feature A
+PSI = 0.35</div></div>
+        <p>این به تنهایی به معنی:</p>
+        <div class="inner-box">Model is broken</div>
+        <p>نیست.</p>
+        <p>باید ببینیم:</p>
+        <div class="box">
+            <div class="chart">
+Drift
+  ↓
+Does it affect important features?
+  ↓
+Does it affect model score?
+  ↓
+Does it affect calibration?
+  ↓
+Does it affect business KPI?
+            </div>
+        </div>
+
+        <h2>35. Covariate Shift vs Concept Shift</h2>
+        <p>این یکی از مهم‌ترین سؤالات مصاحبه است.</p>
+        <div class="inner-box"><div class="inner-title">Covariate Shift</div></div>
+        <div class="formula">$$P(X) \neq Q(X)$$</div>
+        <p>ولی:</p>
+        <div class="formula">$$P(Y|X) = Q(Y|X)$$</div>
+        <div class="inner-box"><div class="inner-title">Concept Shift</div></div>
+        <div class="formula">$$P(Y|X) \neq Q(Y|X)$$</div>
+
+        <h2>36. Label Shift vs Covariate Shift</h2>
+        <div class="inner-box"><div class="inner-title">Label Shift</div></div>
+        <div class="formula">$$P(Y) \neq Q(Y)$$</div>
+        <p>اما:</p>
+        <div class="formula">$$P(X|Y) \approx Q(X|Y)$$</div>
+        <div class="inner-box"><div class="inner-title">Covariate Shift</div></div>
+        <div class="formula">$$P(X) \neq Q(X)$$</div>
+        <p>اما:</p>
+        <div class="formula">$$P(Y|X) \approx Q(Y|X)$$</div>
+
+        <h2>37. Bayesian View</h2>
+        <p>این قسمت برای Senior بسیار مهم است.</p>
+        <p>Bayes:</p>
+        <div class="formula">$$P(Y|X) = \frac{P(X|Y)P(Y)}{P(X)}$$</div>
+        <p>حالا اگر:</p>
+        <div class="formula">$$P(Y)$$</div>
+        <p>تغییر کند:</p>
+        <div class="inner-box">Prior Probability Shift / Label Shift</div>
+        <p>داریم.</p>
+        <p>اگر:</p>
+        <div class="formula">$$P(X)$$</div>
+        <p>تغییر کند:</p>
+        <div class="inner-box">Covariate Shift</div>
+        <p>ممکن است داشته باشیم.</p>
+        <p>و اگر خود:</p>
+        <div class="formula">$$P(Y|X)$$</div>
+        <p>تغییر کند:</p>
+        <div class="inner-box">Concept Shift</div>
+        <p>داریم.</p>
+
+        <h2>38. یک مثال کامل</h2>
+        <p>فرض کن classifier داریم:</p>
+        <div class="box">
+            <div class="chart">
+Input: transaction features X
+Output: Fraud Y
+            </div>
+        </div>
+        
+        <div class="inner-box"><div class="inner-title">حالت 1</div></div>
+        <p>تعداد تراکنش‌های جدید زیاد شده:</p>
+        <div class="formula">$$P(X) \uparrow$$</div>
+        <p>ولی relationship ثابت است:</p>
+        <div class="formula">$$P(Y|X) = constant$$</div>
+        <div class="inner-box">→ Covariate Shift</div>
+        
+        <div class="inner-box"><div class="inner-title">حالت 2</div></div>
+        <p>نرخ fraud از 1% به 5% رسیده:</p>
+        <div class="formula">$$P(Y) \uparrow$$</div>
+        <div class="inner-box">→ Label / Prior Shift</div>
+        
+        <div class="inner-box"><div class="inner-title">حالت 3</div></div>
+        <p>Fraudsters strategy را تغییر داده‌اند:</p>
+        <div class="formula">$$P(Y|X)$$</div>
+        <p>تغییر کرده.</p>
+        <div class="inner-box">→ Concept Shift</div>
+        
+        <div class="inner-box"><div class="inner-title">حالت 4</div></div>
+        <p>هم feature distribution و هم label distribution و relationship تغییر کرده‌اند.</p>
+        <div class="inner-box">→ Dataset Shift</div>
+
+        <h2>39. Feature Drift Detection</h2>
+        <p>برای numerical features می‌توان از:</p>
+        <div class="inner-box">KS Test</div>
+        <p>فرض:</p>
+        <div class="formula">$$H_0: P_{train}(X) = P_{prod}(X)$$</div>
+        <p>اگر p-value کوچک شود:</p>
+        <div class="inner-box">evidence of distribution difference</div>
+
+        <h2>40. نکته مهم درباره p-value</h2>
+        <p>در datasetهای بزرگ:</p>
+        <p>ممکن است:</p>
+        <div class="formula">$$p < 0.001$$</div>
+        <p>شود ولی difference عملی بسیار کوچک باشد.</p>
+        <p>پس:</p>
+        <div class="inner-box">Statistical Significance ≠ Practical Significance</div>
+        <p>این دقیقاً یک نکته Senior-level است.</p>
+
+        <h2>41. PSI</h2>
+        <p>Population Stability Index:</p>
+        <div class="formula">$$PSI = \sum_{i} (P_i - Q_i) \ln \left( \frac{P_i}{Q_i} \right)$$</div>
+        <p>که:</p>
+        <div class="box">
+            <div class="chart">
+Pi: proportion در training/reference
+Qi: proportion در production/current
+            </div>
+        </div>
+        <p>است.</p>
+        <p>PSI معمولاً برای monitoring distributionهای bucketed استفاده می‌شود.</p>
+
+        <h2>42. PSI Interpretation</h2>
+        <p>Thresholdهای رایج در صنعت را گاهی به صورت تقریبی این‌طور می‌بینی:</p>
+        <div class="box">
+            <div class="chart">
+PSI < 0.10
+→ معمولاً shift کم
+
+0.10 - 0.25
+→ shift قابل توجه
+
+> 0.25
+→ shift جدی
+            </div>
+        </div>
+        <p>اما:</p>
+        <div class="inner-box">این thresholdها universal law نیستند.</div>
+        <p>باید با context و business validation شوند.</p>
+
+        <h2>43. Jensen-Shannon Divergence</h2>
+        <p>برای مقایسه دو distribution:</p>
+        <div class="formula">$$JS(P||Q) = \frac{1}{2} KL(P||M) + \frac{1}{2} KL(Q||M)$$</div>
+        <p>که:</p>
+        <div class="formula">$$M = \frac{P + Q}{2}$$</div>
+        <p>است.</p>
+        <p>مزیت نسبت به KL:</p>
+        <div class="inner-box">symmetric است.</div>
+
+        <h2>44. Wasserstein Distance</h2>
+        <p>به آن:</p>
+        <div class="inner-box">Earth Mover's Distance</div>
+        <p>هم می‌گویند.</p>
+        <p>ایده:</p>
+        <div class="inner-box">حداقل هزینه لازم برای تبدیل distribution P به Q.</div>
+        <p>برای continuous distributions بسیار مفید است.</p>
+
+        <h2>45. Population Stability vs Model Stability</h2>
+        <p>ممکن است:</p>
+        <div class="box">
+            <div class="chart">
+Feature Drift
+       ↓
+Large
+
+Model Prediction Distribution
+       ↓
+Stable
+
+Performance
+       ↓
+Stable
+            </div>
+        </div>
+        <p>این امکان‌پذیر است.</p>
+        <p>بنابراین در production باید چند لایه monitor شود:</p>
+        <div class="box">
+            <div class="chart">
+Data
+ ↓
+Feature Distribution
+ ↓
+Model Score
+ ↓
+Prediction Distribution
+ ↓
+Calibration
+ ↓
+Performance
+ ↓
+Business KPI
+            </div>
+        </div>
+
+        <h2>46. Prediction Drift</h2>
+        <p>اگر توزیع prediction مدل تغییر کند:</p>
+        <div class="formula">$$P(\hat{Y})$$</div>
+        <p>می‌تواند نشانه shift باشد.</p>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">
+Training: Predicted Positive = 5%
+Production: Predicted Positive = 35%
+            </div>
+        </div>
+        <p>این یک signal است.</p>
+        <p>ولی باز هم:</p>
+        <div class="inner-box">prediction drift به تنهایی ثابت نمی‌کند مدل خراب شده است.</div>
+
+        <h2>47. Performance Drift</h2>
+        <p>اگر ground-truth label با تأخیر در دسترس باشد، می‌توانیم performance را در طول زمان اندازه بگیریم.</p>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">
+Month 1: F1 = 0.94
+Month 2: F1 = 0.92
+Month 3: F1 = 0.85
+Month 4: F1 = 0.78
+            </div>
+        </div>
+        <p>این:</p>
+        <div class="inner-box">Performance Drift</div>
+        <p>است.</p>
+
+        <h2>48. Data Drift بدون Performance Drift</h2>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Age distribution changed</div></div>
+        <p>ولی age feature چندان مهم نیست.</p>
+        <p>پس:</p>
+        <div class="box">
+            <div class="chart">
+Data Drift = YES
+Performance Drift = NO
+            </div>
+        </div>
+
+        <h2>49. Performance Drift بدون Data Drift</h2>
+        <p>این هم ممکن است.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">P(X) stable</div></div>
+        <p>اما:</p>
+        <div class="formula">$$P(Y|X)$$</div>
+        <p>تغییر کند.</p>
+        <p>یعنی:</p>
+        <div class="inner-box">Concept Drift</div>
+        <p>داریم.</p>
+        <p>این یکی از مهم‌ترین سناریوهای monitoring است.</p>
+
+        <h2>50. Drift Detection معماری</h2>
+        <p>در یک سیستم production می‌توانی چیزی شبیه این داشته باشی:</p>
+        <div class="box">
+            <div class="chart">
+                 Production Data
+                        │
+                        ▼
+              ┌─────────────────┐
+              │ Data Monitoring │
+              └────────┬────────┘
+                       │
+          ┌────────────┼─────────────┐
+          ▼            ▼             ▼
+      Feature       Prediction    Data Quality
+       Drift          Drift          Drift
+          │            │             │
+          └────────────┼─────────────┘
+                       ▼
+               Model Monitoring
+                       │
+             ┌─────────┴─────────┐
+             ▼                   ▼
+       Performance            Calibration
+          Drift                  Drift
+             │                   │
+             └─────────┬─────────┘
+                       ▼
+                 Alert / Action
+                       │
+             ┌─────────┴─────────┐
+             ▼                   ▼
+          Retrain            Investigate
+            </div>
+        </div>
+
+        <h2>51. آیا هر Drift باعث Retraining می‌شود؟</h2>
+        <p>خیر.</p>
+        <p>این یکی از مهم‌ترین نکات Senior است.</p>
+        <p>نباید بگویی:</p>
+        <div class="box">
+            <div class="chart">
+Drift detected
+      ↓
+Retrain immediately
+            </div>
+        </div>
+        <p>بلکه:</p>
+        <div class="box">
+            <div class="chart">
+Drift detected
+      ↓
+Is it statistically significant?
+      ↓
+Is it practically significant?
+      ↓
+Is affected feature important?
+      ↓
+Has model performance degraded?
+      ↓
+Has business KPI degraded?
+      ↓
+Retrain / recalibrate / investigate
+            </div>
+        </div>
+
+        <h2>52. Retraining Strategies</h2>
+        <p>چند strategy داریم:</p>
+        <div class="inner-box"><div class="inner-title">Periodic Retraining</div></div>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Every month</div></div>
+        <div class="inner-box"><div class="inner-title">Trigger-based Retraining</div></div>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">PSI > threshold
+AND
+F1 < threshold
+            </div>
+        </div>
+        <div class="inner-box"><div class="inner-title">Rolling Window</div></div>
+        <p>مثلاً فقط:</p>
+        <div class="box"><div class="chart">Last 90 days</div></div>
+        <p>را برای training استفاده کنیم.</p>
+        <div class="inner-box"><div class="inner-title">Expanding Window</div></div>
+        <div class="box">
+            <div class="chart">
+2024
+2024+2025
+2024+2025+2026
+            </div>
+        </div>
+        <p>داده‌ها را نگه می‌داریم.</p>
+
+        <h2>53. مشکل Retraining کورکورانه</h2>
+        <p>اگر concept drift داشته باشی و فقط آخرین داده‌ها را train کنی:</p>
+        <p>ممکن است:</p>
+        <div class="inner-box">historical knowledge</div>
+        <p>را از دست بدهی.</p>
+        <p>این مخصوصاً در:</p>
+        <div class="box">
+            <div class="chart">seasonal systems
+recurring drift
+fraud
+recommendation
+            </div>
+        </div>
+        <p>مهم است.</p>
+
+        <h2>54. Seasonal Drift</h2>
+        <p>فرض کن:</p>
+        <div class="box">
+            <div class="chart">
+January
+↓
+Normal
+
+December
+↓
+High transactions
+            </div>
+        </div>
+        <p>اگر December را anomaly فرض کنی:</p>
+        <div class="inner-box">اشتباه است.</div>
+        <p>این یک:</p>
+        <div class="inner-box">Seasonal Pattern</div>
+        <p>است.</p>
+        <p>پس مدل باید seasonality را بشناسد.</p>
+
+        <h2>55. Domain Shift در ML Systems</h2>
+        <p>Domain Shift معمولاً در این سناریوها بسیار مهم است:</p>
+        <div class="inner-box"><div class="inner-title">Computer Vision</div></div>
+        <div class="box"><div class="chart">Camera A → Camera B</div></div>
+        <div class="inner-box"><div class="inner-title">NLP</div></div>
+        <div class="box"><div class="chart">News → Social Media</div></div>
+        <div class="inner-box"><div class="inner-title">Medical</div></div>
+        <div class="box"><div class="chart">Hospital A → Hospital B</div></div>
+        <div class="inner-box"><div class="inner-title">Fraud</div></div>
+        <div class="box"><div class="chart">Old fraud behavior → New fraud behavior</div></div>
+
+        <h2>56. Domain Adaptation</h2>
+        <p>اگر domain تغییر کرده باشد، می‌توان مدل را برای domain جدید adapt کرد.</p>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">
+Source Domain
+      ↓
+Pretraining
+      ↓
+Target Domain
+      ↓
+Fine-tuning / Adaptation
+            </div>
+        </div>
+        <p>روش‌ها می‌توانند شامل:</p>
+        <div class="box">
+            <div class="chart">fine-tuning
+importance weighting
+feature alignment
+adversarial domain adaptation
+transfer learning
+            </div>
+        </div>
+        <p>باشند.</p>
+
+        <h2>57. Domain Generalization</h2>
+        <p>هدف حتی قوی‌تر:</p>
+        <div class="inner-box">مدل را طوری train کنیم که روی domainهای ندیده‌شده هم خوب generalize کند.</div>
+        <p>یعنی:</p>
+        <div class="box">
+            <div class="chart">
+Domain A
+Domain B
+Domain C
+    ↓
+Robust Model
+    ↓
+Domain D
+            </div>
+        </div>
+        <p>بدون اینکه لزوماً D را هنگام training دیده باشیم.</p>
+
+        <h2>58. Shift در Classification و Regression</h2>
+        <p>Distribution Shift فقط برای classification نیست.</p>
+        <div class="inner-box"><div class="inner-title">Classification</div></div>
+        <div class="formula">$$P(X,Y)$$</div>
+        <div class="inner-box"><div class="inner-title">Regression</div></div>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">
+Training: house prices = 100K - 500K
+Production: house prices = 500K - 2M
+            </div>
+        </div>
+        <p>می‌تواند shift رخ دهد.</p>
+
+        <h2>59. Shift در Time Series</h2>
+        <p>در time series این مسئله بسیار طبیعی است.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">t1 → t2 → t3 → t4</div></div>
+        <p>و:</p>
+        <div class="formula">$$P_t(X)$$</div>
+        <p>تغییر می‌کند.</p>
+        <p>به همین دلیل:</p>
+        <div class="inner-box">random train-test split</div>
+        <p>در بسیاری از مسائل time-series مناسب نیست.</p>
+        <p>بهتر است:</p>
+        <div class="box">
+            <div class="chart">Past → Train
+Recent → Validation
+Future → Test
+            </div>
+        </div>
+
+        <h2>60. Shift و Validation</h2>
+        <p>یک اشتباه رایج:</p>
+        <div class="box">
+            <div class="chart">Random Split
+Train = 80%
+Test = 20%
+            </div>
+        </div>
+        <p>اگر data drift شدید باشد، این split ممکن است بیش از حد خوش‌بینانه باشد.</p>
+        <p>چون:</p>
+        <div class="formula">$$P_{train}(X) \approx P_{test}(X)$$</div>
+        <p>ولی production:</p>
+        <div class="formula">$$P_{prod}(X) \neq P_{train}(X)$$</div>
+        <p>است.</p>
+
+        <h2>61. Temporal Validation</h2>
+        <p>اگر مسئله temporal باشد:</p>
+        <div class="box">
+            <div class="chart">
+2024 ──────────────→ Train
+2025 ───────→ Validation
+2026 ───────→ Test
+            </div>
+        </div>
+        <p>این بسیار realisticتر است.</p>
+
+        <h2>62. Shift و Generalization</h2>
+        <p>Generalization یعنی:</p>
+        <div class="inner-box">مدل روی داده‌های unseen خوب کار کند.</div>
+        <p>اما معمولاً فرض می‌کنیم:</p>
+        <div class="formula">$$P_{train} \approx P_{test}$$</div>
+        <p>اگر این assumption شدیداً نقض شود:</p>
+        <div class="inner-box">Generalization سخت‌تر می‌شود.</div>
+
+        <h2>63. رابطه با IID</h2>
+        <p>در بسیاری از مدل‌های کلاسیک فرض می‌کنیم داده‌ها:</p>
+        <div class="inner-box">IID</div>
+        <p>هستند:</p>
+        <div class="inner-box">Independent</div>
+        <p>مشاهدات مستقل‌اند.</p>
+        <div class="inner-box">Identically Distributed</div>
+        <p>همه از یک distribution می‌آیند.</p>
+        <p>Distribution Shift دقیقاً می‌تواند بخش:</p>
+        <div class="inner-box">Identically Distributed</div>
+        <p>را نقض کند.</p>
+        <p>مثلاً:</p>
+        <div class="formula">$$X_1 \sim P_1$$</div>
+        <p>ولی:</p>
+        <div class="formula">$$X_2 \sim P_2$$</div>
+        <p>و:</p>
+        <div class="formula">$$P_1 \neq P_2$$</div>
+
+        <h2>64. مهم‌ترین نقشه ذهنی</h2>
+        <p>این را واقعاً پیشنهاد می‌کنم حفظ کنی:</p>
+        <div class="box">
+            <div class="chart">
+                    DISTRIBUTION SHIFT
+                           │
+             ┌─────────────┴─────────────┐
+             │                           │
+          Static                       Temporal
+          Shift                         Drift
+             │                           │
+      ┌──────┼──────┐             ┌──────┼──────┐
+      │      │      │             │      │      │
+   Covariate Label Concept      Data   Feature Concept
+     Shift   Shift  Shift      Drift    Drift   Drift
+      │        │      │                         │
+     P(X)     P(Y)   P(Y|X)                  P(Y|X,t)
+            </div>
+        </div>
+        <p>و در سطح کلی‌تر:</p>
+        <div class="box">
+            <div class="chart">
+Dataset Shift
+      │
+      ├── Covariate Shift
+      ├── Label Shift
+      ├── Concept Shift
+      └── Combinations
+            </div>
+        </div>
+
+        <h2>65. جدول نهایی مفاهیم</h2>
+        <table>
+            <thead><tr><th>مفهوم</th><th>چه چیزی تغییر می‌کند؟</th><th>مثال</th></tr></thead>
+            <tbody>
+                <tr><td>Covariate Shift</td><td>P(X)</td><td>نوع کاربران تغییر کرده</td></tr>
+                <tr><td>Label Shift</td><td>P(Y)</td><td>نرخ fraud از 1% به 5%</td></tr>
+                <tr><td>Prior Probability Shift</td><td>P(Y)</td><td>تغییر prior کلاس</td></tr>
+                <tr><td>Concept Shift</td><td>P(Y|X)</td><td>رابطه بین X و Y عوض شده</td></tr>
+                <tr><td>Concept Drift</td><td>P_t(Y|X)</td><td>رابطه در طول زمان عوض شده</td></tr>
+                <tr><td>Dataset Shift</td><td>P(X,Y)</td><td>هر نوع تغییر کلی</td></tr>
+                <tr><td>Domain Shift</td><td>domain/environment</td><td>Camera A → Camera B</td></tr>
+                <tr><td>Temporal Drift</td><td>distribution در زمان</td><td>رفتار مشتری در طول سال</td></tr>
+                <tr><td>Data Drift</td><td>معمولاً P(X)</td><td>تغییر داده ورودی</td></tr>
+                <tr><td>Feature Drift</td><td>P(X_j)</td><td>تغییر distribution یک feature</td></tr>
+            </tbody>
+        </table>
+
+        <h2>66. یک مثال جامع برای مصاحبه</h2>
+        <p>فرض کن یک Fraud Detection System داریم.</p>
+        <p>Training</p>
+        <div class="box">
+            <div class="chart">
+Fraud = 1%
+New Device = 20%
+Foreign Transaction = 10%
+            </div>
+        </div>
+        <p>بعد از یک سال:</p>
+        <div class="box">
+            <div class="chart">
+Fraud = 5%
+New Device = 40%
+Foreign Transaction = 3%
+            </div>
+        </div>
+        <p>حالا باید بررسی کنیم.</p>
+
+        <div class="inner-box"><div class="inner-title">حالت اول</div></div>
+        <p>فقط:</p>
+        <div class="formula">$$P(X)$$</div>
+        <p>تغییر کرده.</p>
+        <p>ولی:</p>
+        <div class="formula">$$P(Y|X)$$</div>
+        <p>ثابت است.</p>
+        <div class="inner-box">→ Covariate Shift</div>
+
+        <div class="inner-box"><div class="inner-title">حالت دوم</div></div>
+        <p>فقط:</p>
+        <div class="formula">$$P(Y)$$</div>
+        <p>تغییر کرده.</p>
+        <div class="inner-box">→ Label Shift / Prior Probability Shift</div>
+
+        <div class="inner-box"><div class="inner-title">حالت سوم</div></div>
+        <p>رابطه:</p>
+        <div class="inner-box">New Device → Fraud</div>
+        <p>دیگر مثل قبل نیست.</p>
+        <div class="inner-box">→ Concept Shift</div>
+
+        <div class="inner-box"><div class="inner-title">حالت چهارم</div></div>
+        <p>همه این‌ها تغییر کرده‌اند.</p>
+        <div class="inner-box">→ Dataset Shift</div>
+
+        <div class="inner-box"><div class="inner-title">حالت پنجم</div></div>
+        <p>این تغییرات به مرور زمان رخ داده‌اند:</p>
+        <div class="formula">$$P_t(X,Y)$$</div>
+        <div class="inner-box">→ Temporal Drift</div>
+
+        <h2>67. نکته بسیار مهم: Shift Detection با Shift Diagnosis فرق دارد</h2>
+        <p>این دو را قاطی نکن.</p>
+        <div class="inner-box"><div class="inner-title">Detection</div></div>
+        <p>می‌گوید:</p>
+        <div class="inner-box">distribution changed.</div>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">PSI = 0.31</div></div>
+        <div class="inner-box"><div class="inner-title">Diagnosis</div></div>
+        <p>می‌گوید:</p>
+        <div class="inner-box">چرا تغییر کرده؟</div>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">
+Transaction amount drift
+        ↓
+Marketing campaign
+        ↓
+More high-value users
+
+یا:
+
+Fraud rate increased
+        ↓
+New attack pattern
+        ↓
+Concept Drift
+            </div>
+        </div>
+        <p>Senior باید بتواند هر دو را انجام دهد.</p>
+
+        <h2>68. Detection به تنهایی کافی نیست</h2>
+        <p>فرض کن:</p>
+        <div class="formula">$$PSI = 0.4$$</div>
+        <p>سؤال بعدی:</p>
+        <div class="inner-box">آیا این drift واقعاً روی model impact دارد؟</div>
+        <p>باید بررسی کنیم:</p>
+        <div class="inner-box">Drift → Prediction → Calibration → Performance → Business</div>
+
+        <h2>69. Production Monitoring صحیح</h2>
+        <p>یک سیستم Mature ML Monitoring معمولاً چند layer دارد:</p>
+        <div class="box">
+            <div class="chart">
+Layer 1 — Data Quality
+Missing values
+Null rate
+Invalid values
+Schema changes
+
+Layer 2 — Feature Drift
+PSI
+KS
+JS
+Wasserstein
+
+Layer 3 — Prediction Drift
+P(score)
+P(prediction)
+
+Layer 4 — Performance
+Accuracy
+Precision
+Recall
+F1
+AUC
+MAE
+RMSE
+
+Layer 5 — Business
+Fraud loss
+Revenue
+Conversion
+Approval rate
+Customer complaints
+            </div>
+        </div>
+
+        <h2>70. مهم‌ترین تفاوت Data Drift و Concept Drift</h2>
+        <p>اگر این سؤال را در مصاحبه بپرسند:</p>
+        <div class="inner-box">«Feature distribution unchanged but model performance dropped. What might be happening?»</div>
+        <p>یکی از اولین جواب‌ها:</p>
+        <div class="inner-box">Concept Drift</div>
+        <p>چون ممکن است:</p>
+        <div class="formula">$$P(X)$$</div>
+        <p>تقریباً ثابت باشد ولی:</p>
+        <div class="formula">$$P(Y|X)$$</div>
+        <p>تغییر کرده باشد.</p>
+
+        <h2>71. برعکس آن</h2>
+        <p>اگر:</p>
+        <div class="formula">$$P(X)$$</div>
+        <p>خیلی تغییر کند ولی performance تقریباً ثابت باشد:</p>
+        <p>ممکن است:</p>
+        <div class="inner-box">Covariate/Data Drift</div>
+        <p>داشته باشیم ولی مدل هنوز robust باشد.</p>
+
+        <h2>72. Senior-Level Insight</h2>
+        <p>مهم‌ترین نکته این فصل این است:</p>
+        <div class="inner-box">Drift detection یک مسئله آماری است؛ drift diagnosis یک مسئله ML + domain است؛ و تصمیم retraining یک مسئله ML + business است.</div>
+        <p>یعنی:</p>
+        <div class="box">
+            <div class="chart">
+Statistical Test
+      ↓
+"Something changed"
+      ↓
+ML Analysis
+      ↓
+"What changed?"
+      ↓
+Domain Analysis
+      ↓
+"Why did it change?"
+      ↓
+Business Analysis
+      ↓
+"Does it matter?"
+      ↓
+Action
+            </div>
+        </div>
+
+        <h2>73. اگر بخواهی این بخش را برای مصاحبه در ذهن نگه داری</h2>
+        <p>چهار فرمول طلایی:</p>
+        <div class="inner-box"><div class="inner-title">Covariate Shift</div></div>
+        <div class="formula">$$P_{train}(X) \neq P_{prod}(X)$$</div>
+        <div class="inner-box"><div class="inner-title">Label / Prior Shift</div></div>
+        <div class="formula">$$P_{train}(Y) \neq P_{prod}(Y)$$</div>
+        <div class="inner-box"><div class="inner-title">Concept Shift</div></div>
+        <div class="formula">$$P_{train}(Y|X) \neq P_{prod}(Y|X)$$</div>
+        <div class="inner-box"><div class="inner-title">Dataset Shift</div></div>
+        <div class="formula">$$P_{train}(X,Y) \neq P_{prod}(X,Y)$$</div>
+        <p>و برای زمان:</p>
+        <div class="formula">$$P_t(X,Y)$$</div>
+        <p>اگر با زمان تغییر کند، با Temporal/Data/Concept Drift سروکار داریم؛ بسته به اینکه دقیقاً کدام distribution تغییر کرده است.</p>
+
+        <h2>🧠 خلاصه Senior-Level</h2>
+        <p>اگر از تو بپرسند:</p>
+        <div class="inner-box">«مدل در production افت کرده، از کجا شروع می‌کنی؟»</div>
+        <p>یک جواب Senior خوب این نیست که بگویی:</p>
+        <div class="inner-box">«مدل را retrain می‌کنم.»</div>
+        <p>بلکه:</p>
+        <div class="box">
+            <div class="chart">
+1. Check Data Quality
+        ↓
+2. Check Feature Drift
+        ↓
+3. Check Prediction Drift
+        ↓
+4. Check Label Distribution
+        ↓
+5. Check Performance over Time
+        ↓
+6. Determine:
+   Covariate?
+   Label?
+   Concept?
+   Domain?
+   Temporal?
+        ↓
+7. Find Root Cause
+        ↓
+8. Decide:
+   Recalibration?
+   Threshold change?
+   Retraining?
+   Feature redesign?
+   Domain adaptation?
+        ↓
+9. Validate on Future-like Data
+        ↓
+10. Deploy + Monitor
+            </div>
+        </div>
+        <p>و یک اصل بسیار مهم:</p>
+        <div class="inner-box">Drift Detection ≠ Model Failure</div>
+        <p>و:</p>
+        <div class="inner-box">Model Failure ≠ Always Retraining</div>
+        <p>ممکن است مشکل با threshold tuning، calibration، feature engineering، domain adaptation، تغییر window آموزشی، یا حتی اصلاح data pipeline حل شود.</p>
+        <p>این دقیقاً همان سطحی است که مفهوم Distribution Shift از یک تعریف تئوری به یک Production ML Engineering problem تبدیل می‌شود.</p>
+
+    </div>
+</body>
+</html>

@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Explainability & Interpretability in Machine Learning - Senior Level</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}]});"></script>
+    <style>
+        body { background-color: #0d1117; color: #e6edf3; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.8; margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1, h2, h3 { color: #e6edf3; text-align: right; border-bottom: 1px solid #444; padding-bottom: 15px; margin-top: 50px; }
+        p, li { text-align: right; }
+        
+        /* Boxes */
+        .box { background-color: #21262d; border: 1px solid #30363d; border-radius: 8px; padding: 15px; margin: 15px 0; color: #e6edf3; }
+        .inner-box { background-color: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 15px; margin: 10px; }
+        .inner-title { font-weight: bold; margin-bottom: 5px; }
+
+        /* Formula Box */
+        .formula {
+            direction: ltr;
+            background-color: #000;
+            border: 1px solid #fff;
+            border-radius: 0;
+            padding: 20px;
+            margin: 20px auto;
+            width: fit-content;
+            max-width: 100%;
+            overflow-x: auto;
+            text-align: center;
+            font-size: 1.2em;
+            font-family: "Times New Roman", Times, serif;
+            color: #fff;
+        }
+
+        /* Charts / Flowcharts / ASCII Art */
+        .chart { direction: ltr; text-align: left; font-family: monospace; background-color: #21262d; border-radius: 8px; padding: 15px; overflow-x: auto; white-space: pre; border: 1px solid #444; }
+
+        /* Tables */
+        table { width: 100%; border-collapse: collapse; direction: rtl; margin-bottom: 20px; }
+        th, td { border: 1px solid #444; padding: 12px; text-align: right; }
+        th { background-color: #21262d; }
+        
+        .highlight { color: #58a6ff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧠 19. Explainability در Machine Learning</h1>
+        
+        <p>حتماً. Explainability / Interpretability از مباحثی است که برای سطح Senior ML باید فراتر از «SHAP چیست؟» بلد باشی. باید بدانی هر روش چه چیزی را توضیح می‌دهد، چه فرضی دارد، چه چیزی را تضمین نمی‌کند، چه زمانی ممکن است گمراه‌کننده باشد، و Global و Local را چگونه از هم جدا کنیم.</p>
+
+        <h2>1. Explainability چیست؟</h2>
+        <p>فرض کن مدل Fraud Detection داریم:</p>
+        <div class="box">
+            <div class="chart">
+Customer
+   ↓
+ML Model
+   ↓
+Fraud = 1
+Probability = 0.93
+            </div>
+        </div>
+        <p>حالا دو سؤال کاملاً متفاوت داریم:</p>
+        <div class="inner-box"><div class="inner-title">سؤال اول</div></div>
+        <p>چرا این مشتری خاص Fraud تشخیص داده شد؟</p>
+        <p>این می‌شود:</p>
+        <div class="inner-box">Local Explainability</div>
+        
+        <div class="inner-box"><div class="inner-title">سؤال دوم</div></div>
+        <p>مدل ما معمولاً بر اساس چه ویژگی‌هایی Fraud را تشخیص می‌دهد؟</p>
+        <p>این می‌شود:</p>
+        <div class="inner-box">Global Explainability</div>
+
+        <h2>2. Explainability vs Interpretability</h2>
+        <p>این دو اصطلاح گاهی به جای هم استفاده می‌شوند، ولی می‌توان یک تفاوت مفهومی در نظر گرفت.</p>
+        
+        <div class="inner-box"><div class="inner-title">Interpretability</div></div>
+        <p>مدل ذاتاً قابل فهم است.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Linear Regression
+Decision Tree
+Rule-based Model</div></div>
+        
+        <div class="inner-box"><div class="inner-title">Explainability</div></div>
+        <p>ممکن است مدل black-box باشد، ولی روش‌هایی برای توضیح prediction آن داشته باشیم.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">XGBoost
+Neural Network
+Transformer</div></div>
+        <p>و سپس:</p>
+        <div class="box"><div class="chart">SHAP
+LIME
+Permutation Importance</div></div>
+        <p>استفاده کنیم.</p>
+
+        <h2>3. چرا Explainability مهم است؟</h2>
+        <p>در ML واقعی فقط accuracy مهم نیست.</p>
+        <p>مثلاً در:</p>
+        <div class="box">
+            <div class="chart">Banking
+Fraud Detection
+Credit Scoring
+Healthcare
+Insurance
+Security
+HR</div>
+        </div>
+        <p>باید بدانیم:</p>
+        <div class="inner-box">چرا مدل این تصمیم را گرفته؟</div>
+        
+        <div class="inner-box"><div class="inner-title">مثال Fraud</div></div>
+        <p>مدل می‌گوید:</p>
+        <div class="box"><div class="chart">Fraud probability = 0.97</div></div>
+        <p>ولی business می‌پرسد:</p>
+        <div class="inner-box">چرا؟</div>
+        <p>ممکن است جواب:</p>
+        <div class="box">
+            <div class="chart">New device        +0.31
+High amount       +0.25
+Unusual country   +0.18
+Velocity          +0.15</div>
+        </div>
+        <p>باشد.</p>
+        <p>این information برای analyst بسیار ارزشمند است.</p>
+
+        <h2>4. دو محور اصلی Explainability</h2>
+        <p>تقریباً همه روش‌هایی که گفتی را می‌توان در این دو دسته دید:</p>
+        <div class="box">
+            <div class="chart">
+Explainability
+      │
+      ├── Global
+      │
+      └── Local
+            </div>
+        </div>
+
+        <h2>5. Global Explainability</h2>
+        <p>Global یعنی:</p>
+        <div class="inner-box">رفتار کلی مدل روی dataset چیست؟</div>
+        <p>مثلاً:</p>
+        <div class="inner-box">چه featureهایی معمولاً بیشترین تأثیر را روی prediction دارند؟</div>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">
+transaction_amount   ██████████
+transaction_velocity ████████
+device_age            ██████
+country_risk          █████
+account_age           ███
+            </div>
+        </div>
+        <p>این جواب سؤال:</p>
+        <div class="inner-box">What features generally drive Fraud predictions?</div>
+        <p>است.</p>
+
+        <h2>6. Local Explainability</h2>
+        <p>Local یعنی:</p>
+        <div class="inner-box">چرا مدل برای یک نمونه خاص این prediction را داده است؟</div>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">
+Transaction #12345
+
+Fraud probability = 0.94
+
+Top reasons:
++ Amount unusually high
++ New device
++ High transaction velocity
++ Unusual location
+            </div>
+        </div>
+        <p>این جواب سؤال:</p>
+        <div class="inner-box">Why is this customer classified as Fraud?</div>
+        <p>است.</p>
+
+        <h2>7. Feature Importance</h2>
+        <p>ساده‌ترین روش explainability.</p>
+        <p>ایده:</p>
+        <div class="inner-box">به هر feature یک importance score بدهیم.</div>
+        <p>مثلاً Random Forest:</p>
+        <div class="box">
+            <div class="chart">
+Feature             Importance
+--------------------------------
+Age                  0.25
+Income               0.21
+TransactionAmount    0.18
+DeviceAge            0.12
+Country              0.08
+            </div>
+        </div>
+
+        <h2>8. Feature Importance در Tree Models</h2>
+        <p>در tree-based models معمولاً importance بر اساس کاهش impurity محاسبه می‌شود.</p>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">
+Root
+ |
+ |-- TransactionAmount
+ |
+ +-- DeviceAge
+            </div>
+        </div>
+        <p>اگر split مربوط به TransactionAmount impurity را زیاد کاهش دهد، importance آن بالا می‌رود.</p>
+
+        <h2>9. Mean Decrease in Impurity</h2>
+        <p>برای درخت:</p>
+        <div class="formula">$$Importance(j) = \sum_{t} \Delta I_t$$</div>
+        <p>که:</p>
+        <div class="box">
+            <div class="chart">
+j = feature
+t = split
+ΔIt = کاهش impurity
+            </div>
+        </div>
+        <p>است.</p>
+        <p>برای Random Forest معمولاً importance درخت‌ها aggregate می‌شود.</p>
+
+        <h2>10. مشکل Feature Importance</h2>
+        <p>Feature importance به این معنی نیست که:</p>
+        <div class="inner-box">feature علت prediction است.</div>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Feature A importance = 0.8</div></div>
+        <p>به این معنی نیست:</p>
+        <div class="inner-box">اگر A را تغییر دهیم، prediction حتماً تغییر می‌کند.</div>
+        <p>و حتی:</p>
+        <div class="inner-box">A علت واقعی Fraud است.</div>
+        <p>ممکن است صرفاً correlation یا proxy باشد.</p>
+
+        <h2>11. Correlated Features</h2>
+        <p>یکی از مشکلات مهم:</p>
+        <div class="box">
+            <div class="chart">income
+annual_income
+monthly_income</div>
+        </div>
+        <p>اگر این‌ها highly correlated باشند، importance ممکن است بین آنها پخش شود.</p>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">income       0.30
+annual_income 0.15
+monthly_income 0.10</div>
+        </div>
+        <p>در حالی که اگر یکی حذف شود، importance دیگری افزایش پیدا می‌کند.</p>
+        <p>پس feature importance در حضور correlation باید با احتیاط تفسیر شود.</p>
+
+        <h2>12. Permutation Importance</h2>
+        <p>یکی از روش‌های مهم‌تر.</p>
+        <p>ایده:</p>
+        <div class="inner-box">یک feature را shuffle کن و ببین performance چقدر خراب می‌شود.</div>
+
+        <h2>13. مثال</h2>
+        <p>مدل:</p>
+        <div class="box"><div class="chart">AUC = 0.92</div></div>
+        <p>حالا transaction_amount را shuffle می‌کنیم:</p>
+        <div class="box"><div class="chart">AUC = 0.74</div></div>
+        <p>پس:</p>
+        <div class="formula">$$Importance \approx 0.92 - 0.74 = 0.18$$</div>
+
+        <h2>14. الگوریتم Permutation Importance</h2>
+        <p>برای feature j:</p>
+        <div class="inner-box"><div class="inner-title">مرحله 1</div></div>
+        <p>Performance اصلی:</p>
+        <div class="formula">$$S_{original}$$</div>
+        
+        <div class="inner-box"><div class="inner-title">مرحله 2</div></div>
+        <p>Feature j را shuffle کن:</p>
+        <div class="formula">$$X_j^{perm}$$</div>
+        
+        <div class="inner-box"><div class="inner-title">مرحله 3</div></div>
+        <p>Performance جدید:</p>
+        <div class="formula">$$S_{perm}$$</div>
+        
+        <div class="inner-box"><div class="inner-title">مرحله 4</div></div>
+        <p>Importance:</p>
+        <div class="formula">$$I_j = S_{original} - S_{perm}$$</div>
+
+        <h2>15. چرا Permutation Importance جالب است؟</h2>
+        <p>چون:</p>
+        <div class="inner-box">model-agnostic</div>
+        <p>است.</p>
+        <p>یعنی لازم نیست model حتماً tree باشد.</p>
+        <p>می‌توانی برای:</p>
+        <div class="box">
+            <div class="chart">XGBoost
+Random Forest
+Neural Network
+SVM
+Logistic Regression</div>
+        </div>
+        <p>استفاده کنی.</p>
+
+        <h2>16. مشکل Permutation Importance</h2>
+        <p>Correlation.</p>
+        <p>فرض کن:</p>
+        <div class="box"><div class="chart">X1 ≈ X2</div></div>
+        <p>و model از هر دو استفاده می‌کند.</p>
+        <p>اگر X1 را shuffle کنیم:</p>
+        <div class="box">
+            <div class="chart">Performance:
+0.92 → 0.91</div>
+        </div>
+        <p>پس می‌گوییم:</p>
+        <div class="box"><div class="chart">X1 importance = low</div></div>
+        <p>اما ممکن است X2 همان information را نگه داشته باشد.</p>
+        <p>پس:</p>
+        <div class="inner-box">low permutation importance لزوماً به معنی useless بودن feature نیست.</div>
+
+        <h2>17. نکته مهم Senior-Level</h2>
+        <p>Permutation importance باید روی:</p>
+        <div class="inner-box">validation/test data</div>
+        <p>و نه training data به شکل ساده و بدون توجه به overfitting محاسبه شود.</p>
+        <p>اگر model روی train بیش از حد fit شده باشد، importance روی train می‌تواند misleading باشد.</p>
+
+        <h2>18. Partial Dependence Plot — PDP</h2>
+        <p>PDP برای فهم رابطه:</p>
+        <div class="formula">$$Feature \rightarrow Prediction$$</div>
+        <p>است.</p>
+        <p>مثلاً:</p>
+        <div class="inner-box">وقتی transaction amount افزایش پیدا می‌کند، مدل به طور متوسط چقدر احتمال Fraud را تغییر می‌دهد؟</div>
+
+        <h2>19. مثال PDP</h2>
+        <p>فرض کن:</p>
+        <div class="box">
+            <div class="chart">
+Transaction Amount
+        ↓
+Fraud Probability
+            </div>
+        </div>
+        <p>PDP ممکن است نشان دهد:</p>
+        <div class="box">
+            <div class="chart">
+Amount       Fraud Probability
+
+0-100        0.02
+100-500      0.05
+500-1000     0.15
+1000-5000    0.40
+>5000        0.75
+            </div>
+        </div>
+        <p>پس رابطه را می‌بینیم.</p>
+
+        <h2>20. PDP چگونه کار می‌کند؟</h2>
+        <p>فرض کن feature موردنظر:</p>
+        <div class="formula">$$X_j$$</div>
+        <p>است.</p>
+        <p>برای مقدار z:</p>
+        <div class="formula">$$PD(z) = E_{X_{-j}} [f(z, X_{-j})]$$</div>
+        <p>یعنی:</p>
+        <div class="inner-box">feature موردنظر را روی مقدار خاصی ثابت می‌کنیم و روی سایر featureها average می‌گیریم.</div>
+
+        <h2>21. مثال</h2>
+        <p>Dataset:</p>
+        <div class="box"><div class="chart">Age | Income | Amount | Fraud</div></div>
+        <p>می‌خواهیم effect Amount را ببینیم.</p>
+        <p>برای:</p>
+        <div class="box"><div class="chart">Amount = 1000</div></div>
+        <p>برای همه افراد:</p>
+        <div class="box"><div class="chart">Amount = 1000</div></div>
+        <p>قرار می‌دهیم.</p>
+        <p>بعد prediction می‌گیریم.</p>
+        <p>میانگین predictionها:</p>
+        <div class="box"><div class="chart">Average Fraud Probability = 0.18</div></div>
+        <p>بعد:</p>
+        <div class="box"><div class="chart">Amount = 2000</div></div>
+        <p>و دوباره prediction.</p>
+
+        <h2>22. مشکل مهم PDP</h2>
+        <p>PDP فرض می‌کند featureهای موردنظر و سایر featureها را می‌توانیم به شکل مناسب ترکیب کنیم.</p>
+        <p>اما اگر:</p>
+        <div class="box"><div class="chart">Age = 10
+Income = $1M</div></div>
+        <p>ترکیب غیرواقعی باشد، PDP ممکن است روی نقاطی حساب کند که در data وجود ندارند یا بسیار نامحتمل‌اند.</p>
+
+        <h2>23. Correlated Features و PDP</h2>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Age
+YearsOfExperience</div></div>
+        <p>correlated هستند.</p>
+        <p>اگر PDP فقط Age را تغییر دهد ولی YearsOfExperience را ثابت نگه دارد، ممکن است ترکیب‌های غیرواقعی ایجاد کند.</p>
+        <p>پس:</p>
+        <div class="inner-box">PDP در حضور featureهای highly correlated می‌تواند misleading شود.</div>
+
+        <h2>24. ICE Plot</h2>
+        <p>ICE:</p>
+        <div class="inner-box">Individual Conditional Expectation</div>
+        <p>است.</p>
+        <p>PDP:</p>
+        <div class="inner-box">average behavior</div>
+        <p>را نشان می‌دهد.</p>
+        <p>ICE:</p>
+        <div class="inner-box">behavior برای هر individual</div>
+        <p>را نشان می‌دهد.</p>
+
+        <h2>25. تفاوت PDP و ICE</h2>
+        <p>فرض کن 1000 customer داریم.</p>
+        <div class="inner-box"><div class="inner-title">PDP</div></div>
+        <div class="box">
+            <div class="chart">1000 customers
+      ↓
+Average
+      ↓
+One curve</div>
+        </div>
+        <div class="inner-box"><div class="inner-title">ICE</div></div>
+        <div class="box">
+            <div class="chart">Customer 1 → curve
+Customer 2 → curve
+Customer 3 → curve
+...
+Customer 1000 → curve</div>
+        </div>
+
+        <h2>26. چرا ICE مهم است؟</h2>
+        <p>ممکن است PDP نشان دهد:</p>
+        <div class="box">
+            <div class="chart">Amount ↑
+Fraud ↑</div>
+        </div>
+        <p>ولی واقعیت:</p>
+        <div class="box">
+            <div class="chart">Customer A → strong positive effect
+Customer B → almost no effect
+Customer C → negative effect</div>
+        </div>
+        <p>باشد.</p>
+        <p>PDP این heterogeneity را ممکن است پنهان کند.</p>
+        <p>ICE آن را نشان می‌دهد.</p>
+
+        <h2>27. PDP vs ICE</h2>
+        <table>
+            <thead><tr><th></th><th>PDP</th><th>ICE</th></tr></thead>
+            <tbody>
+                <tr><td>سطح</td><td>Global-ish</td><td>Local</td></tr>
+                <tr><td>curve</td><td>یک curve</td><td>چند curve</td></tr>
+                <tr><td>Average</td><td>بله</td><td>خیر</td></tr>
+                <tr><td>Heterogeneity</td><td>ممکن است پنهان شود</td><td>دیده می‌شود</td></tr>
+                <tr><td>Correlation issue</td><td>دارد</td><td>دارد</td></tr>
+            </tbody>
+        </table>
+
+        <h2>28. SHAP</h2>
+        <p>حالا مهم‌ترین روش explainability مدرن:</p>
+        <div class="inner-box">SHAP</div>
+        <p>مخفف:</p>
+        <div class="inner-box">SHapley Additive exPlanations</div>
+        <p>است.</p>
+        <p>ریشه آن در:</p>
+        <div class="inner-box">Shapley Values</div>
+        <p>از Game Theory است.</p>
+
+        <h2>29. ایده SHAP</h2>
+        <p>فرض کن prediction نهایی:</p>
+        <div class="box"><div class="chart">Fraud probability = 0.90</div></div>
+        <p>SHAP می‌خواهد بگوید:</p>
+        <div class="inner-box">هر feature چقدر prediction را نسبت به baseline تغییر داده است؟</div>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">
+Baseline = 0.20
+
+Amount       +0.25
+NewDevice    +0.18
+Velocity     +0.15
+Country      +0.08
+Age          -0.01
+--------------------------------
+Prediction   ≈ 0.90
+            </div>
+        </div>
+
+        <h2>30. SHAP Formula</h2>
+        <p>فرمول Shapley value:</p>
+        <div class="formula">$$\phi_i = \sum_{S \subseteq N \setminus \{i\}} \frac{|S|!(n - |S| - 1)!}{n!} [f(S \cup \{i\}) - f(S)]$$</div>
+        <p>لازم نیست در مصاحبه همیشه فرمول را بنویسی، ولی باید مفهوم آن را بفهمی.</p>
+
+        <h2>31. معنی فرمول SHAP</h2>
+        <p>برای feature i:</p>
+        <div class="inner-box">contribution آن feature را در تمام coalitionهای ممکن بررسی می‌کنیم.</div>
+        <p>یعنی:</p>
+        <div class="box">
+            <div class="chart">
+Feature i
+   ↓
+Add it to different feature subsets
+   ↓
+Measure prediction change
+   ↓
+Weighted average
+   ↓
+SHAP value
+            </div>
+        </div>
+
+        <h2>32. SHAP Additivity</h2>
+        <p>یکی از ویژگی‌های مهم:</p>
+        <div class="formula">$$f(x) = \phi_0 + \sum_i \phi_i$$</div>
+        <p>که:</p>
+        <div class="box">
+            <div class="chart">φ0 = baseline
+φi = contribution feature i</div>
+        </div>
+        <p>است.</p>
+
+        <h2>33. مثال</h2>
+        <p>فرض کن:</p>
+        <div class="box"><div class="chart">Base prediction = 0.30</div></div>
+        <p>و:</p>
+        <div class="box">
+            <div class="chart">Amount       +0.25
+DeviceAge    +0.20
+Velocity     +0.15
+Country      +0.10
+Income       -0.05</div>
+        </div>
+        <p>پس:</p>
+        <div class="formula">$$0.30 + 0.25 + 0.20 + 0.15 + 0.10 - 0.05 = 0.95$$</div>
+        <p>Prediction:</p>
+        <div class="box"><div class="chart">0.95</div></div>
+
+        <h2>34. SHAP برای Local Explainability</h2>
+        <p>مثلاً customer شماره 123:</p>
+        <div class="box"><div class="chart">Prediction = Fraud</div></div>
+        <p>SHAP:</p>
+        <div class="box">
+            <div class="chart">
+Feature             Contribution
+
+High amount          +0.31
+New device           +0.22
+High velocity        +0.18
+Foreign country      +0.12
+Old account          -0.04
+            </div>
+        </div>
+        <p>این دقیقاً جواب:</p>
+        <div class="inner-box">Why is this customer classified as Fraud?</div>
+        <p>است.</p>
+
+        <h2>35. SHAP برای Global Explainability</h2>
+        <p>اگر SHAP absolute values را روی dataset aggregate کنیم:</p>
+        <div class="formula">$$Mean(|\phi_i|)$$</div>
+        <p>می‌توانیم importance کلی feature را به دست آوریم.</p>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">
+Feature             Mean |SHAP|
+
+Amount                  0.31
+Velocity                0.25
+DeviceAge               0.18
+Country                 0.12
+AccountAge              0.07
+            </div>
+        </div>
+        <p>این می‌تواند برای سؤال:</p>
+        <div class="inner-box">What features generally drive Fraud predictions?</div>
+        <p>استفاده شود.</p>
+
+        <h2>36. SHAP Summary Plot</h2>
+        <p>یکی از معروف‌ترین visualizationها:</p>
+        <div class="box">
+            <div class="chart">Feature A   •••••••••••
+Feature B   •••••••
+Feature C   ••••
+Feature D   •••</div>
+        </div>
+        <p>محور x:</p>
+        <div class="box"><div class="chart">SHAP value</div></div>
+        <p>باشد.</p>
+        <p>سمت راست:</p>
+        <div class="inner-box">prediction را افزایش می‌دهد.</div>
+        <p>سمت چپ:</p>
+        <div class="inner-box">prediction را کاهش می‌دهد.</div>
+
+        <h2>37. SHAP یک مزیت مهم نسبت به Feature Importance دارد</h2>
+        <p>Feature importance می‌گوید:</p>
+        <div class="inner-box">این feature مهم است.</div>
+        <p>SHAP می‌تواند بگوید:</p>
+        <div class="inner-box">این feature برای این نمونه prediction را به این سمت برد.</div>
+        <p>یعنی:</p>
+        <div class="box">
+            <div class="chart">Global:
+Feature X is important.
+
+Local:
+Feature X increased THIS prediction by +0.27.</div>
+        </div>
+
+        <h2>38. SHAP Dependence Plot</h2>
+        <p>می‌توانیم ببینیم:</p>
+        <div class="box">
+            <div class="chart">Feature value
+      ↓
+SHAP value</div>
+        </div>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">Transaction Amount ↑
+        ↓
+SHAP ↑</div>
+        </div>
+        <p>یعنی مقدار بیشتر Amount معمولاً contribution مثبت به Fraud دارد.</p>
+
+        <h2>39. SHAP Interaction</h2>
+        <p>SHAP را می‌توان برای interaction هم استفاده کرد.</p>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">Amount
+   +
+New Device
+   ↓
+Much higher Fraud risk</div>
+        </div>
+        <p>ممکن است:</p>
+        <div class="box">
+            <div class="chart">Amount alone → moderate effect
+New Device alone → moderate effect
+Both together → very high effect</div>
+        </div>
+        <p>این interaction بسیار مهم است.</p>
+
+        <h2>40. SHAP و Feature Correlation</h2>
+        <p>اینجا یک نکته Senior-level بسیار مهم داریم.</p>
+        <p>اگر:</p>
+        <div class="box">
+            <div class="chart">X1
+X2</div>
+        </div>
+        <p>highly correlated باشند، attribution بین آنها می‌تواند ambiguous شود.</p>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">AnnualIncome
+MonthlyIncome</div>
+        </div>
+        <p>ممکن است SHAP contribution بین این دو تقسیم شود.</p>
+        <p>پس:</p>
+        <div class="inner-box">SHAP همیشه causal explanation نیست.</div>
+
+        <h2>41. SHAP ≠ Causality</h2>
+        <p>اگر SHAP بگوید:</p>
+        <div class="box"><div class="chart">Age → +0.20</div></div>
+        <p>به این معنی نیست:</p>
+        <div class="inner-box">اگر سن customer را تغییر دهیم، Fraud probability حتماً 0.20 افزایش می‌یابد.</div>
+        <p>SHAP:</p>
+        <div class="inner-box">model behavior</div>
+        <p>را توضیح می‌دهد.</p>
+        <p>نه:</p>
+        <div class="inner-box">causal mechanism</div>
+        <p>را.</p>
+        <p>این یکی از مهم‌ترین نکات مصاحبه است.</p>
+
+        <h2>42. LIME</h2>
+        <p>روش معروف دیگر:</p>
+        <div class="inner-box">LIME</div>
+        <p>مخفف:</p>
+        <div class="inner-box">Local Interpretable Model-agnostic Explanations</div>
+        <p>است.</p>
+        <p>ایده:</p>
+        <div class="inner-box">اطراف یک sample خاص، model پیچیده را با یک model ساده approximate کنیم.</div>
+
+        <h2>43. ایده LIME</h2>
+        <p>فرض کن:</p>
+        <div class="box"><div class="chart">Black-box Model</div></div>
+        <p>داریم.</p>
+        <p>برای customer خاص x:</p>
+        <div class="box">
+            <div class="chart">x
+↓
+Generate nearby samples
+↓
+Black-box predictions
+↓
+Fit simple interpretable model
+↓
+Explanation</div>
+        </div>
+
+        <h2>44. مثال LIME</h2>
+        <p>مدل اصلی:</p>
+        <div class="box"><div class="chart">XGBoost</div></div>
+        <p>نمونه:</p>
+        <div class="box"><div class="chart">Customer #123</div></div>
+        <p>LIME اطراف این customer sampleهای مشابه ایجاد می‌کند:</p>
+        <div class="box">
+            <div class="chart">Customer A
+Customer B
+Customer C
+...</div>
+        </div>
+        <p>بعد prediction مدل اصلی را می‌گیرد.</p>
+        <p>سپس یک model ساده مثلاً:</p>
+        <div class="box"><div class="chart">Linear Model</div></div>
+        <p>را روی neighborhood fit می‌کند.</p>
+
+        <h2>45. چرا LIME Local است؟</h2>
+        <p>چون مدل ساده فقط برای:</p>
+        <div class="inner-box">neighborhood اطراف یک sample</div>
+        <p>fit می‌شود.</p>
+        <p>بنابراین:</p>
+        <div class="box"><div class="chart">LIME explanation for Customer A</div></div>
+        <p>ممکن است با:</p>
+        <div class="box"><div class="chart">LIME explanation for Customer B</div></div>
+        <p>کاملاً متفاوت باشد.</p>
+
+        <h2>46. LIME Model-Agnostic است</h2>
+        <p>می‌تواند روی:</p>
+        <div class="box">
+            <div class="chart">XGBoost
+Random Forest
+Neural Network
+SVM</div>
+        </div>
+        <p>کار کند، چون فقط:</p>
+        <div class="inner-box">input → prediction</div>
+        <p>را نیاز دارد.</p>
+
+        <h2>47. مشکل LIME</h2>
+        <p>LIME به نحوه sampling حساس است.</p>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">Neighborhood definition
+Sampling strategy
+Distance metric
+Kernel width</div>
+        </div>
+        <p>می‌توانند explanation را تغییر دهند.</p>
+        <p>پس ممکن است:</p>
+        <div class="box">
+            <div class="chart">Run 1 → Feature A important
+Run 2 → Feature B important</div>
+        </div>
+        <p>شود.</p>
+
+        <h2>48. SHAP vs LIME</h2>
+        <table>
+            <thead><tr><th>ویژگی</th><th>SHAP</th><th>LIME</th></tr></thead>
+            <tbody>
+                <tr><td>پایه نظری</td><td>Shapley Values</td><td>Local surrogate</td></tr>
+                <tr><td>Local</td><td>بله</td><td>بله</td></tr>
+                <tr><td>Global</td><td>با aggregation</td><td>به شکل مستقیم نه</td></tr>
+                <tr><td>Model agnostic</td><td>بعضی variants بله</td><td>بله</td></tr>
+                <tr><td>Stability</td><td>معمولاً بهتر</td><td>ممکن است حساس باشد</td></tr>
+                <tr><td>Computational cost</td><td>ممکن است بالا</td><td>معمولاً کمتر</td></tr>
+                <tr><td>Interaction</td><td>قابلیت خوب</td><td>محدودتر</td></tr>
+            </tbody>
+        </table>
+
+        <h2>49. Counterfactual Explanation</h2>
+        <p>یکی از جذاب‌ترین روش‌ها:</p>
+        <div class="inner-box">به جای اینکه بگوییم چرا prediction این شد، بگوییم چه چیزی باید تغییر کند تا prediction عوض شود.</div>
+
+        <h2>50. مثال Credit</h2>
+        <p>مدل:</p>
+        <div class="box"><div class="chart">Loan = Rejected</div></div>
+        <p>Counterfactual می‌گوید:</p>
+        <div class="box">
+            <div class="chart">اگر:
+
+Income:
+$40K → $50K
+
+و
+
+Debt:
+$20K → $12K
+
+آنگاه:
+
+Loan = Approved</div>
+        </div>
+
+        <h2>51. Counterfactual سؤال متفاوتی می‌پرسد</h2>
+        <p>SHAP:</p>
+        <div class="inner-box">Why did this happen?</div>
+        <p>Counterfactual:</p>
+        <div class="inner-box">What would need to change for the outcome to change?</div>
+
+        <h2>52. مثال Fraud</h2>
+        <p>Prediction:</p>
+        <div class="box"><div class="chart">Fraud</div></div>
+        <p>Counterfactual:</p>
+        <div class="box">
+            <div class="chart">If transaction amount < $500
+and
+device age > 30 days
+
+→ Non-Fraud</div>
+        </div>
+
+        <h2>53. Counterfactual و Actionability</h2>
+        <p>این موضوع بسیار مهم است.</p>
+        <p>همه featureها قابل تغییر نیستند.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Age</div></div>
+        <p>قابل تغییر نیست.</p>
+        <p>ولی:</p>
+        <div class="box">
+            <div class="chart">Debt
+Income
+Transaction Amount</div>
+        </div>
+        <p>ممکن است قابل تغییر باشند.</p>
+        <p>پس counterfactual باید:</p>
+        <div class="inner-box">actionable</div>
+        <p>باشد.</p>
+
+        <h2>54. Counterfactual Constraints</h2>
+        <p>یک counterfactual خوب باید constraints داشته باشد.</p>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">Age → immutable
+Gender → immutable
+Transaction history → immutable
+Income → mutable
+Debt → mutable</div>
+        </div>
+
+        <h2>55. Counterfactual Optimization</h2>
+        <p>می‌توانیم مسئله را به شکل:</p>
+        <div class="formula">$$\min_{x'} d(x, x')$$</div>
+        <p>حل کنیم، به شرط اینکه:</p>
+        <div class="formula">$$f(x') = desired outcome$$</div>
+        <p>باشد.</p>
+        <p>یعنی:</p>
+        <div class="inner-box">کمترین تغییر ممکن را پیدا کن که outcome را عوض کند.</div>
+
+        <h2>56. مشکل Counterfactual</h2>
+        <p>ممکن است counterfactual از نظر mathematical درست باشد ولی در دنیای واقعی impossible باشد.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Age = 35 → 25</div></div>
+        <p>یا:</p>
+        <div class="box"><div class="chart">Income = $40K → $1M overnight</div></div>
+        <p>پس:</p>
+        <div class="inner-box">feasibility و actionability بسیار مهم‌اند.</div>
+
+        <h2>57. Global vs Local Explainability</h2>
+        <p>این را حتماً برای مصاحبه بلد باش.</p>
+        <table>
+            <thead><tr><th></th><th>Global</th><th>Local</th></tr></thead>
+            <tbody>
+                <tr><td>سؤال</td><td>Model generally behaves how?</td><td>Why this prediction?</td></tr>
+                <tr><td>Scope</td><td>Dataset/model</td><td>One sample</td></tr>
+                <tr><td>مثال</td><td>Feature importance</td><td>SHAP values</td></tr>
+                <tr><td>مثال</td><td>PDP</td><td>LIME</td></tr>
+                <tr><td>مثال</td><td>Global SHAP summary</td><td>SHAP waterfall</td></tr>
+                <tr><td>کاربرد</td><td>Model audit</td><td>Case investigation</td></tr>
+            </tbody>
+        </table>
+
+        <h2>58. سؤال شما: Why is this customer classified as Fraud?</h2>
+        <p>بهترین ابزارها:</p>
+        <div class="box">
+            <div class="chart">SHAP
+LIME
+Counterfactual</div>
+        </div>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">Prediction:
+Fraud = 0.94
+
+Reasons:
+High amount          +0.28
+New device           +0.21
+High velocity        +0.19
+Unusual country      +0.12</div>
+        </div>
+        <p>این:</p>
+        <div class="inner-box">Local Explainability</div>
+        <p>است.</p>
+
+        <h2>59. سؤال شما: What features generally drive Fraud predictions?</h2>
+        <p>بهتر است از:</p>
+        <div class="box">
+            <div class="chart">Global Feature Importance
+Permutation Importance
+Mean Absolute SHAP
+PDP</div>
+        </div>
+        <p>استفاده کنیم.</p>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">Transaction Amount
+Velocity
+Device Age
+Country Risk
+Account Age</div>
+        </div>
+        <p>این:</p>
+        <div class="inner-box">Global Explainability</div>
+        <p>است.</p>
+
+        <h2>60. یک نکته بسیار مهم: Explanation ≠ Truth</h2>
+        <p>این را همیشه در ذهن داشته باش.</p>
+        <p>اگر مدل بگوید:</p>
+        <div class="box"><div class="chart">Feature X → important</div></div>
+        <p>به این معنی نیست:</p>
+        <div class="inner-box">X causes Y</div>
+        <p>بلکه:</p>
+        <div class="inner-box">X is used by the model to produce Y</div>
+        <p>است.</p>
+
+        <h2>61. Explainability vs Causality</h2>
+        <p>سه سؤال متفاوت داریم:</p>
+        <div class="inner-box"><div class="inner-title">Correlation</div></div>
+        <p>X مرتبط با Y است؟</p>
+        <div class="inner-box"><div class="inner-title">Prediction</div></div>
+        <p>آیا X برای پیش‌بینی Y مفید است؟</p>
+        <div class="inner-box"><div class="inner-title">Causality</div></div>
+        <p>اگر X را تغییر دهیم، آیا Y تغییر می‌کند؟</p>
+        <p>SHAP و LIME عمدتاً سؤال دوم را جواب می‌دهند.</p>
+        <p>نه الزاماً سوم را.</p>
+
+        <h2>62. Feature Importance vs Permutation Importance</h2>
+        <div class="inner-box"><div class="inner-title">Feature Importance</div></div>
+        <p>اغلب:</p>
+        <div class="inner-box">importance داخلی مدل</div>
+        <p>است.</p>
+        <p>مثلاً tree impurity.</p>
+        <div class="inner-box"><div class="inner-title">Permutation Importance</div></div>
+        <p>افت performance وقتی feature را خراب می‌کنیم.</p>
+        <p>پس permutation به performance model مرتبط‌تر است.</p>
+
+        <h2>63. Feature Importance vs SHAP</h2>
+        <div class="inner-box"><div class="inner-title">Feature Importance</div></div>
+        <div class="box"><div class="chart">Feature X = important</div></div>
+        <div class="inner-box"><div class="inner-title">SHAP</div></div>
+        <div class="box">
+            <div class="chart">Feature X:
+Sample A → +0.3
+Sample B → -0.1
+Sample C → +0.5</div>
+        </div>
+        <p>پس SHAP جهت و magnitude contribution را نیز نشان می‌دهد.</p>
+
+        <h2>64. PDP vs SHAP</h2>
+        <div class="inner-box"><div class="inner-title">PDP</div></div>
+        <p>average effect of feature</p>
+        <div class="inner-box"><div class="inner-title">SHAP</div></div>
+        <p>contribution of feature to predictions</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">PDP
+Amount ↑ → Fraud probability ↑
+SHAP
+Customer A:
+Amount contributed +0.31
+
+Customer B:
+Amount contributed +0.04</div>
+        </div>
+
+        <h2>65. ICE vs PDP</h2>
+        <div class="inner-box"><div class="inner-title">PDP</div></div>
+        <p>Average behavior</p>
+        <div class="inner-box"><div class="inner-title">ICE</div></div>
+        <p>Individual behavior</p>
+        <p>اگر خطوط ICE خیلی متفاوت باشند:</p>
+        <div class="inner-box">heterogeneous feature effects</div>
+        <p>داریم.</p>
+
+        <h2>66. Explainability در Production</h2>
+        <p>Senior ML فقط notebook نمی‌سازد.</p>
+        <p>مثلاً برای Fraud:</p>
+        <div class="box">
+            <div class="chart">Transaction
+     ↓
+Model
+     ↓
+Fraud Probability
+     ↓
+SHAP / Explanation
+     ↓
+Decision Engine
+     ↓
+┌──────────────┬───────────────┐
+│ Low Risk     │ High Risk     │
+│ Allow        │ Review/Block  │
+└──────────────┴───────────────┘</div>
+        </div>
+
+        <h2>67. Explanation Logging</h2>
+        <p>در production بهتر است برای decisionهای حساس log کنیم:</p>
+        <div class="box">
+            <div class="chart">model_version
+prediction
+probability
+threshold
+top_features
+explanation_version
+timestamp</div>
+        </div>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">model_version = fraud-v42
+prediction = fraud
+probability = 0.94
+
+top_reasons:
+- transaction_amount
+- device_age
+- velocity</div>
+        </div>
+        <p>این برای:</p>
+        <div class="box">
+            <div class="chart">Audit
+Debugging
+Compliance
+Customer support</div>
+        </div>
+        <p>مهم است.</p>
+
+        <h2>68. Explainability Drift</h2>
+        <p>یک نکته پیشرفته:</p>
+        <p>ممکن است performance مدل ثابت بماند ولی explanation تغییر کند.</p>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">Q1
+Amount → dominant
+Q4
+Device → dominant</div>
+        </div>
+        <p>پس:</p>
+        <div class="inner-box">model behavior drift</div>
+        <p>ممکن است قبل از performance degradation قابل مشاهده باشد.</p>
+        <p>این برای monitoring جالب است.</p>
+
+        <h2>69. Stability of Explanations</h2>
+        <p>اگر یک sample بسیار کوچک تغییر کند:</p>
+        <div class="box"><div class="chart">x</div></div>
+        <p>و explanation کاملاً تغییر کند:</p>
+        <div class="box">
+            <div class="chart">SHAP:
+A → +0.3
+
+x + ε
+
+SHAP:
+B → +0.4</div>
+        </div>
+        <p>باید بررسی کنیم که آیا explanation پایدار است یا نه.</p>
+        <p>Explainability خودش باید:</p>
+        <div class="inner-box">validated</div>
+        <p>شود.</p>
+
+        <h2>70. Correlated Features — دام بسیار مهم</h2>
+        <p>فرض کن:</p>
+        <div class="box">
+            <div class="chart">X1 = Annual Income
+X2 = Monthly Income</div>
+        </div>
+        <p>هر دو تقریباً یک information دارند.</p>
+        <p>مدل ممکن است از یکی استفاده کند.</p>
+        <p>روش‌های explainability ممکن است contribution را:</p>
+        <div class="box">
+            <div class="chart">X1 = 70%
+X2 = 30%</div>
+        </div>
+        <p>یا:</p>
+        <div class="box">
+            <div class="chart">X1 = 30%
+X2 = 70%</div>
+        </div>
+        <p>نشان دهند.</p>
+        <p>این الزاماً به معنی تفاوت واقعی importance نیست.</p>
+
+        <h2>71. Data Leakage و Explainability</h2>
+        <p>اگر feature leakage داشته باشیم:</p>
+        <div class="box"><div class="chart">Post-transaction investigation_result</div></div>
+        <p>ممکن است مدل آن را بسیار مهم نشان دهد.</p>
+        <p>SHAP هم احتمالاً می‌گوید:</p>
+        <div class="box"><div class="chart">investigation_result → HUGE contribution</div></div>
+        <p>ولی explanation خوب نیست؛ چون:</p>
+        <div class="inner-box">feature از آینده آمده است.</div>
+        <p>پس explainability جایگزین:</p>
+        <div class="box">
+            <div class="chart">data validation
+leakage detection
+causal reasoning</div>
+        </div>
+        <p>نیست.</p>
+
+        <h2>72. Explainability و Fairness</h2>
+        <p>مثلاً model loan approval:</p>
+        <div class="box">
+            <div class="chart">Prediction
+     ↓
+SHAP
+     ↓
+Feature contributions</div>
+        </div>
+        <p>ممکن است بفهمیم model از یک feature proxy استفاده می‌کند.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">ZIP Code</div></div>
+        <p>ممکن است proxy برای ویژگی‌های حساس باشد.</p>
+        <p>پس explainability می‌تواند در:</p>
+        <div class="inner-box">fairness audit</div>
+        <p>کمک کند.</p>
+
+        <h2>73. اما یک هشدار</h2>
+        <p>اگر SHAP نشان دهد:</p>
+        <div class="box"><div class="chart">ZIP_CODE → +0.25</div></div>
+        <p>نباید فوراً نتیجه بگیریم:</p>
+        <div class="inner-box">discrimination ثابت شده.</div>
+        <p>باید:</p>
+        <div class="box">
+            <div class="chart">causal analysis
+fairness metrics
+subgroup analysis
+policy context</div>
+        </div>
+        <p>را نیز بررسی کنیم.</p>
+
+        <h2>74. مدل‌های ذاتاً Interpretable</h2>
+        <p>گاهی بهترین explainability این است که اصلاً black-box نسازیم.</p>
+        <p>مثلاً:</p>
+        <div class="inner-box"><div class="inner-title">Linear Regression</div></div>
+        <div class="formula">$$y = \beta_0 + \beta_1 x_1 + \beta_2 x_2$$</div>
+        <div class="inner-box"><div class="inner-title">Logistic Regression</div></div>
+        <div class="formula">$$logit(p) = \beta_0 + \beta_1 x_1 + \beta_2 x_2$$</div>
+        <div class="inner-box"><div class="inner-title">Decision Tree</div></div>
+        <div class="box">
+            <div class="chart">if income > X
+   and debt < Y
+       approve</div>
+        </div>
+        <p>این‌ها inherently interpretableتر هستند.</p>
+
+        <h2>75. Explainability Trade-off</h2>
+        <p>گاهی:</p>
+        <div class="box"><div class="chart">Interpretability ↑</div></div>
+        <p>ممکن است:</p>
+        <div class="box"><div class="chart">Model complexity ↓</div></div>
+        <p>شود.</p>
+        <p>اما این قانون مطلق نیست.</p>
+        <p>مثلاً:</p>
+        <div class="inner-box">یک Gradient Boosting model + SHAP</div>
+        <p>می‌تواند هم performance بالا داشته باشد و هم explanation ارائه کند.</p>
+
+        <h2>76. Model-Agnostic vs Model-Specific</h2>
+        <div class="inner-box"><div class="inner-title">Model-Agnostic</div></div>
+        <p>به model داخلی نیاز ندارد.</p>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">LIME
+Permutation Importance</div>
+        </div>
+        <div class="inner-box"><div class="inner-title">Model-Specific</div></div>
+        <p>از structure مدل استفاده می‌کند.</p>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">TreeSHAP
+Tree feature importance</div>
+        </div>
+
+        <h2>77. TreeSHAP</h2>
+        <p>برای tree-based models روش بسیار سریع‌تر و دقیق‌تری نسبت به محاسبه brute-force SHAP دارد.</p>
+        <p>برای:</p>
+        <div class="box">
+            <div class="chart">XGBoost
+LightGBM
+CatBoost
+Random Forest
+Decision Trees</div>
+        </div>
+        <p>بسیار کاربردی است.</p>
+
+        <h2>78. Kernel SHAP</h2>
+        <p>نسخه model-agnostic SHAP است.</p>
+        <p>می‌تواند برای black-box model استفاده شود ولی معمولاً computationally expensiveتر است.</p>
+
+        <h2>79. Deep SHAP</h2>
+        <p>برای deep learning از approximationهایی استفاده می‌کند که برای neural networks مناسب‌تر هستند.</p>
+
+        <h2>80. Explainability Stack حرفه‌ای</h2>
+        <p>اگر بخواهی یک پروژه Senior-level طراحی کنی:</p>
+        <div class="box">
+            <div class="chart">                    ML Model
+                       │
+          ┌────────────┼─────────────┐
+          │            │             │
+          ▼            ▼             ▼
+   Feature          Prediction    Probability
+   Importance
+          │
+     ┌────┴─────┐
+     ▼          ▼
+ Global       Local
+     │          │
+     ▼          ▼
+  SHAP/PDP   SHAP/LIME
+     │          │
+     └────┬─────┘
+          ▼
+   Counterfactual
+          │
+          ▼
+     Human Decision</div>
+        </div>
+
+        <h2>81. Cheat Sheet نهایی</h2>
+        <table>
+            <thead><tr><th>روش</th><th>نوع</th><th>سؤال اصلی</th></tr></thead>
+            <tbody>
+                <tr><td>Feature Importance</td><td>Global</td><td>چه featureهایی مهم‌اند؟</td></tr>
+                <tr><td>Permutation Importance</td><td>Global</td><td>حذف اطلاعات این feature چقدر performance را خراب می‌کند؟</td></tr>
+                <tr><td>PDP</td><td>Global</td><td>اثر متوسط feature روی prediction چیست؟</td></tr>
+                <tr><td>ICE</td><td>Individual</td><td>اثر feature برای هر sample چیست؟</td></tr>
+                <tr><td>SHAP</td><td>Local + Global</td><td>contribution هر feature چیست؟</td></tr>
+                <tr><td>LIME</td><td>Local</td><td>اطراف این sample مدل چگونه رفتار می‌کند؟</td></tr>
+                <tr><td>Counterfactual</td><td>Local</td><td>چه چیزی باید تغییر کند تا prediction عوض شود؟</td></tr>
+                <tr><td>Global Explainability</td><td>Global</td><td>مدل در کل چگونه تصمیم می‌گیرد؟</td></tr>
+                <tr><td>Local Explainability</td><td>Local</td><td>چرا برای این نمونه این تصمیم گرفته شد؟</td></tr>
+            </tbody>
+        </table>
+
+        <h2>🎯 مهم‌ترین تفاوت‌ها برای مصاحبه Senior</h2>
+        <p>سؤال:</p>
+        <div class="inner-box">Why was this customer classified as Fraud?</div>
+        <p>جواب:</p>
+        <div class="inner-box">Local Explainability</div>
+        <p>ابزارهای مناسب:</p>
+        <div class="inner-box">SHAP / LIME / Counterfactual</div>
+        
+        <p>سؤال:</p>
+        <div class="inner-box">What features generally drive Fraud predictions?</div>
+        <p>جواب:</p>
+        <div class="inner-box">Global Explainability</div>
+        <p>ابزارهای مناسب:</p>
+        <div class="inner-box">Permutation Importance / SHAP aggregation / Feature Importance / PDP</div>
+        
+        <p>سؤال:</p>
+        <div class="inner-box">What happens to fraud probability as transaction amount increases?</div>
+        <div class="inner-box">→ PDP</div>
+        
+        <p>سؤال:</p>
+        <div class="inner-box">Does this relationship hold for every customer?</div>
+        <div class="inner-box">→ ICE</div>
+        
+        <p>سؤال:</p>
+        <div class="inner-box">What minimal change would make this customer non-fraud?</div>
+        <div class="inner-box">→ Counterfactual</div>
+        
+        <p>سؤال:</p>
+        <div class="inner-box">Which features are important globally?</div>
+        <div class="inner-box">→ Feature Importance / Permutation Importance / Mean |SHAP|</div>
+        
+        <p>سؤال:</p>
+        <div class="inner-box">Does feature X cause fraud?</div>
+        <div class="inner-box">→ هیچ‌کدام از این روش‌ها به‌تنهایی جواب causal نمی‌دهند.</div>
+
+        <h2>🧠 نهایتاً این Mental Model را حفظ کن</h2>
+        <div class="box">
+            <div class="chart">                         EXPLAINABILITY
+                               │
+              ┌────────────────┴────────────────┐
+              │                                 │
+           GLOBAL                             LOCAL
+              │                                 │
+      "Model generally"                  "This prediction"
+              │                                 │
+      ┌───────┼────────┐                 ┌──────┼─────────┐
+      │       │        │                 │      │         │
+ Feature   Perm.     PDP               SHAP   LIME   Counterfactual
+Importance Importance
+              │
+              ▼
+             ICE
+      (individual curves)</div>
+        </div>
+        
+        <p>و مهم‌ترین اصل Senior-level:</p>
+        <div class="inner-box">Explainability tells you how the model behaves; it does not automatically tell you why the real world behaves that way.</div>
+        <p>یعنی اگر SHAP بگوید transaction_amount مهم‌ترین feature است، نتیجه درست این نیست که «مبلغ تراکنش علت Fraud است»؛ نتیجه درست این است که «مدل برای predictionهای خود به مبلغ تراکنش اتکا می‌کند». این تفاوت بین model explanation و causal explanation یکی از مهم‌ترین نکات این بخش است.</p>
+    </div>
+</body>
+</html>

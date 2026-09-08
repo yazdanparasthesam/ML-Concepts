@@ -1,0 +1,2202 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Statistical Concepts for ML · Senior ML</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}]});"></script>
+    <style>
+        body {
+            background-color: #0d1117;
+            color: #e6edf3;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.8;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h1, h2, h3, h4 {
+            color: #e6edf3;
+            text-align: right;
+            border-bottom: 1px solid #444;
+            padding-bottom: 15px;
+            margin-top: 50px;
+        }
+        p, li {
+            text-align: right;
+        }
+
+        .box {
+            background-color: #21262d;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            color: #e6edf3;
+        }
+        .inner-box {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 10px;
+            border-right: 4px solid #58a6ff;
+        }
+        .inner-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .formula {
+            direction: ltr;
+            background-color: #000;
+            border: 1px solid #fff;
+            border-radius: 0;
+            padding: 20px;
+            margin: 20px auto;
+            width: fit-content;
+            max-width: 100%;
+            overflow-x: auto;
+            text-align: center;
+            font-size: 1.2em;
+            font-family: "Times New Roman", Times, serif;
+            color: #fff;
+        }
+
+        .chart {
+            direction: ltr;
+            text-align: left;
+            font-family: monospace;
+            background-color: #21262d;
+            border-radius: 8px;
+            padding: 15px;
+            overflow-x: auto;
+            white-space: pre;
+            border: 1px solid #444;
+        }
+
+        /* کلاس جدید برای متن‌های فارسی داخل باکس‌های چپ‌چین */
+        .chart.rtl {
+            direction: rtl !important;
+            text-align: right !important;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            direction: rtl;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #444;
+            padding: 12px;
+            text-align: right;
+        }
+        th {
+            background-color: #21262d;
+        }
+
+        .viz-box {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            direction: ltr;
+            text-align: left;
+        }
+        canvas {
+            width: 100%;
+            height: auto;
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            display: block;
+        }
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 10px;
+            justify-content: flex-start;
+        }
+        .slider-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background-color: #21262d;
+            border-radius: 8px;
+            padding: 8px 15px;
+            border: 1px solid #30363d;
+        }
+        .slider-row label {
+            color: #e6edf3;
+            font-family: monospace;
+            min-width: 20px;
+        }
+        .slider-row input[type="range"] {
+            accent-color: #58a6ff;
+        }
+        .slider-row .value {
+            color: #58a6ff;
+            font-family: monospace;
+            min-width: 40px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 20. Statistical Concepts برای Machine Learning</h1>
+
+        <p style="font-size:1.1rem;">حتماً. این بخش 20. Statistical Concepts for ML از آن قسمت‌هایی است که تفاوت بین یک ML Engineer متوسط و Senior را خیلی خوب نشان می‌دهد؛ چون Senior باید فقط فرمول را نداند، بلکه بداند این مفهوم چه فرضی دارد، چه زمانی استفاده می‌شود، چه خطایی ممکن است ایجاد کند و در یک pipeline واقعی ML کجا کاربرد دارد.</p>
+
+        <h2>اول یک نقشه ذهنی داشته باشیم:</h2>
+        <div class="chart">Statistics for ML
+│
+├── Descriptive Statistics
+│   ├── Mean
+│   ├── Median
+│   ├── Variance
+│   ├── Standard Deviation
+│   ├── Covariance
+│   └── Correlation
+│
+├── Probability
+│   ├── Probability
+│   ├── Conditional Probability
+│   ├── Bayes' Theorem
+│   └── Expected Value
+│
+├── Probability Distributions
+│   ├── Distribution
+│   ├── Normal
+│   ├── Bernoulli
+│   └── Binomial
+│
+├── Sampling & Inference
+│   ├── Sampling Distribution
+│   ├── Central Limit Theorem
+│   ├── Standard Error
+│   └── Confidence Interval
+│
+└── Statistical Testing
+    ├── Hypothesis Testing
+    ├── p-value
+    ├── Type I Error
+    ├── Type II Error
+    ├── Statistical Power
+    ├── Effect Size
+    ├── Multiple Testing
+    ├── Bonferroni
+    └── False Discovery Rate</div>
+
+        <h2>1. Mean — میانگین</h2>
+        <p>Mean ساده‌ترین measure of central tendency است.</p>
+        <p>اگر داده‌ها:</p>
+        <div class="formula">$$x_1, x_2, \dots, x_n$$</div>
+        <p>باشند:</p>
+        <div class="formula">$$\boxed{\bar{x} = \frac{1}{n} \sum_{i=1}^{n} x_i}$$</div>
+        <p>مثلاً:</p>
+        <div class="chart">10, 20, 30, 40, 50</div>
+        <p>داریم:</p>
+        <div class="formula">$$\bar{x} = 30$$</div>
+        
+        <h3>Mean در ML کجا استفاده می‌شود؟</h3>
+        <p>خیلی جاها:</p>
+        <div class="chart">normalization
+standardization
+imputation
+loss calculation
+gradient calculation
+baseline models
+statistical estimation</div>
+        <p>مثلاً StandardScaler:</p>
+        <div class="formula">$$z = \frac{x - \mu}{\sigma}$$</div>
+        <p>یعنی ابتدا mean را کم می‌کنیم.</p>
+
+        <h2>2. Mean و Outlier</h2>
+        <p>Mean به outlier حساس است.</p>
+        <p>مثلاً:</p>
+        <div class="chart">10, 10, 10, 10, 1000</div>
+        <p>Mean:</p>
+        <div class="formula">$$208$$</div>
+        <p>در حالی که اکثر داده‌ها اطراف 10 هستند.</p>
+        <p>پس برای داده‌های skewed ممکن است Median بهتر باشد.</p>
+
+        <h2>3. Median</h2>
+        <p>Median مقدار وسط داده مرتب‌شده است.</p>
+        <p>مثلاً:</p>
+        <div class="chart">1, 3, 5, 7, 9</div>
+        <p>Median:</p>
+        <div class="formula">$$5$$</div>
+        <p>اگر تعداد داده‌ها زوج باشد:</p>
+        <div class="chart">1, 3, 5, 7</div>
+        <p>Median:</p>
+        <div class="formula">$$\frac{3 + 5}{2} = 4$$</div>
+
+        <h3>Mean vs Median</h3>
+        <div style="overflow-x:auto;">
+            <table>
+                <thead><tr><th>ویژگی</th><th>Mean</th><th>Median</th></tr></thead>
+                <tbody>
+                    <tr><td>حساسیت به outlier</td><td>زیاد</td><td>کم</td></tr>
+                    <tr><td>مناسب distribution symmetric</td><td>بسیار خوب</td><td>خوب</td></tr>
+                    <tr><td>مناسب skewed data</td><td>ممکن است بد باشد</td><td>معمولاً بهتر</td></tr>
+                    <tr><td>کاربرد</td><td>بسیاری از ML algorithms</td><td>robust statistics</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2>4. Variance</h2>
+        <p>Variance میزان spread داده حول mean را اندازه می‌گیرد.</p>
+        <p>برای population:</p>
+        <div class="formula">$$\boxed{\sigma^2 = \frac{1}{N} \sum_{i=1}^{N} (x_i - \mu)^2}$$</div>
+        <p>برای sample معمولاً:</p>
+        <div class="formula">$$\boxed{s^2 = \frac{1}{n-1} \sum_{i=1}^{n} (x_i - \bar{x})^2}$$</div>
+        <p>است.</p>
+        <p>تفاوت \(n\) و \(n-1\) بسیار مهم است.</p>
+
+        <div class="viz-box">
+            <div style="display: flex; flex-wrap: wrap; gap: 20px;">
+                <div style="flex: 1; min-width: 300px;">
+                    <canvas id="varCanvas" width="500" height="300"></canvas>
+                </div>
+                <div style="flex: 1; min-width: 300px; background: #21262d; padding: 15px; border-radius: 8px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                    <div style="font-family: 'Times New Roman', Times, serif; font-size: 1.5em; text-align: center; color: #e6edf3; margin-bottom: 15px;">
+                        Var(X) = E(X<sup>2</sup>) - [E(X)]<sup>2</sup>
+                    </div>
+                    <div style="font-family: 'Times New Roman', Times, serif; font-size: 1.5em; text-align: center; color: #e6edf3; margin-bottom: 20px;">
+                        Var(X) = (σ)<sup>2</sup> = <span id="varResult" style="color: #58a6ff;">1.96</span>
+                    </div>
+                    
+                    <div class="slider-row" style="width: 100%; justify-content: center;">
+                        <label>σ</label>
+                        <input type="range" id="varSigma" min="0.5" max="5" step="0.1" value="1.4">
+                        <span class="value" id="varSigmaVal">1.4</span>
+                    </div>
+
+                    <div style="color: #8b949e; font-size: 0.9em; text-align: right; width: 100%; margin-top: 10px;">بازخورد بدهید</div>
+                </div>
+            </div>
+        </div>
+
+        <h2>5. چرا مربع می‌کنیم؟</h2>
+        <p>اگر فقط deviation را جمع کنیم:</p>
+        <div class="formula">$$\sum (x_i - \bar{x})$$</div>
+        <p>تقریباً همیشه صفر می‌شود.</p>
+        <p>مثلاً:</p>
+        <div class="chart">-10 + -5 + 0 + 5 + 10 = 0</div>
+        <p>پس square می‌کنیم:</p>
+        <div class="formula">$$(x_i - \bar{x})^2$$</div>
+        <p>تا negative و positive همدیگر را خنثی نکنند.</p>
+
+        <h2>6. Standard Deviation</h2>
+        <p>Standard deviation ریشه variance است:</p>
+        <div class="formula">$$\boxed{\sigma = \sqrt{\sigma^2}}$$</div>
+        <p>اگر:</p>
+        <div class="formula">$$Variance = 25$$</div>
+        <p>آنگاه:</p>
+        <div class="formula">$$SD = 5$$</div>
+
+<div class="viz-box">
+    <div style="display: flex; flex-wrap: wrap; gap: 20px;">
+        <div style="flex: 1; min-width: 300px;">
+            <div class="chart-wrap" style="position: relative; width: 100%; height: 300px; background: rgba(255,255,255,0.01); border: 1px solid #202b35; border-radius: 16px; overflow: hidden;">
+                <svg id="chart" viewBox="0 0 760 430" style="width: 100%; height: 100%; display: block;" aria-label="Standard deviation visualization">
+                    <g id="grid"></g>
+                    <g id="axis"></g>
+
+                    <rect id="sigmaArea" y="70" height="275" rx="8" fill="rgba(74,222,128,.06)" stroke="none"/>
+                    <line id="leftSigma" class="sigma-line-svg" y1="55" y2="345"/>
+                    <line id="rightSigma" class="sigma-line-svg" y1="55" y2="345"/>
+                    <line id="meanLine" class="mean-line-svg" y1="45" y2="345"/>
+
+                    <text id="meanText" class="mean-text" y="35">μ</text>
+                    <text id="leftText" class="sigma-text" y="50">μ − σ</text>
+                    <text id="rightText" class="sigma-text" y="50">μ + σ</text>
+
+                    <g id="points"></g>
+
+                    <style>
+                        .axis-svg{stroke:#52616e;stroke-width:1.4}
+                        .grid-svg{stroke:#202b35;stroke-width:1}
+                        .tick-svg{stroke:#52616e;stroke-width:1}
+                        .tick-text{fill:#778592;font-size:12px;text-anchor:middle}
+                        .point-svg{fill:#4ade80;stroke:#0b0f14;stroke-width:3;filter:drop-shadow(0 3px 5px rgba(74,222,128,.22));transition:cx .2s ease,cy .2s ease;}
+                        .mean-line-svg{stroke:#b5bec7;stroke-width:2;stroke-dasharray:7 6;}
+                        .sigma-line-svg{stroke:#4ade80;stroke-width:2;stroke-dasharray:6 5;}
+                        .mean-text{fill:#d9e1e8;font-size:13px;text-anchor:middle;font-weight:600;}
+                        .sigma-text{fill:#4ade80;font-size:12px;text-anchor:middle;}
+                    </style>
+                </svg>
+            </div>
+            <div style="text-align: right; color: #8b949e; font-size: 0.9em; margin-top: 5px;">بازخورد بدهید</div>
+        </div>
+        
+        <div style="flex: 1; min-width: 300px; background: #21262d; padding: 15px; border-radius: 8px; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 15px;">
+            
+            <div class="formula" style="height: 92px; direction: ltr; display: flex; align-items: center; justify-content: center; color: #f1f1f1; font-family: 'Times New Roman', serif; overflow: visible;">
+                \[
+                    \sigma =
+                    \sqrt{
+                        \frac{1}{N}
+                        \sum_{i=1}^{N}
+                        (x_i-\mu)^2
+                    }
+                \]
+            </div>
+
+            <div style="font-family: 'Times New Roman', Times, serif; font-size: 1.1em; text-align: center; color: #e6edf3;">
+                نقاط میانگین μ = ۵ و انحراف معیار σ = <span id="sdSigmaValDisplay" style="color: #4ade80;">0.62</span> دارند.
+            </div>
+
+            <div style="width: 100%;">
+                <div class="control-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; direction: ltr;">
+                    <span class="control-label" style="font-size: 13px; font-weight: 600; color: #e6edf3;">Standard deviation range</span>
+                    <span id="kValue" style="color: #4ade80; font-variant-numeric: tabular-nums;">1.0σ</span>
+                </div>
+                <input type="range" id="sdSigma" min="0" max="3" step="0.1" value="1" style="width: 100%; accent-color: #4ade80; cursor: pointer;">
+                <div class="presets" style="display: flex; gap: 7px; margin-top: 12px; direction: ltr;">
+                    <button data-k="0" style="flex: 1; border: 1px solid #26323d; color: #cbd5df; background: #111a22; border-radius: 9px; padding: 8px 5px; cursor: pointer; font-size: 12px;">0σ</button>
+                    <button data-k="1" style="flex: 1; border: 1px solid #26323d; color: #cbd5df; background: #111a22; border-radius: 9px; padding: 8px 5px; cursor: pointer; font-size: 12px;">1σ</button>
+                    <button data-k="2" style="flex: 1; border: 1px solid #26323d; color: #cbd5df; background: #111a22; border-radius: 9px; padding: 8px 5px; cursor: pointer; font-size: 12px;">2σ</button>
+                    <button data-k="3" style="flex: 1; border: 1px solid #26323d; color: #cbd5df; background: #111a22; border-radius: 9px; padding: 8px 5px; cursor: pointer; font-size: 12px;">3σ</button>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; margin-top: 10px;">
+                <div style="padding: 13px; border: 1px solid #26323d; border-radius: 12px; background: #0d141b;">
+                    <div style="font-size: 11px; color: #8d9aa7; margin-bottom: 5px;">Mean (μ)</div>
+                    <div id="meanValue" style="font-size: 18px; font-weight: 700; color: #60a5fa;">—</div>
+                </div>
+                <div style="padding: 13px; border: 1px solid #26323d; border-radius: 12px; background: #0d141b;">
+                    <div style="font-size: 11px; color: #8d9aa7; margin-bottom: 5px;">Std. deviation (σ)</div>
+                    <div id="stdValue" style="font-size: 18px; font-weight: 700; color: #4ade80;">—</div>
+                </div>
+                <div style="padding: 13px; border: 1px solid #26323d; border-radius: 12px; background: #0d141b;">
+                    <div style="font-size: 11px; color: #8d9aa7; margin-bottom: 5px;">Lower boundary</div>
+                    <div id="lowerValue" style="font-size: 18px; font-weight: 700;">—</div>
+                </div>
+                <div style="padding: 13px; border: 1px solid #26323d; border-radius: 12px; background: #0d141b;">
+                    <div style="font-size: 11px; color: #8d9aa7; margin-bottom: 5px;">Upper boundary</div>
+                    <div id="upperValue" style="font-size: 18px; font-weight: 700;">—</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$']],
+        displayMath: [['\\[', '\\]']]
+      },
+      svg: {
+        fontCache: 'global'
+      }
+    };
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+        <h3>چرا SD مهم‌تر از Variance است؟</h3>
+        <p>چون variance واحد را به توان 2 می‌رساند.</p>
+        <p>اگر:</p>
+        <div class="chart">Income → dollars</div>
+        <p>باشد:</p>
+        <div class="chart">Variance → dollars²
+SD       → dollars</div>
+        <p>بنابراین SD قابل تفسیرتر است.</p>
+
+        <h2>7. Covariance</h2>
+        <p>Covariance می‌گوید:</p>
+        <p>آیا دو variable با هم حرکت می‌کنند؟</p>
+        <div class="formula">$$\boxed{Cov(X, Y) = E[(X - E[X])(Y - E[Y])]}$$</div>
+        <p>اگر:</p>
+        <div class="formula">$$Cov(X, Y) > 0$$</div>
+        <p>یعنی معمولاً:</p>
+        <div class="chart">X ↑ → Y ↑</div>
+        <p>اگر:</p>
+        <div class="formula">$$Cov(X, Y) < 0$$</div>
+        <p>معمولاً:</p>
+        <div class="chart">X ↑ → Y ↓</div>
+
+        <h2>8. Correlation</h2>
+        <p>Correlation نسخه standardized covariance است.</p>
+        <p>برای Pearson:</p>
+        <div class="formula">$$\boxed{\rho_{XY} = \frac{Cov(X, Y)}{\sigma_X \sigma_Y}}$$</div>
+        <p>محدوده:</p>
+        <div class="formula">$$-1 \leq \rho \leq 1$$</div>
+
+        <div class="viz-box">
+            <div style="display: flex; flex-wrap: wrap; gap: 20px;">
+                <div style="flex: 1; min-width: 300px;">
+                    <canvas id="corrCanvas" width="500" height="300"></canvas>
+                    <div style="text-align: right; color: #8b949e; font-size: 0.9em; margin-top: 5px;">نقطه‌ها را بکشید</div>
+                    <div style="text-align: right; color: #8b949e; font-size: 0.9em; margin-top: 5px;">بازخورد بدهید</div>
+                </div>
+                
+                <div style="flex: 1; min-width: 300px; background: #21262d; padding: 15px; border-radius: 8px; display: flex; flex-direction: column;">
+                    <div style="font-family: 'Times New Roman', Times, serif; font-size: 1.3em; text-align: center; color: #e6edf3; margin-bottom: 20px;">
+                        (X) و (Y) و (r)
+                    </div>
+                    <div id="corr-status" style="font-family: 'Times New Roman', Times, serif; font-size: 1.1em; text-align: center; color: #e6edf3; margin-bottom: 20px;">
+                        همبستگی خطی مثبت است (r = ۰٫۹۸).
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; gap: 10px; margin-top: auto; margin-bottom: 10px;">
+                        <button id="btn-negative" class="focus-btn" style="flex: 1; padding: 10px; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; cursor: pointer; color: #e6edf3; font-family: 'Segoe UI', sans-serif; font-weight: bold;">منفی</button>
+                        <button id="btn-zero" class="focus-btn" style="flex: 1; padding: 10px; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; cursor: pointer; color: #e6edf3; font-family: 'Segoe UI', sans-serif; font-weight: bold;">نزدیک صفر</button>
+                        <button id="btn-positive" class="focus-btn" style="flex: 1; padding: 10px; background: #ffffff; border: 1px solid #30363d; border-radius: 6px; cursor: pointer; color: #0d1117; font-family: 'Segoe UI', sans-serif; font-weight: bold;">مثبت</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <p>تفسیر:</p>
+        <div class="chart">+1 → perfect positive linear relationship
+ 0 → no linear correlation
+-1 → perfect negative linear relationship</div>
+
+        <h2>9. Covariance vs Correlation</h2>
+        <div style="overflow-x:auto;">
+            <table>
+                <thead><tr><th></th><th>Covariance</th><th>Correlation</th></tr></thead>
+                <tbody>
+                    <tr><td>Range</td><td>نامحدود</td><td>-1 تا +1</td></tr>
+                    <tr><td>Scale dependent</td><td>بله</td><td>خیر</td></tr>
+                    <tr><td>Interpretability</td><td>کمتر</td><td>بیشتر</td></tr>
+                    <tr><td>Unit</td><td>حاصل‌ضرب واحدها</td><td>بدون واحد</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2>10. Correlation ≠ Causation</h2>
+        <p>یکی از مهم‌ترین نکات Senior:</p>
+        <p>اگر:</p>
+        <div class="formula">$$Correlation(X, Y) = 0.9$$</div>
+        <p>این به معنی:</p>
+        <div class="chart">X causes Y</div>
+        <p>نیست.</p>
+        <p>ممکن است:</p>
+        <div class="chart">X ← Z → Y</div>
+        <p>یک confounder مشترک وجود داشته باشد.</p>
+
+        <h2>11. Probability</h2>
+        <p>Probability میزان احتمال رخداد یک event است.</p>
+        <div class="formula">$$\boxed{0 \le P(A) \le 1}$$</div>
+        <p>مثلاً:</p>
+        <div class="chart">P(Fraud) = 0.02</div>
+        <p>یعنی احتمال Fraud برابر 2٪ است.</p>
+
+        <h2>12. Conditional Probability</h2>
+        <p>یعنی:</p>
+        <p>احتمال A وقتی می‌دانیم B رخ داده است.</p>
+        <div class="formula">$$\boxed{P(A|B) = \frac{P(A \cap B)}{P(B)}}$$</div>
+        <p>مثلاً:</p>
+        <div class="formula">$$P(Fraud | HighAmount)$$</div>
+        <p>یعنی:</p>
+        <p>احتمال Fraud به شرط اینکه transaction مبلغ بالایی داشته باشد.</p>
+
+        <div class="viz-box">
+            <div style="display: flex; flex-wrap: wrap; gap: 20px;">
+                <div style="flex: 1; min-width: 300px;">
+                    <canvas id="condCanvas" width="500" height="300"></canvas>
+                    <div style="text-align: right; color: #8b949e; font-size: 0.9em; margin-top: 5px;">بازخورد بدهید</div>
+                </div>
+                
+                <div style="flex: 1; min-width: 300px; background: #21262d; padding: 15px; border-radius: 8px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                    
+                    <div id="cond-formula" style="font-family: 'Times New Roman', Times, serif; font-size: 1.3em; text-align: center; color: #e6edf3; margin-bottom: 25px; direction: ltr;"></div>
+                    
+                    <div class="slider-row" style="width: 100%; justify-content: flex-start; gap: 15px; direction: ltr; margin-bottom: 10px;">
+                        <label style="margin-right: 5px; width: 55px; text-align: left;">P(B)</label>
+                        <input type="range" id="condPB" min="0.10" max="0.90" step="0.05" value="0.65" style="flex: 1;">
+                        <span class="value" id="condPBVal" style="width: 40px; text-align: right; margin-left: 5px;">0.65</span>
+                    </div>
+
+                    <div class="slider-row" style="width: 100%; justify-content: flex-start; gap: 15px; direction: ltr;">
+                        <label style="margin-right: 5px; width: 55px; text-align: left;">P(A∩B)</label>
+                        <input type="range" id="condPAB" min="0.05" max="0.50" step="0.05" value="0.30" style="flex: 1;">
+                        <span class="value" id="condPABVal" style="width: 40px; text-align: right; margin-left: 5px;">0.30</span>
+                    </div>
+                    <div id="cond-result" style="font-family: 'Times New Roman', Times, serif; font-size: 1.1em; text-align: center; color: #58a6ff; margin-top: 15px; direction: ltr;"></div>       
+                    <div style="text-align: right; color: #8b949e; font-size: 0.9em; margin-top: 10px;">A∩B بخشی از B است که A هم در آن رخ می‌دهد</div>
+                </div>
+            </div>
+        </div>
+
+        <h2>13. Bayes' Theorem</h2>
+        <p>یکی از مهم‌ترین مفاهیم Probability برای ML:</p>
+        <div class="formula">$$\boxed{P(A|B) = \frac{P(B|A) P(A)}{P(B)}}$$</div>
+
+        <div class="viz-box">
+            <div style="display: flex; flex-wrap: wrap; gap: 20px;">
+                <div style="flex: 1; min-width: 300px;">
+                    <canvas id="bayesCanvas" width="500" height="300"></canvas>
+                    <div style="text-align: right; color: #8b949e; font-size: 0.9em; margin-top: 5px;">بازخورد بدهید</div>
+                </div>
+                
+                <div style="flex: 1; min-width: 300px; background: #21262d; padding: 15px; border-radius: 8px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                    
+                    <div id="bayes-formula" style="font-family: 'Times New Roman', Times, serif; font-size: 1.3em; text-align: center; color: #e6edf3; margin-bottom: 20px; direction: ltr;"></div>
+                    
+                    <div id="bayes-result" style="font-family: 'Times New Roman', Times, serif; font-size: 1.2em; text-align: center; color: #58a6ff; margin-bottom: 25px; direction: ltr;"></div>
+
+                    <div class="slider-row" style="width: 100%; justify-content: flex-start; gap: 15px; direction: ltr; margin-bottom: 10px;">
+                        <label style="margin-right: 5px; width: 55px; text-align: left;">P(A)</label>
+                        <input type="range" id="bayesPA" min="0.01" max="0.99" step="0.01" value="0.70" style="flex: 1;">
+                        <span class="value" id="bayesPAVal" style="width: 40px; text-align: right; margin-left: 5px;">0.70</span>
+                    </div>
+
+                    <div class="slider-row" style="width: 100%; justify-content: flex-start; gap: 15px; direction: ltr; margin-bottom: 10px;">
+                        <label style="margin-right: 5px; width: 55px; text-align: left;">P(B|A)</label>
+                        <input type="range" id="bayesPBA" min="0.01" max="0.99" step="0.01" value="0.60" style="flex: 1;">
+                        <span class="value" id="bayesPBAVal" style="width: 40px; text-align: right; margin-left: 5px;">0.60</span>
+                    </div>
+
+                    <div class="slider-row" style="width: 100%; justify-content: flex-start; gap: 15px; direction: ltr; margin-bottom: 20px;">
+                        <label style="margin-right: 5px; width: 55px; text-align: left;">P(B|¬A)</label>
+                        <input type="range" id="bayesPBNA" min="0.01" max="0.99" step="0.01" value="0.20" style="flex: 1;">
+                        <span class="value" id="bayesPBNAVal" style="width: 40px; text-align: right; margin-left: 5px;">0.20</span>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between; width: 100%; margin-top: 10px; padding: 0 10px; direction: ltr;">
+                        <div style="color: #e6edf3; font-family: 'Times New Roman', Times, serif;">P(A ∩ B)</div>
+                        <div style="color: #e6edf3; font-family: 'Times New Roman', Times, serif;">P(¬A ∩ B)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h3>چهار مفهوم مهم:</h3>
+        <div class="chart">P(A)     → Prior
+P(B|A)   → Likelihood
+P(B)     → Evidence
+P(A|B)   → Posterior</div>
+
+        <h2>14. مثال پزشکی</h2>
+        <p>فرض کن:</p>
+        <div class="chart">Disease prevalence = 1%</div>
+        <p>یعنی:</p>
+        <div class="formula">$$P(D) = 0.01$$</div>
+        <p>Test:</p>
+        <div class="chart">Sensitivity = 99%
+Specificity = 95%</div>
+        <p>اگر test مثبت شود، آیا احتمال بیماری 99٪ است؟</p>
+        <p>خیر.</p>
+        <p>باید Bayes را استفاده کنیم.</p>
+        <p>این یکی از رایج‌ترین اشتباهات interpretation آماری است.</p>
+
+        <h2>15. Bayes در ML</h2>
+        <p>Bayesian methods:</p>
+        <div class="chart">Naive Bayes
+Bayesian Regression
+Bayesian Neural Networks
+Bayesian Optimization</div>
+        <p>و حتی مفاهیم probabilistic inference همگی با همین ایده ارتباط دارند:</p>
+        <div class="chart">Prior
+  ↓
+Evidence
+  ↓
+Posterior</div>
+
+        <h2>16. Expected Value</h2>
+        <p>Expected value میانگین weighted outcomes است.</p>
+        <div class="formula">$$\boxed{E[X] = \sum_x x P(X = x)}$$</div>
+        <p>برای continuous:</p>
+        <div class="formula">$$E[X] = \int x f(x) dx$$</div>
+
+        <div class="viz-box">
+            <div style="display: flex; flex-wrap: wrap; gap: 20px;">
+                <div style="flex: 1; min-width: 300px;">
+                    <canvas id="expectedCanvas" width="500" height="300"></canvas>
+                    <div style="text-align: right; color: #8b949e; font-size: 0.9em; margin-top: 5px;">بازخورد بدهید</div>
+                </div>
+                
+                <div style="flex: 1; min-width: 300px; background: #21262d; padding: 15px; border-radius: 8px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                    
+                    <div id="expected-formula" style="font-family: 'Times New Roman', Times, serif; font-size: 1.2em; text-align: center; color: #e6edf3; margin-bottom: 20px; direction: ltr;"></div>
+                    
+                    <div id="expected-result" style="font-family: 'Times New Roman', Times, serif; font-size: 1.1em; text-align: center; color: #58a6ff; margin-bottom: 25px; direction: ltr;"></div>
+                    
+                    <div class="slider-row" style="width: 100%; justify-content: flex-start; gap: 15px; direction: ltr;">
+                        <label style="margin-right: 5px; width: 60px; text-align: left;">P(X=8)</label>
+                        <input type="range" id="expectedP8" min="0" max="1" step="0.05" value="0.75" style="flex: 1;">
+                        <span class="value" id="expectedP8Val" style="width: 40px; text-align: right; margin-left: 5px;">0.75</span>
+                    </div>
+                    <div style="text-align: right; color: #8b949e; font-size: 0.9em; margin-top: 5px;">احتمال نتیجهٔ ۸
+ P(X=8)</div>
+                </div>
+            </div>
+        </div>
+
+        <p>مثلاً:</p>
+        <div class="box">
+            <div style="font-family: monospace; direction: ltr; text-align: left;">
+                Outcome A = $100<br>
+                P(A)=0.8<br>
+                <br>
+                Outcome B = $0<br>
+                P(B)=0.2
+            </div>
+        </div>
+        <p>پس:</p>
+        <div class="formula">$$E[X] = 100(0.8) + 0(0.2) = 80$$</div>
+
+        <h2>17. Expected Value در ML</h2>
+        <p>Loss function معمولاً expected loss را minimize می‌کند:</p>
+        <div class="formula">$$\boxed{R(f) = E_{(X, Y) \sim P} [L(Y, f(X))]}$$</div>
+        <p>این همان:</p>
+        <div class="chart">Expected Risk</div>
+        <p>است که در مباحث قبلی دیدیم.</p>
+
+        <h2>18. Distribution چیست؟</h2>
+        <p>Distribution می‌گوید:</p>
+        <p>مقادیر یک random variable با چه probabilityهایی رخ می‌دهند؟</p>
+        <p>مثلاً:</p>
+        <div class="chart">X = customer age</div>
+        <p>می‌توانیم distribution آن را بررسی کنیم.</p>
+
+        <h2>19. Probability Distribution</h2>
+        <p>دو نوع اصلی:</p>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">Discrete</div>
+            <p>مقادیر قابل شمارش:</p>
+            <div class="chart">0, 1, 2, 3, ...</div>
+            <p>مثل:</p>
+            <div class="chart">number of fraud transactions</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">Continuous</div>
+            <p>مقادیر روی interval:</p>
+            <div class="chart">income
+height
+temperature</div>
+        </div>
+
+        <h2>20. Normal Distribution</h2>
+        <p>یکی از مهم‌ترین distributions:</p>
+        <div class="formula">$$\boxed{X \sim N(\mu, \sigma^2)}$$</div>
+        <p>شکل معروف bell curve:</p>
+        <div class="chart">             /\
+           /    \
+         /        \
+_______/____________\_______
+             μ</div>
+
+        <h2>21. ویژگی‌های Normal Distribution</h2>
+        <p>در Normal:</p>
+        <div class="formula">$$Mean = Median = Mode$$</div>
+        <p>و distribution symmetric است.</p>
+        <p>قاعده تقریبی:</p>
+        <div class="chart">μ ± 1σ → ~68%
+μ ± 2σ → ~95%
+μ ± 3σ → ~99.7%</div>
+        <p>این همان 68–95–99.7 rule است.</p>
+
+        <h2>22. Standard Normal Distribution</h2>
+        <p>اگر:</p>
+        <div class="formula">$$X \sim N(\mu, \sigma^2)$$</div>
+        <p>با transformation:</p>
+        <div class="formula">$$\boxed{Z = \frac{X - \mu}{\sigma}}$$</div>
+        <p>می‌رسیم به:</p>
+        <div class="formula">$$Z \sim N(0, 1)$$</div>
+
+        <h2>23. Bernoulli Distribution</h2>
+        <p>برای یک trial دو نتیجه داریم:</p>
+        <div class="chart">Success = 1
+Failure = 0</div>
+        <p>مثلاً:</p>
+        <div class="chart">Fraud / Not Fraud</div>
+        <div class="formula">$$X \sim Bernoulli(p)$$</div>
+        <p>و:</p>
+        <div class="formula">$$P(X = 1) = p$$</div>
+        <div class="formula">$$P(X = 0) = 1 - p$$</div>
+
+        <h2>24. Mean و Variance برنولی</h2>
+        <p>برای Bernoulli:</p>
+        <div class="formula">$$E[X] = p$$</div>
+        <p>و:</p>
+        <div class="formula">$$Var(X) = p(1 - p)$$</div>
+
+        <h2>25. Binomial Distribution</h2>
+        <p>اگر Bernoulli را \(n\) بار مستقل تکرار کنیم:</p>
+        <div class="formula">$$X \sim Binomial(n, p)$$</div>
+        <p>مثلاً:</p>
+        <p>در 100 transaction چند Fraud داریم؟</p>
+        <div class="formula">$$n = 100$$</div>
+        <p>و:</p>
+        <div class="formula">$$p = 0.02$$</div>
+
+        <h2>26. Probability Binomial</h2>
+        <p>احتمال دقیقاً k موفقیت:</p>
+        <div class="formula">$$\boxed{P(X = k) = \binom{n}{k} p^k (1 - p)^{n - k}}$$</div>
+
+        <div class="viz-box">
+            <div style="background: #21262d; border-radius: 8px; padding: 15px; margin-bottom: 10px; text-align: center;">
+                <canvas id="binomialCanvas" width="800" height="450"></canvas>
+            </div>
+            <div class="controls">
+                <div class="slider-row">
+                    <label>n</label>
+                    <input type="range" id="binomN" min="1" max="10" step="1" value="4" style="flex: 1;">
+                    <span class="value" id="binomNVal">4.0</span>
+                </div>
+                <div class="slider-row">
+                    <label>p %</label>
+                    <input type="range" id="binomP" min="0" max="100" step="1" value="25" style="flex: 1;">
+                    <span class="value" id="binomPVal">25.0%</span>
+                </div>
+                <div style="color: #8b949e; margin-left: auto; font-size: 0.9em;">بازخورد بدهید</div>
+            </div>
+        </div>
+
+        <h2>27. Bernoulli vs Binomial</h2>
+        <div style="overflow-x:auto;">
+            <table>
+                <thead><tr><th></th><th>Bernoulli</th><th>Binomial</th></tr></thead>
+                <tbody>
+                    <tr><td>تعداد trials</td><td>1</td><td>n</td></tr>
+                    <tr><td>خروجی</td><td>0 یا 1</td><td>0 تا n</td></tr>
+                    <tr><td>مثال</td><td>آیا این transaction fraud است؟</td><td>چند transaction fraud است؟</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2>28. Sampling</h2>
+        <p>فرض کن population داریم:</p>
+        <div class="chart">Population
+1,000,000 customers</div>
+        <p>ولی نمی‌توانیم همه را بررسی کنیم.</p>
+        <p>یک sample می‌گیریم:</p>
+        <div class="chart">Sample
+10,000 customers</div>
+        <p>و از sample درباره population inference می‌کنیم.</p>
+
+        <h2>29. Sampling Distribution</h2>
+        <p>یکی از مفاهیم بسیار مهم و معمولاً misunderstood.</p>
+        <p>Sampling distribution:</p>
+        <p>distribution یک statistic در صورت تکرار sampling.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Population
+    ↓
+Sample 1 → mean₁
+Sample 2 → mean₂
+Sample 3 → mean₃
+...
+Sample 1000 → mean₁₀₀₀</div>
+        <p>حالا distribution این meanها:</p>
+        <div class="formula">$$\boxed{Sampling\ Distribution\ of\ \bar{X}}$$</div>
+        <p>است.</p>
+
+        <h2>30. Sampling Distribution ≠ Data Distribution</h2>
+        <p>این دو را قاطی نکن.</p>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">Data distribution</div>
+            <p>distribution خود داده‌ها:</p>
+            <div class="chart">Customer Ages</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">Sampling distribution</div>
+            <p>distribution یک statistic:</p>
+            <div class="chart">Sample Mean</div>
+        </div>
+
+        <h2>31. Central Limit Theorem — CLT</h2>
+        <p>یکی از مهم‌ترین قضایای Statistics:</p>
+        <p>اگر از یک population با شرایط مناسب sampleهای مستقل و به اندازه کافی بزرگ بگیریم، distribution میانگین sampleها به سمت Normal میل می‌کند.</p>
+        <p>تقریباً:</p>
+        <div class="formula">$$\boxed{\bar{X} \approx N\left(\mu, \frac{\sigma^2}{n}\right)}$$</div>
+
+        <h2>32. نکته بسیار مهم درباره CLT</h2>
+        <p>CLT نمی‌گوید:</p>
+        <!-- اصلاح: اضافه کردن کلاس rtl -->
+        <div class="chart rtl">خود data حتماً Normal می‌شود.</div>
+        <p>بلکه می‌گوید:</p>
+        <!-- اصلاح: اضافه کردن کلاس rtl -->
+        <div class="chart rtl">Sampling distribution of the sample mean تقریباً Normal می‌شود.</div>
+        <p>این تفاوت را در مصاحبه Senior باید دقیق بگویی.</p>
+
+        <h2>33. Standard Error</h2>
+        <p>Standard Error میزان uncertainty یک estimator را اندازه می‌گیرد.</p>
+        <p>برای sample mean:</p>
+        <div class="formula">$$\boxed{SE(\bar{X}) = \frac{\sigma}{\sqrt{n}}}$$</div>
+        <p>اگر σ را ندانیم:</p>
+        <div class="formula">$$SE = \frac{s}{\sqrt{n}}$$</div>
+
+        <h2>34. رابطه Sample Size و SE</h2>
+        <p>اگر:</p>
+        <div class="chart">n ↑</div>
+        <p>آنگاه:</p>
+        <div class="chart">SE ↓</div>
+        <p>اما نه به صورت خطی.</p>
+        <p>چون:</p>
+        <div class="formula">$$SE \propto \frac{1}{\sqrt{n}}$$</div>
+        <p>برای نصف کردن SE تقریباً باید sample size را 4 برابر کنیم.</p>
+
+        <h2>35. Standard Deviation vs Standard Error</h2>
+        <p>این دو را بسیار با هم اشتباه می‌گیرند.</p>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">Standard Deviation</div>
+            <p>variability خود داده‌ها</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">Standard Error</div>
+            <p>uncertainty در estimator</p>
+        </div>
+        <p>مثلاً:</p>
+        <div class="chart">SD = variability of salaries</div>
+        <div class="chart">SE = uncertainty of estimated mean salary</div>
+
+        <h2>36. Confidence Interval</h2>
+        <p>Confidence Interval بازه‌ای برای یک parameter است.</p>
+        <p>مثلاً:</p>
+        <div class="formula">$$95\%\ CI = [48,000,\ 52,000]$$</div>
+
+        <h2>37. تفسیر دقیق 95% CI</h2>
+        <p>تفسیر frequentist صحیح:</p>
+        <p>اگر همین sampling procedure را بارها تکرار کنیم و هر بار 95% CI بسازیم، تقریباً 95% این intervalها parameter واقعی را پوشش خواهند داد.</p>
+        <p>نه اینکه:</p>
+        <p>probability اینکه parameter داخل این interval خاص باشد 95٪ است.</p>
+        <p>این دومی تفسیر Bayesian است، نه frequentist.</p>
+
+        <h2>38. Confidence Interval برای Mean</h2>
+        <p>تقریب ساده:</p>
+        <div class="formula">$$\boxed{\bar{x} \pm z_{\alpha/2} SE}$$</div>
+        <p>مثلاً برای 95٪:</p>
+        <div class="formula">$$z_{0.975} \approx 1.96$$</div>
+        <p>پس:</p>
+        <div class="formula">$$CI = \bar{x} \pm 1.96 SE$$</div>
+        <p>برای sampleهای کوچک و unknown variance معمولاً t-distribution مطرح می‌شود.</p>
+
+        <h2>39. Confidence Level و Interval Width</h2>
+        <p>اگر:</p>
+        <div class="chart">90% CI</div>
+        <p>بگیریم، interval معمولاً narrowتر است.</p>
+        <p>اگر:</p>
+        <div class="chart">99% CI</div>
+        <p>بگیریم، interval wideتر می‌شود.</p>
+        <p>یعنی:</p>
+        <div class="chart">Confidence ↑
+      ↓
+Interval Width ↑</div>
+
+        <h2>40. Hypothesis Testing</h2>
+        <p>می‌خواهیم بررسی کنیم آیا evidence کافی برای یک claim داریم یا نه.</p>
+        <p>دو hypothesis:</p>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">Null</div>
+            <div class="formula">$$H_0$$</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">Alternative</div>
+            <div class="formula">$$H_1$$</div>
+        </div>
+        <p>مثلاً:</p>
+        <div class="chart">H0: Model A and Model B have equal performance</div>
+        <div class="chart">H1: Model A performs differently</div>
+
+        <h2>41. روند Hypothesis Testing</h2>
+        <div class="chart">Define H0/H1
+      ↓
+Choose test
+      ↓
+Calculate test statistic
+      ↓
+Calculate p-value
+      ↓
+Compare with α
+      ↓
+Reject / Fail to Reject H0</div>
+
+        <h2>42. p-value</h2>
+        <p>p-value یعنی:</p>
+        <p>اگر \(H_0\) درست باشد، احتمال مشاهده evidence به اندازه مشاهده‌شده یا extremeتر چقدر است؟</p>
+        <p>مثلاً:</p>
+        <div class="formula">$$p = 0.01$$</div>
+        <p>یعنی تحت فرض \(H_0\)، چنین evidenceای نسبتاً غیرمعمول است.</p>
+
+        <h2>43. p-value چه چیزی نیست؟</h2>
+        <p>p-value:</p>
+        <!-- اصلاح: اضافه کردن کلاس rtl -->
+        <div class="chart rtl">❌ احتمال اینکه H0 درست باشد نیست.</div>
+        <p>یعنی:</p>
+        <div class="formula">$$p \neq P(H_0 | data)$$</div>
+
+        <h2>44. مثال</h2>
+        <p>فرض کن:</p>
+        <div class="chart">p = 0.03
+α = 0.05</div>
+        <p>چون:</p>
+        <div class="formula">$$0.03 < 0.05$$</div>
+        <p>می‌گوییم:</p>
+        <div class="chart">Reject \(H_0\)</div>
+        <p>اما نمی‌گوییم:</p>
+        <!-- اصلاح: اضافه کردن کلاس rtl -->
+        <div class="chart rtl">H0 با احتمال 97٪ غلط است.</div>
+
+        <h2>45. Statistical Significance</h2>
+        <p>اگر:</p>
+        <div class="formula">$$p < \alpha$$</div>
+        <p>نتیجه statistically significant است.</p>
+        <p>معمولاً:</p>
+        <div class="formula">$$\alpha = 0.05$$</div>
+        <p>اما این threshold قانون طبیعت نیست.</p>
+
+        <h2>46. Type I Error</h2>
+        <p>Type I:</p>
+        <!-- اصلاح: اضافه کردن کلاس rtl -->
+        <div class="chart rtl">Reject کردن H0 در حالی که H0 درست است.</div>
+        <p>یعنی:</p>
+        <div class="chart">False Positive</div>
+        <p>مثلاً:</p>
+        <div class="chart">Model actually no improvement
+       ↓
+We conclude improvement</div>
+
+        <h2>47. Type II Error</h2>
+        <p>Type II:</p>
+        <!-- اصلاح: اضافه کردن کلاس rtl -->
+        <div class="chart rtl">Reject نکردن H0 در حالی که H1 واقعاً درست است.</div>
+        <p>یعنی:</p>
+        <div class="chart">False Negative</div>
+        <p>مثلاً:</p>
+        <div class="chart">Model actually improves performance
+       ↓
+We fail to detect improvement</div>
+
+        <h2>48. جدول Type I / II</h2>
+        <div style="overflow-x:auto;">
+            <table>
+                <thead><tr><th>واقعیت</th><th>تصمیم</th><th>نتیجه</th></tr></thead>
+                <tbody>
+                    <tr><td>H0 درست</td><td>Reject H0</td><td>Type I</td></tr>
+                    <tr><td>H0 درست</td><td>Fail to reject</td><td>Correct</td></tr>
+                    <tr><td>H0 غلط</td><td>Reject H0</td><td>Correct</td></tr>
+                    <tr><td>H0 غلط</td><td>Fail to reject</td><td>Type II</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2>49. Statistical Power</h2>
+        <p>Power:</p>
+        <div class="formula">$$\boxed{Power = 1 - \beta}$$</div>
+        <p>یعنی:</p>
+        <p>احتمال detect کردن یک effect واقعی.</p>
+        <p>اگر:</p>
+        <div class="formula">$$Power = 0.8$$</div>
+        <p>باشد یعنی تقریباً 80٪ احتمال داریم effect واقعی را detect کنیم، تحت فرض effect size و design مشخص.</p>
+
+        <h2>50. چه چیزهایی Power را افزایش می‌دهد؟</h2>
+        <p>معمولاً:</p>
+        <div class="chart">Sample size ↑
+Effect size ↑
+Noise ↓
+α ↑</div>
+        <p>باعث افزایش power می‌شوند.</p>
+        <!-- اصلاح: اضافه کردن کلاس rtl -->
+        <div class="chart rtl">باعث افزایش power می‌شوند.</div>
+        <p>اما افزایش α باعث افزایش Type I error هم می‌شود.</p>
+        <p>پس trade-off داریم.</p>
+
+        <h2>51. Effect Size</h2>
+        <p>این مفهوم بسیار مهم است.</p>
+        <p>p-value می‌گوید:</p>
+        <!-- اصلاح: اضافه کردن کلاس rtl -->
+        <div class="chart rtl">evidence چقدر strong است؟</div>
+        <p>Effect size می‌گوید:</p>
+        <!-- اصلاح: اضافه کردن کلاس rtl -->
+        <div class="chart rtl">effect چقدر بزرگ است؟</div>
+
+        <h2>52. مثال مهم</h2>
+        <p>فرض کن با یک dataset بسیار بزرگ:</p>
+        <div class="chart">Model A accuracy = 90.000%
+Model B accuracy = 90.001%</div>
+        <p>ممکن است:</p>
+        <div class="chart">p < 0.001</div>
+        <p>باشد.</p>
+        <p>یعنی statistically significant.</p>
+        <p>اما:</p>
+        <!-- اصلاح: اضافه کردن کلاس rtl -->
+        <div class="chart rtl">practical significance تقریباً صفر است.</div>
+        <p>پس:</p>
+        <div class="formula">$$\boxed{Statistical\ Significance \neq Practical\ Significance}$$</div>
+
+        <h2>53. مثال Effect Size</h2>
+        <p>برای مقایسه میانگین‌ها یکی از effect sizeها:</p>
+        <div class="chart">Cohen's d</div>
+        <div class="formula">$$\boxed{d = \frac{\bar{X}_1 - \bar{X}_2}{s_{pooled}}}$$</div>
+        <p>به شکل تقریبی:</p>
+        <div class="chart">d ≈ 0.2 → small
+d ≈ 0.5 → medium
+d ≈ 0.8 → large</div>
+        <p>این thresholds context-dependent هستند.</p>
+
+        <h2>54. Effect Size در ML</h2>
+        <p>مثلاً دو مدل:</p>
+        <div class="chart">Model A F1 = 0.901
+Model B F1 = 0.903</div>
+        <p>فقط گفتن:</p>
+        <div class="chart">B بهتر است</div>
+        <p>کافی نیست.</p>
+        <p>باید بدانیم:</p>
+        <div class="chart">uncertainty
+confidence interval
+variance across folds
+statistical significance
+practical significance</div>
+        <p>چقدر است.</p>
+
+        <h2>55. Multiple Testing</h2>
+        <p>حالا یک دام بسیار مهم.</p>
+        <p>فرض کن:</p>
+        <div class="chart">1 hypothesis test
+α = 0.05</div>
+        <p>احتمال False Positive حدود 5٪ است.</p>
+        <p>ولی اگر:</p>
+        <div class="chart">100 tests</div>
+        <p>انجام دهیم چه؟</p>
+
+        <h2>56. Family-Wise Error Rate</h2>
+        <p>اگر هر test را با:</p>
+        <div class="formula">$$\alpha = 0.05$$</div>
+        <p>انجام دهیم، احتمال اینکه حداقل یک false positive رخ دهد می‌تواند بسیار بالا شود.</p>
+        <p>اگر tests مستقل باشند:</p>
+        <div class="formula">$$P(\text{at least one false positive}) = 1 - (1 - 0.05)^{100}$$</div>
+        <p>تقریباً:</p>
+        <div class="formula">$$99.4\%$$</div>
+        <p>است.</p>
+        <p>یعنی ممکن است صرفاً با آزمون‌های زیاد، نتایج ظاهراً significant پیدا کنیم.</p>
+
+        <h2>57. Bonferroni Correction</h2>
+        <p>راه‌حل ساده:</p>
+        <div class="formula">$$\boxed{\alpha' = \frac{\alpha}{m}}$$</div>
+        <p>که:</p>
+        <!-- اصلاح: اضافه کردن کلاس rtl -->
+        <div class="chart rtl">\(m\) = تعداد tests</div>
+        <p>مثلاً:</p>
+        <div class="chart">α = 0.05
+m = 10</div>
+        <p>پس:</p>
+        <div class="formula">$$\alpha' = 0.005$$</div>
+
+        <h2>58. Bonferroni چه مشکلی دارد؟</h2>
+        <p>محافظه‌کارانه است.</p>
+        <p>یعنی:</p>
+        <div class="chart">False Positives ↓</div>
+        <p>اما ممکن است:</p>
+        <div class="chart">False Negatives ↑
+Power ↓</div>
+        <p>شود.</p>
+        <p>برای تعداد بسیار زیاد hypotheses ممکن است بیش از حد conservative باشد.</p>
+
+        <h2>59. False Discovery Rate — FDR</h2>
+        <p>به جای کنترل احتمال:</p>
+        <!-- اصلاح: اضافه کردن کلاس rtl -->
+        <div class="chart rtl">حتی یک false positive</div>
+        <p>می‌خواهیم کنترل کنیم:</p>
+        <!-- اصلاح: اضافه کردن کلاس rtl -->
+        <div class="chart rtl">چه fractionای از discoveries ممکن است false باشند؟</div>
+        <p>مثلاً:</p>
+        <div class="chart">100 discoveries</div>
+        <p>و FDR:</p>
+        <div class="chart">10%</div>
+        <p>تقریباً یعنی expected proportion of false discoveries در مجموعه discoveries حدود 10٪ باشد، تحت شرایط روش/تعریف مربوطه.</p>
+
+        <h2>60. Bonferroni vs FDR</h2>
+        <div style="overflow-x:auto;">
+            <table>
+                <thead><tr><th></th><th>Bonferroni</th><th>FDR</th></tr></thead>
+                <tbody>
+                    <tr><td>هدف</td><td>کنترل Family-Wise Error Rate</td><td>کنترل False Discovery Rate</td></tr>
+                    <tr><td>Conservative</td><td>زیاد</td><td>کمتر</td></tr>
+                    <tr><td>Power</td><td>کمتر</td><td>بیشتر</td></tr>
+                    <tr><td>مناسب</td><td>تست‌های حساس با false positive بسیار پرهزینه</td><td>High-dimensional testing</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2>61. Benjamini-Hochberg</h2>
+        <p>یکی از روش‌های معروف کنترل FDR:</p>
+        <div class="formula">$$\boxed{Benjamini-Hochberg}$$</div>
+        <p>ایده کلی:</p>
+        <!-- اصلاح: اضافه کردن کلاس rtl -->
+        <div class="chart rtl">1. p-valueها را sort کن.
+2. به هر rank آستانه اختصاص بده.
+3. بزرگ‌ترین rank قابل قبول را پیدا کن.
+4. hypotheses مناسب را reject کن.</div>
+        <p>در:</p>
+        <div class="chart">genomics
+feature screening
+high-dimensional statistics</div>
+        <p>بسیار استفاده می‌شود.</p>
+
+        <h2>62. Statistical Testing در ML</h2>
+        <p>در ML ممکن است بخواهی بررسی کنی:</p>
+        <p>آیا Model B واقعاً از Model A بهتر است؟</p>
+        <p>مثلاً:</p>
+        <div class="chart">Model A:
+F1 = 0.88
+
+Model B:
+F1 = 0.89</div>
+        <p>نباید صرفاً بگویی:</p>
+        <!-- اصلاح: اضافه کردن کلاس rtl -->
+        <div class="chart rtl">0.89 > 0.88 پس B بهتر است.</div>
+        <p>باید variation را نیز در نظر بگیری.</p>
+
+        <h2>63. Cross-Validation و Statistics</h2>
+        <p>فرض کن 5-fold CV:</p>
+        <div class="chart">Model A:
+0.87
+0.89
+0.88
+0.86
+0.90
+
+Model B:
+0.88
+0.91
+0.89
+0.87
+0.92</div>
+        <p>می‌توانیم:</p>
+        <div class="chart">mean
+standard deviation
+confidence interval</div>
+        <p>را بررسی کنیم.</p>
+        <p>ولی یک نکته مهم:</p>
+        <!-- اصلاح: اضافه کردن کلاس rtl -->
+        <div class="chart rtl">foldها لزوماً independent observations کامل نیستند.</div>
+        <p>پس نباید هر statistical test را بدون توجه به ساختار CV به کار ببریم.</p>
+
+        <h2>64. Paired Comparison</h2>
+        <p>اگر دو مدل را روی همان folds / همان test cases مقایسه می‌کنیم، مقایسه paired می‌تواند مناسب‌تر باشد.</p>
+        <p>مثلاً برای هر observation:</p>
+        <div class="chart">Model A loss
+Model B loss</div>
+        <p>و difference:</p>
+        <div class="formula">$$d_i = L_{A, i} - L_{B, i}$$</div>
+        <p>را بررسی کنیم.</p>
+        <p>این معمولاً اطلاعات بیشتری نسبت به مقایسه دو میانگین مستقل می‌دهد.</p>
+
+        <h2>65. Bootstrap</h2>
+        <p>یکی از ابزارهای بسیار مهم Senior ML که در این لیست نیست ولی باید بشناسی.</p>
+        <p>ایده:</p>
+        <div class="chart">Original dataset
+       ↓
+Sample with replacement
+       ↓
+Bootstrap sample 1
+Bootstrap sample 2
+Bootstrap sample 3
+...
+       ↓
+Distribution of metric</div>
+        <p>بعد می‌توانیم uncertainty metric را تخمین بزنیم.</p>
+        <p>مثلاً:</p>
+        <div class="chart">AUC = 0.91
+95% Bootstrap CI = [0.89, 0.93]</div>
+
+        <h2>66. Statistical Concepts در ML Pipeline</h2>
+        <p>یک Senior ML Engineer باید این مفاهیم را به pipeline وصل کند:</p>
+        <div class="chart">Raw Data
+   ↓
+Sampling
+   ↓
+Distribution Analysis
+   ↓
+Train/Validation/Test
+   ↓
+Model
+   ↓
+Prediction
+   ↓
+Metric
+   ↓
+Uncertainty
+   ↓
+Statistical Testing
+   ↓
+Business Decision</div>
+
+        <h2>67. مثال واقعی — Fraud Detection</h2>
+        <p>فرض کن:</p>
+        <div class="chart">1,000,000 transactions</div>
+        <p>داریم.</p>
+        <p>Fraud rate:</p>
+        <div class="chart">1%</div>
+        <p>یعنی:</p>
+        <div class="formula">$$P(Fraud) = 0.01$$</div>
+
+        <h3>مرحله 1 — Distribution</h3>
+        <p>بررسی:</p>
+        <div class="chart">amount
+velocity
+country
+device_age</div>
+
+        <h3>مرحله 2 — Sampling</h3>
+        <p>Train/validation/test با split مناسب.</p>
+
+        <h3>مرحله 3 — Model</h3>
+        <p>مدل:</p>
+        <div class="chart">XGBoost</div>
+
+        <h3>مرحله 4 — Prediction</h3>
+        <div class="chart">Fraud probability</div>
+
+        <h3>مرحله 5 — Metric</h3>
+        <p>مثلاً:</p>
+        <div class="chart">PR-AUC
+Recall
+Precision</div>
+
+        <h3>مرحله 6 — Uncertainty</h3>
+        <p>مثلاً:</p>
+        <div class="chart">PR-AUC = 0.71
+95% CI = [0.69, 0.73]</div>
+
+        <h3>مرحله 7 — Model comparison</h3>
+        <div class="chart">Model A = 0.70
+Model B = 0.71</div>
+        <p>بررسی می‌کنیم:</p>
+        <p>آیا difference واقعی است یا ممکن است ناشی از sampling variation باشد؟</p>
+
+        <h2>68. یک اشتباه بسیار مهم: p-value برای همه چیز</h2>
+        <p>Senior نباید بگوید:</p>
+        <!-- اصلاح: اضافه کردن کلاس rtl -->
+        <div class="chart rtl">p-value < 0.05 یعنی model بهتر است.</div>
+        <p>چون ممکن است:</p>
+        <!-- اصلاح: اضافه کردن کلاس rtl -->
+        <div class="chart rtl">effect بسیار کوچک باشد
+sample size بسیار بزرگ باشد
+test اشتباه انتخاب شده باشد
+multiple testing وجود داشته باشد
+data leakage وجود داشته باشد
+assumptions نقض شده باشند</div>
+
+        <h2>69. Assumptions بسیار مهم‌اند</h2>
+        <p>Statistical testها معمولاً assumptions دارند.</p>
+        <p>مثلاً ممکن است شامل:</p>
+        <div class="chart">independence
+distributional assumptions
+equal variance
+random sampling</div>
+        <p>باشند.</p>
+        <p>اگر assumptions خراب شوند، نتیجه test ممکن است unreliable شود.</p>
+
+        <h2>70. IID Assumption</h2>
+        <p>یکی از مهم‌ترین assumptions در ML:</p>
+        <div class="formula">$$\boxed{X_i, Y_i \overset{iid}{\sim} P(X, Y)}$$</div>
+        <p>یعنی:</p>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">Independent</div>
+            <p>نمونه‌ها به هم وابسته نیستند.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">Identically Distributed</div>
+            <p>از distribution یکسانی می‌آیند.</p>
+        </div>
+        <p>در دنیای واقعی ممکن است نقض شود:</p>
+        <div class="chart">Time Series
+User Sessions
+Medical Patients
+Multiple Transactions per Customer</div>
+        <p>و این موضوع روی:</p>
+        <div class="chart">sampling
+CV
+confidence intervals
+hypothesis testing</div>
+        <p>اثر می‌گذارد.</p>
+
+        <h2>71. Distribution Shift</h2>
+        <p>اگر:</p>
+        <div class="formula">$$P_{train}(X) \neq P_{test}(X)$$</div>
+        <p>باشد، بسیاری از inferenceهای ساده مشکل پیدا می‌کنند.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Train:
+customers from 2025
+
+Test:
+customers from 2026</div>
+        <p>ممکن است distribution تغییر کرده باشد.</p>
+
+        <h2>72. Sampling Bias</h2>
+        <p>اگر sample نماینده population نباشد:</p>
+        <div class="chart">Population
+     ↓
+Bad Sampling
+     ↓
+Biased Sample
+     ↓
+Biased Model</div>
+        <p>حتی بهترین statistical method نمی‌تواند sampling bias را magically حل کند.</p>
+
+        <h2>73. Law of Large Numbers vs CLT</h2>
+        <p>این دو را قاطی نکن.</p>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">Law of Large Numbers</div>
+            <p>با افزایش \(n\):</p>
+            <div class="formula">$$\bar{X} \rightarrow \mu$$</div>
+            <p>یعنی sample mean به population mean نزدیک می‌شود.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">CLT</div>
+            <p>می‌گوید distribution مربوط به sample mean، تحت شرایط مناسب، به Normal نزدیک می‌شود.</p>
+        </div>
+
+        <h2>74. خلاصه رابطه مفاهیم</h2>
+        <div class="chart">Population
+    │
+    ▼
+ Sampling
+    │
+    ▼
+ Sample
+    │
+    ├── Mean
+    ├── Variance
+    └── Statistic
+    │
+    ▼
+Sampling Distribution
+    │
+    ├── CLT
+    ├── Standard Error
+    └── Confidence Interval
+    │
+    ▼
+Hypothesis Testing
+    │
+    ├── p-value
+    ├── Type I Error
+    ├── Type II Error
+    ├── Power
+    └── Effect Size
+    │
+    ▼
+Multiple Testing
+    │
+    ├── Bonferroni
+    └── FDR</div>
+
+        <h2>🎯 Cheat Sheet مصاحبه Senior</h2>
+        <div style="overflow-x:auto;">
+            <table>
+                <thead><tr><th>مفهوم</th><th>معنی واقعی</th></tr></thead>
+                <tbody>
+                    <tr><td>Mean</td><td>مرکز داده بر اساس average</td></tr>
+                    <tr><td>Median</td><td>مقدار وسط، robustتر نسبت به outlier</td></tr>
+                    <tr><td>Variance</td><td>میزان spread به صورت squared</td></tr>
+                    <tr><td>Std</td><td>spread در واحد اصلی داده</td></tr>
+                    <tr><td>Covariance</td><td>جهت حرکت مشترک دو variable</td></tr>
+                    <tr><td>Correlation</td><td>covariance استانداردشده بین -1 و +1</td></tr>
+                    <tr><td>Probability</td><td>احتمال یک event</td></tr>
+                    <tr><td>Conditional Probability</td><td>احتمال A با دانستن B</td></tr>
+                    <tr><td>Bayes</td><td>به‌روزرسانی belief با evidence</td></tr>
+                    <tr><td>Expected Value</td><td>weighted average outcome</td></tr>
+                    <tr><td>Distribution</td><td>نحوه پخش probability</td></tr>
+                    <tr><td>Normal</td><td>distribution متقارن bell-shaped</td></tr>
+                    <tr><td>Bernoulli</td><td>یک binary trial</td></tr>
+                    <tr><td>Binomial</td><td>تعداد success در n Bernoulli trials</td></tr>
+                    <tr><td>Sampling Distribution</td><td>distribution یک statistic روی samples</td></tr>
+                    <tr><td>CLT</td><td>sampling distribution mean تقریباً Normal می‌شود</td></tr>
+                    <tr><td>SE</td><td>uncertainty یک estimator</td></tr>
+                    <tr><td>CI</td><td>interval estimation تحت sampling procedure</td></tr>
+                    <tr><td>Hypothesis Test</td><td>بررسی evidence علیه H0</td></tr>
+                    <tr><td>p-value</td><td>احتمال data این‌قدر extreme یا extremeتر تحت H0</td></tr>
+                    <tr><td>Type I</td><td>False Positive</td></tr>
+                    <tr><td>Type II</td><td>False Negative</td></tr>
+                    <tr><td>Power</td><td>احتمال detect کردن effect واقعی</td></tr>
+                    <tr><td>Effect Size</td><td>اندازه effect</td></tr>
+                    <tr><td>Multiple Testing</td><td>افزایش false discoveries با تست‌های زیاد</td></tr>
+                    <tr><td>Bonferroni</td><td>کنترل FWER با threshold محافظه‌کارانه</td></tr>
+                    <tr><td>FDR</td><td>کنترل expected proportion of false discoveries</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2>🧠 10 نکته‌ای که باید واقعاً Senior-level بلد باشی</h2>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">1.</div>
+            <p>Mean به outlier حساس است؛ Median robustتر است.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">2.</div>
+            <p>Variance و Standard Deviation spread را اندازه می‌گیرند، نه uncertainty estimator را.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#3fb950;">
+            <div class="inner-title">3.</div>
+            <p>Correlation ≠ Causation.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#d2a8ff;">
+            <div class="inner-title">4.</div>
+            <p>Sampling Distribution با Data Distribution فرق دارد.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">5.</div>
+            <p>CLT نمی‌گوید data distribution نرمال می‌شود؛ sampling distribution statistic، مخصوصاً mean، تحت شرایط مناسب تقریباً نرمال می‌شود.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">6.</div>
+            <p>Standard Error با افزایش sample size کاهش می‌یابد:</p>
+            <div class="formula">$$SE \propto \frac{1}{\sqrt{n}}$$</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#3fb950;">
+            <div class="inner-title">7.</div>
+            <p>p-value احتمال درست بودن H0 نیست.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#d2a8ff;">
+            <div class="inner-title">8.</div>
+            <p>Statistical significance ≠ Practical significance.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">9.</div>
+            <p>Multiple testing می‌تواند false positive ایجاد کند؛ Bonferroni و FDR راه‌حل‌های متفاوتی برای کنترل این مسئله‌اند.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">10.</div>
+            <p>و مهم‌تر از همه:</p>
+            <p>Statistics در ML فقط محاسبه Mean و p-value نیست؛ ابزار reasoning درباره uncertainty، sampling، variation، evidence و generalization است.</p>
+        </div>
+
+        <p>این دقیقاً جایی است که Statistics به مباحث قبلی تو یعنی Train/Validation/Test، Cross-Validation، Bias–Variance، Distribution Shift، Evaluation Metrics و Generalization وصل می‌شود.</p>
+
+        <hr style="border:1px solid #444; margin:50px 0;" />
+        <p style="text-align:center; color:#8b949e; font-size:0.85rem; padding:16px 0;">Statistical Concepts for ML · Senior ML · تمام نکات ریز 🧠</p>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const ctxVars = {};
+            const canvases = ['varCanvas', 'sdCanvas', 'corrCanvas', 'condCanvas', 'bayesCanvas', 'expectedCanvas', 'binomialCanvas'];
+
+            function getCtx(id) {
+                if (!ctxVars[id]) {
+                    const canvas = document.getElementById(id);
+                    if (!canvas) return null;
+                    const ctx = canvas.getContext('2d');
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctxVars[id] = ctx;
+                }
+                return ctxVars[id];
+            }
+
+            function drawVariance() {
+                const canvas = document.getElementById('varCanvas');
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                const sigma = parseFloat(document.getElementById('varSigma').value);
+                
+                document.getElementById('varSigmaVal').textContent = sigma.toFixed(1);
+                
+                const variance = Math.pow(sigma, 2).toFixed(2);
+                const resultEl = document.getElementById('varResult');
+                if (resultEl) {
+                    resultEl.textContent = variance;
+                }
+
+                const w = 500, h = 300;
+                ctx.clearRect(0, 0, w, h);
+
+                ctx.strokeStyle = '#30363d';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                for (let y = 30; y < h - 30; y += 30) { ctx.moveTo(30, y); ctx.lineTo(w - 30, y); }
+                for (let x = 30; x < w - 30; x += 30) { ctx.moveTo(x, 30); ctx.lineTo(x, h - 30); }
+                ctx.stroke();
+
+                const mean = 250;
+                const sdScale = 40 * sigma;
+                ctx.strokeStyle = '#3fb950';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                for (let x = 0; x < w; x++) {
+                    let z = (x - mean) / sdScale;
+                    let y = h / 2 - 120 * Math.exp(-0.5 * z * z);
+                    if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+
+                ctx.strokeStyle = '#58a6ff';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 5]);
+                ctx.beginPath();
+                ctx.moveTo(mean - sdScale, 30);
+                ctx.lineTo(mean - sdScale, h - 30);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(mean + sdScale, 30);
+                ctx.lineTo(mean + sdScale, h - 30);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                ctx.strokeStyle = '#e6edf3';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(mean, 30);
+                ctx.lineTo(mean, h - 30);
+                ctx.stroke();
+
+                ctx.fillStyle = '#e6edf3';
+                ctx.font = '20px sans-serif';
+                ctx.fillText('μ', mean - 10, 25);
+                ctx.fillText('-σ', mean - sdScale - 15, h - 20);
+                ctx.fillText('+σ', mean + sdScale - 15, h - 20);
+            }
+            
+            document.getElementById('varSigma').addEventListener('input', drawVariance);
+            drawVariance();
+
+function initSDVisualization() {
+    const grid = document.getElementById('grid');
+    const axis = document.getElementById('axis');
+    const pointsGroup = document.getElementById('points');
+    const slider = document.getElementById('sdSigma');
+    
+    if (!grid || !axis || !pointsGroup || !slider) return;
+
+    const W = 760;
+    const H = 430;
+    const left = 55;
+    const right = 710;
+    const axisY = 345;
+    const minX = 0;
+    const maxX = 10;
+    const mean = 5.0;
+    
+    function xScale(x){
+        return left + ((x - minX) / (maxX - minX)) * (right - left);
+    }
+
+    const zScores = [
+        -1.65, -1.25, -1.05, -0.75, -0.35,
+         0.00,  0.35,  0.75,  1.05,  1.45
+    ];
+
+    const yLevels = [
+        310, 290, 270, 250, 310,
+        290, 270, 310, 290, 250
+    ];
+
+    let std = 0.62;
+
+    function svgElement(name, attrs = {}){
+        const el = document.createElementNS("http://www.w3.org/2000/svg", name);
+        for(const [key, value] of Object.entries(attrs)){
+            el.setAttribute(key, value);
+        }
+        return el;
+    }
+
+    function drawSD() {
+        const k = Number(slider.value);
+        
+        std = 0.62 * k;
+        const effectiveStd = Math.max(std, 0.02);
+        
+        const distance = k * effectiveStd;
+        const lower = mean - distance;
+        const upper = mean + distance;
+
+        const leftX = xScale(lower);
+        const rightX = xScale(upper);
+        const meanX = xScale(mean);
+
+        while (grid.firstChild) grid.removeChild(grid.firstChild);
+        while (axis.firstChild) axis.removeChild(axis.firstChild);
+        while (pointsGroup.firstChild) pointsGroup.removeChild(pointsGroup.firstChild);
+
+        axis.appendChild(svgElement("line", { x1:left, y1:axisY, x2:right, y2:axisY, class:"axis-svg" }));
+
+        for(let i=0;i<=10;i++){
+            const x = xScale(i);
+            grid.appendChild(svgElement("line", { x1:x, y1:70, x2:x, y2:axisY, class:"grid-svg" }));
+            axis.appendChild(svgElement("line", { x1:x, y1:axisY, x2:x, y2:axisY+8, class:"tick-svg" }));
+            const label = svgElement("text", { x:x, y:axisY+29, class:"tick-text" });
+            label.textContent = i;
+            axis.appendChild(label);
+        }
+
+        for(let i=0; i<zScores.length; i++){
+            const z = zScores[i];
+            const x = mean + z * effectiveStd;
+            const point = svgElement("circle", {
+                cx:xScale(x),
+                cy:yLevels[i],
+                r:7,
+                class:"point-svg"
+            });
+            pointsGroup.appendChild(point);
+        }
+
+        document.getElementById("meanLine").setAttribute("x1", meanX);
+        document.getElementById("meanLine").setAttribute("x2", meanX);
+        document.getElementById("meanText").setAttribute("x", meanX);
+
+        document.getElementById("leftSigma").setAttribute("x1", leftX);
+        document.getElementById("leftSigma").setAttribute("x2", leftX);
+        document.getElementById("rightSigma").setAttribute("x1", rightX);
+        document.getElementById("rightSigma").setAttribute("x2", rightX);
+
+        document.getElementById("sigmaArea").setAttribute("x", leftX);
+        document.getElementById("sigmaArea").setAttribute("width", Math.max(0, rightX-leftX));
+
+        document.getElementById("leftText").setAttribute("x", leftX);
+        document.getElementById("rightText").setAttribute("x", rightX);
+
+        document.getElementById("meanValue").textContent = mean.toFixed(2);
+        document.getElementById("stdValue").textContent = effectiveStd.toFixed(2);
+        document.getElementById("lowerValue").textContent = lower.toFixed(2);
+        document.getElementById("upperValue").textContent = upper.toFixed(2);
+        document.getElementById("kValue").textContent = `${k.toFixed(1)}σ`;
+        document.getElementById("sdSigmaValDisplay").textContent = effectiveStd.toFixed(2);
+    }
+    
+    slider.addEventListener('input', drawSD);
+    
+    document.querySelectorAll("[data-k]").forEach(button => {
+        button.addEventListener("click", () => {
+            slider.value = button.dataset.k;
+            drawSD();
+        });
+    });
+
+    drawSD();
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initSDVisualization);
+} else {
+    initSDVisualization();
+}
+
+let corrPoints = [{x:2,y:4},{x:3,y:5},{x:4,y:5},{x:5,y:7},{x:6,y:6},{x:7,y:8},{x:8,y:9},{x:9,y:7}];
+let corrDragging = -1;
+
+function updateButtons(r) {
+    const btnNeg = document.getElementById('btn-negative');
+    const btnZero = document.getElementById('btn-zero');
+    const btnPos = document.getElementById('btn-positive');
+    
+    [btnNeg, btnZero, btnPos].forEach(btn => {
+        btn.style.backgroundColor = '#0d1117';
+        btn.style.color = '#e6edf3';
+    });
+    
+    if (r > 0.1) {
+        btnPos.style.backgroundColor = '#ffffff';
+        btnPos.style.color = '#0d1117';
+    } else if (r < -0.1) {
+        btnNeg.style.backgroundColor = '#ffffff';
+        btnNeg.style.color = '#0d1117';
+    } else {
+        btnZero.style.backgroundColor = '#ffffff';
+        btnZero.style.color = '#0d1117';
+    }
+}
+
+function generatePoints(type) {
+    let newPoints = [];
+    let attempts = 0;
+    let r = 0;
+    
+    do {
+        newPoints = [];
+        for (let i = 0; i < 8; i++) {
+            let x = Math.random() * 7 + 1.5;
+            let y;
+            
+            if (type === 'positive') {
+                y = x + (Math.random() - 0.5) * 4;
+            } else if (type === 'negative') {
+                y = -x + 10 + (Math.random() - 0.5) * 4;
+            } else {
+                y = Math.random() * 7 + 1;
+            }
+            
+            y = Math.max(1, Math.min(8, y));
+            newPoints.push({x: x, y: y});
+        }
+        
+        let n = newPoints.length;
+        let sumX=0, sumY=0, sumXY=0, sumX2=0, sumY2=0;
+        newPoints.forEach(p => {
+            sumX += p.x; sumY += p.y; sumXY += p.x*p.y; sumX2 += p.x*p.x; sumY2 += p.y*p.y;
+        });
+        r = (n*sumXY - sumX*sumY) / Math.sqrt((n*sumX2 - sumX*sumX)*(n*sumY2 - sumY*sumY));
+        
+        attempts++;
+        if (type !== 'zero') break; 
+    } while (attempts < 20 && (r > 0.1 || r < -0.1));
+    
+    corrPoints = newPoints;
+    drawCorr();
+}
+
+function drawCorr() {
+    const ctx = getCtx('corrCanvas');
+    if (!ctx) return;
+    const w = 500, h = 300;
+    ctx.clearRect(0, 0, w, h);
+    
+    ctx.strokeStyle = '#30363d';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let x = 30; x < w - 30; x += 50) { 
+        ctx.moveTo(x, 30); 
+        ctx.lineTo(x, h - 30); 
+    }
+    for (let y = 30; y < h - 30; y += 30) { 
+        ctx.moveTo(30, y); 
+        ctx.lineTo(w - 30, y); 
+    }
+    ctx.stroke();
+    
+    ctx.strokeStyle = '#e6edf3'; 
+    ctx.lineWidth = 2;
+    ctx.beginPath(); 
+    ctx.moveTo(30, h-30); 
+    ctx.lineTo(w-30, h-30); 
+    ctx.stroke(); 
+    ctx.beginPath(); 
+    ctx.moveTo(30, h-30); 
+    ctx.lineTo(30, 30); 
+    ctx.stroke(); 
+    
+    ctx.fillStyle = '#8b949e';
+    ctx.font = '14px monospace';
+    ctx.fillText('2', 75, h - 10);
+    ctx.fillText('4', 175, h - 10);
+    ctx.fillText('6', 275, h - 10);
+    ctx.fillText('8', 375, h - 10);
+    ctx.fillText('10', 465, h - 10);
+    ctx.fillText('2', 15, h - 40);
+    ctx.fillText('4', 15, h - 70);
+    ctx.fillText('6', 15, h - 100);
+    ctx.fillText('8', 15, h - 130);
+    ctx.fillText('10', 10, h - 160);
+    
+    let n = corrPoints.length;
+    let sumX=0, sumY=0, sumXY=0, sumX2=0, sumY2=0;
+    corrPoints.forEach(p => {
+        sumX += p.x; sumY += p.y; sumXY += p.x*p.y; sumX2 += p.x*p.x; sumY2 += p.y*p.y;
+    });
+    let r = (n*sumXY - sumX*sumY) / Math.sqrt((n*sumX2 - sumX*sumX)*(n*sumY2 - sumY*sumY));
+    
+    ctx.strokeStyle = '#58a6ff'; 
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    let meanX = sumX/n; 
+    let meanY = sumY/n;
+    let slope = (sumXY - n*meanX*meanY)/(sumX2 - n*meanX*meanX);
+    let y1 = meanY + slope * (1 - meanX);
+    let y2 = meanY + slope * (9 - meanX);
+    ctx.moveTo(30, h-30 - (y1 * 30));
+    ctx.lineTo(w-30, h-30 - (y2 * 30));
+    ctx.stroke();
+    
+    corrPoints.forEach(p => {
+        let x = 30 + p.x * 50;
+        let y = h-30 - p.y * 30;
+        ctx.fillStyle = '#3fb950';
+        ctx.beginPath(); 
+        ctx.arc(x, y, 8, 0, 2*Math.PI); 
+        ctx.fill();
+        ctx.strokeStyle = '#e6edf3'; 
+        ctx.lineWidth = 1; 
+        ctx.stroke();
+    });
+    
+    let status = r > 0.1 ? 'همبستگی خطی مثبت است' : (r < -0.1 ? 'همبستگی خطی منفی است' : 'همبستگی نزدیک صفر است');
+    document.getElementById('corr-status').textContent = `${status} (r = ${r.toFixed(2)}).`;
+    updateButtons(r);
+}
+
+const corrCanvas = document.getElementById('corrCanvas');
+function getCorrPos(e) {
+    const rect = corrCanvas.getBoundingClientRect();
+    const x = (e.clientX - rect.left) * (500 / rect.width);
+    const y = (e.clientY - rect.top) * (300 / rect.height);
+    
+    return {x: (x - 30) / 50, y: (300 - 30 - y) / 30};
+}
+
+corrCanvas.addEventListener('mousedown', (e) => {
+    let pos = getCorrPos(e);
+    for(let i=0; i<corrPoints.length; i++) {
+        if(Math.abs(corrPoints[i].x - pos.x) < 0.5 && Math.abs(corrPoints[i].y - pos.y) < 0.5) { corrDragging = i; break; }
+    }
+});
+
+corrCanvas.addEventListener('mousemove', (e) => {
+    if(corrDragging >= 0) {
+        let pos = getCorrPos(e);
+        pos.x = Math.max(1, Math.min(9, pos.x));
+        pos.y = Math.max(1, Math.min(8, pos.y));
+        corrPoints[corrDragging] = pos;
+        drawCorr();
+    }
+});
+
+corrCanvas.addEventListener('mouseup', () => corrDragging = -1);
+corrCanvas.addEventListener('mouseleave', () => corrDragging = -1);
+
+document.getElementById('btn-negative').addEventListener('click', () => { generatePoints('negative'); });
+document.getElementById('btn-zero').addEventListener('click', () => { generatePoints('zero'); });
+document.getElementById('btn-positive').addEventListener('click', () => { generatePoints('positive'); });
+
+drawCorr();
+
+            function drawCond() {
+                const ctx = getCtx('condCanvas');
+                if (!ctx) return;
+                
+                let PB = parseFloat(document.getElementById('condPB').value);
+                let PAB = parseFloat(document.getElementById('condPAB').value);
+                
+                document.getElementById('condPAB').max = PB;
+                if (PAB > PB) {
+                    PAB = PB;
+                    document.getElementById('condPAB').value = PAB;
+                }
+                
+                document.getElementById('condPBVal').textContent = PB.toFixed(2);
+                document.getElementById('condPABVal').textContent = PAB.toFixed(2);
+                
+                const result = PAB / PB;
+                
+                const eqEl = document.getElementById('cond-formula');
+                katex.render(
+                    `P(A|B) = \\frac{P(A \\cap B)}{P(B)} = \\frac{${PAB.toFixed(2)}}{${PB.toFixed(2)}} = ${result.toFixed(2)}`,
+                    eqEl,
+                    {throwOnError: false}
+                );
+
+                const resultEl = document.getElementById('cond-result');
+                if (resultEl) {
+                    resultEl.textContent = `P(A|B) = ${result.toFixed(2)}`;
+                }
+                
+                const w = 500, h = 300;
+                ctx.clearRect(0, 0, w, h);
+                
+                ctx.fillStyle = '#21262d';
+                ctx.fillRect(0, 0, w, h);
+                
+                const barX = 50, barY = 50, barW = 400, barH = 150;
+                
+                ctx.fillStyle = '#58a6ff';
+                ctx.fillRect(barX, barY, barW, barH);
+                
+                let greenW = (PAB / PB) * barW;
+                ctx.fillStyle = '#3fb950';
+                ctx.fillRect(barX, barY, greenW, barH);
+                
+                ctx.strokeStyle = '#e6edf3';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(barX, barY, barW, barH);
+                
+                ctx.fillStyle = '#e6edf3';
+                ctx.font = '20px sans-serif';
+                ctx.fillText('P(B)', barX + 10, barY - 10);
+                ctx.fillText('P(A∩B)', barX, barY + barH + 30);
+            }
+            
+            document.getElementById('condPB').addEventListener('input', drawCond);
+            document.getElementById('condPAB').addEventListener('input', drawCond);
+            drawCond();
+
+            function drawBayes() {
+                const ctx = getCtx('bayesCanvas');
+                if (!ctx) return;
+                
+                let PA = parseFloat(document.getElementById('bayesPA').value);
+                let PBA = parseFloat(document.getElementById('bayesPBA').value);
+                let PBNA = parseFloat(document.getElementById('bayesPBNA').value);
+                
+                document.getElementById('bayesPAVal').textContent = PA.toFixed(2);
+                document.getElementById('bayesPBAVal').textContent = PBA.toFixed(2);
+                document.getElementById('bayesPBNAVal').textContent = PBNA.toFixed(2);
+                
+                const PB = PA * PBA + (1 - PA) * PBNA;
+                const PAB = (PBA * PA) / PB;
+                
+                const eqEl = document.getElementById('bayes-formula');
+                katex.render(
+                    `P(A|B) = \\frac{P(B|A)P(A)}{P(B)}`,
+                    eqEl,
+                    {throwOnError: false}
+                );
+
+                const resultEl = document.getElementById('bayes-result');
+                if (resultEl) {
+                    resultEl.textContent = `P(A|B) = ${PAB.toFixed(2)}`;
+                }
+                
+                const w = 500, h = 300;
+                ctx.clearRect(0, 0, w, h);
+                
+                ctx.fillStyle = '#21262d';
+                ctx.fillRect(0, 0, w, h);
+                
+                const barX = 50, barY = 50, barW = 400, barH = 150;
+                
+                const jointA = PA * PBA;
+                const jointNotA = (1 - PA) * PBNA;
+                const totalJoint = jointA + jointNotA;
+                
+                const ratioA = totalJoint > 0 ? jointA / totalJoint : 0;
+                const ratioNotA = totalJoint > 0 ? jointNotA / totalJoint : 0;
+                
+                ctx.fillStyle = '#58a6ff';
+                ctx.fillRect(barX, barY, barW * ratioA, barH);
+                
+                ctx.fillStyle = '#3fb950';
+                ctx.fillRect(barX + barW * ratioA, barY, barW * ratioNotA, barH);
+                
+                ctx.strokeStyle = '#e6edf3';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(barX, barY, barW, barH);
+
+                ctx.font = '18px sans-serif';
+                
+                ctx.fillStyle = '#e6edf3';
+                ctx.fillText('P(A)', barX + 10, barY + barH + 30);
+                ctx.fillStyle = '#58a6ff';
+                ctx.beginPath();
+                ctx.arc(barX + 50, barY + barH + 30, 6, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                ctx.fillStyle = '#e6edf3';
+                ctx.fillText('P(¬A)', barX + barW - 70, barY + barH + 30);
+                ctx.fillStyle = '#3fb950';
+                ctx.beginPath();
+                ctx.arc(barX + barW - 30, barY + barH + 30, 6, 0, 2 * Math.PI);
+                ctx.fill();
+            }
+            
+            document.getElementById('bayesPA').addEventListener('input', drawBayes);
+            document.getElementById('bayesPBA').addEventListener('input', drawBayes);
+            document.getElementById('bayesPBNA').addEventListener('input', drawBayes);
+            drawBayes();
+
+            function drawExpected() {
+                const ctx = getCtx('expectedCanvas');
+                if (!ctx) return;
+                
+                let p8 = parseFloat(document.getElementById('expectedP8').value);
+                let p2 = 1 - p8;
+                
+                document.getElementById('expectedP8Val').textContent = p8.toFixed(2);
+                
+                const expected = 2 * p2 + 8 * p8;
+                
+                const eqEl = document.getElementById('expected-formula');
+                katex.render(
+                    `E[X] = \\sum_x x P(X = x)`,
+                    eqEl,
+                    {throwOnError: false}
+                );
+                
+                const resultEl = document.getElementById('expected-result');
+                katex.render(
+                    `E[X] = 2(${p2.toFixed(2)}) + 8(${p8.toFixed(2)}) = ${expected.toFixed(2)}`,
+                    resultEl,
+                    {throwOnError: false}
+                );
+                
+                const w = 500, h = 300;
+                ctx.clearRect(0, 0, w, h);
+                
+                ctx.strokeStyle = '#e6edf3';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(50, 200);
+                ctx.lineTo(450, 200);
+                ctx.stroke();
+                
+                const x2 = 50;
+                const x8 = 450;
+                
+                const rectHeight2 = 20 * p2;
+                const rectHeight8 = 20 * p8;
+                
+                ctx.fillStyle = '#3fb950';
+                ctx.fillRect(x2 - 15, 200 - rectHeight2, 30, rectHeight2);
+                ctx.fillRect(x8 - 15, 200 - rectHeight8, 30, rectHeight8);
+                
+                ctx.fillStyle = '#e6edf3';
+                ctx.font = '18px monospace';
+                ctx.fillText(`P=${p2.toFixed(2)}`, x2 - 35, 120);
+                ctx.fillText(`P=${p8.toFixed(2)}`, x8 - 35, 120);
+                
+                ctx.font = '20px monospace';
+                ctx.fillText('2', x2 - 5, 250);
+                ctx.fillText('8', x8 - 5, 250);
+                
+                const xExp = 50 + (expected - 2) / 6 * 400;
+                
+                ctx.fillStyle = '#e6edf3';
+                ctx.beginPath();
+                ctx.moveTo(xExp - 10, 200 - 30);
+                ctx.lineTo(xExp + 10, 200 - 30);
+                ctx.lineTo(xExp, 200);
+                ctx.fill();
+                
+                ctx.setLineDash([5, 5]);
+                ctx.strokeStyle = '#e6edf3';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(xExp, 200 - 40);
+                ctx.lineTo(xExp, 280);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                
+                ctx.font = '16px monospace';
+                ctx.fillText('E[X]', xExp - 20, 290);
+            }
+            
+            document.getElementById('expectedP8').addEventListener('input', drawExpected);
+            drawExpected();
+
+function drawBinomial() {
+    const ctx = getCtx('binomialCanvas');
+    if (!ctx) return;
+    const n = parseInt(document.getElementById('binomN').value);
+    const p = parseFloat(document.getElementById('binomP').value) / 100;
+    document.getElementById('binomNVal').textContent = n.toFixed(1);
+    document.getElementById('binomPVal').textContent = (p*100).toFixed(1) + '%';
+    
+    const w = 800, h = 450;
+    ctx.clearRect(0, 0, w, h);
+    
+    ctx.fillStyle = '#21262d';
+    ctx.fillRect(0, 0, w, 90); 
+
+    ctx.fillStyle = '#e6edf3';
+    ctx.font = '18px monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText(`${n} آزمون مستقل بله/خیر`, w - 20, 30);
+    
+    ctx.fillStyle = '#58a6ff';
+    ctx.font = '20px monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText(`p = ${(p*100).toFixed(1)}%`, 20, 30);
+
+    const startX = 230;
+    const maxWidth = 550;
+    const barY = 50;
+    const barH = 15;
+    const gap = 5;
+
+    const barW = (maxWidth - (n - 1) * gap) / n;
+
+    for (let i = 0; i < n; i++) {
+        let x = startX + i * (barW + gap);
+        
+        ctx.fillStyle = '#30363d';
+        ctx.fillRect(x, barY, barW, barH);
+        
+        ctx.fillStyle = '#3fb950';
+        ctx.fillRect(x, barY, barW * p, barH);
+    }
+
+    let maxProb = 0;
+    let probs = [];
+    for(let k=0; k<=n; k++) {
+        let comb = 1;
+        for(let i=0; i<k; i++) comb = comb * (n-i)/(i+1);
+        let prob = comb * Math.pow(p, k) * Math.pow(1-p, n-k);
+        probs.push(prob);
+        if(prob > maxProb) maxProb = prob;
+    }
+    
+    const chartTop = 130; 
+    const chartBottom = 350;
+    const chartLeft = 80;
+    const chartRight = 750;
+    const chartHeight = chartBottom - chartTop;
+    const step = (chartRight - chartLeft) / (n > 0 ? n : 1);
+    const barWidth = Math.min(60, step * 0.6);
+    
+    ctx.strokeStyle = '#30363d'; 
+    ctx.lineWidth = 1;
+    ctx.fillStyle = '#8b949e';
+    ctx.font = '14px monospace';
+    ctx.textAlign = 'right';
+    for(let y=chartBottom; y>=chartTop; y-=50) {
+        ctx.beginPath(); 
+        ctx.moveTo(chartLeft, y); 
+        ctx.lineTo(chartRight, y); 
+        ctx.stroke();
+        
+        const percent = Math.round((chartBottom - y) / chartHeight * 100);
+        ctx.fillText(percent + '%', chartLeft - 10, y + 5);
+    }
+    
+    ctx.fillStyle = '#e6edf3';
+    ctx.font = '18px monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText('احتمال (%)', chartLeft, chartTop - 15);
+    
+    ctx.fillStyle = '#e6edf3'; 
+    ctx.font = '16px monospace';
+    ctx.textAlign = 'center';
+    for(let k=0; k<=n; k++) {
+        let x = chartLeft + k * step - barWidth / 2;
+        let barH = chartHeight * probs[k] / maxProb;
+        let y = chartBottom - barH;
+        
+        ctx.fillStyle = '#3fb950';
+        ctx.fillRect(x, y, barWidth, barH);
+        
+        ctx.fillStyle = '#e6edf3';
+        ctx.fillText(k.toString(), x + barWidth/2, chartBottom + 25);
+    }
+    
+    ctx.fillStyle = '#e6edf3';
+    ctx.font = '20px monospace';
+    ctx.fillText('تعداد موفقیت k', (chartLeft + chartRight) / 2, 400);
+    
+    let maxK = probs.indexOf(maxProb);
+    
+    const toPersianDigits = (str) => str.replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
+    
+    const labelText = `${toPersianDigits(maxK.toString())} موفقیت، ${toPersianDigits((maxProb*100).toFixed(1))}٪`;
+    
+    ctx.font = '16px monospace';
+    const textWidth = ctx.measureText(labelText).width;
+    const pillW = textWidth + 30;
+    const pillH = 30;
+    
+    const maxBarX = chartLeft + maxK * step;
+    const maxBarTopY = chartBottom - (chartHeight * probs[maxK] / maxProb);
+    const pillX = maxBarX - pillW / 2;
+    const pillY = maxBarTopY - 45;
+    
+    ctx.fillStyle = '#3fb950';
+    ctx.beginPath();
+    ctx.roundRect(pillX, pillY, pillW, pillH, 15);
+    ctx.fill();
+    
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'center';
+    ctx.fillText(labelText, pillX + pillW / 2, pillY + 21);
+}
+            
+document.getElementById('binomN').addEventListener('input', drawBinomial);
+document.getElementById('binomP').addEventListener('input', drawBinomial);
+drawBinomial();
+        });
+    </script>
+</body>
+</html>

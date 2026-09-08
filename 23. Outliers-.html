@@ -1,0 +1,1791 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Outliers · Senior ML Level</title>
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}]});"></script>
+
+    <style>
+        body {
+            background-color: #0d1117;
+            color: #e6edf3;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.8;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h1, h2, h3, h4 {
+            color: #e6edf3;
+            text-align: right;
+            border-bottom: 1px solid #444;
+            padding-bottom: 15px;
+            margin-top: 50px;
+        }
+        p, li {
+            text-align: right;
+        }
+
+        .box {
+            background-color: #21262d;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            color: #e6edf3;
+        }
+        .inner-box {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 10px;
+            border-right: 4px solid #58a6ff;
+        }
+        .inner-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .formula {
+            direction: ltr;
+            background-color: #000;
+            border: 1px solid #fff;
+            border-radius: 0;
+            padding: 20px;
+            margin: 20px auto;
+            width: fit-content;
+            max-width: 100%;
+            overflow-x: auto;
+            text-align: center;
+            font-size: 1.2em;
+            font-family: "Times New Roman", Times, serif;
+            color: #fff;
+        }
+
+        .chart {
+            direction: ltr;
+            text-align: left;
+            font-family: monospace;
+            background-color: #21262d;
+            border-radius: 8px;
+            padding: 15px;
+            overflow-x: auto;
+            white-space: pre;
+            border: 1px solid #444;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            direction: rtl;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #444;
+            padding: 12px;
+            text-align: right;
+        }
+        th {
+            background-color: #21262d;
+        }
+
+        .visualization {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            direction: ltr;
+            text-align: left;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .viz-plot {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .viz-controls {
+            flex: 1;
+            min-width: 300px;
+            background: #21262d;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        canvas {
+            width: 100%;
+            height: auto;
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            display: block;
+        }
+
+        .slider-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background-color: #0d1117;
+            border-radius: 6px;
+            padding: 8px 12px;
+            margin-bottom: 15px;
+            border: 1px solid #30363d;
+            direction: ltr;
+        }
+
+        .slider-row label {
+            width: 40px;
+            color: #58a6ff;
+            font-weight: bold;
+            font-family: monospace;
+            text-align: right;
+        }
+
+        .slider-row input[type="range"] {
+            flex: 1;
+            accent-color: #58a6ff;
+        }
+
+        .slider-row .value {
+            width: 40px;
+            text-align: center;
+            font-family: monospace;
+        }
+
+        .equation-box {
+            font-family: "Times New Roman", Times, serif;
+            font-size: 1.5em;
+            text-align: center;
+            margin-bottom: 20px;
+            color: #e6edf3;
+        }
+        
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📦 23. Outliers — از پایه تا Senior ML</h1>
+
+        <p style="font-size:1.1rem;">حتماً. این مبحث را اگر بخواهی در سطح Senior ML / Data Scientist بلد باشی، نباید Outlier را صرفاً «عددی که خیلی بزرگ یا کوچک است» تعریف کنی. باید بتوانی تشخیص بدهی:</p>
+        <ul>
+            <li>آیا observation واقعاً اشتباه است؟</li>
+            <li>آیا فقط rare است؟</li>
+            <li>آیا anomaly است؟</li>
+            <li>آیا در regression leverage بالایی دارد؟</li>
+            <li>آیا influential است؟</li>
+            <li>حذفش چه اثری روی مدل دارد؟</li>
+            <li>آیا آن outlier اتفاقاً مهم‌ترین signal کسب‌وکار است؟</li>
+            <li>آیا outlier مربوط به data quality است یا یک پدیده واقعی؟</li>
+        </ul>
+
+        <h2>1. Outlier چیست؟</h2>
+        <p>Outlier یک observation است که نسبت به الگوی غالب داده، به‌طور غیرعادی دور است.</p>
+        <p>مثلاً:</p>
+        <div class="chart">10
+11
+12
+10
+13
+11
+12
+100</div>
+        <p>عدد:</p>
+        <div class="formula">$$ 100 $$</div>
+        <p>یک outlier نسبت به بقیه داده‌هاست.</p>
+        <p>اما دقت کن:</p>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <p><strong>Outlier بودن یک مفهوم نسبی است.</strong></p>
+            <p>به چه چیزی؟</p>
+            <div class="chart">• distribution
+• population
+• feature
+• context
+• time
+• business domain</div>
+            <p>وابسته است.</p>
+        </div>
+
+        <h2>2. Outlier ≠ Error</h2>
+        <p>این یکی از مهم‌ترین نکات Senior است.</p>
+        <p>فرض کن transactionها:</p>
+        <div class="chart">100
+120
+90
+110
+105
+500000</div>
+        <p>داریم.</p>
+        <p><code>500000</code> می‌تواند:</p>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">حالت 1 — Data Error</div>
+            <p>مثلاً:</p>
+            <div class="chart">5000.00 → 500000</div>
+            <p>به علت bug.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#3fb950;">
+            <div class="inner-title">حالت 2 — Genuine Rare Event</div>
+            <p>واقعاً یک transaction بزرگ بوده.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#d2a8ff;">
+            <div class="inner-title">حالت 3 — Fraud</div>
+            <p>ممکن است مهم‌ترین fraud transaction dataset باشد.</p>
+        </div>
+        <p>پس:</p>
+        <div class="formula">$$ \boxed{Outlier \neq Error} $$</div>
+
+        <h2>3. Outlier vs Anomaly</h2>
+        <p>این دو اصطلاح نزدیک هستند ولی دقیقاً یکی نیستند.</p>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">Outlier</div>
+            <p>بیشتر یک مفهوم آماری است:</p>
+            <p>observation نسبت به distribution غالب، غیرعادی است.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">Anomaly</div>
+            <p>بیشتر مفهومی از رفتار غیرطبیعی در context است.</p>
+        </div>
+        <p>مثلاً:</p>
+        <div class="chart">Temperature = 45°C</div>
+        <p>در یک شهر گرم ممکن است outlier نباشد.</p>
+        <p>ولی:</p>
+        <div class="chart">Temperature = 45°C</div>
+        <p>در یک محیط کنترل‌شده که باید همیشه 20–22 باشد، می‌تواند anomaly باشد.</p>
+
+        <h2>4. Context بسیار مهم است</h2>
+        <p>فرض کن:</p>
+        <div class="chart">Transaction = $10,000</div>
+        <p>در:</p>
+        <div class="chart">Luxury Car Purchase</div>
+        <p>کاملاً طبیعی است.</p>
+        <p>ولی در:</p>
+        <div class="chart">Coffee Shop</div>
+        <p>بسیار غیرعادی است.</p>
+        <p>پس:</p>
+        <div class="formula">$$ \boxed{ Anomaly = Context\ dependent } $$</div>
+
+        <h2>5. Outlier یک Feature یا کل Record؟</h2>
+        <p>این تفاوت هم مهم است.</p>
+        <p>فرض کن:</p>
+        <div class="chart">Age = 150</div>
+        <p>ممکن است:</p>
+        <div class="chart">univariate outlier</div>
+        <p>باشد.</p>
+        <p>اما ممکن است یک رکورد در فضای چندبعدی کاملاً عادی باشد.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Age = 80
+Income = 1M</div>
+        <p>به تنهایی شاید unusual باشد، ولی در یک dataset مربوط به ثروتمندان کاملاً ممکن است.</p>
+
+        <h2>6. Univariate Outlier</h2>
+        <p>فقط یک feature را بررسی می‌کنیم.</p>
+        <p>مثلاً:</p>
+        <div class="formula">$$ X = Age $$</div>
+        <p>و:</p>
+        <div class="chart">18
+22
+25
+30
+28
+31
+200</div>
+        <p><code>200</code> یک univariate outlier است.</p>
+
+        <h2>7. Multivariate Outlier</h2>
+        <p>گاهی هر feature به‌تنهایی طبیعی است، ولی ترکیب آنها غیرطبیعی است.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Age = 25
+Income = $2,000,000</div>
+        <p>هر دو ممکن است individually قابل قبول باشند.</p>
+        <p>اما:</p>
+        <div class="formula">$$ P(Age=25,Income=2M) $$</div>
+        <p>ممکن است بسیار پایین باشد.</p>
+        <p>این یک:</p>
+        <div class="formula">$$ \boxed{Multivariate\ Outlier} $$</div>
+        <p>است.</p>
+
+        <h2>8. Contextual Outlier</h2>
+        <p>یک مقدار ممکن است در یک context طبیعی و در context دیگری غیرطبیعی باشد.</p>
+        <p>مثلاً:</p>
+        <div class="chart">CPU = 90%</div>
+        <p>در ساعت 3 صبح:</p>
+        <div class="chart">suspicious</div>
+        <p>ولی در ساعت 14 هنگام batch processing:</p>
+        <div class="chart">normal</div>
+        <p>بنابراین:</p>
+        <div class="formula">$$ Outlier(x|context) $$</div>
+        <p>ممکن است متفاوت باشد.</p>
+
+        <h2>9. Global vs Local Outlier</h2>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">Global Outlier</div>
+            <p>در کل dataset غیرعادی است.</p>
+            <p>مثلاً:</p>
+            <div class="chart">1
+2
+2
+3
+2
+1000</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">Local Outlier</div>
+            <p>در کل dataset شاید طبیعی باشد، ولی نسبت به neighborhood خودش غیرعادی است.</p>
+            <p>مثلاً دو cluster داریم:</p>
+            <div class="chart">Cluster A:
+10, 11, 12, 13
+
+Cluster B:
+100, 101, 102, 103, 150</div>
+            <p><code>150</code> ممکن است local outlier باشد.</p>
+            <p>این ایده پایه روش‌هایی مثل:</p>
+            <div class="formula">$$ LOF $$</div>
+            <p>است.</p>
+        </div>
+
+        <h2>10. روش اول: Z-Score</h2>
+        <p>یکی از معروف‌ترین روش‌ها:</p>
+        <div class="formula">$$ z=\frac{x-\mu}{\sigma} $$</div>
+        <p>که:</p>
+        <div class="chart">• \(x\): observation
+• \(\mu\): mean
+• \(\sigma\): standard deviation</div>
+        <p>است.</p>
+
+        <!-- INTERACTIVE VISUALIZATION FOR PART 10 -->
+        <div class="visualization">
+            <div class="viz-plot">
+                <canvas id="zScoreCanvas" width="500" height="350"></canvas>
+                <div style="text-align: center; color: #8b949e; font-size: 0.9em; margin-top: 5px;">بازخورد بدهید</div>
+            </div>
+            <div class="viz-controls">
+                <div id="equation-box" class="equation-box">
+                    $$ z = \frac{x - \mu}{\sigma} $$
+                </div>
+                <div id="result-box" class="equation-box" style="font-size: 1.2em; color: #58a6ff;">
+                    $$ z = 1.2, \ \Phi(z) \approx 88.5\% $$
+                </div>
+
+                <div class="slider-row">
+                    <label>x</label>
+                    <input type="range" id="x-slider" min="0" max="10" step="0.1" value="1.2">
+                    <span class="value" id="x-val">1.2</span>
+                </div>
+                <div class="slider-row">
+                    <label>μ</label>
+                    <input type="range" id="mu-slider" min="0" max="10" step="0.1" value="0">
+                    <span class="value" id="mu-val">0</span>
+                </div>
+                <div class="slider-row">
+                    <label>σ</label>
+                    <input type="range" id="sigma-slider" min="0.5" max="3" step="0.1" value="1">
+                    <span class="value" id="sigma-val">1</span>
+                </div>
+            </div>
+        </div>
+        <!-- END VISUALIZATION -->
+
+        <h2>11. تفسیر Z-Score</h2>
+        <p>مثلاً:</p>
+        <div class="formula">$$ z=0 $$</div>
+        <p>یعنی observation روی mean قرار دارد.</p>
+        <p>اگر:</p>
+        <div class="formula">$$ z=2 $$</div>
+        <p>یعنی دو standard deviation بالاتر از mean است.</p>
+        <p>اگر:</p>
+        <div class="formula">$$ z=-3 $$</div>
+        <p>یعنی سه standard deviation پایین‌تر از mean است.</p>
+
+        <h2>12. Rule رایج Z-Score</h2>
+        <p>اغلب به‌عنوان یک heuristic:</p>
+        <div class="formula">$$ |z|>3 $$</div>
+        <p>را outlier در نظر می‌گیرند.</p>
+        <p>گاهی:</p>
+        <div class="formula">$$ |z|>2.5 $$</div>
+        <p>یا:</p>
+        <div class="formula">$$ |z|>3 $$</div>
+        <p>استفاده می‌شود.</p>
+        <p>اما:</p>
+        <div class="chart">3 یک قانون جهانی نیست.</div>
+
+        <h2>13. چرا Z-Score مشکل دارد؟</h2>
+        <p>چون:</p>
+        <div class="formula">$$ z=\frac{x-\mu}{\sigma} $$</div>
+        <p>از:</p>
+        <div class="chart">• Mean
+• Standard deviation</div>
+        <p>استفاده می‌کند.</p>
+        <p>و هر دو به outlier حساس هستند.</p>
+        <p>مثلاً:</p>
+        <div class="chart">10
+11
+12
+13
+14
+1000</div>
+        <p>خود <code>1000</code> می‌تواند mean و std را تغییر دهد.</p>
+        <p>در نتیجه Z-score خودش تحت تأثیر outlier قرار می‌گیرد.</p>
+
+        <h2>14. Z-Score چه زمانی مناسب‌تر است؟</h2>
+        <p>وقتی:</p>
+        <div class="chart">• distribution تقریباً symmetric باشد
+• outlier شدید نداشته باشیم
+• داده approximately Gaussian باشد
+• هدف detection اولیه باشد</div>
+        <p>ولی اگر distribution شدیداً skewed باشد، باید محتاط باشی.</p>
+
+        <h2>15. IQR Method</h2>
+        <p>روش robustتر:</p>
+        <div class="formula">$$ IQR=Q_3-Q_1 $$</div>
+        <p>که:</p>
+        <div class="chart">• \(Q_1\): 25th percentile
+• \(Q_3\): 75th percentile</div>
+        <p>است.</p>
+
+        <h2>16. IQR Rule</h2>
+        <p>Lower fence:</p>
+        <div class="formula">$$ Q_1-1.5IQR $$</div>
+        <p>Upper fence:</p>
+        <div class="formula">$$ Q_3+1.5IQR $$</div>
+        <p>هر مقدار خارج از این بازه:</p>
+        <div class="chart">potential outlier</div>
+        <p>است.</p>
+
+        <h2>17. مثال IQR</h2>
+        <p>فرض کن:</p>
+        <div class="formula">$$ Q_1=10 $$</div>
+        <div class="formula">$$ Q_3=20 $$</div>
+        <p>پس:</p>
+        <div class="formula">$$ IQR=10 $$</div>
+        <p>Upper fence:</p>
+        <div class="formula">$$ 20+1.5(10)=35 $$</div>
+        <p>Lower fence:</p>
+        <div class="formula">$$ 10-1.5(10)=-5 $$</div>
+        <p>پس:</p>
+        <div class="chart">[-5, 35]</div>
+        <p>محدوده معمول است.</p>
+        <p>مثلاً:</p>
+        <div class="chart">40</div>
+        <p>potential outlier است.</p>
+
+        <h2>18. چرا IQR Robust است؟</h2>
+        <p>Median و quartiles نسبت به extreme values مقاوم‌تر از mean/std هستند.</p>
+        <p>بنابراین اگر:</p>
+        <div class="chart">10
+11
+12
+13
+14
+10000</div>
+        <p>داشته باشیم، IQR معمولاً کمتر از mean/std تحت تأثیر قرار می‌گیرد.</p>
+        <p>پس:</p>
+        <div class="formula">$$ \boxed{IQR \rightarrow Robust} $$</div>
+
+        <h2>19. Z-Score vs IQR</h2>
+        <table>
+            <thead><tr><th>ویژگی</th><th>Z-Score</th><th>IQR</th></tr></thead>
+            <tbody>
+                <tr><td>استفاده از Mean</td><td>✅</td><td>❌</td></tr>
+                <tr><td>استفاده از Std</td><td>✅</td><td>❌</td></tr>
+                <tr><td>استفاده از Quartile</td><td>❌</td><td>✅</td></tr>
+                <tr><td>Robust به Outlier</td><td>ضعیف‌تر</td><td>قوی‌تر</td></tr>
+                <tr><td>مناسب Gaussian</td><td>✅</td><td>نه لزوماً</td></tr>
+                <tr><td>مناسب skewed data</td><td>محدود</td><td>بهتر</td></tr>
+                <tr><td>سادگی</td><td>بسیار ساده</td><td>بسیار ساده</td></tr>
+            </tbody>
+        </table>
+
+        <h2>20. Robust Statistics</h2>
+        <p>Robust Statistics یعنی روش‌های آماری‌ای که:</p>
+        <div class="chart">نسبت به contamination و extreme observations حساسیت کمتری دارند.</div>
+        <p>مثلاً:</p>
+        <div class="chart">Mean
+$$ \mu $$
+non-robust است.</div>
+        <div class="chart">Median
+robustتر است.</div>
+
+        <h2>21. Mean vs Median</h2>
+        <p>داده:</p>
+        <div class="chart">10
+11
+12
+13
+1000</div>
+        <p>Mean:</p>
+        <div class="formula">$$ 209.2 $$</div>
+        <p>ولی Median:</p>
+        <div class="formula">$$ 12 $$</div>
+        <p>است.</p>
+        <div class="chart">Mean شدیداً تحت تأثیر outlier قرار گرفت.</div>
+
+        <h2>22. Robust Estimators</h2>
+        <p>نمونه‌های مهم:</p>
+        <div class="chart">• Median
+• IQR
+• MAD
+• Robust scaling
+• Trimmed mean
+• Winsorized statistics</div>
+
+        <h2>23. MAD — Median Absolute Deviation</h2>
+        <p>یکی از مفاهیم مهم Robust Statistics:</p>
+        <div class="formula">$$ MAD=Median(|x_i-Median(X)|) $$</div>
+        <p>یعنی:</p>
+        <div class="chart">1. Median را پیدا کن.
+2. فاصله هر point از median را بگیر.
+3. Median این فاصله‌ها را بگیر.</div>
+
+        <h2>24. Robust Z-Score</h2>
+        <p>می‌توانیم از MAD برای ساخت robust z-score استفاده کنیم:</p>
+        <div class="formula">$$ z_{robust} = \frac{x-Median(X)} {1.4826\times MAD} $$</div>
+        <p>ضریب:</p>
+        <div class="formula">$$ 1.4826 $$</div>
+        <p>برای scale کردن MAD نسبت به standard deviation در شرایط Gaussian استفاده می‌شود.</p>
+        <div class="chart">این روش در presence of extreme outliers بسیار مفید است.</div>
+
+        <h2>25. Outlier Detection ≠ Outlier Treatment</h2>
+        <p>این دو مرحله را جدا کن.</p>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">Detection</div>
+            <p>پیدا کنیم کدام observation unusual است.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">Treatment</div>
+            <p>تصمیم بگیریم با آن چه کنیم.</p>
+        </div>
+        <p>مثلاً:</p>
+        <div class="chart">Detect
+ ↓
+Outlier
+ ↓
+Investigate
+ ↓
+Keep / Correct / Remove / Cap / Transform</div>
+
+        <h2>26. مهم‌ترین اشتباه</h2>
+        <p>این:</p>
+        <div class="chart">if outlier:
+    delete()</div>
+        <p>است.</p>
+        <div class="chart">در ML حرفه‌ای:
+Detection ≠ Deletion</div>
+
+        <h2>27. چرا نباید Outlier را فوراً حذف کنیم؟</h2>
+        <p>چون ممکن است:</p>
+        <div class="chart">1. Signal باشد
+مثلاً fraud.
+
+2. Rare class باشد
+مثلاً بیماری نادر.
+
+3. مهم‌ترین business case باشد
+مثلاً high-value customer.
+
+4. Distribution واقعی heavy-tailed باشد.
+5. Dataset sampling درست نباشد.</div>
+
+        <h2>28. مثال Fraud Detection</h2>
+        <p>فرض کن:</p>
+        <div class="chart">Normal:
+$10
+$20
+$30
+$40
+
+Fraud:
+$50,000</div>
+        <p>اگر outlier detector اجرا کنی:</p>
+        <div class="chart">$50,000 → Outlier</div>
+        <p>و آن را حذف کنی:</p>
+        <div class="chart">شاید مهم‌ترین fraud نمونه را حذف کرده باشی.</div>
+        <p>پس:</p>
+        <div class="formula">$$ \boxed{ Outlier \ can\ be\ the\ signal } $$</div>
+
+        <h2>29. Outlier در Medical ML</h2>
+        <p>مثلاً:</p>
+        <div class="chart">Heart Rate = 220</div>
+        <p>می‌تواند outlier باشد.</p>
+        <p>اما شاید:</p>
+        <div class="chart">بیمار واقعاً وضعیت خطرناکی دارد.</div>
+        <p>حذف آن می‌تواند دقیقاً نمونه‌هایی را حذف کند که مدل باید یاد بگیرد.</p>
+
+        <h2>30. Outlier در Anomaly Detection</h2>
+        <p>اینجا قضیه برعکس است.</p>
+        <p>اگر مسئله:</p>
+        <div class="formula">$$ Anomaly Detection $$</div>
+        <p>باشد، unusual observations دقیقاً همان target ما هستند.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Normal transactions → 99.9%
+Anomalies → 0.1%</div>
+        <p>اگر outlierها را حذف کنیم:</p>
+        <div class="chart">کل مسئله را نابود کرده‌ایم.</div>
+
+        <h2>31. Winsorization</h2>
+        <p>به جای حذف outlier:</p>
+        <p>مقدارهای extreme را به یک percentile مشخص cap می‌کنیم.</p>
+        <p>مثلاً:</p>
+        <div class="chart">99th percentile = 100</div>
+        <p>هر چیزی بالاتر:</p>
+        <div class="chart">120 → 100
+500 → 100
+10000 → 100</div>
+        <p>می‌شود.</p>
+
+        <h2>32. مثال Winsorization</h2>
+        <p>Original:</p>
+        <div class="chart">10
+12
+13
+15
+20
+1000</div>
+        <p>فرض کنیم upper cap:</p>
+        <div class="formula">$$ 100 $$</div>
+        <p>باشد.</p>
+        <p>بعد:</p>
+        <div class="chart">10
+12
+13
+15
+20
+100</div>
+        <p>داریم.</p>
+        <div class="chart">Observation حذف نشده است.
+فقط extreme value محدود شده.</div>
+
+        <h2>33. Winsorization vs Trimming</h2>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">Winsorization</div>
+            <p>رکورد را نگه می‌داریم:</p>
+            <div class="formula">$$ x>Q_{99} \rightarrow Q_{99} $$</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">Trimming</div>
+            <p>رکورد را حذف می‌کنیم:</p>
+            <div class="formula">$$ x>Q_{99} \rightarrow Remove $$</div>
+        </div>
+
+        <h2>34. Trimming</h2>
+        <p>مثلاً 1% بالایی و پایینی را حذف کنیم:</p>
+        <div class="chart">Bottom 1% → remove
+Top 1% → remove</div>
+        <p>این روش در بعضی تحلیل‌های آماری مفید است.</p>
+        <div class="chart">ولی در ML باید بسیار محتاط باشی.</div>
+
+        <h2>35. چرا Trimming خطرناک است؟</h2>
+        <p>اگر extreme observations:</p>
+        <div class="chart">Rare but important</div>
+        <p>باشند، آنها را حذف می‌کنی.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Fraud = 1</div>
+        <p>در میان extreme transactionها.</p>
+        <p>ممکن است:</p>
+        <div class="formula">$$ Recall $$</div>
+        <p>مدل شدیداً کاهش پیدا کند.</p>
+
+        <h2>36. Winsorization چه مشکلی دارد؟</h2>
+        <p>اطلاعات magnitude را از بین می‌برد.</p>
+        <p>مثلاً:</p>
+        <div class="chart">1000
+5000
+10000</div>
+        <p>همه ممکن است بشوند:</p>
+        <div class="chart">500</div>
+        <p>در نتیجه مدل دیگر تفاوت بین extreme values را نمی‌بیند.</p>
+
+        <h2>37. Log Transformation</h2>
+        <p>برای positive skewed data:</p>
+        <div class="formula">$$ x'=\log(1+x) $$</div>
+        <p>می‌تواند extreme values را فشرده کند.</p>
+        <p>مثلاً:</p>
+        <div class="chart">10
+100
+1000
+10000</div>
+        <p>بعد از log:</p>
+        <div class="chart">~2.4
+~4.6
+~6.9
+~9.2</div>
+        <p>فاصله‌ها بسیار کمتر می‌شوند.</p>
+
+        <h2>38. چرا Log Transform مفید است؟</h2>
+        <p>برای distributions مثل:</p>
+        <div class="chart">Income
+Transaction Amount
+Population
+Sales
+Count</div>
+        <p>که long-tail دارند.</p>
+        <p>به جای:</p>
+        <div class="chart">        *
+        *
+        *
+       *
+      *
+     *
+****</div>
+        <p>ممکن است distribution متعادل‌تر شود.</p>
+
+        <h2>39. اما Log Transformation Outlier را حذف نمی‌کند</h2>
+        <p>این نکته مهم است.</p>
+        <p>Log فقط:</p>
+        <div class="chart">scale / geometry داده را تغییر می‌دهد.</div>
+        <p>Outlier هنوز ممکن است outlier باشد.</p>
+        <p>فقط اثر آن کمتر می‌شود.</p>
+
+        <h2>40. Outlier Detection با Business Rules</h2>
+        <p>یکی از بهترین روش‌ها در production:</p>
+        <div class="chart">Domain Constraints</div>
+        <p>مثلاً:</p>
+        <div class="chart">Age < 0 → invalid
+Age > 120 → suspicious</div>
+        <p>یا:</p>
+        <div class="chart">TransactionAmount < 0</div>
+        <p>ممکن است invalid باشد.</p>
+        <div class="chart">این از Z-score بهتر است چون:
+domain knowledge را مستقیماً وارد می‌کند.</div>
+
+        <h2>41. Statistical Outlier vs Business Invalid Value</h2>
+        <p>این دو را جدا کن.</p>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">Statistical Outlier</div>
+            <div class="chart">Age = 80</div>
+            <p>ممکن است statistically unusual باشد.</p>
+            <p>اما valid است.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">Invalid</div>
+            <div class="chart">Age = -50</div>
+            <p>اصلاً valid نیست.</p>
+        </div>
+
+        <h2>42. Outlier Detection نباید Blind باشد</h2>
+        <p>یک Senior ML Engineer می‌پرسد:</p>
+        <div class="chart">Is this value:
+    impossible?
+    improbable?
+    rare?
+    erroneous?
+    fraudulent?
+    important?</div>
+        <p>این پنج سؤال خیلی مهم‌اند.</p>
+
+        <h2>43. Leverage Point</h2>
+        <p>حالا می‌رسیم به یک مفهوم مهم‌تر در Regression.</p>
+        <p>فرض کن:</p>
+        <div class="formula">$$ y=\beta_0+\beta_1x $$</div>
+        <p>داریم.</p>
+        <p>یک observation ممکن است در فضای featureها خیلی دور از بقیه باشد.</p>
+        <p>مثلاً:</p>
+        <div class="chart">x:
+1
+2
+3
+4
+5
+100</div>
+        <p>این point:</p>
+        <div class="chart">x=100</div>
+        <p>high leverage دارد.</p>
+
+        <h2>44. چرا به آن Leverage می‌گوییم؟</h2>
+        <p>چون این observation می‌تواند روی محل fit شدن regression line اثر زیادی بگذارد.</p>
+        <p>یعنی:</p>
+        <div class="chart">نقطه‌ای با feature value غیرعادی می‌تواند مدل را به سمت خودش بکشد.</div>
+
+        <h2>45. Leverage به X مربوط است</h2>
+        <p>نکته مهم:</p>
+        <div class="formula">$$ \boxed{ Leverage \rightarrow X-space } $$</div>
+        <p>یعنی بیشتر به موقعیت observation در predictor space مربوط است.</p>
+        <p>نه مستقیماً به residual.</p>
+
+        <h2>46. High Leverage Point الزاماً Outlier در Y نیست</h2>
+        <p>مثلاً:</p>
+        <div class="chart">X = 100
+Y = perfectly follows trend</div>
+        <p>این point:</p>
+        <div class="chart">• high leverage است
+• ولی residual ممکن است کوچک باشد.</div>
+        <p>پس:</p>
+        <div class="formula">$$ High\ Leverage \neq Large\ Residual $$</div>
+
+        <h2>47. Influential Point</h2>
+        <p>حالا مفهوم مهم‌تر:</p>
+        <p>Pointی که حذف آن باعث تغییر قابل توجه در مدل شود.</p>
+        <p>مثلاً حذف یک point باعث شود:</p>
+        <div class="chart">Before:
+slope = 2.0
+
+After:
+slope = 1.1</div>
+        <p>این observation:</p>
+        <div class="formula">$$ \boxed{Influential} $$</div>
+        <p>است.</p>
+
+        <h2>48. رابطه Outlier / Leverage / Influence</h2>
+        <p>این سه را باید خیلی خوب از هم جدا کنی:</p>
+        <table>
+            <thead><tr><th>مفهوم</th><th>سؤال</th></tr></thead>
+            <tbody>
+                <tr><td>Outlier</td><td>آیا observation غیرعادی است؟</td></tr>
+                <tr><td>Leverage</td><td>آیا X آن دور از بقیه است؟</td></tr>
+                <tr><td>Influence</td><td>آیا حضور آن مدل را تغییر می‌دهد؟</td></tr>
+            </tbody>
+        </table>
+
+        <h2>49. حالت‌های مختلف</h2>
+        <div class="chart">Case 1
+Normal X
+Normal Y
+
+نه outlier، نه leverage، نه influence.
+
+Case 2
+Normal X
+Extreme Y
+
+Potential Y-outlier.
+Residual بزرگ.
+
+Case 3
+Extreme X
+Y follows trend
+
+High leverage ولی ممکن است influence کم باشد.
+
+Case 4
+Extreme X
+Extreme Y
+
+ممکن است:
+$$ High\ leverage + High\ influence $$
+باشد.</div>
+
+        <h2>50. Cook's Distance</h2>
+        <p>برای بررسی influence در regression بسیار معروف است:</p>
+        <div class="formula">$$ D_i $$</div>
+        <p>به صورت مفهومی می‌پرسد:</p>
+        <div class="chart">اگر observation \(i\) را حذف کنیم، fitted model چقدر تغییر می‌کند؟</div>
+        <p>یکی از فرمول‌های رایج:</p>
+        <div class="formula">$$ D_i= \frac{ e_i^2 }{ p\cdot MSE } \frac{ h_{ii} }{ (1-h_{ii})^2 } $$</div>
+        <p>که:</p>
+        <div class="chart">• \(e_i\): residual
+• \(h_{ii}\): leverage
+• \(p\): تعداد پارامترها</div>
+        <p>است.</p>
+
+        <h2>51. Cook's Distance به چه چیزی حساس است؟</h2>
+        <p>ترکیبی از:</p>
+        <div class="formula">$$ Residual $$</div>
+        <p>و:</p>
+        <div class="formula">$$ Leverage $$</div>
+        <p>است.</p>
+        <p>یعنی:</p>
+        <div class="formula">$$ \boxed{ Influence \approx Residual \times Leverage } $$</div>
+        <p>این یک intuition است، نه تعریف دقیق.</p>
+
+        <h2>52. چرا این برای ML مهم است؟</h2>
+        <p>در مدل‌های linear:</p>
+        <div class="chart">Extreme X
++
+Extreme Y</div>
+        <p>می‌تواند regression coefficientها را شدیداً تغییر دهد.</p>
+        <p>پس فقط بررسی distribution feature کافی نیست.</p>
+        <p>باید:</p>
+        <div class="chart">اثر observation روی model fit</div>
+        <p>را هم بررسی کنی.</p>
+
+        <h2>53. مثال</h2>
+        <p>فرض کن داده:</p>
+        <div class="chart">X    Y
+
+1    2
+2    4
+3    6
+4    8
+5    10
+100  10</div>
+        <p>point:</p>
+        <div class="chart">(100,10)</div>
+        <p>از نظر X بسیار دور است.</p>
+        <p>ولی با trend سازگار نیست.</p>
+        <p>پس:</p>
+        <div class="chart">• high leverage
+• large residual
+• potentially highly influential</div>
+        <p>است.</p>
+
+        <h2>54. Outlier در Tree Models</h2>
+        <p>نکته مهم:</p>
+        <div class="chart">Tree-based models معمولاً نسبت به feature outliers کمتر حساس‌اند.</div>
+        <p>چرا؟</p>
+        <p>چون tree بر اساس:</p>
+        <div class="formula">$$ X < threshold $$</div>
+        <p>split می‌کند.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Income < 5000</div>
+        <p>نه بر اساس distance از mean.</p>
+        <div class="chart">پس extreme scaling کمتر مشکل ایجاد می‌کند.</div>
+
+        <h2>55. Outlier در Linear Regression</h2>
+        <p>Linear Regression می‌تواند به outliers حساس باشد.</p>
+        <p>چرا؟</p>
+        <p>Loss:</p>
+        <div class="formula">$$ MSE=\frac1n\sum(y_i-\hat y_i)^2 $$</div>
+        <p>است.</p>
+        <p>Residual به توان 2 می‌رسد.</p>
+        <p>اگر:</p>
+        <div class="formula">$$ e=100 $$</div>
+        <p>باشد:</p>
+        <div class="formula">$$ e^2=10000 $$</div>
+        <p>پس outlier می‌تواند loss را dominate کند.</p>
+
+        <h2>56. MAE در مقابل MSE</h2>
+        <p>MAE:</p>
+        <div class="formula">$$ MAE=\frac1n\sum|y_i-\hat y_i| $$</div>
+        <p>است.</p>
+        <p>MSE:</p>
+        <div class="formula">$$ MSE=\frac1n\sum(y_i-\hat y_i)^2 $$</div>
+        <p>است.</p>
+        <p>MSE نسبت به residualهای بزرگ حساس‌تر است.</p>
+        <p>پس:</p>
+        <div class="formula">$$ \boxed{ MSE \rightarrow More\ sensitive\ to\ outliers } $$</div>
+
+        <h2>57. Huber Loss</h2>
+        <p>Huber Loss تلاش می‌کند:</p>
+        <p>نزدیک صفر مثل MSE باشد و برای residualهای بزرگ مثل MAE رفتار کند.</p>
+        <div class="formula">$$ L_\delta(r)= \begin{cases} \frac12r^2 & |r|\leq\delta\\ \delta(|r|-\frac12\delta)&|r|>\delta \end{cases} $$</div>
+        <p>این برای regression با outlierها بسیار مفید است.</p>
+
+        <h2>58. چرا Huber مهم است؟</h2>
+        <p>چون:</p>
+        <div class="chart">Small error
+   ↓
+Quadratic
+   ↓
+Good optimization
+
+Large error
+   ↓
+Linear
+   ↓
+Less sensitive to outliers</div>
+        <p>پس:</p>
+        <div class="formula">$$ \boxed{ Huber = Robust\ compromise\ between\ MSE\ and\ MAE } $$</div>
+
+        <h2>59. Scaling و Outliers</h2>
+        <p>StandardScaler:</p>
+        <div class="formula">$$ z=\frac{x-\mu}{\sigma} $$</div>
+        <p>خودش نسبت به outliers حساس است.</p>
+        <p>اگر extreme values زیاد باشند:</p>
+        <div class="chart">• mean تغییر می‌کند
+• std تغییر می‌کند</div>
+
+        <h2>60. RobustScaler</h2>
+        <p>RobustScaler از median و IQR استفاده می‌کند.</p>
+        <p>به‌صورت مفهومی:</p>
+        <div class="formula">$$ x'= \frac{x-Median(X)} {IQR(X)} $$</div>
+        <p>بنابراین برای dataهای دارای extreme values می‌تواند مناسب‌تر باشد.</p>
+
+        <h2>61. Outlier و Neural Networks</h2>
+        <p>Neural Networks هم می‌توانند از outliers آسیب ببینند، ولی شکل اثر متفاوت است.</p>
+        <p>مثلاً inputهای extreme می‌توانند:</p>
+        <div class="chart">• activationهای بزرگ
+• gradientهای بزرگ
+• training instability</div>
+        <p>ایجاد کنند.</p>
+        <p>در نتیجه ممکن است نیاز باشد:</p>
+        <div class="chart">• log transform
+• robust scaling
+• clipping
+• normalization
+• robust loss</div>
+        <p>را بررسی کنیم.</p>
+
+        <h2>62. Outlier و Gradient Explosion</h2>
+        <p>فرض کن input خیلی بزرگ باشد:</p>
+        <div class="formula">$$ x=10^8 $$</div>
+        <p>و model:</p>
+        <div class="formula">$$ y=wx $$</div>
+        <p>باشد.</p>
+        <p>Gradient نسبت به \(w\):</p>
+        <div class="formula">$$ \frac{\partial L}{\partial w} $$</div>
+        <p>می‌تواند بسیار بزرگ شود.</p>
+        <div class="chart">پس extreme inputها در بعضی architectureها می‌توانند به training instability کمک کنند.</div>
+
+        <h2>63. Outlier Detection در High Dimensions</h2>
+        <p>این قسمت خیلی مهم است.</p>
+        <p>در high-dimensional data:</p>
+        <div class="chart">1000 features</div>
+        <p>روش‌های ساده مثل Z-score برای هر feature ممکن است کافی نباشند.</p>
+        <p>چون outlier ممکن است:</p>
+        <div class="chart">در هیچ feature منفردی extreme نباشد ولی در joint distribution غیرعادی باشد.</div>
+
+        <h2>64. مثال Multivariate</h2>
+        <p>فرض کن:</p>
+        <div class="chart">Age = 30
+Income = 50k</div>
+        <p>طبیعی است.</p>
+        <p>اما:</p>
+        <div class="chart">Age = 30
+Income = 2M</div>
+        <p>ممکن است joint anomaly باشد.</p>
+        <p>روش‌هایی مثل:</p>
+        <div class="chart">• Mahalanobis Distance
+• Isolation Forest
+• Local Outlier Factor
+• One-Class SVM
+• Autoencoder</div>
+        <p>می‌توانند مناسب‌تر باشند.</p>
+
+        <h2>65. Mahalanobis Distance</h2>
+        <p>برای multivariate data:</p>
+        <div class="formula">$$ D_M(x) = \sqrt{ (x-\mu)^T \Sigma^{-1} (x-\mu) } $$</div>
+        <p>فرق مهم با Euclidean distance این است که:</p>
+        <div class="chart">covariance structure را در نظر می‌گیرد.</div>
+
+        <h2>66. چرا Covariance مهم است؟</h2>
+        <p>فرض کن:</p>
+        <div class="chart">Height ↑
+Weight ↑</div>
+        <p>با هم correlation دارند.</p>
+        <p>یک point که:</p>
+        <div class="chart">Height high
+Weight high</div>
+        <p>است، شاید اصلاً anomaly نباشد.</p>
+        <div class="chart">Mahalanobis می‌تواند این correlation را لحاظ کند.</div>
+
+        <h2>67. Isolation Forest</h2>
+        <p>Isolation Forest بر ایده‌ای جالب بنا شده:</p>
+        <div class="chart">Anomalies راحت‌تر isolate می‌شوند.</div>
+        <p>مثلاً:</p>
+        <div class="chart">Normal points:
+████████████████
+
+Anomaly:
+*</div>
+        <p>با random splits، anomaly معمولاً با تعداد split کمتری جدا می‌شود.</p>
+        <p>پس:</p>
+        <div class="formula">$$ Shorter\ path \rightarrow More\ anomalous $$</div>
+
+        <h2>68. Local Outlier Factor — LOF</h2>
+        <p>LOF به جای نگاه کردن به کل dataset:</p>
+        <div class="chart">density یک point را نسبت به همسایه‌هایش بررسی می‌کند.</div>
+        <p>اگر:</p>
+        <div class="formula">$$ Density(x) \ll Density(neighbors) $$</div>
+        <p>باشد، point مشکوک است.</p>
+        <div class="chart">این برای local anomalies بسیار مفید است.</div>
+
+        <h2>69. Outlier Detection vs Anomaly Detection</h2>
+        <p>در ML مدرن بهتر است این distinction را حفظ کنی:</p>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">Outlier Detection</div>
+            <p>اغلب:</p>
+            <div class="chart">identify observations statistically unusual.</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">Anomaly Detection</div>
+            <p>اغلب:</p>
+            <div class="chart">identify observations that violate expected behavior.</div>
+        </div>
+        <div class="chart">البته در literature این اصطلاحات overlap زیادی دارند.</div>
+
+        <h2>70. Outlier Detection و Train/Test</h2>
+        <p>یک اشتباه بسیار خطرناک:</p>
+        <div class="chart">Train + Test
+      ↓
+Detect Outliers
+      ↓
+Remove
+      ↓
+Train</div>
+        <p>ممکن است test distribution را وارد preprocessing کنی.</p>
+        <p>بهتر:</p>
+        <div class="chart">Train
+ ↓
+Fit detection rule
+ ↓
+Transform Train
+
+Test
+ ↓
+Apply learned rule</div>
+        <div class="chart">البته اگر هدف anomaly detection در production باشد، طراحی pipeline متفاوت خواهد بود.</div>
+
+        <h2>71. Outlier Removal و Cross-Validation</h2>
+        <p>مثلاً:</p>
+        <div class="chart">X_clean = remove_outliers(X)
+cross_val_score(model, X_clean, y, cv=5)</div>
+        <p>ممکن است leakage ایجاد کند اگر outlier detection قبل از CV روی کل dataset انجام شده باشد.</p>
+        <p>روش بهتر:</p>
+        <div class="chart">Fold
+ ├── train
+ │    └── fit outlier detector
+ │
+ └── validation
+      └── apply detector</div>
+        <div class="chart">ولی اینکه validation outliers را حذف کنی یا نه، بستگی به هدف deployment دارد.</div>
+
+        <h2>72. یک نکته خیلی مهم درباره Test Set</h2>
+        <p>گاهی می‌خواهی ببینی model در برابر outlierها چطور رفتار می‌کند.</p>
+        <p>در این حالت:</p>
+        <div class="chart">نباید outlierهای test را پاک کنی صرفاً برای اینکه metric بهتر شود.</div>
+        <p>چون شاید دقیقاً می‌خواهی performance روی rare/extreme cases را بسنجی.</p>
+
+        <h2>73. Outlier Removal و Distribution Shift</h2>
+        <p>فرض کن production شامل:</p>
+        <div class="chart">5% extreme customers</div>
+        <p>باشد.</p>
+        <p>ولی train:</p>
+        <div class="chart">0% extreme customers</div>
+        <p>باشد چون تمام outliers را حذف کرده‌ای.</p>
+        <div class="chart">مدل در production شکست می‌خورد.</div>
+        <p>یعنی outlier removal باعث:</p>
+        <div class="formula">$$ Train\ Distribution \neq Production\ Distribution $$</div>
+        <p>شده است.</p>
+
+        <h2>74. Outlier و Class Imbalance</h2>
+        <p>این دو گاهی با هم اشتباه می‌شوند.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Fraud = 1%
+Normal = 99%</div>
+        <p>Fraud samples ممکن است در feature space unusual باشند.</p>
+        <p>اما:</p>
+        <div class="chart">rare class ≠ outlier</div>
+        <p>یک Fraud ممکن است کاملاً داخل distribution قرار داشته باشد.</p>
+        <p>و یک Normal customer ممکن است outlier باشد.</p>
+
+        <h2>75. Outlier و Rare Event</h2>
+        <div class="formula">$$ Rare \neq Wrong $$</div>
+        <p>این جمله را حفظ کن.</p>
+        <p>یک event می‌تواند:</p>
+        <div class="chart">• بسیار نادر
+• کاملاً معتبر
+• بسیار مهم</div>
+        <p>باشد.</p>
+        <p>مثلاً:</p>
+        <div class="chart">1 successful $10M transaction</div>
+        <p>ممکن است rare باشد، ولی حذف آن می‌تواند اطلاعات ارزشمند را از بین ببرد.</p>
+
+        <h2>76. چه زمانی Outlier را حذف کنیم؟</h2>
+        <p>احتمالاً وقتی evidence داریم که:</p>
+        <div class="chart">1. Data Entry Error
+Age = 250
+
+2. Sensor Failure
+Temperature = -999
+
+3. Impossible Value
+TransactionAmount < 0
+در حالتی که منفی از نظر domain غیرممکن است.
+
+4. Corrupted Record
+وقتی مشخص است record خراب شده.</div>
+
+        <h2>77. چه زمانی حذف نکنیم؟</h2>
+        <p>اگر:</p>
+        <div class="chart">• rare but valid
+• fraud
+• medical emergency
+• high-value customer
+• extreme weather
+• production incident
+• rare class
+• legitimate heavy tail</div>
+        <p>باشد.</p>
+
+        <h2>78. جایگزین حذف Outlier</h2>
+        <p>می‌توانی:</p>
+        <div class="chart">1. Keep
+هیچ کاری نکن.
+
+2. Transform
+مثلاً:
+$$ log(1+x) $$
+
+3. Winsorize
+Cap extreme values.
+
+4. Robust Scaling
+Median/IQR.
+
+5. Robust Loss
+Huber / MAE.
+
+6. Separate Model
+برای segment خاص.
+
+7. Add Indicator
+مثلاً:
+is_extreme = 1</div>
+
+        <h2>79. Outlier Indicator</h2>
+        <p>مثلاً:</p>
+        <div class="chart">income > P99</div>
+        <p>یک feature بساز:</p>
+        <div class="chart">income_extreme = 1</div>
+        <p>و مقدار را شاید transform کنی.</p>
+        <div class="chart">این strategy می‌تواند هم:
+magnitude
+و هم:
+extremeness
+را به مدل بدهد.</div>
+
+        <h2>80. یک Strategy حرفه‌ای</h2>
+        <p>مثلاً برای Transaction Amount:</p>
+        <div class="chart">Raw Amount
+      │
+      ├── log1p(amount)
+      │
+      ├── is_extreme
+      │
+      └── robust scaling</div>
+        <p>به جای:</p>
+        <div class="chart">delete(amount > threshold)</div>
+        <div class="chart">این approach ممکن است signal بیشتری حفظ کند.</div>
+
+        <h2>81. Outlier Threshold باید از Train بیاید</h2>
+        <p>مثلاً:</p>
+        <div class="chart">99th percentile</div>
+        <p>را روی کل dataset محاسبه نکن.</p>
+        <p>درست:</p>
+        <div class="chart">Train
+ ↓
+calculate P99
+ ↓
+save threshold
+ ↓
+Validation/Test → apply threshold</div>
+
+        <h2>82. Threshold در Production</h2>
+        <p>اگر:</p>
+        <div class="formula">$$ P99_{train}=1000 $$</div>
+        <p>باشد:</p>
+        <div class="chart">amount > 1000</div>
+        <p>را extreme در نظر می‌گیری.</p>
+        <p>ولی اگر production distribution تغییر کند:</p>
+        <div class="chart">P99_production = 3000</div>
+        <p>باید بررسی کنی:</p>
+        <div class="chart">آیا business واقعاً تغییر کرده یا threshold قدیمی شده؟</div>
+
+        <h2>83. Outlier Monitoring</h2>
+        <p>در production باید monitor کنی:</p>
+        <div class="chart">Outlier Rate</div>
+        <p>مثلاً:</p>
+        <div class="chart">Feature	Train	Production
+income	1.0%	1.2%
+amount	1.5%	1.8%
+age	0.2%	7.5%</div>
+        <div class="chart">اگر Age suddenly:
+$$ 0.2\%\rightarrow7.5\% $$
+شود، احتمالاً data quality problem یا distribution shift داریم.</div>
+
+        <h2>84. Outlier Rate خودش Metric است</h2>
+        <p>مثلاً:</p>
+        <div class="formula">$$ OutlierRate= \frac{\#Outliers}{N} $$</div>
+        <p>و می‌توانی آن را در طول زمان monitor کنی:</p>
+        <div class="chart">Day 1 → 1.2%
+Day 2 → 1.1%
+Day 3 → 1.3%
+...
+Day 30 → 8.9%</div>
+        <div class="chart">این می‌تواند alert ایجاد کند.</div>
+
+        <h2>85. Outlier Detection و Data Drift</h2>
+        <p>اگر outlier rate تغییر کند:</p>
+        <div class="formula">$$ P_{train}(X) \neq P_{production}(X) $$</div>
+        <p>ممکن است Data Drift رخ داده باشد.</p>
+        <p>اما باز هم:</p>
+        <div class="chart">افزایش outlier rate الزاماً به معنی drift نیست.</div>
+        <p>باید context را بررسی کرد.</p>
+
+        <h2>86. یک نکته بسیار مهم درباره Gaussian Assumption</h2>
+        <p>خیلی‌ها می‌گویند:</p>
+        <div class="chart">«هر چیزی که Z-score > 3 دارد outlier است.»</div>
+        <p>این ساده‌سازی است.</p>
+        <p>اگر distribution واقعاً heavy-tailed باشد:</p>
+        <div class="chart">Extreme values</div>
+        <p>ممکن است کاملاً normal باشند.</p>
+        <p>مثلاً:</p>
+        <div class="chart">• financial returns
+• income
+• transaction amounts
+• web traffic</div>
+        <p>اغلب Gaussian ساده نیستند.</p>
+
+        <h2>87. Heavy-Tailed Distribution</h2>
+        <p>مثلاً:</p>
+        <div class="chart">Most values small
+Few values extremely large</div>
+        <p>این الزاماً data error نیست.</p>
+        <p>ممکن است distribution ذاتاً:</p>
+        <div class="formula">$$ Heavy\ Tailed $$</div>
+        <p>باشد.</p>
+        <div class="chart">در این شرایط حذف extreme values می‌تواند distribution واقعی را نابود کند.</div>
+
+        <h2>88. Tail ≠ Outlier</h2>
+        <p>این جمله خیلی مهم است:</p>
+        <div class="formula">$$ \boxed{ Tail\ observation \neq necessarily\ outlier } $$</div>
+        <p>یک observation ممکن است در tail باشد ولی کاملاً از distribution واقعی پیروی کند.</p>
+
+        <h2>89. Quantile-Based Detection</h2>
+        <p>به جای Z-score می‌توانیم بگوییم:</p>
+        <div class="chart">x < P1
+یا
+x > P99</div>
+        <p>potential extreme است.</p>
+        <div class="chart">این روش برای skewed distributions ساده و مفید است.</div>
+
+        <h2>90. ولی P99 هم قانون مطلق نیست</h2>
+        <p>اگر:</p>
+        <div class="chart">1,000,000 records</div>
+        <p>داشته باشی، P99 یعنی:</p>
+        <div class="chart">10,000 observations</div>
+        <p>به‌صورت قراردادی در tail قرار می‌گیرند.</p>
+        <div class="chart">این لزوماً به معنی outlier بودن آنها نیست.</div>
+
+        <h2>91. Statistical vs ML-based Detection</h2>
+        <div class="chart">Statistical
+• Z-score
+• IQR
+• MAD
+• Quantile
+
+ML-based
+• Isolation Forest
+• LOF
+• One-Class SVM
+• Autoencoder
+
+Domain-based
+• Business rules
+• Physical constraints
+• Regulatory constraints</div>
+        <div class="chart">بهترین سیستم‌ها معمولاً ترکیبی از اینها هستند.</div>
+
+        <h2>92. Outlier Handling Decision Framework</h2>
+        <p>این framework را برای مصاحبه و پروژه حفظ کن:</p>
+        <div class="chart">                OUTLIER
+                   │
+                   ▼
+          Is it impossible?
+             /          \
+           YES           NO
+            │             │
+         Correct/        Is it
+         Remove          legitimate?
+                         /      \
+                       NO        YES
+                       │          │
+                   Investigate   KEEP
+                       │           │
+                       ▼           ▼
+                 Data Quality   Transform?
+                                Robust Model?
+                                Indicator?</div>
+
+        <h2>93. مثال Senior-Level: Fraud</h2>
+        <p>فرض کن:</p>
+        <div class="chart">Transaction Amount</div>
+        <p>داده:</p>
+        <div class="chart">10
+20
+30
+50
+100
+500
+10000
+500000</div>
+        <p>Z-score می‌گوید:</p>
+        <div class="chart">500000 → outlier</div>
+        <p>ولی business knowledge می‌گوید:</p>
+        <div class="chart">High-value transaction</div>
+        <p>و fraud labels نشان می‌دهند:</p>
+        <div class="chart">P(Fraud | Amount > 10000)</div>
+        <p>خیلی بالاست.</p>
+        <p>پس:</p>
+        <div class="chart">❌ حذف نمی‌کنیم.</div>
+        <p>ممکن است:</p>
+        <div class="chart">log_amount
+amount_percentile
+is_high_value</div>
+        <p>بسازیم.</p>
+
+        <h2>94. مثال Data Quality</h2>
+        <div class="chart">Age:
+20
+21
+25
+30
+35
+250</div>
+        <p>اینجا:</p>
+        <div class="chart">250</div>
+        <p>احتمالاً impossible است.</p>
+        <p>اگر domain می‌گوید:</p>
+        <div class="formula">$$ Age \le 120 $$</div>
+        <p>پس:</p>
+        <div class="chart">250 → invalid</div>
+        <p>و می‌توانیم:</p>
+        <div class="chart">• correct from source
+• mark as missing
+• remove record
+• investigate source</div>
+        <p>کنیم.</p>
+
+        <h2>95. Outlier و Missing Data</h2>
+        <p>گاهی outlier را نباید حذف کرد؛ بلکه باید به missing تبدیل کرد.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Temperature = -999</div>
+        <p>اگر -999 sentinel value باشد:</p>
+        <div class="chart">-999 → NaN</div>
+        <p>و بعد missing-data strategy اجرا کنیم.</p>
+        <p>پس:</p>
+        <div class="formula">$$ Invalid\ Value \rightarrow Missing $$</div>
+        <p>ممکن است strategy مناسب باشد.</p>
+
+        <h2>96. نکته مهم درباره Scaling</h2>
+        <p>اگر data outlier دارد:</p>
+        <div class="chart">StandardScaler</div>
+        <p>ممکن است تحت تأثیر outlier قرار گیرد.</p>
+        <div class="chart">RobustScaler</div>
+        <p>از median/IQR استفاده می‌کند.</p>
+        <div class="chart">MinMaxScaler</div>
+        <p>بسیار به min/max حساس است.</p>
+        <p>مثلاً:</p>
+        <div class="chart">0
+1
+2
+3
+10000</div>
+        <p>باعث می‌شود بیشتر داده‌ها نزدیک صفر فشرده شوند.</p>
+
+        <h2>97. Outlier و PCA</h2>
+        <p>PCA به covariance matrix وابسته است.</p>
+        <p>Covariance:</p>
+        <div class="formula">$$ \Sigma $$</div>
+        <p>به outlierها حساس است.</p>
+        <div class="chart">پس چند extreme point می‌توانند جهت principal components را تغییر دهند.</div>
+        <p>این یک نکته بسیار مهم است.</p>
+
+        <h2>98. Outlier و K-Means</h2>
+        <p>K-Means از Euclidean distance و centroid استفاده می‌کند.</p>
+        <p>Centroid:</p>
+        <div class="formula">$$ \mu_k = \frac{1}{n_k} \sum x_i $$</div>
+        <p>به outlier حساس است.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Cluster:
+10
+11
+12
+13
+1000</div>
+        <p>centroid به سمت 1000 کشیده می‌شود.</p>
+        <p>پس K-Means:</p>
+        <div class="formula">$$ \boxed{ Sensitive\ to\ outliers } $$</div>
+        <p>است.</p>
+
+        <h2>99. K-Medoids</h2>
+        <p>K-Medoids به جای centroid از یک actual data point به عنوان representative استفاده می‌کند.</p>
+        <p>بنابراین نسبت به K-Means:</p>
+        <div class="chart">robustتر به outliers است.</div>
+        <div class="chart">این یکی از دلایل استفاده از K-Medoids است.</div>
+
+        <h2>100. Outliers و Tree Models</h2>
+        <p>به‌طور کلی:</p>
+        <div class="chart">Decision Tree
+Random Forest
+Gradient Boosting</div>
+        <p>به feature outliers کمتر حساس‌اند.</p>
+        <p>ولی این به معنی:</p>
+        <div class="chart">«Outlier اصلاً مهم نیست»</div>
+        <p>نیست.</p>
+        <div class="chart">Outlier می‌تواند:
+• split structure
+• target relationship
+• class distribution
+• training labels</div>
+        <p>را تحت تأثیر قرار دهد.</p>
+
+        <h2>101. Senior Checklist</h2>
+        <p>وقتی outlier می‌بینی، این سؤالات را بپرس:</p>
+        <div class="chart">Data
+1. آیا value ممکن است؟
+2. آیا unit درست است؟
+3. آیا parsing درست است؟
+4. آیا sensor/API مشکل داشته؟
+5. آیا duplicate است؟
+
+Statistics
+6. نسبت به distribution چقدر rare است؟
+7. Z-score چیست؟
+8. IQR چیست؟
+9. MAD چیست؟
+10. آیا distribution heavy-tailed است؟
+
+ML
+11. آیا model به outlier حساس است؟
+12. آیا leverage بالاست؟
+13. آیا influential است؟
+14. آیا loss حساس به extreme error است؟
+15. آیا scaling تحت تأثیر قرار می‌گیرد؟
+
+Business
+16. آیا outlier signal است؟
+17. آیا fraud است؟
+18. آیا rare customer است؟
+19. آیا anomaly واقعی است؟
+20. آیا در production هم وجود خواهد داشت؟</div>
+
+        <h2>102. جدول نهایی مفاهیم</h2>
+        <table>
+            <thead><tr><th>Concept</th><th>معنی اصلی</th></tr></thead>
+            <tbody>
+                <tr><td>Outlier</td><td>Observation غیرعادی آماری</td></tr>
+                <tr><td>Anomaly</td><td>رفتار غیرعادی نسبت به expected pattern/context</td></tr>
+                <tr><td>Leverage Point</td><td>observation با X غیرعادی در regression</td></tr>
+                <tr><td>Influential Point</td><td>observation که حذفش model را تغییر می‌دهد</td></tr>
+                <tr><td>Z-Score</td><td>فاصله از mean بر حسب std</td></tr>
+                <tr><td>IQR</td><td>فاصله Q3 و Q1</td></tr>
+                <tr><td>MAD</td><td>robust measure of dispersion</td></tr>
+                <tr><td>Robust Statistics</td><td>روش‌های مقاوم به extreme observations</td></tr>
+                <tr><td>Winsorization</td><td>cap کردن extreme values</td></tr>
+                <tr><td>Trimming</td><td>حذف extreme observations</td></tr>
+            </tbody>
+        </table>
+
+        <h2>🎯 مهم‌ترین ارتباط‌ها برای Senior ML</h2>
+        <p>این بخش را واقعاً خوب یاد بگیر:</p>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">Outlier و Bias</div>
+            <p>حذف outlier ممکن است:</p>
+            <div class="formula">$$ Bias \uparrow $$</div>
+            <p>کند اگر outlierها بخشی واقعی از population باشند.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">Outlier و Variance</div>
+            <p>Extreme values می‌توانند:</p>
+            <div class="formula">$$ Variance \uparrow $$</div>
+            <p>کنند و بعضی مدل‌ها را ناپایدار کنند.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#3fb950;">
+            <div class="inner-title">Outlier و Loss</div>
+            <div class="formula">$$ MSE $$</div>
+            <p>بسیار حساس‌تر از:</p>
+            <div class="formula">$$ MAE $$</div>
+            <p>به residualهای بزرگ است.</p>
+            <p>و:</p>
+            <div class="formula">$$ Huber $$</div>
+            <p>بین این دو trade-off ایجاد می‌کند.</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#d2a8ff;">
+            <div class="inner-title">Outlier و Model</div>
+            <div class="chart">Linear Regression → sensitive
+K-Means → sensitive
+PCA → sensitive
+KNN → distance-sensitive
+
+Tree Models → generally more robust
+Robust Models → designed for contamination</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">Outlier و Business</div>
+            <p>مهم‌ترین اصل:</p>
+            <div class="formula">$$ \boxed{ Rare \neq Wrong } $$</div>
+            <p>و:</p>
+            <div class="formula">$$ \boxed{ Outlier \neq Error } $$</div>
+            <p>و از همه مهم‌تر:</p>
+            <div class="formula">$$ \boxed{ Do\ not\ remove\ an\ outlier\ before\ understanding\ why\ it\ exists. } $$</div>
+        </div>
+
+        <h2>🧠 اگر در مصاحبه ازت بپرسند: «با Outlier چه کار می‌کنی؟»</h2>
+        <p>یک جواب Senior-level این نیست که بگویی:</p>
+        <div class="chart">«Z-score می‌زنم و outlierها را حذف می‌کنم.»</div>
+        <p>جواب قوی‌تر:</p>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <p>First, I distinguish statistical outliers from invalid observations and genuine rare events. I investigate the data-generation process and business context before deciding on treatment. Depending on the model and distribution, I may keep the observations, apply a transformation such as log, use robust scaling or robust loss, winsorize extreme values, add an outlier indicator, or remove observations only when there is strong evidence that they are erroneous or outside the intended population. I also make sure the detection threshold is learned only from the training data and is applied consistently during validation and inference. Finally, I monitor outlier rates in production because changes in the tail can indicate data-quality problems or distribution shift.</p>
+        </div>
+        <p>این دقیقاً طرز فکری است که از یک Senior ML Engineer / Data Scientist انتظار می‌رود.</p>
+        <div class="chart">و ارتباط کل Chapter را می‌توانی این‌طور در ذهن نگه داری:
+
+                    OUTLIER
+                       │
+           ┌───────────┴───────────┐
+           │                       │
+      Is it invalid?          Is it rare but real?
+           │                       │
+      ┌────┴────┐                  │
+     YES        NO                 ▼
+      │          │               KEEP
+   Fix/Remove    │                 │
+                 ▼                 ├── Transform
+             Investigate          ├── Robust Scaling
+                                  ├── Robust Loss
+                                  ├── Indicator
+                                  └── Keep as Signal
+
+             Detection Methods
+                    │
+       ┌────────────┼─────────────┐
+       ▼            ▼             ▼
+    Z-Score        IQR           MAD
+       │            │             │
+       └────────────┼─────────────┘
+                    ▼
+             ML-based Methods
+                    │
+       ┌────────────┼────────────┐
+       ▼            ▼            ▼
+ Isolation Forest   LOF      One-Class SVM
+                    │
+                    ▼
+             Model-specific
+                    │
+       ┌────────────┼─────────────┐
+       ▼            ▼             ▼
+   Regression      K-Means        PCA
+   Leverage        Centroid       Covariance
+   Influence       Sensitive      Sensitive</div>
+        <p>یک جمله طلایی برای این chapter:</p>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <p>Outlier detection یک مسئله آماری است، اما outlier treatment یک تصمیم ML + business + data-generation است.</p>
+        </div>
+
+        <hr style="border:1px solid #444; margin:50px 0;" />
+        <p style="text-align:center; color:#8b949e; font-size:0.85rem; padding:16px 0;">Outliers · Senior ML · تمام نکات ریز 🧠</p>
+    </div>
+
+    <!-- SCRIPT FOR INTERACTIVE Z-SCORE VISUALIZATION -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const canvas = document.getElementById('zScoreCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            const xSlider = document.getElementById('x-slider');
+            const muSlider = document.getElementById('mu-slider');
+            const sigmaSlider = document.getElementById('sigma-slider');
+            
+            const xVal = document.getElementById('x-val');
+            const muVal = document.getElementById('mu-val');
+            const sigmaVal = document.getElementById('sigma-val');
+            
+            const equationBox = document.getElementById('equation-box');
+            const resultBox = document.getElementById('result-box');
+
+            // Normal Distribution CDF (Approximation)
+            function normCdf(z) {
+                const t = 1.0 / (1.0 + 0.2316419 * Math.abs(z));
+                const d = 0.3989423 * Math.exp(-z * z / 2.0);
+                let prob = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
+                if (z > 0) prob = 1 - prob;
+                return prob;
+            }
+
+            function draw() {
+                const x = parseFloat(xSlider.value);
+                const mu = parseFloat(muSlider.value);
+                const sigma = parseFloat(sigmaSlider.value);
+                
+                xVal.textContent = x.toFixed(1);
+                muVal.textContent = mu.toFixed(1);
+                sigmaVal.textContent = sigma.toFixed(1);
+
+                const z = (x - mu) / sigma;
+                const phi = normCdf(z);
+
+                // Render formulas using KaTeX
+                katex.render(`z = \\frac{x - \\mu}{\\sigma}`, equationBox, {throwOnError: false});
+                katex.render(`z = ${z.toFixed(2)}, \\ \\Phi(z) \\approx ${(phi * 100).toFixed(1)}\\%`, resultBox, {throwOnError: false});
+
+                // Draw Graph
+                const w = 500, h = 350;
+                ctx.clearRect(0, 0, w, h);
+
+                // Grid
+                ctx.strokeStyle = '#30363d';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                for (let x = 30; x < w - 30; x += 40) { ctx.moveTo(x, 30); ctx.lineTo(x, h - 30); }
+                for (let y = 30; y < h - 30; y += 40) { ctx.moveTo(30, y); ctx.lineTo(w - 30, y); }
+                ctx.stroke();
+
+                // Bell Curve
+                const mean = 250;
+                const sdScale = 40 * sigma;
+                
+                ctx.strokeStyle = '#3fb950';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                for (let i = 0; i < w; i++) {
+                    let zVal = (i - mean) / sdScale;
+                    let y = h / 2 - 120 * Math.exp(-0.5 * zVal * zVal);
+                    if (i === 0) ctx.moveTo(i, y); else ctx.lineTo(i, y);
+                }
+                ctx.stroke();
+
+                // X line
+                const xLine = mean + (x - mu) * sdScale;
+                ctx.strokeStyle = '#d2a8ff';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([4, 4]);
+                ctx.beginPath();
+                ctx.moveTo(xLine, 30);
+                ctx.lineTo(xLine, h - 30);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.fillStyle = '#d2a8ff';
+                ctx.font = '16px monospace';
+                ctx.fillText('x', xLine - 10, 25);
+
+                // Mu line
+                ctx.strokeStyle = '#e6edf3';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([4, 4]);
+                ctx.beginPath();
+                ctx.moveTo(mean, 30);
+                ctx.lineTo(mean, h - 30);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.fillStyle = '#e6edf3';
+                ctx.font = '16px monospace';
+                ctx.fillText('μ', mean - 10, 25);
+
+                // Shade Area
+                ctx.fillStyle = 'rgba(74,222,128,0.3)';
+                ctx.beginPath();
+                ctx.moveTo(mean, h/2);
+                for (let i = mean; i <= xLine; i += 5) {
+                    let zVal = (i - mean) / sdScale;
+                    let y = h / 2 - 120 * Math.exp(-0.5 * zVal * zVal);
+                    ctx.lineTo(i, y);
+                }
+                ctx.lineTo(xLine, h / 2);
+                ctx.closePath();
+                ctx.fill();
+
+                // Phi Label
+                ctx.fillStyle = '#d2a8ff';
+                ctx.font = '14px sans-serif';
+                ctx.fillText('Φ(z)', (mean + xLine) / 2 - 10, h / 2 + 30);
+            }
+
+            xSlider.addEventListener('input', draw);
+            muSlider.addEventListener('input', draw);
+            sigmaSlider.addEventListener('input', draw);
+            draw();
+        });
+    </script>
+</body>
+</html>

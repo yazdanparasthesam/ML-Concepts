@@ -1,0 +1,1705 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Learning Curves · Senior ML Level</title>
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}]});"></script>
+
+    <style>
+        body {
+            background-color: #0d1117;
+            color: #e6edf3;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.8;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h1, h2, h3, h4 {
+            color: #e6edf3;
+            text-align: right;
+            border-bottom: 1px solid #444;
+            padding-bottom: 15px;
+            margin-top: 50px;
+        }
+        h1 {
+            border-bottom: 4px double #58a6ff;
+            text-align: center;
+        }
+        p, li {
+            text-align: right;
+        }
+
+        .box {
+            background-color: #21262d;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            color: #e6edf3;
+        }
+        .inner-box {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 10px;
+            border-right: 4px solid #58a6ff;
+        }
+        .inner-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .formula {
+            direction: ltr;
+            background-color: #000;
+            border: 1px solid #fff;
+            border-radius: 0;
+            padding: 20px;
+            margin: 20px auto;
+            width: fit-content;
+            max-width: 100%;
+            overflow-x: auto;
+            text-align: center;
+            font-size: 1.2em;
+            font-family: "Times New Roman", Times, serif;
+            color: #fff;
+        }
+
+        .chart {
+            direction: ltr;
+            text-align: left;
+            font-family: 'Consolas', 'Courier New', monospace;
+            background-color: #21262d;
+            border-radius: 8px;
+            padding: 15px;
+            overflow-x: auto;
+            white-space: pre;
+            border: 1px solid #444;
+            color: #a5d6ff;
+            font-size: 0.95rem;
+        }
+
+        .highlight-box {
+            background-color: #2d333b;
+            border-right: 4px solid #58a6ff;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            direction: rtl;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #444;
+            padding: 12px;
+            text-align: right;
+        }
+        th {
+            background-color: #21262d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧠 24. Learning Curves — از پایه تا Senior ML</h1>
+
+        <p style="font-size:1.1rem;">حتماً. Learning Curves یکی از مهم‌ترین ابزارهای diagnostic در ML است؛ مخصوصاً برای اینکه بفهمی مشکل مدل از Bias، Variance، ظرفیت مدل، کمبود داده، یا حتی pipeline است.</p>
+        <p style="font-size:1.1rem;">در سطح Senior نباید فقط بلد باشی نمودار را رسم کنی؛ باید بتوانی از شکل منحنی‌ها علت مشکل و اقدام بعدی را استنتاج کنی.</p>
+
+        <h2>1. Learning Curve چیست؟</h2>
+        <p>Learning Curve نموداری است که نشان می‌دهد performance مدل با افزایش مقدار داده آموزشی چگونه تغییر می‌کند.</p>
+        <p>محور X:</p>
+        <div class="formula">$$ Training\ Set\ Size $$</div>
+        <p>محور Y معمولاً:</p>
+        <div class="chart">Training Error
+Validation Error</div>
+        <p>یا برعکس، metricهایی مثل:</p>
+        <div class="chart">Accuracy
+F1
+AUC
+\(R^2\)</div>
+        <p>است.</p>
+        <p>شکل مفهومی:</p>
+        <div class="chart">Error
+ ^
+ |\
+ | \       Training Error
+ |  \________________
+ |
+ |        ____________ Validation Error
+ |      /
+ |    /
+ |___/________________________> Training Size</div>
+        <p>ایده اصلی:</p>
+        <p>اگر داده بیشتری در اختیار مدل قرار دهیم، آیا مدل بهتر می‌شود یا نه؟</p>
+
+        <h2>2. چرا Learning Curve مهم است؟</h2>
+        <p>فرض کن مدل تو:</p>
+        <div class="chart">Train Accuracy = 99%
+Validation Accuracy = 72%</div>
+        <p>می‌بینی:</p>
+        <div class="chart">overfitting</div>
+        <p>اما سؤال مهم‌تر:</p>
+        <p>چه کار کنیم؟</p>
+        <p>آیا:</p>
+        <div class="chart">داده بیشتری جمع کنیم؟
+مدل ساده‌تر کنیم؟
+regularization اضافه کنیم؟
+مدل را قوی‌تر کنیم؟
+feature engineering انجام دهیم؟
+labelها را بررسی کنیم؟</div>
+        <p>Learning Curve کمک می‌کند به این سؤال جواب بدهی.</p>
+
+        <h2>3. دو منحنی اصلی</h2>
+        <p>معمولاً دو منحنی داریم:</p>
+        <div class="inner-box">
+            <div class="inner-title">Training Curve</div>
+            <p>عملکرد مدل روی training data.</p>
+        </div>
+        <div class="inner-box">
+            <div class="inner-title">Validation Curve</div>
+            <p>عملکرد مدل روی validation data.</p>
+        </div>
+        <p>مثلاً اگر Error رسم کنیم:</p>
+        <div class="formula">$$ E_{train} $$</div>
+        <p>و:</p>
+        <div class="formula">$$ E_{val} $$</div>
+
+        <h2>4. یک نکته بسیار مهم</h2>
+        <p>در بسیاری از منابع به جای Error، Score رسم می‌شود.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Accuracy
+ ^
+ |              Validation
+ |            /
+ |          /
+ |        /
+ |      /
+ |_____/________________
+       Training size</div>
+        <p>در این حالت:</p>
+        <p>بالا رفتن بهتر است.</p>
+        <p>اما اگر Error رسم کنیم:</p>
+        <p>پایین آمدن بهتر است.</p>
+        <p>پس قبل از تفسیر نمودار حتماً بدان:</p>
+        <div class="formula">$$ \boxed{ Is\ higher\ better\ or\ lower\ better? } $$</div>
+
+        <h2>5. Training Error با افزایش داده چه می‌شود؟</h2>
+        <p>معمولاً وقتی داده بیشتری اضافه می‌کنی:</p>
+        <p>training error افزایش پیدا می‌کند یا حداقل کاهش نمی‌یابد.</p>
+        <p>ممکن است عجیب به نظر برسد.</p>
+        <p>ولی دلیلش ساده است.</p>
+        <p>فرض کن با 100 نمونه:</p>
+        <div class="chart">Train:
+Model sees 100 samples</div>
+        <p>مدل ممکن است آنها را خیلی خوب fit کند.</p>
+        <p>مثلاً:</p>
+        <div class="formula">$$ Train\ Error=1\% $$</div>
+        <p>حالا 10,000 نمونه داریم.</p>
+        <p>مدل باید روی نمونه‌های بسیار بیشتری خوب باشد.</p>
+        <p>ممکن است:</p>
+        <div class="formula">$$ Train\ Error=5\% $$</div>
+        <p>شود.</p>
+        <p>بنابراین:</p>
+        <div class="chart">Training error الزاماً با افزایش training data کاهش پیدا نمی‌کند.</div>
+
+        <h2>6. Validation Error چه می‌کند؟</h2>
+        <p>معمولاً:</p>
+        <div class="formula">$$ Validation\ Error $$</div>
+        <p>با افزایش داده کاهش پیدا می‌کند، مخصوصاً اگر مشکل اصلی variance باشد.</p>
+        <p>یعنی:</p>
+        <div class="chart">More Data
+   ↓
+Better estimate of underlying distribution
+   ↓
+Better generalization
+   ↓
+Lower validation error</div>
+        <p>اما این همیشه اتفاق نمی‌افتد.</p>
+
+        <h2>7. Learning Curve و Bias–Variance</h2>
+        <p>ارتباط اصلی:</p>
+        <div class="formula">$$ \boxed{ Learning\ Curves \leftrightarrow Bias-Variance } $$</div>
+        <p>Learning Curve یکی از ابزارهای عملی برای تشخیص این دو است.</p>
+
+        <h2>8. حالت اول — High Variance</h2>
+        <p>فرض کن:</p>
+        <div class="chart">Error
+ ^
+ |\
+ | \
+ |  \ Training
+ |   \____________
+ |
+ |      \________ Validation
+ |       \
+ |        \
+ |         \
+ +--------------------> Data</div>
+        <p>در ابتدای کار:</p>
+        <div class="formula">$$ E_{train} \ll E_{validation} $$</div>
+        <p>یعنی:</p>
+        <p>Training error خیلی کم است ولی validation error زیاد است.</p>
+        <p>این نشانه کلاسیک:</p>
+        <div class="formula">$$ \boxed{High\ Variance} $$</div>
+        <p>است.</p>
+
+        <h2>9. High Variance یعنی چه؟</h2>
+        <p>مدل بیش از حد به training data وابسته شده.</p>
+        <p>یعنی:</p>
+        <div class="formula">$$ Model \approx Training\ Dataset $$</div>
+        <p>به جای اینکه:</p>
+        <div class="formula">$$ Model \approx Underlying\ Pattern $$</div>
+        <p>باشد.</p>
+        <p>این همان:</p>
+        <div class="formula">$$ Overfitting $$</div>
+        <p>است.</p>
+
+        <h2>10. مثال High Variance</h2>
+        <p>فرض کن:</p>
+        <div class="chart">Training Error = 1%
+Validation Error = 20%</div>
+        <p>Gap:</p>
+        <div class="formula">$$ 19\% $$</div>
+        <p>است.</p>
+        <p>اگر با افزایش داده:</p>
+        <div class="chart">Train Error:       1% → 4%
+Validation Error: 20% → 10%</div>
+        <p>شود، داده بیشتر کمک کرده.</p>
+        <p>یعنی احتمالاً:</p>
+        <div class="formula">$$ Variance $$</div>
+        <p>مشکل اصلی بوده است.</p>
+
+        <h2>11. راه‌حل High Variance</h2>
+        <p>گزینه‌ها:</p>
+        <div class="inner-box">
+            <div class="inner-title">1. More Data</div>
+            <p>اغلب بسیار مؤثر.</p>
+        </div>
+        <div class="inner-box">
+            <div class="inner-title">2. Regularization</div>
+            <p>مثلاً:</p>
+            <div class="chart">L1
+L2
+Dropout
+Weight Decay</div>
+        </div>
+        <div class="inner-box">
+            <div class="inner-title">3. Reduce Model Capacity</div>
+            <p>مثلاً:</p>
+            <div class="chart">Deep tree → Shallow tree
+Large NN → Smaller NN</div>
+        </div>
+        <div class="inner-box">
+            <div class="inner-title">4. Feature Selection</div>
+            <p>حذف featureهای noisy.</p>
+        </div>
+        <div class="inner-box">
+            <div class="inner-title">5. Data Augmentation</div>
+            <p>در deep learning بسیار مهم.</p>
+        </div>
+        <div class="inner-box">
+            <div class="inner-title">6. Early Stopping</div>
+        </div>
+        <div class="inner-box">
+            <div class="inner-title">7. Ensemble</div>
+            <p>گاهی bagging کمک می‌کند variance کاهش یابد.</p>
+        </div>
+
+        <h2>12. حالت دوم — High Bias</h2>
+        <p>حالا فرض کن:</p>
+        <div class="chart">Error
+ ^
+ |---------------- Validation
+ |---------------- Training
+ |
+ |
+ +--------------------------> Data</div>
+        <p>هر دو error بالا هستند و به هم نزدیک‌اند.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Train Error = 20%
+Validation Error = 22%</div>
+        <p>Gap:</p>
+        <div class="formula">$$ 2\% $$</div>
+        <p>است.</p>
+        <p>ولی هر دو بد هستند.</p>
+        <p>این معمولاً:</p>
+        <div class="formula">$$ \boxed{High\ Bias} $$</div>
+        <p>را نشان می‌دهد.</p>
+
+        <h2>13. High Bias یعنی چه؟</h2>
+        <p>مدل توانایی کافی برای یادگیری relationship موجود را ندارد.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Data:
+Complex nonlinear pattern
+
+Model:
+Simple linear model</div>
+        <p>مدل:</p>
+        <div class="formula">$$ y=\beta_0+\beta_1x $$</div>
+        <p>است ولی relationship واقعاً nonlinear است.</p>
+
+        <h2>14. راه‌حل High Bias</h2>
+        <div class="inner-box">
+            <div class="inner-title">افزایش Model Capacity</div>
+            <p>مثلاً:</p>
+            <div class="chart">Linear
+   ↓
+Polynomial
+   ↓
+Neural Network
+   ↓
+More expressive architecture</div>
+        </div>
+        <p>یا:</p>
+        <div class="chart">Feature engineering
+Interaction features
+کمتر کردن regularization
+مدل پیچیده‌تر
+training بیشتر</div>
+
+        <h2>15. اما یک نکته مهم</h2>
+        <p>More Data معمولاً High Bias را حل نمی‌کند.</p>
+        <p>اگر مدل ذاتاً خیلی ساده باشد:</p>
+        <div class="chart">1M samples
++
+Too-simple model</div>
+        <p>ممکن است همچنان:</p>
+        <div class="chart">Train Error = 20%</div>
+        <p>داشته باشی.</p>
+        <p>این یکی از مهم‌ترین نکات Learning Curve است.</p>
+
+        <h2>16. حالت سوم — More Data Needed</h2>
+        <p>این حالت بسیار مهم است.</p>
+        <p>فرض کن:</p>
+        <div class="chart">Training Error
+      ↓
+      ───────────────
+
+Validation Error
+      \
+       \
+        \
+         \
+          \__________</div>
+        <p>هنوز:</p>
+        <div class="formula">$$ Validation\ Error $$</div>
+        <p>در حال کاهش است.</p>
+        <p>یعنی:</p>
+        <p>مدل هنوز از داده بیشتر benefit می‌گیرد.</p>
+
+        <h2>17. چگونه بفهمیم More Data کمک می‌کند؟</h2>
+        <p>اگر با افزایش data:</p>
+        <div class="formula">$$ E_{val}\downarrow $$</div>
+        <p>و هنوز به plateau نرسیده:</p>
+        <p>احتمالاً data بیشتر ارزش دارد.</p>
+        <p>مثلاً:</p>
+        <div class="chart">100 samples  → 30% error
+500 samples  → 20%
+1000 samples → 15%
+5000 samples → 10%</div>
+        <p>هنوز روند کاهش ادامه دارد.</p>
+
+        <h2>18. اما اگر Validation Error Plateau شود؟</h2>
+        <p>مثلاً:</p>
+        <div class="chart">100 samples  → 20%
+500 samples  → 15%
+1000 samples → 14%
+5000 samples → 14%
+20000 samples → 14%</div>
+        <p>دیگر:</p>
+        <div class="formula">$$ E_{val} $$</div>
+        <p>تقریباً ثابت شده.</p>
+        <p>در این حالت:</p>
+        <p>صرفاً data بیشتر احتمالاً improvement بزرگی نمی‌دهد.</p>
+        <p>باید دنبال مشکل دیگری بگردی.</p>
+
+        <h2>19. نکته‌ای که خودت اشاره کردی</h2>
+        <p>گفتی:</p>
+        <p>Training Error ↓, Validation Error ↓. اگر با افزایش داده Validation Error همچنان بالا باشد، احتمالاً مشکل دیگری داریم.</p>
+        <p>دقیقاً.</p>
+        <p>ولی باید یک نکته ظریف اضافه کنیم:</p>
+        <p>صرفاً بالا بودن Validation Error کافی نیست.</p>
+        <p>باید ببینی:</p>
+        <div class="chart">آیا هنوز decreasing است؟
+آیا plateau شده؟
+train/validation gap چقدر است؟
+Bayes error چقدر ممکن است باشد؟
+label noise داریم؟
+distribution mismatch داریم؟
+model capacity کافی است؟</div>
+
+        <h2>20. حالت چهارم — هر دو خوب می‌شوند</h2>
+        <p>مثلاً:</p>
+        <div class="chart">Training Error
+30% → 10% → 5%
+
+Validation Error
+35% → 15% → 7%</div>
+        <p>این یک وضعیت سالم است.</p>
+        <p>یعنی:</p>
+        <div class="chart">model یاد می‌گیرد
+generalization بهتر می‌شود
+data بیشتر کمک می‌کند</div>
+
+        <h2>21. حالت پنجم — Training خوب، Validation بد و ثابت</h2>
+        <p>مثلاً:</p>
+        <div class="chart">Train:
+2% → 1% → 1%
+
+Validation:
+30% → 29% → 29%</div>
+        <p>این خیلی مهم است.</p>
+        <p>مدل training data را تقریباً کامل یاد گرفته ولی generalization ضعیف است.</p>
+        <p>احتمال:</p>
+        <div class="formula">$$ High\ Variance $$</div>
+        <p>بالاست.</p>
+        <p>اما اگر data بیشتر هیچ improvement ایجاد نکند، صرفاً گفتن «more data» کافی نیست.</p>
+        <p>ممکن است:</p>
+        <div class="chart">train/test distribution mismatch
+label noise
+bad features
+leakage
+wrong validation split
+covariate shift
+concept drift
+irreducible error</div>
+        <p>وجود داشته باشد.</p>
+
+        <h2>22. جدول Diagnostic اصلی</h2>
+        <p>اگر Error رسم کنیم:</p>
+        <table>
+            <thead><tr><th>Training Error</th><th>Validation Error</th><th>احتمال</th></tr></thead>
+            <tbody>
+                <tr><td>پایین</td><td>بالا</td><td>High Variance</td></tr>
+                <tr><td>بالا</td><td>بالا و نزدیک</td><td>High Bias</td></tr>
+                <tr><td>پایین</td><td>پایین</td><td>Good</td></tr>
+                <tr><td>پایین</td><td>هنوز بالا ولی decreasing</td><td>More Data may help</td></tr>
+                <tr><td>پایین</td><td>بالا و plateau</td><td>Data alone may not solve</td></tr>
+                <tr><td>بالا</td><td>بالا و plateau</td><td>Capacity / features / Bayes error</td></tr>
+            </tbody>
+        </table>
+
+        <h2>23. اگر Accuracy رسم کنیم، برعکس است</h2>
+        <p>اگر:</p>
+        <div class="formula">$$ Accuracy $$</div>
+        <p>رسم کنیم:</p>
+        <table>
+            <thead><tr><th>Training Accuracy</th><th>Validation Accuracy</th><th>Interpretation</th></tr></thead>
+            <tbody>
+                <tr><td>بالا</td><td>پایین</td><td>High Variance</td></tr>
+                <tr><td>پایین</td><td>پایین</td><td>High Bias</td></tr>
+                <tr><td>بالا</td><td>بالا</td><td>Good</td></tr>
+                <tr><td>بالا</td><td>پایین ولی improving</td><td>More data may help</td></tr>
+            </tbody>
+        </table>
+        <p>پس همیشه حواست باشد:</p>
+        <div class="formula">$$ Error \downarrow = Better $$</div>
+        <p>ولی:</p>
+        <div class="formula">$$ Accuracy \uparrow = Better $$</div>
+
+        <h2>24. Learning Curve و Model Capacity</h2>
+        <p>حالا یک مفهوم بسیار مهم‌تر:</p>
+        <div class="formula">$$ Model\ Capacity $$</div>
+        <p>ظرفیت مدل یعنی توانایی مدل برای نمایش functionهای پیچیده.</p>
+        <p>مثلاً در Decision Tree:</p>
+        <div class="chart">depth = 2</div>
+        <p>capacity پایین‌تر از:</p>
+        <div class="chart">depth = 20</div>
+        <p>است.</p>
+        <p>در Neural Network:</p>
+        <div class="chart">10 parameters</div>
+        <p>ظرفیت بسیار کمتر از:</p>
+        <div class="chart">100M parameters</div>
+        <p>است.</p>
+
+        <h2>25. Capacity خیلی کم</h2>
+        <p>اگر:</p>
+        <div class="formula">$$ Capacity \ll Complexity(Data) $$</div>
+        <p>باشد:</p>
+        <div class="formula">$$ High\ Bias $$</div>
+        <p>داریم.</p>
+        <p>مدل حتی training set را هم خوب fit نمی‌کند.</p>
+
+        <h2>26. Capacity خیلی زیاد</h2>
+        <p>اگر:</p>
+        <div class="formula">$$ Capacity \gg Necessary\ Complexity $$</div>
+        <p>باشد:</p>
+        <p>ممکن است:</p>
+        <div class="formula">$$ High\ Variance $$</div>
+        <p>ایجاد شود.</p>
+        <p>ولی یک نکته Senior-level:</p>
+        <p>ظرفیت بالا لزوماً به معنی overfitting نیست.</p>
+        <p>در deep learning این موضوع بسیار مهم است.</p>
+
+        <h2>27. Deep Learning و Double Descent</h2>
+        <p>در مدل‌های مدرن ممکن است رابطه ساده:</p>
+        <div class="chart">Capacity ↑
+    ↓
+Variance ↑
+    ↓
+Generalization ↓</div>
+        <p>همیشه برقرار نباشد.</p>
+        <p>ممکن است:</p>
+        <div class="chart">Test Error
+ ^
+ |\
+ | \
+ |  \      /
+ |   \____/ \____
+ |
+ +--------------------> Model Capacity</div>
+        <p>رفتاری شبیه:</p>
+        <div class="formula">$$ Double\ Descent $$</div>
+        <p>دیده شود.</p>
+        <p>پس Bias-Variance کلاسیک یک framework بسیار مهم است، اما تمام رفتار مدل‌های مدرن را توضیح نمی‌دهد.</p>
+
+        <h2>28. Learning Curve با Validation Curve فرق دارد</h2>
+        <p>این دو را قاطی نکن.</p>
+        <div class="inner-box">
+            <div class="inner-title">Learning Curve</div>
+            <p>محور X:</p>
+            <div class="formula">$$ Training\ Set\ Size $$</div>
+            <p>مثلاً:</p>
+            <div class="chart">100
+500
+1000
+5000
+10000</div>
+        </div>
+        <div class="inner-box">
+            <div class="inner-title">Validation Curve</div>
+            <p>محور X:</p>
+            <p>یک hyperparameter</p>
+            <p>مثلاً:</p>
+            <div class="chart">Tree Depth:
+2
+4
+6
+8
+10</div>
+            <p>و عملکرد train/validation را بررسی می‌کنی.</p>
+        </div>
+
+        <h2>29. مثال Validation Curve</h2>
+        <p>فرض کن Decision Tree:</p>
+        <div class="chart">Depth = 2
+Train = 80%
+Val   = 78%
+
+Depth = 5
+Train = 92%
+Val   = 89%
+
+Depth = 15
+Train = 100%
+Val   = 75%</div>
+        <p>می‌بینی:</p>
+        <div class="chart">Capacity ↑
+Train performance ↑
+Validation performance ↑ then ↓</div>
+        <p>این overfitting را نشان می‌دهد.</p>
+
+        <h2>30. Learning Curve برای تشخیص Data Sufficiency</h2>
+        <p>یکی از مهم‌ترین کاربردهای آن:</p>
+        <p>آیا جمع کردن data بیشتر ارزش دارد؟</p>
+        <p>مثلاً:</p>
+        <div class="chart">Dataset Size
+
+100      → Val F1 = 0.70
+500      → Val F1 = 0.78
+1000     → Val F1 = 0.83
+5000     → Val F1 = 0.88
+10000    → Val F1 = 0.89</div>
+        <p>اگر business target:</p>
+        <div class="formula">$$ F1=0.90 $$</div>
+        <p>باشد، شاید:</p>
+        <p>data بیشتر منطقی باشد.</p>
+
+        <h2>31. Learning Curve و Plateau</h2>
+        <p>Plateau یعنی:</p>
+        <div class="formula">$$ \frac{dE_{val}}{dN}\approx0 $$</div>
+        <p>یعنی با افزایش data:</p>
+        <p>performance تقریباً دیگر تغییر نمی‌کند.</p>
+        <p>این signal مهمی است.</p>
+
+        <h2>32. Plateau یعنی چه؟</h2>
+        <p>ممکن است:</p>
+        <div class="chart">1. Model Capacity محدود باشد
+2. Features ضعیف باشند
+3. Label noise بالا باشد
+4. Bayes error بالا باشد
+5. Task ذاتاً دشوار باشد
+6. Distribution mismatch باشد
+7. Optimization مشکل داشته باشد
+8. Data quality مشکل داشته باشد</div>
+
+        <h2>33. Bayes Error</h2>
+        <p>حتی بهترین classifier هم ممکن است error صفر نداشته باشد.</p>
+        <p>چون ممکن است:</p>
+        <div class="chart">Same X
+Different Y</div>
+        <p>وجود داشته باشد.</p>
+        <p>مثلاً دو customer با دقیقاً featureهای مشابه ولی outcomes متفاوت.</p>
+        <p>پس:</p>
+        <div class="formula">$$ Bayes\ Error > 0 $$</div>
+        <p>ممکن است.</p>
+        <p>در نتیجه:</p>
+        <p>نباید انتظار داشته باشی validation error حتماً به صفر برسد.</p>
+
+        <h2>34. Label Noise</h2>
+        <p>فرض کن 10% labelها اشتباه باشند:</p>
+        <div class="chart">True label → Fraud
+Stored label → Normal</div>
+        <p>مدل ممکن است نتواند performance کامل داشته باشد.</p>
+        <p>Data بیشتر:</p>
+        <p>الزاماً مشکل را حل نمی‌کند.</p>
+        <p>حتی ممکن است مدل noise را بهتر یاد بگیرد.</p>
+
+        <h2>35. Feature Problem</h2>
+        <p>ممکن است:</p>
+        <div class="chart">1,000,000 samples</div>
+        <p>داشته باشی ولی featureهای مهم را نداشته باشی.</p>
+        <p>مثلاً می‌خواهی:</p>
+        <div class="chart">Fraud Detection</div>
+        <p>انجام دهی ولی فقط:</p>
+        <div class="chart">Age
+Gender
+City</div>
+        <p>را داری.</p>
+        <p>داده بیشتر با همین featureهای ضعیف ممکن است کمک محدودی کند.</p>
+
+        <h2>36. Learning Curve و Underfitting</h2>
+        <p>Underfitting معمولاً:</p>
+        <div class="chart">Train error: high
+Validation error: high
+Gap: small</div>
+        <p>است.</p>
+        <p>یعنی:</p>
+        <div class="formula">$$ Bias \uparrow $$</div>
+
+        <h2>37. Learning Curve و Overfitting</h2>
+        <p>Overfitting معمولاً:</p>
+        <div class="chart">Train error: low
+Validation error: high
+Gap: large</div>
+        <p>است.</p>
+        <p>یعنی:</p>
+        <div class="formula">$$ Variance \uparrow $$</div>
+
+        <h2>38. اما Gap به تنهایی کافی نیست</h2>
+        <p>این نکته Senior-level است.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Train error = 2%
+Validation error = 5%</div>
+        <p>Gap:</p>
+        <div class="formula">$$ 3\% $$</div>
+        <p>است.</p>
+        <p>ممکن است کاملاً acceptable باشد.</p>
+        <p>اما:</p>
+        <div class="chart">Train = 2%
+Validation = 50%</div>
+        <p>واضحاً مشکل داریم.</p>
+        <p>بنابراین:</p>
+        <div class="formula">$$ \boxed{ Gap\ must\ be\ interpreted\ together\ with\ absolute\ performance. } $$</div>
+
+        <h2>39. Learning Curve و Sample Size</h2>
+        <p>معمولاً چند subset از training data انتخاب می‌کنی:</p>
+        <div class="chart">10%
+20%
+40%
+60%
+80%
+100%</div>
+        <p>برای هر subset:</p>
+        <div class="chart">مدل را train می‌کنی.
+training score را حساب می‌کنی.
+validation score را حساب می‌کنی.
+میانگین می‌گیری.
+منحنی را رسم می‌کنی.</div>
+
+        <h2>40. چرا چند بار train می‌کنیم؟</h2>
+        <p>چون اگر فقط یک split داشته باشی، ممکن است curve تحت تأثیر random sampling باشد.</p>
+        <p>در حالت حرفه‌ای:</p>
+        <div class="formula">$$ CV $$</div>
+        <p>را هم می‌توانی وارد کنی.</p>
+        <p>مثلاً برای هر training size:</p>
+        <div class="chart">100 samples
+   ↓
+5-fold CV
+   ↓
+mean ± std</div>
+
+        <h2>41. Learning Curve با Cross-Validation</h2>
+        <p>این approach بسیار قوی است.</p>
+        <p>برای هر training size:</p>
+        <div class="formula">$$ n $$</div>
+        <p>اجرا می‌کنی:</p>
+        <div class="formula">$$ CV_1,CV_2,\dots,CV_k $$</div>
+        <p>و:</p>
+        <div class="formula">$$ \bar{S} = \frac1k\sum_{i=1}^{k}S_i $$</div>
+        <p>را حساب می‌کنی.</p>
+        <p>همچنین:</p>
+        <div class="formula">$$ \sigma_S $$</div>
+        <p>را می‌توانی گزارش کنی.</p>
+
+        <h2>42. چرا Error Bars مهم‌اند؟</h2>
+        <p>مثلاً:</p>
+        <div class="chart">Validation F1
+
+0.70 ± 0.01
+0.75 ± 0.02
+0.80 ± 0.04</div>
+        <p>اگر variance زیاد باشد:</p>
+        <p>estimate uncertainty بالاست.</p>
+        <p>پس فقط mean را نگاه نکن.</p>
+
+        <h2>43. Learning Curve و Small Dataset</h2>
+        <p>اگر dataset کوچک باشد، learning curve ممکن است بسیار noisy باشد.</p>
+        <p>مثلاً:</p>
+        <div class="chart">50 samples → F1 = 0.91
+100 samples → F1 = 0.72
+150 samples → F1 = 0.86</div>
+        <p>این الزاماً به معنی behavior عجیب مدل نیست.</p>
+        <p>ممکن است:</p>
+        <p>sample variance بالا باشد.</p>
+
+        <h2>44. Learning Curve و Stratification</h2>
+        <p>برای classification مخصوصاً با class imbalance:</p>
+        <p>مثلاً:</p>
+        <div class="chart">Fraud = 1%</div>
+        <p>اگر subset را random انتخاب کنی ممکن است بعضی subsetها fraud کافی نداشته باشند.</p>
+        <p>بنابراین:</p>
+        <div class="formula">$$ Stratified\ Sampling $$</div>
+        <p>مهم می‌شود.</p>
+
+        <h2>45. Learning Curve و Group Data</h2>
+        <p>اگر داده‌ها group دارند:</p>
+        <div class="chart">Customer A → 100 transactions
+Customer B → 200 transactions</div>
+        <p>نباید subsetها را طوری بسازی که همان customer هم در train و هم validation قرار گیرد.</p>
+        <p>در این حالت باید:</p>
+        <div class="formula">$$ Group\ aware $$</div>
+        <p>باشی.</p>
+
+        <h2>46. Learning Curve و Time Series</h2>
+        <p>در time series نباید:</p>
+        <div class="chart">Future data
+   ↓
+Train</div>
+        <p>شود.</p>
+        <p>باید مثلاً:</p>
+        <div class="chart">Train: Jan → Jun
+Validation: Jul
+
+Train: Jan → Jul
+Validation: Aug
+
+Train: Jan → Aug
+Validation: Sep</div>
+        <p>باشد.</p>
+
+        <h2>47. Learning Curve و Data Leakage</h2>
+        <p>اگر preprocessing قبل از ایجاد curve روی کل dataset fit شود:</p>
+        <div class="chart">Full Dataset
+ ↓
+Scaler.fit()
+ ↓
+Learning Curve</div>
+        <p>ممکن است leakage ایجاد شود.</p>
+        <p>بهتر:</p>
+        <div class="chart">Training subset
+ ↓
+Fit preprocessing
+ ↓
+Train model
+ ↓
+Validation</div>
+        <p>و pipeline استفاده شود.</p>
+
+        <h2>48. Learning Curve و Regularization</h2>
+        <p>فرض کن مدل overfit است.</p>
+        <p>Learning Curve:</p>
+        <div class="chart">Train error → very low
+Val error   → high</div>
+        <p>اگر:</p>
+        <div class="formula">$$ \lambda $$</div>
+        <p>در L2 را افزایش دهی:</p>
+        <div class="chart">Train Error ↑
+Validation Error ↓</div>
+        <p>ممکن است gap کمتر شود.</p>
+        <p>این همان trade-off:</p>
+        <div class="formula">$$ Bias \uparrow $$</div>
+        <p>در مقابل:</p>
+        <div class="formula">$$ Variance \downarrow $$</div>
+        <p>است.</p>
+
+        <h2>49. Learning Curve و Model Capacity</h2>
+        <p>فرض کن سه مدل داریم:</p>
+        <div class="chart">Model A = Low Capacity
+Model B = Medium Capacity
+Model C = High Capacity</div>
+        <p>ممکن است:</p>
+        <div class="chart">A
+Train error high
+Val error high
+
+→ underfitting
+
+B
+Train error low
+Val error low
+
+→ good
+
+C
+Train error extremely low
+Val error high
+
+→ overfitting</div>
+
+        <h2>50. ولی More Data می‌تواند Model C را نجات دهد</h2>
+        <p>این نکته مهم است.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Small data:
+
+High-capacity model
+Train = 1%
+Val = 25%
+
+با داده بیشتر:
+
+Train = 3%
+Val = 10%
+
+می‌شود.
+
+یعنی:
+$$ Variance \downarrow $$</div>
+
+        <h2>51. Learning Curve و Compute Cost</h2>
+        <p>Learning Curve فقط برای accuracy نیست.</p>
+        <p>اگر training size زیاد شود:</p>
+        <div class="chart">100K
+1M
+10M
+100M</div>
+        <p>هزینه:</p>
+        <div class="chart">GPU
+CPU
+memory
+storage
+training time</div>
+        <p>زیاد می‌شود.</p>
+        <p>بنابراین در production باید بپرسی:</p>
+        <p>آیا 2 برابر data، improvement کافی ایجاد می‌کند؟</p>
+
+        <h2>52. Data Scaling Law</h2>
+        <p>در deep learning می‌توان performance را نسبت به:</p>
+        <div class="chart">data
+model size
+compute</div>
+        <p>بررسی کرد.</p>
+        <p>مثلاً:</p>
+        <div class="formula">$$ Loss(N) $$</div>
+        <p>با افزایش dataset size کاهش پیدا می‌کند.</p>
+        <p>اما معمولاً diminishing returns داریم:</p>
+        <div class="chart">10K → 100K
+Huge improvement
+
+100K → 1M
+Moderate improvement
+
+1M → 10M
+Small improvement</div>
+        <p>پس:</p>
+        <div class="formula">$$ Marginal\ Benefit \downarrow $$</div>
+
+        <h2>53. Learning Curve و Diminishing Returns</h2>
+        <p>اگر:</p>
+        <div class="formula">$$ \Delta Performance $$</div>
+        <p>به ازای هر مقدار data جدید کاهش پیدا کند:</p>
+        <p>diminishing returns</p>
+        <p>داریم.</p>
+        <p>مثلاً:</p>
+        <div class="chart">100K → +8%
+200K → +4%
+400K → +2%
+800K → +0.5%</div>
+        <p>در این شرایط شاید feature engineering بهتر از جمع‌آوری data بیشتر باشد.</p>
+
+        <h2>54. یک Diagnostic Matrix حرفه‌ای</h2>
+        <table>
+            <thead><tr><th>Train</th><th>Validation</th><th>Curve</th><th>تشخیص احتمالی</th><th>اقدام</th></tr></thead>
+            <tbody>
+                <tr><td>بد</td><td>بد</td><td>نزدیک</td><td>High Bias</td><td>افزایش capacity</td></tr>
+                <tr><td>عالی</td><td>بد</td><td>gap زیاد</td><td>High Variance</td><td>data / regularization</td></tr>
+                <tr><td>عالی</td><td>بد</td><td>val در حال کاهش</td><td>More data</td><td>data collection</td></tr>
+                <tr><td>عالی</td><td>بد</td><td>val plateau</td><td>مشکل دیگر</td><td>features/model/data quality</td></tr>
+                <tr><td>خوب</td><td>خوب</td><td>هر دو plateau</td><td>نزدیک به limit</td><td>optimize objective/features</td></tr>
+                <tr><td>بد</td><td>بد</td><td>هر دو plateau</td><td>capacity/task issue</td><td>model/features/labels</td></tr>
+                <tr><td>عالی</td><td>عالی</td><td>gap کوچک</td><td>healthy</td><td>production validation</td></tr>
+            </tbody>
+        </table>
+
+        <h2>55. یک نکته خیلی مهم درباره "More Data"</h2>
+        <p>فرض کن:</p>
+        <div class="chart">Train Error = 2%
+Validation Error = 30%</div>
+        <p>و با افزایش data:</p>
+        <div class="chart">Validation Error:
+30 → 25 → 20 → 15 → 10</div>
+        <p>اینجا:</p>
+        <p>More Data is working.</p>
+        <p>ولی اگر:</p>
+        <div class="chart">30 → 29 → 29 → 28.8 → 28.7</div>
+        <p>شود:</p>
+        <p>data بیشتر احتمالاً درمان اصلی نیست.</p>
+
+        <h2>56. اگر هر دو Error بالا باشند ولی فاصله کم باشد</h2>
+        <p>مثلاً:</p>
+        <div class="chart">Train = 30%
+Val   = 32%</div>
+        <p>این:</p>
+        <div class="formula">$$ High\ Bias $$</div>
+        <p>است.</p>
+        <p>اقدامات:</p>
+        <div class="chart">More expressive model
+        ↓
+Better features
+        ↓
+Less regularization
+        ↓
+Better optimization</div>
+        <p>نه اینکه فوراً:</p>
+        <p>data بیشتری جمع کنیم.</p>
+
+        <h2>57. اگر Train عالی و Val بد باشد</h2>
+        <p>مثلاً:</p>
+        <div class="chart">Train = 99%
+Val = 70%</div>
+        <p>به:</p>
+        <div class="formula">$$ High\ Variance $$</div>
+        <p>فکر کن.</p>
+        <p>اما قبل از اینکه regularization بزنی، Senior باید اینها را هم بررسی کند:</p>
+        <div class="chart">leakage
+duplicate samples
+train/test contamination
+wrong split
+distribution shift
+label mismatch
+data quality</div>
+
+        <h2>58. Duplicate Leakage</h2>
+        <p>مثلاً:</p>
+        <div class="chart">Train:
+Customer transaction A
+
+Validation:
+Same transaction A</div>
+        <p>مدل ممکن است:</p>
+        <div class="chart">Train = 99%
+Validation = 98%</div>
+        <p>نشان دهد.</p>
+        <p>Learning Curve عالی به نظر می‌رسد.</p>
+        <p>ولی model واقعاً generalize نمی‌کند.</p>
+        <p>پس:</p>
+        <p>Learning Curve جایگزین data auditing نیست.</p>
+
+        <h2>59. Distribution Shift</h2>
+        <p>اگر:</p>
+        <div class="formula">$$ P_{train}(X) \neq P_{production}(X) $$</div>
+        <p>باشد، validation performance ممکن است misleading باشد.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Train → Iranian customers
+Validation → Iranian customers
+Production → European customers</div>
+        <p>ممکن است:</p>
+        <div class="chart">Validation = 95%
+Production = 70%</div>
+        <p>باشد.</p>
+        <p>Learning Curve روی validation داخلی ممکن است مشکل را نشان ندهد.</p>
+
+        <h2>60. Concept Shift</h2>
+        <p>حتی اگر:</p>
+        <div class="formula">$$ P(X) $$</div>
+        <p>مشابه باشد، ممکن است:</p>
+        <div class="formula">$$ P(Y|X) $$</div>
+        <p>تغییر کند.</p>
+        <p>مثلاً relationship بین features و fraud در طول زمان تغییر کند.</p>
+        <p>در این حالت:</p>
+        <p>data بیشتر از همان historical distribution الزاماً مشکل را حل نمی‌کند.</p>
+
+        <h2>61. Learning Curve و Test Set</h2>
+        <p>یک اشتباه:</p>
+        <div class="chart">Learning Curve
+ ↓
+Tune model
+ ↓
+Look at test
+ ↓
+Change model
+ ↓
+Look at test again</div>
+        <p>این باعث:</p>
+        <div class="formula">$$ Test\ Set\ Overfitting $$</div>
+        <p>می‌شود.</p>
+        <p>Test set باید برای final evaluation باشد.</p>
+
+        <h2>62. Learning Curve و Hyperparameter Tuning</h2>
+        <p>اگر مدل را برای هر training size با hyperparameterهای متفاوت optimize کنی، interpretation سخت‌تر می‌شود.</p>
+        <p>بهتر است strategy مشخص داشته باشی.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Choose pipeline + hyperparameters
+          ↓
+Learning curve
+          ↓
+Diagnose data sufficiency</div>
+        <p>یا اگر hyperparameters را optimize می‌کنی، این process را به‌صورت nested و leak-free طراحی کن.</p>
+
+        <h2>63. Learning Curve برای Regression</h2>
+        <p>همین مفهوم در regression وجود دارد.</p>
+        <p>مثلاً:</p>
+        <div class="formula">$$ RMSE $$</div>
+        <p>رسم می‌کنیم.</p>
+        <div class="chart">RMSE
+ ^
+ |\
+ | \
+ |  \ Training
+ |   \________
+ |
+ |       \________ Validation
+ |
+ +------------------------> N</div>
+        <p>یعنی با افزایش داده:</p>
+        <div class="formula">$$ RMSE_{val}\downarrow $$</div>
+
+        <h2>64. Learning Curve برای Classification</h2>
+        <p>می‌توانی:</p>
+        <div class="chart">Accuracy
+Precision
+Recall
+F1
+ROC-AUC
+PR-AUC
+Log Loss</div>
+        <p>را رسم کنی.</p>
+        <p>ولی انتخاب metric مهم است.</p>
+        <p>برای fraud با 1% positive:</p>
+        <p>Accuracy learning curve ممکن است تقریباً بی‌معنی باشد.</p>
+        <p>بهتر است مثلاً:</p>
+        <div class="formula">$$ PR-AUC $$</div>
+        <p>یا:</p>
+        <div class="formula">$$ F_1 $$</div>
+        <p>را بررسی کنی.</p>
+
+        <h2>65. Learning Curve برای Imbalanced Classification</h2>
+        <p>مثلاً:</p>
+        <div class="chart">Accuracy = 99%</div>
+        <p>ممکن است حتی مدل کاملاً useless باشد.</p>
+        <p>پس:</p>
+        <div class="chart">Training PR-AUC
+Validation PR-AUC</div>
+        <p>را بررسی کن.</p>
+        <p>این یک نکته بسیار مهم برای production ML است.</p>
+
+        <h2>66. Learning Curve و Confidence Interval</h2>
+        <p>اگر curve را با CV بسازی، می‌توانی:</p>
+        <div class="formula">$$ Mean \pm Std $$</div>
+        <p>نمایش دهی.</p>
+        <p>مثلاً:</p>
+        <div class="chart">F1
+ ^
+ |        ●────
+ |      ●
+ |    ●
+ |  ●
+ | ●
+ +----------------> Data</div>
+        <p>و برای هر نقطه error bar داشته باشی.</p>
+        <p>این بهتر از یک curve تک‌مسیره است.</p>
+
+        <h2>67. Learning Curve و Variance بین Folds</h2>
+        <p>فرض کن:</p>
+        <div class="chart">Fold 1 = 0.91
+Fold 2 = 0.90
+Fold 3 = 0.89
+Fold 4 = 0.50
+Fold 5 = 0.91</div>
+        <p>Mean شاید خوب باشد.</p>
+        <p>ولی:</p>
+        <div class="formula">$$ Variance $$</div>
+        <p>بالاست.</p>
+        <p>این می‌تواند نشانه:</p>
+        <div class="chart">small dataset
+heterogeneous groups
+leakage
+unstable model
+distribution differences</div>
+        <p>باشد.</p>
+
+        <h2>68. Learning Curve و Group Generalization</h2>
+        <p>مثلاً در medical:</p>
+        <div class="chart">Patient A → 100 samples
+Patient B → 100 samples</div>
+        <p>اگر split بر اساس row باشد:</p>
+        <div class="chart">Patient A:
+Train → 80
+Validation → 20</div>
+        <p>ممکن است performance غیرواقعی بالا باشد.</p>
+        <p>Learning Curve خوب به نظر می‌رسد.</p>
+        <p>ولی deployment روی:</p>
+        <p>New Patients</p>
+        <p>ضعیف باشد.</p>
+        <p>پس:</p>
+        <div class="formula">$$ Group\ Split $$</div>
+        <p>مهم است.</p>
+
+        <h2>69. Learning Curve و Data Quality</h2>
+        <p>فرض کن با افزایش داده:</p>
+        <div class="chart">Train Error ↓
+Validation Error ↓</div>
+        <p>ولی بعد:</p>
+        <div class="chart">Validation Error ↑</div>
+        <p>ممکن است data جدید noisy باشد.</p>
+        <p>مثلاً:</p>
+        <div class="chart">0–10K → High quality
+10K–100K → Noisy labels</div>
+        <p>در این حالت:</p>
+        <p>«More data» لزوماً بهتر نیست.</p>
+        <p>کیفیت data هم مهم است.</p>
+
+        <h2>70. More Data vs Better Data</h2>
+        <p>گاهی:</p>
+        <div class="formula">$$ 100K\ Clean\ Samples $$</div>
+        <p>بهتر از:</p>
+        <div class="formula">$$ 10M\ Noisy\ Samples $$</div>
+        <p>است.</p>
+        <p>بنابراین Senior ML باید بپرسد:</p>
+        <p>آیا مشکل quantity است یا quality؟</p>
+
+        <h2>71. Active Learning</h2>
+        <p>اگر data labeling گران باشد، به جای جمع کردن random samples می‌توانی نمونه‌های informative را انتخاب کنی.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Model uncertain
+      ↓
+Select samples
+      ↓
+Human labeling
+      ↓
+Retrain</div>
+        <p>این می‌تواند از جمع‌آوری random data بسیار مؤثرتر باشد.</p>
+
+        <h2>72. Learning Curve و Active Learning</h2>
+        <p>دو curve می‌توانی مقایسه کنی:</p>
+        <div class="chart">Random Sampling
+vs
+Active Learning</div>
+        <p>مثلاً:</p>
+        <div class="chart">F1
+ ^
+ |                 Active
+ |             ___/
+ |          __/
+ |       __/
+ |    __/ Random
+ |___/________________> Labeled samples</div>
+        <p>این نشان می‌دهد:</p>
+        <p>کدام strategy با label budget کمتر performance بیشتری می‌دهد.</p>
+
+        <h2>73. Learning Curve و Error Decomposition</h2>
+        <p>در سطح تئوری:</p>
+        <div class="formula">$$ Expected\ Test\ Error $$</div>
+        <p>را می‌توان به اجزایی مثل:</p>
+        <div class="formula">$$ Bias^2 + Variance + Noise $$</div>
+        <p>مرتبط کرد.</p>
+        <p>Learning Curve به‌صورت empirical کمک می‌کند بفهمی کدام component احتمالاً غالب است.</p>
+
+        <h2>74. ولی Bias–Variance را بیش از حد ساده نکن</h2>
+        <p>در مدل‌های پیچیده مدرن:</p>
+        <div class="formula">$$ Bias^2+Variance+Noise $$</div>
+        <p>یک framework مفید است، ولی همه پدیده‌های generalization را به‌طور کامل توضیح نمی‌دهد.</p>
+        <p>مثلاً:</p>
+        <div class="chart">Deep neural networks
+Double descent
+Overparameterization
+SGD implicit regularization</div>
+        <p>رفتارهای پیچیده‌تری دارند.</p>
+
+        <h2>75. Learning Curve در Deep Learning</h2>
+        <p>در Neural Network معمولاً دو مفهوم را باید جدا کنی:</p>
+        <div class="chart">Learning Curve بر اساس Dataset Size
+Samples → Performance
+
+Training Curve بر اساس Epoch
+Epoch → Train/Validation Loss</div>
+        <p>این دو یکی نیستند.</p>
+
+        <h2>76. Training Curve</h2>
+        <p>مثلاً:</p>
+        <div class="chart">Loss
+ ^
+ |\
+ | \
+ |  \
+ |   \ Training
+ |
+ |    \____ Validation
+ |
+ +----------------> Epoch</div>
+        <p>اینجا محور X:</p>
+        <div class="formula">$$ Epoch $$</div>
+        <p>است.</p>
+
+        <h2>77. Learning Curve</h2>
+        <p>اما:</p>
+        <div class="chart">Loss
+ ^
+ |
+ |\
+ | \
+ |  \____
+ |
+ +----------------------> Training Samples</div>
+        <p>اینجا محور X:</p>
+        <div class="formula">$$ N $$</div>
+        <p>است.</p>
+        <p>این distinction در مصاحبه خیلی مهم است.</p>
+
+        <h2>78. اگر Validation Loss بعد از چند Epoch افزایش یابد</h2>
+        <p>مثلاً:</p>
+        <div class="chart">Epoch
+
+Train Loss:
+1.0 → 0.7 → 0.4 → 0.2 → 0.1
+
+Val Loss:
+1.0 → 0.7 → 0.5 → 0.6 → 0.9</div>
+        <p>این بیشتر:</p>
+        <div class="formula">$$ Overfitting\ over\ training $$</div>
+        <p>را نشان می‌دهد.</p>
+        <p>راه‌حل:</p>
+        <div class="formula">$$ Early\ Stopping $$</div>
+        <p>مثلاً بهترین epoch:</p>
+        <div class="chart">Epoch 3</div>
+
+        <h2>79. اما Learning Curve می‌تواند بگوید Early Stopping کافی نیست</h2>
+        <p>اگر:</p>
+        <div class="chart">Train Error = 2%
+Val Error = 25%</div>
+        <p>و با افزایش data:</p>
+        <div class="chart">Val = 25 → 20 → 15 → 10</div>
+        <p>مشکل اصلی احتمالاً variance است و data بیشتر کمک می‌کند.</p>
+        <p>اما اگر:</p>
+        <div class="chart">Val = 25 → 24.5 → 24.3 → 24.2</div>
+        <p>باشد:</p>
+        <p>Early stopping alone مشکل اصلی را حل نمی‌کند.</p>
+
+        <h2>80. یک Framework برای تصمیم‌گیری</h2>
+        <p>وقتی Learning Curve داری، این ترتیب را برو:</p>
+        <div class="chart">Step 1
+ببین metric چیست:
+Error?
+Accuracy?
+F1?
+AUC?
+
+Step 2
+Train و Validation را مقایسه کن.
+
+Step 3
+Gap را بررسی کن:
+$$ Gap=E_{val}-E_{train} $$
+
+Step 4
+Slope validation را بررسی کن:
+$$ \frac{\Delta E_{val}}{\Delta N} $$
+
+Step 5
+ببین plateau شده یا نه.
+
+Step 6
+Distribution و split را بررسی کن.
+
+Step 7
+تصمیم بگیر:
+More Data?
+Better Data?
+Higher Capacity?
+Lower Capacity?
+Regularization?
+Better Features?
+Better Labels?
+Different Objective?</div>
+
+        <h2>81. مثال کامل Senior-Level</h2>
+        <p>فرض کن Fraud Model داریم.</p>
+        <p>Dataset</p>
+        <div class="chart">1M transactions
+Fraud = 0.5%</div>
+        <p>Learning Curve:</p>
+        <table>
+            <thead><tr><th>Samples</th><th>Train PR-AUC</th><th>Val PR-AUC</th></tr></thead>
+            <tbody>
+                <tr><td>10K</td><td>0.99</td><td>0.55</td></tr>
+                <tr><td>50K</td><td>0.98</td><td>0.65</td></tr>
+                <tr><td>100K</td><td>0.97</td><td>0.72</td></tr>
+                <tr><td>250K</td><td>0.96</td><td>0.79</td></tr>
+                <tr><td>500K</td><td>0.95</td><td>0.83</td></tr>
+                <tr><td>1M</td><td>0.94</td><td>0.85</td></tr>
+            </tbody>
+        </table>
+
+        <h2>82. Interpretation</h2>
+        <p>Train:</p>
+        <div class="formula">$$ 0.99\rightarrow0.94 $$</div>
+        <p>کاهش پیدا کرده.</p>
+        <p>Validation:</p>
+        <div class="formula">$$ 0.55\rightarrow0.85 $$</div>
+        <p>بهبود زیادی داشته.</p>
+        <p>پس:</p>
+        <p>More data clearly helps.</p>
+        <p>و هنوز:</p>
+        <div class="formula">$$ Val\ PR-AUC $$</div>
+        <p>در حال افزایش است.</p>
+        <p>احتمالاً data بیشتری می‌تواند مفید باشد.</p>
+
+        <h2>83. مثال دوم</h2>
+        <table>
+            <thead><tr><th>Samples</th><th>Train PR-AUC</th><th>Val PR-AUC</th></tr></thead>
+            <tbody>
+                <tr><td>10K</td><td>0.99</td><td>0.55</td></tr>
+                <tr><td>50K</td><td>0.99</td><td>0.58</td></tr>
+                <tr><td>100K</td><td>0.99</td><td>0.59</td></tr>
+                <tr><td>500K</td><td>0.99</td><td>0.60</td></tr>
+                <tr><td>1M</td><td>0.99</td><td>0.60</td></tr>
+            </tbody>
+        </table>
+        <p>اینجا:</p>
+        <p>Train = excellent</p>
+        <p>Validation = poor</p>
+        <p>و validation تقریباً plateau است.</p>
+        <p>پس:</p>
+        <p>صرفاً data بیشتر احتمالاً solution اصلی نیست.</p>
+        <p>باید بررسی کنیم:</p>
+        <div class="chart">feature quality
+label quality
+train/production mismatch
+concept shift
+model objective
+fraud signal availability</div>
+
+        <h2>84. مثال سوم — High Bias</h2>
+        <table>
+            <thead><tr><th>Samples</th><th>Train F1</th><th>Val F1</th></tr></thead>
+            <tbody>
+                <tr><td>10K</td><td>0.62</td><td>0.60</td></tr>
+                <tr><td>50K</td><td>0.63</td><td>0.61</td></tr>
+                <tr><td>100K</td><td>0.63</td><td>0.62</td></tr>
+                <tr><td>500K</td><td>0.64</td><td>0.63</td></tr>
+                <tr><td>1M</td><td>0.64</td><td>0.63</td></tr>
+            </tbody>
+        </table>
+        <p>هر دو پایین و نزدیک‌اند.</p>
+        <p>این strongly suggests:</p>
+        <div class="formula">$$ High\ Bias $$</div>
+        <p>اقدام:</p>
+        <div class="chart">More Capacity
+Better Features
+Less Regularization
+Better Optimization</div>
+
+        <h2>85. مثال چهارم — Healthy Model</h2>
+        <table>
+            <thead><tr><th>Samples</th><th>Train F1</th><th>Val F1</th></tr></thead>
+            <tbody>
+                <tr><td>10K</td><td>0.80</td><td>0.72</td></tr>
+                <tr><td>50K</td><td>0.83</td><td>0.79</td></tr>
+                <tr><td>100K</td><td>0.85</td><td>0.82</td></tr>
+                <tr><td>500K</td><td>0.87</td><td>0.85</td></tr>
+                <tr><td>1M</td><td>0.88</td><td>0.87</td></tr>
+            </tbody>
+        </table>
+        <p>Gap کم می‌شود.</p>
+        <p>Validation بهتر می‌شود.</p>
+        <p>این تقریباً:</p>
+        <p>healthy learning behavior</p>
+        <p>است.</p>
+
+        <h2>86. Learning Curve و Generalization Gap</h2>
+        <p>یکی از چیزهایی که Senior باید دنبال کند:</p>
+        <div class="formula">$$ Generalization\ Gap $$</div>
+        <p>مثلاً برای loss:</p>
+        <div class="formula">$$ Gap = L_{val}-L_{train} $$</div>
+        <p>اگر gap بزرگ باشد:</p>
+        <div class="formula">$$ Variance $$</div>
+        <p>محتمل‌تر است.</p>
+        <p>اگر هر دو loss بالا باشند:</p>
+        <div class="formula">$$ Bias $$</div>
+        <p>محتمل‌تر است.</p>
+
+        <h2>87. ولی Generalization Gap به Dataset Size وابسته است</h2>
+        <p>معمولاً با افزایش data:</p>
+        <div class="formula">$$ Gap\downarrow $$</div>
+        <p>می‌تواند رخ دهد.</p>
+        <p>چون تخمین model از underlying distribution پایدارتر می‌شود.</p>
+
+        <h2>88. Learning Curve و Sample Complexity</h2>
+        <p>در تئوری ML سؤال مهمی داریم:</p>
+        <p>برای رسیدن به performance مشخص، چند sample لازم داریم؟</p>
+        <p>این همان ایده:</p>
+        <div class="formula">$$ Sample\ Complexity $$</div>
+        <p>است.</p>
+        <p>Learning Curve یک نگاه empirical به این مسئله می‌دهد.</p>
+
+        <h2>89. Learning Curve برای تعیین Data Budget</h2>
+        <p>مثلاً business می‌گوید:</p>
+        <div class="chart">F1 ≥ 0.90</div>
+        <p>Learning Curve نشان می‌دهد:</p>
+        <div class="chart">100K → .82
+200K → .86
+500K → .89
+800K → .90</div>
+        <p>پس می‌توانی بگویی:</p>
+        <p>حدود 800K labeled examples احتمالاً لازم است.</p>
+        <p>البته باید uncertainty و تغییرات production را هم در نظر گرفت.</p>
+
+        <h2>90. مهم: Extrapolation خطرناک است</h2>
+        <p>اگر curve تا:</p>
+        <div class="formula">$$ 1M $$</div>
+        <p>داریم، نمی‌توانی با اطمینان بگویی:</p>
+        <div class="chart">10M → F1 = 0.95</div>
+        <p>چون curve ممکن است plateau شود.</p>
+        <p>بنابراین:</p>
+        <p>extrapolating far beyond observed data risky است.</p>
+
+        <h2>91. Learning Curve و Business Objective</h2>
+        <p>فرض کن:</p>
+        <div class="chart">100K samples → Recall = 90%
+500K samples → Recall = 91%
+1M samples → Recall = 91.2%</div>
+        <p>اگر هزینه جمع‌آوری 1M نمونه زیاد باشد، شاید ارزش نداشته باشد.</p>
+        <p>بنابراین سؤال:</p>
+        <p>«آیا data بیشتر performance را بهتر می‌کند؟»</p>
+        <p>با:</p>
+        <p>«آیا data بیشتر از نظر اقتصادی ارزش دارد؟»</p>
+        <p>متفاوت است.</p>
+
+        <h2>92. Data-Centric ML</h2>
+        <p>اگر learning curve نشان دهد data بیشتر کمک نمی‌کند، ممکن است به جای model-centric optimization برویم سمت:</p>
+        <div class="chart">Better Labels
+Better Features
+Better Sampling
+Better Coverage
+Better Data Quality</div>
+        <p>این همان تفکر:</p>
+        <div class="formula">$$ Data-Centric\ AI $$</div>
+        <p>است.</p>
+
+        <h2>93. یک اشتباه رایج</h2>
+        <p>دیدن:</p>
+        <div class="chart">Train = 99%
+Validation = 70%</div>
+        <p>و بلافاصله گفتن:</p>
+        <p>«داده بیشتری جمع کن.»</p>
+        <p>نه همیشه.</p>
+        <p>اول باید ببینی:</p>
+        <div class="chart">Validation Error
+       ↓
+با افزایش داده
+       ↓
+کاهش دارد؟</div>
+        <p>اگر ندارد:</p>
+        <p>more data ممکن است waste باشد.</p>
+
+        <h2>94. یک اشتباه رایج دیگر</h2>
+        <p>دیدن:</p>
+        <div class="chart">Train = 70%
+Validation = 68%</div>
+        <p>و گفتن:</p>
+        <p>«مدل underfit است، پس data بیشتری لازم داریم.»</p>
+        <p>نه.</p>
+        <p>این بیشتر:</p>
+        <div class="formula">$$ High\ Bias $$</div>
+        <p>است.</p>
+        <p>ممکن است مدل ظرفیت کافی نداشته باشد.</p>
+
+        <h2>95. یک اشتباه سوم</h2>
+        <p>دیدن:</p>
+        <div class="chart">Train = 99%
+Validation = 90%</div>
+        <p>و گفتن:</p>
+        <p>«Overfitting.»</p>
+        <p>ممکن است درست باشد، ولی کافی نیست.</p>
+        <p>باید بپرسی:</p>
+        <div class="chart">آیا 90% برای business کافی است؟
+آیا split درست بوده؟
+آیا distribution shift وجود دارد؟
+آیا test performance هم 90% است؟
+آیا metric مناسب است؟</div>
+
+        <h2>96. Learning Curve و Test Set</h2>
+        <p>ساختار حرفه‌ای:</p>
+        <div class="chart">                Full Data
+                   │
+          ┌────────┴────────┐
+          │                 │
+       Train/Val           Test
+          │                 │
+          ▼                 │
+   Learning Curve           │
+          │                 │
+          ▼                 │
+ Model Selection            │
+          │                 │
+          └────────┬────────┘
+                   ▼
+              Final Model
+                   │
+                   ▼
+              Test Once</div>
+
+        <h2>97. Learning Curve و Cross-Validation Leakage</h2>
+        <p>اگر preprocessing یا feature selection را قبل از CV روی کل dataset انجام دهی:</p>
+        <div class="chart">Full Dataset
+ ↓
+Feature Selection
+ ↓
+Learning Curve</div>
+        <p>validation information ممکن است وارد process شود.</p>
+        <p>راه صحیح:</p>
+        <div class="chart">Fold
+ ↓
+Fit preprocessing/selection
+ ↓
+Train
+ ↓
+Validate</div>
+        <p>Pipeline بسیار مهم است.</p>
+
+        <h2>98. در Senior Interview اگر بپرسند: «Learning curve چه چیزی به ما می‌گوید؟»</h2>
+        <p>جواب:</p>
+        <div class="highlight-box">
+            <p>Learning curves show how training and validation performance change as the amount of training data increases. They help diagnose whether the model is suffering primarily from high bias, high variance, insufficient data, or a capacity/feature limitation. The key is not just the train-validation gap, but also whether validation performance is still improving or has plateaued as more data is added.</p>
+        </div>
+
+        <h2>99. اگر بپرسند: «اگر Training Error و Validation Error هر دو بالا باشند چه می‌کنی؟»</h2>
+        <div class="highlight-box">
+            <p>I would suspect high bias or insufficient model capacity first. I would evaluate whether the model can fit the training data, then consider increasing model capacity, improving features, reducing excessive regularization, or improving optimization. I would not assume that more data will solve the problem.</p>
+        </div>
+
+        <h2>100. اگر بپرسند: «اگر Training Error پایین و Validation Error بالا باشد؟»</h2>
+        <div class="highlight-box">
+            <p>I would suspect high variance / overfitting, but I would first verify that the validation split is representative and leakage-free. Then I would inspect whether validation error decreases substantially as training size increases. If it does, more data may help. Otherwise I would consider regularization, reducing model capacity, better features, data quality, or distribution mismatch.</p>
+        </div>
+
+        <h2>101. اگر بپرسند: «چطور می‌فهمی More Data لازم داری؟»</h2>
+        <p>سه signal اصلی:</p>
+        <div class="formula">$$ \boxed{ Validation\ performance\ is\ still\ improving } $$</div>
+        <div class="formula">$$ \boxed{ Train-Validation\ gap\ is\ decreasing } $$</div>
+        <div class="formula">$$ \boxed{ Model\ has\ enough\ capacity } $$</div>
+        <p>اگر validation plateau شده باشد:</p>
+        <p>data بیشتر احتمالاً diminishing returns دارد.</p>
+
+        <h2>102. خلاصه نهایی در یک نمودار ذهنی</h2>
+        <div class="chart">                    LEARNING CURVE
+                          │
+                          ▼
+              Plot performance vs N
+                          │
+              ┌───────────┴───────────┐
+              │                       │
+         Train ≈ Val             Train << Val
+              │                       │
+              ▼                       ▼
+          High Bias              High Variance
+              │                       │
+              ▼                       ▼
+      Increase Capacity          More Data?
+      Better Features            Regularization
+      Less Regularization        Reduce Capacity
+      Better Optimization        Augmentation
+                                      │
+                                      ▼
+                         Does Validation improve?
+                              /             \
+                            YES              NO
+                             │                │
+                             ▼                ▼
+                       More Data       Problem elsewhere
+                                       │
+                              ┌────────┼─────────┐
+                              ▼        ▼         ▼
+                           Features  Labels   Distribution
+                           Quality   Noise      Shift
+                                      │
+                                      ▼
+                                  Bayes Error</div>
+
+        <h2>🎯 چیزهایی که باید در سطح Senior از Learning Curves بلد باشی</h2>
+        <p>اگر بخواهم تمام این chapter را به چند اصل تبدیل کنم:</p>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">1.</div>
+            <div class="formula">$$ \boxed{Learning\ Curve \neq Training\ Curve} $$</div>
+            <p>Learning Curve → مقدار data</p>
+            <p>Training Curve → معمولاً epoch/iteration</p>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">2.</div>
+            <div class="formula">$$ \boxed{ High\ Train\ Performance + Poor\ Validation \rightarrow High\ Variance } $$</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#3fb950;">
+            <div class="inner-title">3.</div>
+            <div class="formula">$$ \boxed{ Poor\ Train + Poor\ Validation \rightarrow High\ Bias } $$</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#d2a8ff;">
+            <div class="inner-title">4.</div>
+            <div class="formula">$$ \boxed{ Validation\ improving\ with\ N \rightarrow More\ Data\ may\ help } $$</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#58a6ff;">
+            <div class="inner-title">5.</div>
+            <div class="formula">$$ \boxed{ Validation\ plateau \rightarrow More\ Data\ alone\ may\ not\ help } $$</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#f0883e;">
+            <div class="inner-title">6.</div>
+            <p>اگر validation plateau است، برو سراغ:</p>
+            <div class="chart">Features
+Labels
+Model Capacity
+Optimization
+Data Quality
+Distribution Shift
+Bayes Error
+Objective / Metric</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#3fb950;">
+            <div class="inner-title">7.</div>
+            <p>Train-validation gap به‌تنهایی کافی نیست.</p>
+            <p>باید همزمان نگاه کنی به:</p>
+            <div class="formula">$$ Absolute\ Performance + Generalization\ Gap + Slope + Plateau + Data\ Distribution $$</div>
+        </div>
+        <div class="inner-box" style="border-right-color:#d2a8ff;">
+            <div class="inner-title">8. و مهم‌ترین نکته:</div>
+            <p>Learning Curve به تو نمی‌گوید «چه کاری حتماً انجام بده»؛ به تو evidence می‌دهد که آیا افزایش داده احتمالاً ارزشمند است یا باید دنبال bottleneck دیگری بگردی.</p>
+            <p>این دقیقاً تفاوت نگاه Junior و Senior ML است.</p>
+        </div>
+
+        <hr style="border:1px solid #444; margin:50px 0;" />
+        <p style="text-align:center; color:#8b949e; font-size:0.85rem; padding:16px 0;">Learning Curves · Senior ML · تمام نکات ریز 🧠</p>
+    </div>
+</body>
+</html>
