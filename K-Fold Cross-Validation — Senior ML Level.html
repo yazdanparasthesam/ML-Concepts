@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>K-Fold Cross-Validation - Senior ML Level</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}]});"></script>
+    <style>
+        body { background-color: #0d1117; color: #e6edf3; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.8; margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1, h2, h3 { color: #e6edf3; text-align: right; border-bottom: 1px solid #444; padding-bottom: 15px; margin-top: 50px; }
+        p, li { text-align: right; }
+        
+        /* Boxes */
+        .box { background-color: #21262d; border: 1px solid #30363d; border-radius: 8px; padding: 15px; margin: 15px 0; color: #e6edf3; }
+        .inner-box { background-color: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 15px; margin: 10px; }
+        .inner-title { font-weight: bold; margin-bottom: 5px; }
+
+        /* Formula Box */
+        .formula {
+            direction: ltr;
+            background-color: #000;
+            border: 1px solid #fff;
+            border-radius: 0;
+            padding: 20px;
+            margin: 20px auto;
+            width: fit-content;
+            max-width: 100%;
+            overflow-x: auto;
+            text-align: center;
+            font-size: 1.2em;
+            font-family: "Times New Roman", Times, serif;
+            color: #fff;
+        }
+
+        /* Charts / Flowcharts / ASCII Art */
+        .chart { direction: ltr; text-align: left; font-family: monospace; background-color: #21262d; border-radius: 8px; padding: 15px; overflow-x: auto; white-space: pre; border: 1px solid #444; }
+
+        /* Tables */
+        table { width: 100%; border-collapse: collapse; direction: rtl; margin-bottom: 20px; }
+        th, td { border: 1px solid #444; padding: 12px; text-align: right; }
+        th { background-color: #21262d; }
+        
+        .highlight { color: #58a6ff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧠 K-Fold Cross-Validation — Senior ML Level</h1>
+        
+        <p>حتماً. K-Fold Cross-Validation را اگر بخواهی برای سطح مصاحبه‌ی ML Engineer واقعاً خوب بلد باشی، باید فقط تعریفش را حفظ نکنی؛ باید بدانی چرا استفاده می‌شود، دقیقاً چطور کار می‌کند، چه زمانی نباید استفاده شود، تفاوتش با Stratified/Group/TimeSeries چیست، و Leakage در CV چطور اتفاق می‌افتد.</p>
+
+        <h2>1. اصلاً چرا Cross-Validation داریم؟</h2>
+        <p>فرض کن 10,000 رکورد داری.</p>
+        <p>اگر این کار را انجام بدهی:</p>
+        <div class="box"><div class="chart">Train = 80%
+Validation = 20%</div></div>
+        <p>ممکن است اتفاقی Validation Set خیلی آسان یا خیلی سخت انتخاب شود.</p>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">Split 1 → Accuracy = 91%
+Split 2 → Accuracy = 86%
+Split 3 → Accuracy = 94%</div></div>
+        <p>پس Performance ما به نحوه Split کردن داده حساس است.</p>
+        <p>Cross-Validation می‌گوید:</p>
+        <div class="inner-box">بیایید چندین بار Train/Validation Split انجام بدهیم و Performance را روی همه‌ی آن‌ها بررسی کنیم.</div>
+        <p>هدف اصلی این است که تخمین قابل‌اعتماد‌تری از عملکرد مدل روی داده‌ی ندیده داشته باشیم.</p>
+
+        <h2>2. K-Fold دقیقاً چیست؟</h2>
+        <p>فرض کن:</p>
+        <div class="box"><div class="chart">K = 5</div></div>
+        <p>داده را به 5 قسمت تقسیم می‌کنیم:</p>
+        <div class="box">
+            <div class="chart">
+        Dataset
+─────────────────────────────
+ Fold 1 | Fold 2 | Fold 3 | Fold 4 | Fold 5
+            </div>
+        </div>
+        <p>حالا 5 بار مدل را Train می‌کنیم.</p>
+
+        <div class="inner-box"><div class="inner-title">Round 1</div></div>
+        <div class="box"><div class="chart">Train: Fold 2 + 3 + 4 + 5
+Valid: Fold 1</div></div>
+        
+        <div class="inner-box"><div class="inner-title">Round 2</div></div>
+        <div class="box"><div class="chart">Train: Fold 1 + 3 + 4 + 5
+Valid: Fold 2</div></div>
+        
+        <div class="inner-box"><div class="inner-title">Round 3</div></div>
+        <div class="box"><div class="chart">Train: Fold 1 + 2 + 4 + 5
+Valid: Fold 3</div></div>
+        
+        <div class="inner-box"><div class="inner-title">Round 4</div></div>
+        <div class="box"><div class="chart">Train: Fold 1 + 2 + 3 + 5
+Valid: Fold 4</div></div>
+        
+        <div class="inner-box"><div class="inner-title">Round 5</div></div>
+        <div class="box"><div class="chart">Train: Fold 1 + 2 + 3 + 4
+Valid: Fold 5</div></div>
+
+        <p>در نتیجه هر sample دقیقاً یک بار در validation قرار می‌گیرد و در 4 بار دیگر در training استفاده می‌شود. این همان K-Fold استاندارد است.</p>
+
+        <h2>3. بعد چه کار می‌کنیم؟</h2>
+        <p>فرض کن F1 هر Fold این باشد:</p>
+        <div class="box">
+            <div class="chart">
+Fold 1 → 0.91
+Fold 2 → 0.94
+Fold 3 → 0.89
+Fold 4 → 0.93
+Fold 5 → 0.92
+            </div>
+        </div>
+        <p>میانگین:</p>
+        <div class="formula">$$CV_{score} = \frac{0.91 + 0.94 + 0.89 + 0.93 + 0.92}{5}$$</div>
+        <p>یعنی:</p>
+        <div class="formula">$$CV_{score} = 0.918$$</div>
+        <p>پس می‌گوییم:</p>
+        <div class="box"><div class="chart">Mean CV F1 = 0.918</div></div>
+
+        <p>ولی فقط Mean مهم نیست.</p>
+        <p>Standard Deviation هم مهم است:</p>
+        <div class="box"><div class="chart">Mean F1 = 0.918
+Std     = 0.018</div></div>
+        <p>یعنی Performance بین Foldها نسبتاً پایدار بوده.</p>
+        <p>اگر داشته باشیم:</p>
+        <div class="box">
+            <div class="chart">
+Fold 1 → 0.99
+Fold 2 → 0.72
+Fold 3 → 0.95
+Fold 4 → 0.68
+Fold 5 → 0.91
+            </div>
+        </div>
+        <p>Mean شاید هنوز قابل‌قبول به نظر برسد، ولی Variance بین Foldها زیاد است و باید علتش را بررسی کنیم.</p>
+
+        <h2>4. K را چند بگذاریم؟</h2>
+        <p>مقادیر رایج:</p>
+        <div class="box"><div class="chart">K = 5
+K = 10</div></div>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">KFold(n_splits=5)</div></div>
+
+        <div class="inner-box"><div class="inner-title">K کوچک</div></div>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">K = 2</div></div>
+        <p>هر مدل فقط روی 50٪ داده Train می‌شود.</p>
+        <p>پس:</p>
+        <ul>
+            <li>Training data کمتر</li>
+            <li>تخمین ممکن است Bias بیشتری داشته باشد</li>
+            <li>محاسبات کمتر</li>
+        </ul>
+
+        <div class="inner-box"><div class="inner-title">K بزرگ</div></div>
+        <p>مثلاً:</p>
+        <div class="box"><div class="chart">K = 20</div></div>
+        <p>هر مدل روی تقریباً 95٪ داده Train می‌شود.</p>
+        <p>ولی:</p>
+        <ul>
+            <li>مدل را 20 بار Train می‌کنی</li>
+            <li>Computational Cost بالا می‌رود</li>
+            <li>ممکن است برآوردها به هم وابسته‌تر شوند.</li>
+        </ul>
+
+        <div class="inner-box"><div class="inner-title">K = N</div></div>
+        <p>این حالت می‌شود:</p>
+        <div class="inner-box">Leave-One-Out Cross-Validation (LOOCV)</div>
+        <p>یعنی:</p>
+        <div class="box">
+            <div class="chart">
+N samples
+↓
+N models
+            </div>
+        </div>
+        <p>هر بار یک sample validation است.</p>
+
+        <h2>5. مهم‌ترین نکته: K-Fold به معنی Test Set نیست</h2>
+        <p>این اشتباه خیلی رایج است.</p>
+        <p>فرض کن:</p>
+        <div class="box"><div class="chart">100,000 samples</div></div>
+        <p>بهتر است:</p>
+        <div class="box"><div class="chart">80% Train
+20% Test</div></div>
+        <p>و فقط روی 80٪:</p>
+        <div class="box"><div class="chart">5-Fold CV</div></div>
+        <p>انجام دهیم.</p>
+        <p>یعنی:</p>
+        <div class="box">
+            <div class="chart">
+                Dataset
+                   │
+          ┌────────┴────────┐
+          │                 │
+       Train 80%          Test 20%
+          │                 │
+      5-Fold CV           FINAL
+          │              EVALUATION
+          │
+    Model Selection
+    Hyperparameter
+    Tuning
+            </div>
+        </div>
+        <p>Test Set را تا پایان دست‌نخورده نگه می‌داریم.</p>
+        <p>این همان چیزی است که باعث می‌شود Test Set برای final evaluation اعتبار داشته باشد.</p>
+
+        <h2>6. K-Fold چه مشکلی را حل می‌کند؟</h2>
+        <p>فرض کن فقط یک Validation Split داشته باشیم:</p>
+        <div class="box">
+            <div class="chart">
+Train
+████████████████████
+
+Validation
+█████
+            </div>
+        </div>
+        <p>ممکن است نتیجه به این Split خاص وابسته باشد.</p>
+        <p>K-Fold:</p>
+        <div class="box">
+            <div class="chart">
+Fold 1 → Score
+Fold 2 → Score
+Fold 3 → Score
+Fold 4 → Score
+Fold 5 → Score
+             ↓
+        Mean + Std
+            </div>
+        </div>
+        <p>پس تخمین Performance معمولاً کمتر وابسته به یک Split خاص می‌شود.</p>
+
+        <h2>7. ولی K-Fold همیشه درست نیست!</h2>
+        <p>این قسمت برای مصاحبه خیلی مهم است.</p>
+        <p>اگر Classification داری:</p>
+        <p>معمولاً به جای KFold ساده، بهتر است از:</p>
+        <div class="inner-box">Stratified K-Fold</div>
+        <p>استفاده کنی.</p>
+        <p>فرض کن:</p>
+        <div class="box"><div class="chart">Normal = 950
+Fraud  = 50</div></div>
+        <p>یعنی:</p>
+        <div class="box"><div class="chart">95% / 5%</div></div>
+        <p>StratifiedKFold تلاش می‌کند این نسبت کلاس‌ها را در Foldها تقریباً حفظ کند.</p>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">
+Fold 1 → 95% / 5%
+Fold 2 → 95% / 5%
+Fold 3 → 95% / 5%
+Fold 4 → 95% / 5%
+Fold 5 → 95% / 5%
+            </div>
+        </div>
+        <p>این مخصوصاً برای Imbalanced Classification مهم است.</p>
+
+        <h2>8. KFold vs StratifiedKFold</h2>
+        <div class="inner-box"><div class="inner-title">KFold</div></div>
+        <p>فقط داده را تقسیم می‌کند.</p>
+        <div class="box">
+            <div class="chart">
+from sklearn.model_selection import KFold
+
+kf = KFold(
+    n_splits=5,
+    shuffle=True,
+    random_state=42
+)
+            </div>
+        </div>
+        
+        <div class="inner-box"><div class="inner-title">StratifiedKFold</div></div>
+        <p>Class Distribution را هم در نظر می‌گیرد.</p>
+        <div class="box">
+            <div class="chart">
+from sklearn.model_selection import StratifiedKFold
+
+skf = StratifiedKFold(
+    n_splits=5,
+    shuffle=True,
+    random_state=42
+)
+            </div>
+        </div>
+        <p>برای Classification معمولاً:</p>
+        <div class="box">
+            <div class="chart">
+Classification
+      ↓
+StratifiedKFold
+            </div>
+        </div>
+        <p>انتخاب طبیعی‌تری است، مخصوصاً وقتی کلاس‌ها نامتوازن‌اند.</p>
+
+        <h2>9. یک نکته ظریف درباره Stratification</h2>
+        <p>Stratification الزاماً یک «بهبود آماری عمومی» نیست.</p>
+        <p>هدف اصلی آن این است که مشکلات عملی Split در Classification، مخصوصاً با کلاس‌های نادر، کاهش پیدا کند.</p>
+        <p>حتی scikit-learn اشاره می‌کند که Stratification می‌تواند variability بین Foldها را ظاهراً کمتر نشان دهد.</p>
+        <p>پس:</p>
+        <div class="inner-box">Stratification ≠ تضمین بهتر بودن مدل</div>
+        <p>بلکه:</p>
+        <div class="inner-box">Stratification = Split مناسب‌تر برای حفظ نسبت کلاس‌ها.</div>
+
+        <h2>10. Regression چه؟</h2>
+        <p>برای Regression معمولاً:</p>
+        <div class="box"><div class="chart">KFold</div></div>
+        <p>مناسب است.</p>
+        <p>چون Target پیوسته است:</p>
+        <div class="box">
+            <div class="chart">
+12.3
+15.7
+18.2
+...
+            </div>
+        </div>
+        <p>و مفهوم Class Ratio مثل Classification نداریم.</p>
+        <p>البته در مسائل خاص ممکن است نیاز به روش‌های خاص‌تر برای تقسیم‌بندی Target داشته باشی.</p>
+
+        <h2>11. Group K-Fold</h2>
+        <p>این یکی خیلی مهم است.</p>
+        <p>فرض کن Dataset پزشکی داری:</p>
+        <div class="box">
+            <div class="chart">
+Patient A → 100 samples
+Patient B → 100 samples
+Patient C → 100 samples
+            </div>
+        </div>
+        <p>اگر Random K-Fold انجام بدهی، ممکن است:</p>
+        <div class="box">
+            <div class="chart">
+Patient A
+ ├── Train
+ └── Validation
+            </div>
+        </div>
+        <p>یعنی اطلاعات یک بیمار هم در Train و هم Validation وجود دارد.</p>
+        <p>این می‌تواند باعث Data Leakage شود.</p>
+        <p>راه‌حل:</p>
+        <div class="box"><div class="chart">GroupKFold</div></div>
+        <p>یعنی:</p>
+        <div class="box">
+            <div class="chart">
+Patient A → فقط Train
+Patient B → فقط Train
+Patient C → فقط Validation
+            </div>
+        </div>
+        <p>هیچ Group مشترکی بین Train و Validation وجود ندارد.</p>
+        <p>مثال‌های Group:</p>
+        <div class="box">
+            <div class="chart">
+Patient ID
+User ID
+Customer ID
+Device ID
+Company ID
+Transaction Account
+Subject ID
+            </div>
+        </div>
+
+        <h2>12. یک مثال خیلی مهم برای Fraud Detection</h2>
+        <p>فرض کن:</p>
+        <div class="box">
+            <div class="chart">
+User A
+ ├── Transaction 1
+ ├── Transaction 2
+ ├── Transaction 3
+ └── Transaction 4
+            </div>
+        </div>
+        <p>اگر:</p>
+        <div class="box">
+            <div class="chart">
+Transaction 1 → Train
+Transaction 2 → Validation
+            </div>
+        </div>
+        <p>باشد، ممکن است مدل User-specific patternها را یاد بگیرد.</p>
+        <p>اگر هدف تو این است که:</p>
+        <div class="inner-box">روی Userهای کاملاً جدید Generalize کنیم</div>
+        <p>باید:</p>
+        <div class="box"><div class="chart">Group = User ID</div></div>
+        <p>و از:</p>
+        <div class="box"><div class="chart">GroupKFold</div></div>
+        <p>استفاده کنی.</p>
+
+        <h2>13. StratifiedGroupKFold</h2>
+        <p>حالا اگر همزمان:</p>
+        <div class="box">
+            <div class="chart">
+Class Imbalance
++
+Groups
+            </div>
+        </div>
+        <p>داشته باشی:</p>
+        <div class="box">
+            <div class="chart">
+User A → Fraud/Normal
+User B → Fraud/Normal
+User C → Fraud/Normal
+            </div>
+        </div>
+        <p>می‌توانی از:</p>
+        <div class="box"><div class="chart">StratifiedGroupKFold</div></div>
+        <p>استفاده کنی.</p>
+        <p>هدف:</p>
+        <div class="box">
+            <div class="chart">
+Class distribution
+        +
+Group separation
+            </div>
+        </div>
+        <p>را همزمان تا حد امکان رعایت کند.</p>
+
+        <h2>14. Time Series: اینجا KFold معمولی خطرناک است</h2>
+        <p>فرض کن:</p>
+        <div class="box"><div class="chart">2022 → 2023 → 2024 → 2025 → 2026</div></div>
+        <p>اگر Random KFold انجام دهی:</p>
+        <div class="box">
+            <div class="chart">
+2025 → Train
+2024 → Validation
+            </div>
+        </div>
+        <p>مدل ممکن است از آینده برای پیش‌بینی گذشته استفاده کند.</p>
+        <p>این یک نوع Temporal Leakage است.</p>
+        <p>برای Time Series معمولاً:</p>
+        <div class="box"><div class="chart">TimeSeriesSplit</div></div>
+        <p>مناسب‌تر است.</p>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">
+Fold 1:
+
+Train: 2022
+Valid: 2023
+
+Fold 2:
+
+Train: 2022 + 2023
+Valid: 2024
+
+Fold 3:
+
+Train: 2022 + 2023 + 2024
+Valid: 2025
+            </div>
+        </div>
+        <p>یعنی Train همیشه در گذشته و Validation در آینده است. scikit-learn هم توضیح می‌دهد که KFold کلاسیک برای داده‌های time-dependent می‌تواند برآورد غیرواقعی ایجاد کند و TimeSeriesSplit برای این حالت طراحی شده است.</p>
+
+        <h2>15. TimeSeriesSplit با Gap</h2>
+        <p>در بعضی مسائل حتی این هم کافی نیست:</p>
+        <div class="box"><div class="chart">Train | Validation</div></div>
+        <p>ممکن است داده‌های خیلی نزدیک به مرز زمانی به هم وابسته باشند.</p>
+        <p>می‌توانیم داشته باشیم:</p>
+        <div class="box"><div class="chart">Train | GAP | Validation</div></div>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">
+Train
+████████████
+
+Gap
+██
+
+Validation
+████
+            </div>
+        </div>
+        <p>در scikit-learn TimeSeriesSplit پارامتر gap دارد که تعدادی sample را بین انتهای Train و Validation حذف می‌کند.</p>
+        <p>این در مسائل مالی و Forecasting می‌تواند بسیار مهم باشد.</p>
+
+        <h2>16. K-Fold و Preprocessing؛ اینجا یک دام بسیار مهم داریم 🚨</h2>
+        <p>فرض کن:</p>
+        <div class="box"><div class="chart">scaler.fit_transform(X)</div></div>
+        <p>را روی کل Dataset انجام بدهی و بعد K-Fold اجرا کنی.</p>
+        <p>اشتباه است.</p>
+        <p>چون Validation Fold در محاسبه:</p>
+        <div class="box">
+            <div class="chart">
+Mean
+Std
+Min
+Max
+            </div>
+        </div>
+        <p>دخالت کرده است.</p>
+        <p>یعنی Validation اطلاعاتش وارد Training Pipeline شده.</p>
+
+        <h2>17. روش درست</h2>
+        <p>باید در هر Fold:</p>
+        <div class="box">
+            <div class="chart">
+Fold
+ │
+ ├── Train
+ │    ↓
+ │   Fit Scaler
+ │
+ └── Validation
+      ↓
+   Transform
+            </div>
+        </div>
+        <p>نه:</p>
+        <div class="box">
+            <div class="chart">
+Whole Dataset
+      ↓
+Fit Scaler
+      ↓
+KFold
+            </div>
+        </div>
+        <p>در scikit-learn معمولاً این کار را با Pipeline انجام می‌دهیم.</p>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+
+pipeline = Pipeline([
+    ("scaler", StandardScaler()),
+    ("model", LogisticRegression())
+])
+            </div>
+        </div>
+        <p>بعد Pipeline را داخل Cross-Validation می‌دهیم.</p>
+        <p>این باعث می‌شود preprocessing داخل هر training fold fit شود.</p>
+
+        <h2>18. Feature Selection هم همین مشکل را دارد</h2>
+        <p>این اشتباه است:</p>
+        <div class="box">
+            <div class="chart">
+Whole Dataset
+      ↓
+Feature Selection
+      ↓
+KFold
+            </div>
+        </div>
+        <p>چون Validation اطلاعاتی در Feature Selection وارد کرده.</p>
+        <p>درست:</p>
+        <div class="box">
+            <div class="chart">
+Fold
+ │
+ ├── Train
+ │    ↓
+ │ Feature Selection
+ │    ↓
+ │ Model
+ │
+ └── Validation
+            </div>
+        </div>
+        <p>یعنی هر چیزی که از Data یاد می‌گیرد باید فقط روی Training Fold fit شود.</p>
+        <p>این قانون طلایی CV است:</p>
+        <div class="inner-box">Anything that learns from data must be fitted inside the CV training fold.</div>
+
+        <h2>19. Hyperparameter Tuning با K-Fold</h2>
+        <p>مثلاً XGBoost داری:</p>
+        <div class="box">
+            <div class="chart">
+learning_rate
+max_depth
+n_estimators
+            </div>
+        </div>
+        <p>می‌توانی:</p>
+        <div class="box">
+            <div class="chart">
+max_depth = 3
+→ 5-Fold CV
+→ Mean F1 = 0.91
+
+max_depth = 5
+→ 5-Fold CV
+→ Mean F1 = 0.94
+
+max_depth = 8
+→ 5-Fold CV
+→ Mean F1 = 0.92
+            </div>
+        </div>
+        <p>پس:</p>
+        <div class="box"><div class="chart">max_depth = 5</div></div>
+        <p>انتخاب می‌شود.</p>
+
+        <h2>20. اما یک مشکل مهم‌تر: Test Leakage</h2>
+        <p>فرض کن 100 بار Hyperparameterها را با Test Set امتحان کنی:</p>
+        <div class="box">
+            <div class="chart">
+Test
+ ↓
+Try model
+ ↓
+Try another model
+ ↓
+Change threshold
+ ↓
+Try another parameter
+            </div>
+        </div>
+        <p>در نهایت Test Set دیگر واقعاً unseen نیست.</p>
+        <p>برای همین:</p>
+        <div class="box">
+            <div class="chart">
+Train
+ ↓
+CV
+ ↓
+Hyperparameter Selection
+ ↓
+Final Model
+ ↓
+Test
+            </div>
+        </div>
+        <p>ساختار سالم‌تری است.</p>
+
+        <h2>21. Nested Cross-Validation</h2>
+        <p>اگر بخواهی خیلی حرفه‌ای‌تر عمل کنی، می‌رسی به:</p>
+        <div class="inner-box">Nested CV</div>
+        <p>دو حلقه داریم.</p>
+        <div class="box">
+            <div class="chart">
+             OUTER CV
+        ┌─────────────────┐
+        │                 │
+        │    INNER CV     │
+        │                 │
+        │ Hyperparameter   │
+        │    Tuning        │
+        │                 │
+        └─────────────────┘
+            </div>
+        </div>
+        <div class="inner-box"><div class="inner-title">Outer Loop</div></div>
+        <p>برای ارزیابی مدل.</p>
+        <div class="inner-box"><div class="inner-title">Inner Loop</div></div>
+        <p>برای انتخاب Hyperparameters.</p>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">
+Outer Fold 1
+   │
+   └── Inner CV
+        ├── LR=0.01
+        ├── LR=0.001
+        └── LR=0.0001
+
+Outer Fold 2
+   │
+   └── Inner CV
+        ├── LR=0.01
+        ├── LR=0.001
+        └── LR=0.0001
+            </div>
+        </div>
+        <p>این روش مخصوصاً برای unbiased model evaluation همراه با hyperparameter selection مفید است.</p>
+
+        <h2>22. Repeated K-Fold</h2>
+        <p>یک بار 5-Fold:</p>
+        <div class="box">
+            <div class="chart">
+Fold 1
+Fold 2
+Fold 3
+Fold 4
+Fold 5
+            </div>
+        </div>
+        <p>ممکن است هنوز به Random Split خاصی وابسته باشیم.</p>
+        <p>می‌توانیم چند بار تکرارش کنیم:</p>
+        <div class="box">
+            <div class="chart">
+Repeat 1
+  5-Fold
+
+Repeat 2
+  5-Fold
+
+Repeat 3
+  5-Fold
+            </div>
+        </div>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">
+from sklearn.model_selection import RepeatedKFold
+
+cv = RepeatedKFold(
+    n_splits=5,
+    n_repeats=3,
+    random_state=42
+)
+            </div>
+        </div>
+        <p>پس:</p>
+        <div class="box"><div class="chart">5 folds × 3 repeats = 15 evaluations</div></div>
+        <p>RepeatedKFold دقیقاً همین ایده را پیاده می‌کند و برای هر تکرار Splitهای متفاوتی ایجاد می‌کند.</p>
+
+        <h2>23. K-Fold و Bias–Variance</h2>
+        <p>این قسمت به بحث قبلی‌مان وصل می‌شود.</p>
+        <p>K-Fold کمک می‌کند تخمین Performance ما نسبت به یک Split خاص کمتر حساس باشد.</p>
+        <p>اما خود K هم یک Tradeoff دارد:</p>
+        <div class="box">
+            <div class="chart">
+K ↑
+│
+├── Training data per fold ↑
+├── Computational cost ↑
+└── Fold estimates become more correlated
+            </div>
+        </div>
+        <p>در مقابل:</p>
+        <div class="box">
+            <div class="chart">
+K ↓
+│
+├── Training data per fold ↓
+└── Computational cost ↓
+            </div>
+        </div>
+        <p>پس انتخاب K هم یک تصمیم عملی/آماری است.</p>
+
+        <h2>24. آیا CV جلوی Overfitting را می‌گیرد؟</h2>
+        <p>نه، مستقیماً نه.</p>
+        <p>Cross-validation بیشتر برای:</p>
+        <div class="box">
+            <div class="chart">
+Model Evaluation
+Model Selection
+Hyperparameter Tuning
+            </div>
+        </div>
+        <p>است.</p>
+        <p>مثلاً ممکن است یک مدل روی CV خیلی خوب باشد ولی به دلیل انتخاب مکرر مدل‌ها و Hyperparameterها روی CV، خودت به CV هم Overfit کنی.</p>
+        <p>به همین دلیل Test Set مستقل یا Nested CV مهم می‌شود.</p>
+
+        <h2>25. K-Fold در Deep Learning</h2>
+        <p>در Deep Learning هم می‌توانی K-Fold انجام بدهی:</p>
+        <div class="box">
+            <div class="chart">
+Fold 1 → Train Neural Network
+Fold 2 → Train Neural Network
+Fold 3 → Train Neural Network
+Fold 4 → Train Neural Network
+Fold 5 → Train Neural Network
+            </div>
+        </div>
+        <p>اما هزینه بسیار بالاست.</p>
+        <p>اگر:</p>
+        <div class="box"><div class="chart">1 training = 2 hours</div></div>
+        <p>و:</p>
+        <div class="box"><div class="chart">5-fold</div></div>
+        <p>تقریباً حداقل:</p>
+        <div class="box"><div class="chart">10 hours</div></div>
+        <p>زمان می‌برد.</p>
+        <p>برای همین در Deep Learning معمولاً:</p>
+        <div class="box"><div class="chart">Train / Validation / Test</div></div>
+        <p>استفاده می‌شود، مگر اینکه Dataset کوچک باشد یا ارزیابی دقیق‌تر ارزش هزینه را داشته باشد.</p>
+
+        <h2>26. K-Fold در پروژه Phishing Detection خودت</h2>
+        <p>برای مسئله Classification تو، اگر Dataset مستقل و IID باشد، چیزی شبیه:</p>
+        <div class="box">
+            <div class="chart">
+Original Dataset
+       │
+       ├───────────────┐
+       │               │
+    Train 80%       Test 20%
+       │               │
+       │               │
+Stratified K-Fold      │
+       │               │
+  ┌────┼────┐          │
+  │    │    │          │
+Fold1 Fold2 ...         │
+       │               │
+       ↓               │
+ Model Selection       │
+       │               │
+       └───────┐       │
+               ↓       ↓
+          Final Model → Test
+            </div>
+        </div>
+        <p>و اگر مثلاً:</p>
+        <div class="box"><div class="chart">5-Fold</div></div>
+        <p>باشد:</p>
+        <div class="box">
+            <div class="chart">
+Fold 1 → F1 = 0.961
+Fold 2 → F1 = 0.967
+Fold 3 → F1 = 0.959
+Fold 4 → F1 = 0.964
+Fold 5 → F1 = 0.968
+            </div>
+        </div>
+        <p>گزارش حرفه‌ای‌تر:</p>
+        <div class="box"><div class="chart">CV F1 = 0.964 ± 0.004</div></div>
+        <p>نه فقط:</p>
+        <div class="box"><div class="chart">F1 = 0.964</div></div>
+
+        <h2>27. یک نکته بسیار مهم درباره مدل نهایی</h2>
+        <p>بعد از اینکه با CV بهترین Hyperparameter را پیدا کردی، معمولاً مدل نهایی را روی کل Training Set با همان Hyperparameters آموزش می‌دهی:</p>
+        <div class="box">
+            <div class="chart">
+CV
+ ↓
+Best Hyperparameters
+ ↓
+Train final model on ALL training data
+ ↓
+Evaluate ONCE on Test
+            </div>
+        </div>
+        <p>یعنی لازم نیست مدل نهایی فقط روی Fold خاصی که بهترین Score را گرفته آموزش داده شود.</p>
+
+        <h2>28. انواع CV که باید بلد باشی</h2>
+        <p>این جدول را برای مصاحبه حفظ کن:</p>
+        <table>
+            <thead><tr><th>روش</th><th>چه زمانی؟</th></tr></thead>
+            <tbody>
+                <tr><td>KFold</td><td>داده‌های معمولی</td></tr>
+                <tr><td>StratifiedKFold</td><td>Classification</td></tr>
+                <tr><td>RepeatedKFold</td><td>کاهش وابستگی به یک Split</td></tr>
+                <tr><td>RepeatedStratifiedKFold</td><td>Classification + تکرار</td></tr>
+                <tr><td>GroupKFold</td><td>وابستگی بین نمونه‌های یک Group</td></tr>
+                <tr><td>StratifiedGroupKFold</td><td>Group + Class Imbalance</td></tr>
+                <tr><td>TimeSeriesSplit</td><td>Time Series</td></tr>
+                <tr><td>Leave-One-Out</td><td>Dataset خیلی کوچک</td></tr>
+                <tr><td>Nested CV</td><td>ارزیابی + Hyperparameter Tuning دقیق</td></tr>
+                <tr><td>ShuffleSplit</td><td>Splitهای تصادفی متعدد</td></tr>
+            </tbody>
+        </table>
+        <p>این روش‌ها در scikit-learn به عنوان خانواده‌های مختلف Cross-Validation ارائه شده‌اند.</p>
+
+        <h2>29. در یک نگاه: کدام را انتخاب کنم؟</h2>
+        <div class="box">
+            <div class="chart">
+                 Dataset
+                    │
+          ┌─────────┴─────────┐
+          │                   │
+       Time Series?          No
+          │                   │
+         YES                  ↓
+          │             Classification?
+ TimeSeriesSplit          │          │
+                     YES  │          NO
+                          ↓           ↓
+                  StratifiedKFold   KFold
+                          │
+                          │
+                  Group dependency?
+                          │
+                         YES
+                          ↓
+              StratifiedGroupKFold
+            </div>
+        </div>
+        <p>اگر Time Series باشد، Random KFold نزن.</p>
+        <p>اگر User/Patient/Device/Account چند رکورد دارد و می‌خواهی روی Groupهای جدید Generalize کنی، GroupKFold را در نظر بگیر.</p>
+        <p>اگر Classification نامتوازن داری، StratifiedKFold.</p>
+        <p>اگر هر دو را داری:</p>
+        <div class="inner-box">StratifiedGroupKFold.</div>
+
+        <h2>30. سؤال‌های مصاحبه‌ای خیلی مهم</h2>
+        <p>اگر برای Senior ML Engineer آماده می‌شوی، این‌ها را باید بتوانی جواب بدهی:</p>
+
+        <div class="inner-box">Q1: Why do we use K-Fold Cross-Validation?</div>
+        <div class="inner-box">To obtain a more robust estimate of model generalization performance and reduce dependence on a single train-validation split.</div>
+
+        <div class="inner-box">Q2: Why StratifiedKFold?</div>
+        <div class="inner-box">To preserve approximately the same class distribution across folds, especially useful for classification and imbalanced datasets.</div>
+
+        <div class="inner-box">Q3: Why not KFold for time series?</div>
+        <div class="inner-box">Because random splitting can put future observations in the training set while evaluating on past observations, causing temporal leakage.</div>
+
+        <div class="inner-box">Q4: Why GroupKFold?</div>
+        <div class="inner-box">When samples within the same group are correlated, to ensure the same group doesn't appear in both training and validation folds.</div>
+
+        <div class="inner-box">Q5: Where should StandardScaler be fitted?</div>
+        <div class="inner-box">Inside each training fold, never on the entire dataset before cross-validation.</div>
+
+        <div class="inner-box">Q6: Does Cross-Validation eliminate overfitting?</div>
+        <div class="inner-box">No. It provides a better evaluation/model-selection procedure, but the model or hyperparameter search can still overfit the CV process.</div>
+
+        <div class="inner-box">Q7: What is Nested CV?</div>
+        <div class="inner-box">An outer loop estimates generalization performance while an inner loop performs model/hyperparameter selection.</div>
+
+        <h2>⭐ مهم‌ترین چیزی که باید از K-Fold در ذهنت بماند</h2>
+        <p>سه قانون طلایی:</p>
+        <ol>
+            <li>معمولی: <div class="inner-box">KFold</div></li>
+            <li>Classification: <div class="inner-box">StratifiedKFold</div></li>
+            <li>Group/Time-dependent data: <div class="inner-box">GroupKFold / StratifiedGroupKFold</div> <div class="inner-box">TimeSeriesSplit</div></li>
+        </ol>
+        <p>و مهم‌تر از همه:</p>
+        <div class="inner-box">Cross-validation فقط Split کردن داده نیست؛ کل Training Pipeline باید داخل هر Fold اجرا شود.</div>
+        <p>یعنی:</p>
+        <div class="box">
+            <div class="chart">
+Fold
+ │
+ ├── Preprocessing
+ ├── Feature Engineering
+ ├── Feature Selection
+ ├── Resampling
+ ├── Model Training
+ └── Validation
+            </div>
+        </div>
+        <p>اگر مثلاً قبل از K-Fold روی کل Dataset StandardScaler، Feature Selection، PCA یا SMOTE اجرا کنی، ممکن است Data Leakage ایجاد کنی و CV Score تو بیش از حد خوش‌بینانه شود.</p>
+    </div>
+</body>
+</html>

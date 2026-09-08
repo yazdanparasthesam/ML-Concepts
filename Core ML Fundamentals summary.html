@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Core ML Fundamentals - Senior ML Level</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}]});"></script>
+    <style>
+        body { background-color: #0d1117; color: #e6edf3; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.8; margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1, h2, h3 { color: #e6edf3; text-align: right; border-bottom: 1px solid #444; padding-bottom: 15px; margin-top: 50px; }
+        p, li { text-align: right; }
+        .box { background-color: #21262d; border: 1px solid #30363d; border-radius: 8px; padding: 15px; margin: 15px 0; color: #e6edf3; }
+        .inner-box { background-color: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 15px; margin: 10px; }
+        .inner-title { font-weight: bold; margin-bottom: 5px; }
+        .formula {
+            direction: ltr;
+            background-color: #000;
+            border: 1px solid #fff;
+            border-radius: 0;
+            padding: 20px;
+            margin: 20px auto;
+            width: fit-content;
+            max-width: 100%;
+            overflow-x: auto;
+            text-align: center;
+            font-size: 1.2em;
+            font-family: "Times New Roman", Times, serif;
+            color: #fff;
+        }
+        .chart { direction: ltr; text-align: left; font-family: monospace; background-color: #21262d; border-radius: 8px; padding: 15px; overflow-x: auto; white-space: pre; border: 1px solid #444; }
+        table { width: 100%; border-collapse: collapse; direction: rtl; margin-bottom: 20px; }
+        th, td { border: 1px solid #444; padding: 12px; text-align: right; }
+        th { background-color: #21262d; }
+        .highlight { color: #58a6ff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧠 Core ML Fundamentals — Senior Level</h1>
+        <p>بله. اگر منظورت از «موارد این‌مدلی» مفاهیم Fundamental / Core ML Concepts است که مثل Bias–Variance در مصاحبه‌ها و درک عمیق ML خیلی مهم‌اند، یک نقشه‌ی نسبتاً کامل این‌هاست:</p>
+
+        <h2>🧠 1. مفاهیم پایه‌ی یادگیری</h2>
+        
+        <div class="box">
+            <div class="inner-title">1. Bias–Variance Tradeoff</div>
+            <ul>
+                <li>High Bias → Underfitting</li>
+                <li>High Variance → Overfitting</li>
+                <li>هدف: بهترین Generalization</li>
+            </ul>
+        </div>
+
+        <div class="box">
+            <div class="inner-title">2. Underfitting vs Overfitting</div>
+            <div class="inner-box"><div class="inner-title">Underfitting:</div></div>
+            <div class="box"><div class="chart">Train Error ↑
+Validation Error ↑</div></div>
+            <div class="inner-box"><div class="inner-title">Overfitting:</div></div>
+            <div class="box"><div class="chart">Train Error ↓
+Validation Error ↑</div></div>
+            <div class="inner-box"><div class="inner-title">Good Fit:</div></div>
+            <div class="box"><div class="chart">Train Error ↓
+Validation Error ↓</div></div>
+        </div>
+
+        <div class="box">
+            <div class="inner-title">3. Generalization</div>
+            <p>مدل باید روی داده‌هایی که قبلاً ندیده خوب عمل کند.</p>
+            <div class="box">
+                <div class="chart">
+Training Data
+     ↓
+   Model
+     ↓
+Unseen Data
+     ↓
+Generalization
+                </div>
+            </div>
+            <p>این در واقع یکی از اهداف اصلی ML است.</p>
+        </div>
+
+        <div class="box">
+            <div class="inner-title">4. Empirical Risk vs Expected Risk</div>
+            <div class="inner-box"><div class="inner-title">Empirical Risk:</div></div>
+            <p>خطایی که روی Training Data اندازه می‌گیریم:</p>
+            <div class="formula">$$R_{emp}(f) = \frac{1}{n} \sum_{i=1}^{n} L(f(x_i), y_i)$$</div>
+            <div class="inner-box"><div class="inner-title">Expected Risk:</div></div>
+            <p>خطایی که انتظار داریم روی کل Distribution داده داشته باشیم:</p>
+            <div class="formula">$$R(f) = E[L(f(X), Y)]$$</div>
+            <p>ما در عمل Expected Risk را مستقیماً نمی‌دانیم؛ بنابراین با Empirical Risk آن را تخمین می‌زنیم.</p>
+        </div>
+
+        <div class="box">
+            <div class="inner-title">⚖️ 5. Model Complexity</div>
+            <p>هرچه مدل پیچیده‌تر شود معمولاً:</p>
+            <div class="box">
+                <div class="chart">
+Complexity ↑
+     ↓
+Bias ↓
+Variance ↑
+                </div>
+            </div>
+            <p>مثلاً:</p>
+            <div class="box">
+                <div class="chart">
+Linear Regression
+      ↓
+Polynomial Regression
+      ↓
+Decision Tree
+      ↓
+Deep Neural Network
+                </div>
+            </div>
+            <p>اما این رابطه همیشه به شکل کلاسیک و ساده نیست؛ مخصوصاً در Deep Learning.</p>
+        </div>
+
+        <div class="box">
+            <div class="inner-title">🎯 6. Train / Validation / Test</div>
+            <p>این سه تا را باید کاملاً بلد باشی.</p>
+            <div class="inner-box"><div class="inner-title">Train</div></div>
+            <p>برای یادگیری Parameters:</p>
+            <div class="box"><div class="chart">w, b</div></div>
+            <div class="inner-box"><div class="inner-title">Validation</div></div>
+            <p>برای انتخاب:</p>
+            <div class="box"><div class="chart">Hyperparameters
+Model
+Threshold
+Architecture</div></div>
+            <div class="inner-box"><div class="inner-title">Test</div></div>
+            <p>برای Final Evaluation.</p>
+            <p>مثلاً:</p>
+            <div class="box"><div class="chart">70% Train
+15% Validation
+15% Test</div></div>
+            <p>نکته مهم:</p>
+            <div class="inner-box">Test Set نباید برای تصمیم‌گیری مکرر استفاده شود.</div>
+        </div>
+
+        <div class="box">
+            <div class="inner-title">🔧 7. Parameters vs Hyperparameters</div>
+            <div class="inner-box"><div class="inner-title">Parameters</div></div>
+            <p>مدل خودش یاد می‌گیرد:</p>
+            <div class="box"><div class="chart">Weights
+Biases</div></div>
+            <p>مثلاً:</p>
+            <div class="formula">$$y = wx + b$$</div>
+            <p>w و b پارامترند.</p>
+            <div class="inner-box"><div class="inner-title">Hyperparameters</div></div>
+            <p>ما تعیین می‌کنیم:</p>
+            <div class="box"><div class="chart">Learning Rate
+Tree Depth
+Number of Trees
+Batch Size
+Regularization λ
+Number of Layers</div></div>
+        </div>
+
+        <div class="box">
+            <div class="inner-title">📉 8. Loss Function vs Evaluation Metric</div>
+            <p>خیلی مهم.</p>
+            <div class="inner-box"><div class="inner-title">Loss</div></div>
+            <p>برای Training / Optimization استفاده می‌شود.</p>
+            <p>مثلاً:</p>
+            <div class="formula">$$MSE = \frac{1}{n} \sum (y - \hat{y})^2$$</div>
+            <div class="inner-box"><div class="inner-title">Metric</div></div>
+            <p>برای ارزیابی عملکرد استفاده می‌شود.</p>
+            <p>مثلاً:</p>
+            <div class="box"><div class="chart">Accuracy
+Precision
+Recall
+F1
+AUC
+MAE
+RMSE
+R²</div></div>
+            <p>ممکن است Loss و Metric یکی نباشند.</p>
+        </div>
+
+        <div class="box">
+            <div class="inner-title">🔥 9. Optimization vs Generalization</div>
+            <p>مدل دو مسئله متفاوت دارد:</p>
+            <div class="inner-box"><div class="inner-title">Optimization</div></div>
+            <p>آیا توانسته‌ایم Loss روی Training را کم کنیم؟</p>
+            <div class="inner-box"><div class="inner-title">Generalization</div></div>
+            <p>آیا مدل روی داده جدید هم خوب عمل می‌کند؟</p>
+            <p>ممکن است:</p>
+            <div class="box"><div class="chart">Training Loss = Excellent
+Generalization = Poor</div></div>
+            <p>که همان Overfitting است.</p>
+        </div>
+
+        <div class="box">
+            <div class="inner-title">🧮 10. Bias–Variance Decomposition</div>
+            <p>برای Regression با Squared Error، به صورت مفهومی:</p>
+            <div class="formula">$$Expected Error = Bias^2 + Variance + Noise$$</div>
+            <p>یعنی:</p>
+            <div class="box">
+                <div class="chart">
+Total Error
+    =
+Bias²
++
+Variance
++
+Irreducible Noise
+                </div>
+            </div>
+            <div class="inner-box"><div class="inner-title">Irreducible Noise</div></div>
+            <p>خطایی که حتی بهترین مدل هم نمی‌تواند حذف کند.</p>
+            <p>مثلاً:</p>
+            <div class="box"><div class="chart">Measurement Error
+Randomness
+Missing Information</div></div>
+        </div>
+
+        <div class="box">
+            <div class="inner-title">🎲 11. Aleatoric vs Epistemic Uncertainty</div>
+            <p>این یکی خیلی مهم و Advanced است.</p>
+            <div class="inner-box"><div class="inner-title">Aleatoric Uncertainty</div></div>
+            <p>عدم قطعیت ذاتی در داده.</p>
+            <p>مثلاً:</p>
+            <div class="box"><div class="chart">دو خانه کاملاً مشابه
+ولی قیمت‌های متفاوت</div></div>
+            <p>این randomness ممکن است قابل حذف نباشد.</p>
+            <div class="inner-box"><div class="inner-title">Epistemic Uncertainty</div></div>
+            <p>عدم قطعیت ناشی از این‌که مدل اطلاعات کافی ندارد.</p>
+            <p>مثلاً مدل فقط خانه‌های تهران را دیده و حالا باید قیمت یک خانه در شهری کاملاً جدید را پیش‌بینی کند.</p>
+            <div class="box">
+                <div class="chart">
+More Data
+   ↓
+Epistemic Uncertainty ↓
+                </div>
+            </div>
+        </div>
+
+        <div class="box">
+            <div class="inner-title">📊 12. Data Leakage</div>
+            <p>یکی از مهم‌ترین مفاهیم ML Engineering.</p>
+            <p>یعنی اطلاعاتی از آینده یا Test وارد Training شود.</p>
+            <p>مثلاً:</p>
+            <div class="box"><div class="chart">Normalize whole dataset
+        ↓
+Train/Test Split</div></div>
+            <p>اشتباه.</p>
+            <p>باید:</p>
+            <div class="box"><div class="chart">Train/Test Split
+      ↓
+Fit scaler on Train
+      ↓
+Transform Train
+      ↓
+Transform Test</div></div>
+            <p>مثال دیگر:</p>
+            <div class="box"><div class="chart">Future information
+      ↓
+Training Features</div></div>
+            <p>این باعث Validation/Test Performance غیرواقعی می‌شود.</p>
+        </div>
+
+        <div class="box">
+            <div class="inner-title">🔀 13. IID Assumption</div>
+            <p>بسیاری از الگوریتم‌های ML فرض می‌کنند داده‌ها تقریباً:</p>
+            <div class="inner-box">Independent and Identically Distributed</div>
+            <p>هستند.</p>
+            <p>یعنی:</p>
+            <div class="box">
+                <div class="chart">
+Independent
++
+Same Distribution
+                </div>
+            </div>
+            <p>ولی در Time Series معمولاً:</p>
+            <div class="box"><div class="chart">Past → Future</div></div>
+            <p>وابستگی وجود دارد.</p>
+            <p>بنابراین Random Shuffle می‌تواند مشکل‌ساز شود.</p>
+        </div>
+
+        <div class="box">
+            <div class="inner-title">🌍 14. Covariate Shift</div>
+            <p>Distribution Featureها تغییر می‌کند:</p>
+            <div class="formula">$$P_{train}(X) \neq P_{test}(X)$$</div>
+            <p>ولی:</p>
+            <div class="formula">$$P(Y|X)$$</div>
+            <p>تقریباً ثابت می‌ماند.</p>
+            <p>مثلاً مدل روی کاربران قدیمی آموزش دیده و کاربران جدید ویژگی‌های متفاوتی دارند.</p>
+        </div>
+
+        <div class="box">
+            <div class="inner-title">🔄 15. Concept Drift</div>
+            <p>رابطه بین X و Y تغییر می‌کند:</p>
+            <div class="formula">$$P_{train}(Y|X) \neq P_{production}(Y|X)$$</div>
+            <p>مثلاً:</p>
+            <div class="box">
+                <div class="chart">
+Fraud Pattern
+     ↓
+2024
+     ↓
+Different
+     ↓
+2026
+                </div>
+            </div>
+            <p>مدلی که قبلاً خوب بوده ممکن است به مرور خراب شود.</p>
+        </div>
+
+        <div class="box">
+            <div class="inner-title">🧩 16. Class Imbalance</div>
+            <p>مثلاً:</p>
+            <div class="box"><div class="chart">Normal: 99%
+Fraud:   1%</div></div>
+            <p>اگر مدل همیشه Normal بگوید:</p>
+            <div class="box"><div class="chart">Accuracy = 99%</div></div>
+            <p>ولی عملاً مدل Fraud Detection بدی است.</p>
+            <p>پس باید برویم سراغ:</p>
+            <div class="box"><div class="chart">Precision
+Recall
+F1
+PR-AUC
+ROC-AUC
+Confusion Matrix</div></div>
+        </div>
+
+        <div class="box">
+            <div class="inner-title">🎚️ 17. Threshold Tradeoff</div>
+            <p>در Classification خروجی مدل ممکن است Probability باشد:</p>
+            <div class="box"><div class="chart">P(Fraud) = 0.72</div></div>
+            <p>اگر:</p>
+            <div class="box"><div class="chart">Threshold = 0.5</div></div>
+            <p>→ Fraud</p>
+            <p>ولی اگر:</p>
+            <div class="box"><div class="chart">Threshold = 0.8</div></div>
+            <p>→ Normal</p>
+            <p>تغییر Threshold باعث تغییر:</p>
+            <div class="box"><div class="chart">Precision ↔ Recall</div></div>
+            <p>می‌شود.</p>
+        </div>
+
+        <div class="box">
+            <div class="inner-title">🔺 18. ROC vs PR</div>
+            <div class="inner-box"><div class="inner-title">ROC Curve</div></div>
+            <p>بین:</p>
+            <div class="box"><div class="chart">TPR
+FPR</div></div>
+            <div class="inner-box"><div class="inner-title">PR Curve</div></div>
+            <p>بین:</p>
+            <div class="box"><div class="chart">Precision
+Recall</div></div>
+            <p>برای Imbalanced Classification معمولاً PR-AUC اطلاعات مفیدتری درباره عملکرد روی کلاس مثبت می‌دهد.</p>
+        </div>
+
+        <div class="box">
+            <div class="inner-title">🧠 19. Calibration</div>
+            <p>مدل ممکن است Probability بدهد:</p>
+            <div class="box"><div class="chart">P(Fraud) = 0.8</div></div>
+            <p>Calibration می‌پرسد:</p>
+            <div class="inner-box">آیا واقعاً تقریباً 80٪ نمونه‌هایی که مدل Probability=0.8 داده Fraud هستند؟</div>
+            <p>ممکن است:</p>
+            <div class="box"><div class="chart">Accuracy = Excellent
+Calibration = Poor</div></div>
+            <p>دو مفهوم متفاوت‌اند.</p>
+        </div>
+
+        <div class="box">
+            <div class="inner-title">🌳 20. Bagging vs Boosting</div>
+            <div class="inner-box"><div class="inner-title">Bagging</div></div>
+            <p>مدل‌ها بیشتر به صورت موازی ساخته می‌شوند.</p>
+            <p>مثال:</p>
+            <div class="box"><div class="chart">Random Forest</div></div>
+            <p>هدف اصلی:</p>
+            <div class="box"><div class="chart">Variance ↓</div></div>
+            <div class="inner-box"><div class="inner-title">Boosting</div></div>
+            <p>مدل‌ها sequential ساخته می‌شوند.</p>
+            <p>مثال:</p>
+            <div class="box"><div class="chart">XGBoost
+LightGBM
+CatBoost</div></div>
+            <p>به طور مفهومی بیشتر برای کاهش Bias و ساخت مدل قوی استفاده می‌شود، هرچند رفتار واقعی به تنظیمات و داده بستگی دارد.</p>
+        </div>
+
+        <div class="box">
+            <div class="inner-title">🧮 21. Parametric vs Non-Parametric</div>
+            <div class="inner-box"><div class="inner-title">Parametric</div></div>
+            <p>ساختار پارامترها نسبتاً مشخص است.</p>
+            <p>مثلاً:</p>
+            <div class="box"><div class="chart">Linear Regression</div></div>
+            <div class="inner-box"><div class="inner-title">Non-Parametric</div></div>
+            <p>تعداد/ساختار مؤثر پارامترها می‌تواند با داده رشد کند.</p>
+            <p>مثلاً:</p>
+            <div class="box"><div class="chart">KNN
+Decision Tree</div></div>
+        </div>
+
+        <div class="box">
+            <div class="inner-title">📐 22. Generative vs Discriminative</div>
+            <div class="inner-box"><div class="inner-title">Discriminative</div></div>
+            <p>مستقیماً رابطه تصمیم را یاد می‌گیرد:</p>
+            <div class="formula">$$P(Y|X)$$</div>
+            <p>مثلاً:</p>
+            <div class="box"><div class="chart">Logistic Regression
+SVM
+Neural Network Classifier</div></div>
+            <div class="inner-box"><div class="inner-title">Generative</div></div>
+            <p>Distribution داده را مدل می‌کند.</p>
+            <p>مثلاً:</p>
+            <div class="formula">$$P(X,Y)$$</div>
+            <p>و از آن می‌تواند:</p>
+            <div class="formula">$$P(Y|X)$$</div>
+            <p>را به دست آورد.</p>
+            <p>مثال:</p>
+            <div class="box"><div class="chart">Naive Bayes
+Gaussian Mixture Model</div></div>
+        </div>
+
+        <div class="box">
+            <div class="inner-title">🔍 23. Feature Selection vs Feature Extraction</div>
+            <div class="inner-box"><div class="inner-title">Feature Selection</div></div>
+            <p>از Featureهای موجود بعضی را حذف می‌کنیم.</p>
+            <div class="box">
+                <div class="chart">
+F1 F2 F3 F4 F5
+      ↓
+F1 F3 F5
+                </div>
+            </div>
+            <div class="inner-box"><div class="inner-title">Feature Extraction</div></div>
+            <p>Feature جدید می‌سازیم.</p>
+            <p>مثلاً:</p>
+            <div class="box"><div class="chart">PCA
+100 Features
+     ↓
+PCA
+     ↓
+10 Components</div></div>
+        </div>
+
+        <div class="box">
+            <div class="inner-title">📏 24. Normalization vs Standardization</div>
+            <div class="inner-box"><div class="inner-title">Standardization</div></div>
+            <div class="formula">$$z = \frac{x - \mu}{\sigma}$$</div>
+            <p>تقریباً:</p>
+            <div class="box"><div class="chart">Mean = 0
+Std = 1</div></div>
+            <div class="inner-box"><div class="inner-title">Min-Max Normalization</div></div>
+            <div class="formula">$$x' = \frac{x - min(x)}{max(x) - min(x)}$$</div>
+            <p>تقریباً:</p>
+            <div class="box"><div class="chart">0 ≤ x' ≤ 1</div></div>
+            <p>این موضوع مخصوصاً برای:</p>
+            <div class="box"><div class="chart">Neural Networks
+KNN
+SVM
+PCA
+Gradient Descent</div></div>
+            <p>مهم است.</p>
+        </div>
+
+        <div class="box">
+            <div class="inner-title">📉 25. Curse of Dimensionality</div>
+            <p>هرچه تعداد Featureها زیاد شود، فضا sparseتر می‌شود.</p>
+            <div class="box">
+                <div class="chart">
+Dimensions ↑
+      ↓
+Data Sparsity ↑
+      ↓
+Distance becomes less informative
+      ↓
+ML Performance may ↓
+                </div>
+            </div>
+            <p>برای همین:</p>
+            <div class="box"><div class="chart">Feature Selection
+PCA
+Regularization
+More Data</div></div>
+            <p>مهم می‌شوند.</p>
+        </div>
+
+        <div class="box">
+            <div class="inner-title">🧠 26. VC Dimension</div>
+            <p>یک مفهوم تئوری مهم برای ظرفیت مدل.</p>
+            <p>به صورت ساده:</p>
+            <div class="inner-box">VC Dimension نشان می‌دهد یک مدل چقدر توانایی fit کردن الگوهای مختلف را دارد.</div>
+            <p>ظرفیت بیشتر:</p>
+            <div class="box"><div class="chart">Model Capacity ↑</div></div>
+            <p>می‌تواند باعث شود مدل الگوهای پیچیده‌تری را یاد بگیرد؛ ولی ریسک Generalization هم باید تحلیل شود.</p>
+        </div>
+
+        <div class="box">
+            <div class="inner-title">🧠 27. No Free Lunch Theorem</div>
+            <p>هیچ الگوریتمی وجود ندارد که برای تمام مسائل بهترین باشد.</p>
+            <p>یعنی:</p>
+            <div class="box"><div class="chart">XGBoost
+    ≠
+Best for Everything</div></div>
+            <p>انتخاب مدل به:</p>
+            <div class="box">
+                <div class="chart">
+Data
+Distribution
+Noise
+Feature Type
+Objective
+Constraints
+                </div>
+            </div>
+            <p>وابسته است.</p>
+        </div>
+
+        <div class="box">
+            <div class="inner-title">🧪 28. Cross Validation</div>
+            <p>به جای یک Train/Validation Split:</p>
+            <div class="box"><div class="chart">Fold 1
+Fold 2
+Fold 3
+Fold 4
+Fold 5</div></div>
+            <p>مدل را چند بار ارزیابی می‌کنیم.</p>
+            <p>مثلاً:</p>
+            <div class="inner-title">Fold CV-5</div>
+            <div class="formula">$$CV Score = \frac{1}{5} \sum Score_i$$</div>
+            <p>مزیت:</p>
+            <div class="inner-box">تخمین robustتر از Generalization Performance.</div>
+        </div>
+
+        <div class="box">
+            <div class="inner-title">🔁 29. Nested Cross Validation</div>
+            <p>برای Hyperparameter Tuning جدی‌تر.</p>
+            <div class="box">
+                <div class="chart">
+Outer CV
+   ↓
+Performance Evaluation
+
+Inner CV
+   ↓
+Hyperparameter Tuning
+                </div>
+            </div>
+            <p>کمک می‌کند bias ناشی از انتخاب مدل/Hyperparameter را در ارزیابی نهایی کاهش دهیم.</p>
+        </div>
+
+        <div class="box">
+            <div class="inner-title">🎯 30. Regularization</div>
+            <p>دو نوع معروف:</p>
+            <div class="inner-box"><div class="inner-title">L1</div></div>
+            <div class="formula">$$Loss + \lambda \sum |w_i|$$</div>
+            <p>تمایل به:</p>
+            <div class="box"><div class="chart">Sparse Weights</div></div>
+            <p>و Feature Selection دارد.</p>
+            <div class="inner-box"><div class="inner-title">L2</div></div>
+            <div class="formula">$$Loss + \lambda \sum w_i^2$$</div>
+            <p>وزن‌ها را کوچک‌تر می‌کند.</p>
+        </div>
+
+        <div class="box">
+            <div class="inner-title">🧠 31. Early Stopping</div>
+            <p>در Neural Network:</p>
+            <div class="box">
+                <div class="chart">
+Epoch
+ ↓
+Train Loss ↓
+
+Validation Loss
+ ↓
+ ↓
+ ↓
+   ↑
+   │
+Overfitting starts
+                </div>
+            </div>
+            <p>در نقطه مناسب Training را متوقف می‌کنیم.</p>
+        </div>
+
+        <div class="box">
+            <div class="inner-title">🎲 32. Ensemble Learning</div>
+            <p>به جای یک مدل:</p>
+            <div class="box">
+                <div class="chart">
+Model 1
+Model 2
+Model 3
+Model 4
+    ↓
+Combine
+    ↓
+Final Prediction
+                </div>
+            </div>
+            <p>مثال:</p>
+            <div class="box"><div class="chart">Random Forest
+XGBoost
+Voting
+Stacking
+Bagging
+Boosting</div></div>
+            <p>هدف معمولاً کاهش خطا و بهبود Generalization است.</p>
+        </div>
+
+        <div class="box">
+            <div class="inner-title">⚠️ 33. Simpson's Paradox</div>
+            <p>یک رابطه ممکن است:</p>
+            <div class="box"><div class="chart">Overall Dataset → Positive</div></div>
+            <p>ولی وقتی داده را Group کنیم:</p>
+            <div class="box"><div class="chart">Group A → Negative
+Group B → Negative</div></div>
+            <p>باشد.</p>
+            <p>این موضوع در:</p>
+            <div class="box"><div class="chart">Statistics
+ML
+Data Analysis</div></div>
+            <p>خیلی مهم است.</p>
+        </div>
+
+        <div class="box">
+            <div class="inner-title">🔗 34. Correlation vs Causation</div>
+            <p>ML معمولاً:</p>
+            <div class="inner-box">Correlation</div>
+            <p>را یاد می‌گیرد، نه لزوماً:</p>
+            <div class="inner-box">Causation</div>
+            <p>مثلاً:</p>
+            <div class="box"><div class="chart">Ice Cream Sales ↑
+Drowning ↑</div></div>
+            <p>به این معنی نیست که Ice Cream باعث غرق شدن شده.</p>
+            <p>عامل سوم:</p>
+            <div class="box"><div class="chart">Temperature ↑</div></div>
+            <p>است.</p>
+        </div>
+
+        <div class="box">
+            <div class="inner-title">💥 35. Spurious Correlation</div>
+            <p>مدل ممکن است یک رابطه تصادفی را به عنوان Pattern یاد بگیرد.</p>
+            <div class="box">
+                <div class="chart">
+Feature
+   ↓
+Accidental Correlation
+   ↓
+Model learns it
+   ↓
+Fails on new data
+                </div>
+            </div>
+            <p>این یکی از دلایل Overfitting است.</p>
+        </div>
+
+        <div class="box">
+            <div class="inner-title">🧠 36. Distribution Shift</div>
+            <p>یک مفهوم کلی‌تر:</p>
+            <div class="formula">$$P_{train}(X,Y) \neq P_{production}(X,Y)$$</div>
+            <p>انواع مهم:</p>
+            <div class="box"><div class="chart">Covariate Shift
+Label Shift
+Concept Drift</div></div>
+            <p>این موضوع برای Production ML فوق‌العاده مهم است.</p>
+        </div>
+
+        <div class="box">
+            <div class="inner-title">🚨 37. Selection Bias</div>
+            <p>داده‌ای که جمع کرده‌ایم نماینده واقعی Population نیست.</p>
+            <p>مثلاً فقط از:</p>
+            <div class="box"><div class="chart">Tech Users</div></div>
+            <p>داده بگیریم و بعد مدل را برای:</p>
+            <div class="box"><div class="chart">All Users</div></div>
+            <p>استفاده کنیم.</p>
+        </div>
+
+        <div class="box">
+            <div class="inner-title">🕳️ 38. Missing Data Mechanisms</div>
+            <p>سه مفهوم مهم:</p>
+            <div class="inner-title">MCAR</div>
+            <p>Missing Completely At Random</p>
+            <div class="inner-title">MAR</div>
+            <p>Missing At Random</p>
+            <div class="inner-title">MNAR</div>
+            <p>Missing Not At Random</p>
+            <p>نحوه Missing شدن Data می‌تواند روی انتخاب روش Imputation اثر بگذارد.</p>
+        </div>
+
+        <div class="box">
+            <div class="inner-title">🔥 39. Data Quantity vs Data Quality</div>
+            <p>همیشه:</p>
+            <div class="box"><div class="chart">More Data ≠ Better Data</div></div>
+            <p>ممکن است:</p>
+            <div class="box"><div class="chart">1M noisy samples</div></div>
+            <p>بدتر از:</p>
+            <div class="box"><div class="chart">100K high-quality samples</div></div>
+            <p>باشد.</p>
+        </div>
+
+        <div class="box">
+            <div class="inner-title">⚔️ 40. Bias in Dataset vs Bias in Model</div>
+            <p>این دو را قاطی نکن.</p>
+            <div class="inner-title">Statistical Bias</div>
+            <p>مفهوم آماری مربوط به Error.</p>
+            <div class="inner-title">Dataset Bias</div>
+            <p>مشکل در نحوه جمع‌آوری/نمایندگی داده.</p>
+            <div class="inner-title">Algorithmic Bias</div>
+            <p>رفتار نامطلوب مدل نسبت به گروه‌ها یا شرایط خاص.</p>
+            <p>این‌ها مفاهیم متفاوتی هستند.</p>
+        </div>
+
+        <h2>🧭 اگر بخواهیم این‌ها را برای یادگیری ML دسته‌بندی کنیم</h2>
+        <p>من پیشنهاد می‌کنم این ترتیب را یاد بگیری:</p>
+        <div class="box">
+            <div class="chart">
+                    MACHINE LEARNING
+                           │
+        ┌──────────────────┼──────────────────┐
+        │                  │                  │
+     FUNDAMENTALS       EVALUATION          DATA
+        │                  │                  │
+ Bias / Variance       Confusion Matrix    Leakage
+ Under/Overfit         Precision/Recall    Shift
+ Generalization        F1 / AUC            Drift
+ Risk / Loss            Calibration        Imbalance
+        │                  │                  │
+        └──────────────┬───┴──────────────────┘
+                       │
+                 MODEL BUILDING
+                       │
+          ┌────────────┼────────────┐
+          │            │            │
+    Regularization  CV/Tuning    Ensembles
+    L1/L2            GridSearch   Bagging
+    Dropout          Bayesian     Boosting
+    Early Stop       Optimization Stacking
+                       │
+                       ▼
+                 ADVANCED ML
+                       │
+        ┌──────────────┼──────────────┐
+        │              │              │
+   Distribution     Uncertainty    Learning Theory
+       Shift        Aleatoric       VC Dimension
+       Drift        Epistemic       No Free Lunch
+       Causality                    Double Descent
+            </div>
+        </div>
+        <p>برای سطح Senior ML Engineer، از بین این‌ها مهم‌ترین‌هایی که باید واقعاً عمیق بلد باشی این‌ها هستند:</p>
+        <div class="inner-box">Bias–Variance → Under/Overfitting → Generalization → Loss/Optimization → Regularization → Cross-Validation → Data Leakage → Class Imbalance → Calibration → Distribution Shift → Concept Drift → Feature Engineering → Ensemble → Model Selection → Uncertainty → Learning Curves → Error Analysis.</div>
+        <p>اگر این زنجیره را درست یاد بگیری، بخش بزرگی از ML Fundamentals برای مصاحبه Senior ML Engineer را پوشش داده‌ای.</p>
+    </div>
+</body>
+</html>

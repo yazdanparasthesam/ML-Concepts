@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bias–Variance Tradeoff - Senior ML Level</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}]});"></script>
+    <style>
+        body { background-color: #0d1117; color: #e6edf3; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.8; margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1, h2, h3 { color: #e6edf3; text-align: right; border-bottom: 1px solid #444; padding-bottom: 15px; margin-top: 50px; }
+        p, li { text-align: right; }
+        
+        /* Boxes */
+        .box { background-color: #21262d; border: 1px solid #30363d; border-radius: 8px; padding: 15px; margin: 15px 0; color: #e6edf3; }
+        .inner-box { background-color: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 15px; margin: 10px; }
+        .inner-title { font-weight: bold; margin-bottom: 5px; }
+
+        /* Formula Box */
+        .formula {
+            direction: ltr;
+            background-color: #000;
+            border: 1px solid #fff;
+            border-radius: 0;
+            padding: 20px;
+            margin: 20px auto;
+            width: fit-content;
+            max-width: 100%;
+            overflow-x: auto;
+            text-align: center;
+            font-size: 1.2em;
+            font-family: "Times New Roman", Times, serif;
+            color: #fff;
+        }
+
+        /* Charts / Flowcharts / ASCII Art */
+        .chart { direction: ltr; text-align: left; font-family: monospace; background-color: #21262d; border-radius: 8px; padding: 15px; overflow-x: auto; white-space: pre; border: 1px solid #444; }
+
+        /* Tables */
+        table { width: 100%; border-collapse: collapse; direction: rtl; margin-bottom: 20px; }
+        th, td { border: 1px solid #444; padding: 12px; text-align: right; }
+        th { background-color: #21262d; }
+        
+        .highlight { color: #58a6ff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 Bias-Variance Tradeoff در ML</h1>
+        <p>حتماً. Bias–Variance Tradeoff یکی از مفاهیم بسیار مهم در ML است و مستقیماً به Underfitting و Overfitting مربوط می‌شود.</p>
+
+        <h2>1. اول Bias و Variance یعنی چه؟</h2>
+        <p>فرض کن می‌خواهیم مدلی بسازیم که قیمت خانه را پیش‌بینی کند.</p>
+
+        <div class="inner-box"><div class="inner-title">🔵 Bias — خطای ناشی از ساده بودن مدل</div></div>
+        <p>Bias یعنی مدل به خاطر فرض‌های بیش از حد ساده نمی‌تواند رابطه واقعی بین Featureها و Target را یاد بگیرد.</p>
+        <p>مثلاً رابطه واقعی:</p>
+        <div class="box"><div class="chart">Price = f(size, location, age, rooms, ...)</div></div>
+        <p>ولی تو یک مدل خیلی ساده می‌سازی:</p>
+        <div class="box"><div class="chart">Price = a × size + b</div></div>
+        <p>مدل قدرت کافی برای یادگیری پیچیدگی داده را ندارد.</p>
+        <p>نتیجه:</p>
+        <div class="box">
+            <div class="chart">
+Training Error  → زیاد
+Validation Error → زیاد
+            </div>
+        </div>
+        <p>این همان Underfitting است.</p>
+
+        <div class="inner-box"><div class="inner-title">🔴 Variance — حساسیت زیاد مدل به داده Training</div></div>
+        <p>Variance یعنی مدل بیش از حد به نمونه‌های Training وابسته می‌شود.</p>
+        <p>مثلاً اگر داده Training را کمی تغییر بدهیم:</p>
+        <div class="box">
+            <div class="chart">
+Dataset A → Model A
+Dataset B → Model B
+            </div>
+        </div>
+        <p>اگر Model A و Model B خیلی متفاوت شوند، مدل Variance بالایی دارد.</p>
+        <p>مدل معمولاً خیلی پیچیده است و حتی:</p>
+        <div class="box">
+            <div class="chart">
+Noise
+Outlier
+الگوهای تصادفی
+            </div>
+        </div>
+        <p>را یاد می‌گیرد.</p>
+        <p>نتیجه:</p>
+        <div class="box">
+            <div class="chart">
+Training Error   → خیلی کم
+Validation Error → زیاد
+            </div>
+        </div>
+        <p>این همان Overfitting است.</p>
+
+        <h2>2. Tradeoff دقیقاً چیست؟</h2>
+        <p>معمولاً با افزایش پیچیدگی مدل:</p>
+        <div class="box">
+            <div class="chart">
+Model Complexity
+       ↑
+       │
+       │       Variance
+       │          /
+       │         /
+       │        /
+       │       /
+       │      /
+       │     /
+       │    /
+       │   /
+       │  /
+       │ /
+       │/________________
+       │\
+       │ \
+       │  \
+       │   \
+       │    \
+       │     Bias
+       │
+            </div>
+        </div>
+        <p>تقریباً:</p>
+        <table>
+            <thead><tr><th>Model</th><th>Bias</th><th>Variance</th><th>وضعیت</th></tr></thead>
+            <tbody>
+                <tr><td>خیلی ساده</td><td>🔴 زیاد</td><td>🟢 کم</td><td>Underfitting</td></tr>
+                <tr><td>مناسب</td><td>🟢 کم</td><td>🟢 کنترل‌شده</td><td>Good Fit</td></tr>
+                <tr><td>خیلی پیچیده</td><td>🟢 کم</td><td>🔴 زیاد</td><td>Overfitting</td></tr>
+            </tbody>
+        </table>
+        <p>بنابراین هدف ما این نیست که فقط Bias را کم کنیم یا فقط Variance را کم کنیم.</p>
+        <p>هدف این است که مجموع خطا را کمینه کنیم.</p>
+
+        <h2>3. رابطه با Generalization</h2>
+        <p>مدل خوب مدلی نیست که فقط روی Training عالی باشد.</p>
+        <p>مدل خوب باید روی داده‌های ندیده‌شده هم خوب عمل کند.</p>
+        <p>یعنی:</p>
+        <div class="box">
+            <div class="chart">
+Training Performance
+        +
+Generalization Performance
+        ↓
+     Good Model
+            </div>
+        </div>
+        <p>به همین دلیل معمولاً به دنبال نقطه‌ای هستیم که Validation/Test Error کمینه شود.</p>
+
+        <h2>4. یک مثال خیلی ساده</h2>
+        <p>فرض کن سه مدل داریم:</p>
+        <div class="inner-box"><div class="inner-title">Model A — Linear Regression</div></div>
+        <div class="box"><div class="chart">y = ax + b</div></div>
+        <p>خیلی ساده است.</p>
+        <div class="box">
+            <div class="chart">
+Bias     = High
+Variance = Low
+
+→ Underfitting
+            </div>
+        </div>
+
+        <div class="inner-box"><div class="inner-title">Model B — Polynomial Degree 3</div></div>
+        <div class="box"><div class="chart">y = ax³ + bx² + cx + d</div></div>
+        <p>انعطاف‌پذیری مناسبی دارد.</p>
+        <div class="box">
+            <div class="chart">
+Bias     = Low
+Variance = Moderate
+
+→ Good Fit
+            </div>
+        </div>
+
+        <div class="inner-box"><div class="inner-title">Model C — Polynomial Degree 30</div></div>
+        <p>مدل تقریباً می‌تواند تمام نقاط Training را دنبال کند.</p>
+        <div class="box">
+            <div class="chart">
+Bias     = Very Low
+Variance = Very High
+
+→ Overfitting
+            </div>
+        </div>
+
+        <h2>5. ارتباط با Regularization</h2>
+        <p>یکی از مهم‌ترین کاربردهای Bias–Variance Tradeoff همین‌جاست.</p>
+        <p>مثلاً در Linear Regression:</p>
+        <div class="inner-box"><div class="inner-title">Ridge:</div></div>
+        <div class="formula">$$Loss = MSE + \lambda \sum w_i^2$$</div>
+        <p>وقتی λ را افزایش می‌دهیم:</p>
+        <div class="box">
+            <div class="chart">
+λ ↑
+↓
+Model Complexity ↓
+↓
+Variance ↓
+Bias ↑
+            </div>
+        </div>
+        <p>پس Regularization معمولاً:</p>
+        <div class="inner-box">Variance را کاهش می‌دهد، اما مقداری Bias اضافه می‌کند.</div>
+        <p>این دقیقاً همان Tradeoff است.</p>
+
+        <h2>6. روش‌های کاهش Bias و Variance</h2>
+        <div class="inner-box"><div class="inner-title">اگر Bias زیاد باشد:</div></div>
+        <div class="box"><div class="chart">Bias ↑</div></div>
+        <p>می‌توانیم:</p>
+        <ul>
+            <li>مدل پیچیده‌تر استفاده کنیم</li>
+            <li>Featureهای بیشتری اضافه کنیم</li>
+            <li>Feature engineering انجام دهیم</li>
+            <li>Regularization را کاهش دهیم</li>
+            <li>مدل قوی‌تری استفاده کنیم</li>
+        </ul>
+        <p>مثلاً:</p>
+        <div class="box">
+            <div class="chart">
+Linear Regression
+        ↓
+Random Forest
+        ↓
+XGBoost
+        ↓
+Neural Network
+            </div>
+        </div>
+        <p>البته این ترتیب الزاماً برای هر مسئله بهترین نیست.</p>
+
+        <div class="inner-box"><div class="inner-title">اگر Variance زیاد باشد:</div></div>
+        <div class="box"><div class="chart">Variance ↑</div></div>
+        <p>می‌توانیم:</p>
+        <ul>
+            <li>داده بیشتری جمع کنیم</li>
+            <li>Regularization اضافه کنیم</li>
+            <li>مدل را ساده‌تر کنیم</li>
+            <li>Feature selection انجام دهیم</li>
+            <li>Dropout استفاده کنیم</li>
+            <li>Early stopping استفاده کنیم</li>
+            <li>Cross-validation انجام دهیم</li>
+            <li>از Ensemble استفاده کنیم</li>
+        </ul>
+
+        <h2>7. یک نکته خیلی مهم برای مصاحبه</h2>
+        <p>این را خوب به خاطر بسپار:</p>
+        <div class="box">
+            <div class="chart">
+High Bias → Underfitting
+High Variance → Overfitting
+            </div>
+        </div>
+        <p>و:</p>
+        <div class="inner-box">Regularization → معمولاً Variance را کاهش و Bias را افزایش می‌دهد.</div>
+        <p>و مهم‌تر:</p>
+        <div class="inner-box">هدف، پیدا کردن مدلی با بهترین Generalization است، نه کمترین Training Error.</div>
+        <p>مثلاً اگر interviewer بپرسد:</p>
+        <div class="inner-box">"Your model has 99% training accuracy but 75% validation accuracy. What's wrong?"</div>
+        <p>جواب اصلی:</p>
+        <div class="inner-box">The model likely has high variance and is overfitting the training data.</div>
+        <p>و اگر بپرسد:</p>
+        <div class="inner-box">"How would you fix it?"</div>
+        <p>می‌توانی بگویی:</p>
+        <div class="inner-box">More training data, stronger regularization, simpler model, feature selection, dropout/early stopping for neural networks, and cross-validation.</div>
+        <p>یک نکته ظریف هم وجود دارد: در ML مدرن، مخصوصاً Deep Learning، رابطه Bias–Variance کمی پیچیده‌تر از نمودار کلاسیک است و پدیده‌هایی مثل Double Descent هم داریم؛ یعنی افزایش پیچیدگی مدل همیشه الزاماً باعث افزایش نهایی Test Error نمی‌شود.</p>
+    </div>
+</body>
+</html>
